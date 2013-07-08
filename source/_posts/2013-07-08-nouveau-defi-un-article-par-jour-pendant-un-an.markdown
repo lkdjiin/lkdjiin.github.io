@@ -3,7 +3,6 @@ layout: post
 title: "Nouveau défi: un article par jour pendant un an"
 date: 2013-07-08 17:09
 comments: true
-published: false
 categories: annonce
 ---
 
