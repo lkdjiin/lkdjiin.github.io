@@ -40,7 +40,7 @@ plusieurs manières :
    outils que je connais déjà.
 
 
-Voilà, ça commence aujourd'hui.
+Voilà, ça commence aujourd'hui. Je tente le coup.
 
 À demain.
 
