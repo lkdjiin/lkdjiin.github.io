@@ -1,0 +1,412 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Ruby et les eigenclass - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Dans l&#8217;
+article d&#8217;hier,
+je cherchais un intérêt à class &lt;&lt; self dans la
+définition d&#8217;une classe, et je n&#8217;en ai pas &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/07/11/ruby-et-les-eigenclass">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Ruby Et Les Eigenclass</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-11T10:24:00+02:00" pubdate data-updated="true">Jul 11<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Dans l&#8217;
+<a href="http://lkdjiin.github.io/blog/2013/07/10/quel-est-linteret-de-cette-syntaxe/">article d&#8217;hier</a>,
+je cherchais un intérêt à <code>class &lt;&lt; self</code> dans la
+définition d&#8217;une classe, et je n&#8217;en ai pas trouvé.
+Aujourd&#8217;hui je vais appronfondir le sujet et parler des eigenclass(es) en Ruby.
+Il se trouve que Ruby est un langage orienté objet, contrairement à…
+(au hasard) Java…</p>
+
+<!-- more -->
+
+
+<p>Ok, c&#8217;est pour rire. Bien sûr que Java est un langage OO. Mais quand même,
+par rapport à Ruby je dirais plutôt que Java est un langage orienté classe.
+Avec Ruby, tout est objet, même les classes ! Je re-dis ça autrement
+pour que ce soit
+bien clair : en Ruby les classes sont des objets comme les autres.
+Voyons comment ça fonctionne, au travers des eigenclass(es):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Engin</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">roule</span>
+</span><span class='line'>    <span class="s2">&quot;Je roule&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">voiture</span> <span class="o">=</span> <span class="no">Engin</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'><span class="n">moto</span> <span class="o">=</span> <span class="no">Engin</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">voiture</span><span class="o">.</span><span class="n">roule</span>
+</span><span class='line'><span class="c1"># =&gt; &quot;Je roule&quot;</span>
+</span><span class='line'><span class="n">moto</span><span class="o">.</span><span class="n">roule</span>
+</span><span class='line'><span class="c1"># =&gt; &quot;Je roule&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On a créé une classe <code>Engin</code> et instancié deux objets à partir de cette
+classe, <code>voiture</code> et <code>moto</code>. La classe a joué le rôle d&#8217;un moule, à partir
+duquel les deux objets ont été fabriqués et leurs comportements sont
+identiques. Maintenant, si on veut spécialiser le comportement de <code>moto</code>,
+on pourrait utiliser l&#8217;héritage ou les mixins. Ce qui serait très bien si
+on devait gérer des dizaines d&#8217;objets au comportement similaire. Mais si on
+a un seul objet qui diffère, devoir écrire une nouvelle classe pour un seul
+objet est un peu lourd. Grâce au eigenclass(es), Ruby permet de changer le
+comportement d&#8217;un objet pendant l&#8217;execution.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="n">moto</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">wheeling</span>
+</span><span class='line'>    <span class="s2">&quot;Wahooo&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ou bien avec la syntaxe suivante, qui fait la même chose:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">moto</span><span class="o">.</span><span class="nf">wheeling</span>
+</span><span class='line'>  <span class="s2">&quot;Wahooo&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On vient d&#8217;ajouter une méthode à l&#8217;objet <code>moto</code> de classe <code>Engin</code>, mais pas
+à l&#8217;objet <code>voiture</code>, pourtant lui aussi de classe <code>Engin</code>. Pour vérifier:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">moto</span><span class="o">.</span><span class="n">wheeling</span>
+</span><span class='line'><span class="c1"># =&gt; &quot;Wahooo&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">voiture</span><span class="o">.</span><span class="n">wheeling</span>
+</span><span class='line'><span class="c1"># =&gt; NoMethodError: undefined method `wheeling&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">voiture</span><span class="o">.</span><span class="n">class</span> <span class="o">==</span> <span class="n">moto</span><span class="o">.</span><span class="n">class</span>
+</span><span class='line'><span class="c1"># =&gt; true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Comment Ruby gère ce système ? C&#8217;est surprenant de simplicité. Ruby interpose
+une nouvelle classe, anonyme, entre l&#8217;objet et sa hiérarchie de classes. C&#8217;est
+cette nouvelle classe, qu&#8217;on appelle eigenclass.
+L&#8217;eigenclass ne comprend que les comportements ajoutés à «son» objet.  Dans
+notre exemple, l&#8217;eigenclass de <code>moto</code> ne comporte que la méthode <code>wheeling</code>.
+Le système de classe de Ruby est complexe, mais pour la partie qui nous
+intéresse ici cela donne ça:</p>
+
+<pre><code>moto &lt; eigenclass &lt; Engin &lt; Object
+</code></pre>
+
+<p>À la place de «eigenclass», on peut lire et entendre parfois «singleton» ou
+«metaclass», c&#8217;est la même chose. D&#8217;ailleurs, pour obtenir la liste des
+méthodes de la «ghost class» (encore un autre nom) on peut utiliser la
+méthode <code>singleton_methods</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">moto</span><span class="o">.</span><span class="n">singleton_methods</span>
+</span><span class='line'><span class="c1"># =&gt; [</span>
+</span><span class='line'><span class="c1"># =&gt;   [0] wheeling() #&lt;Engin:0xa05585c&gt;</span>
+</span><span class='line'><span class="c1"># =&gt; ]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;ai dit au début qu&#8217;une classe est un objet comme un autre. Donc ce qui
+fonctionne pour <code>moto</code> doit aussi fonctionner pour <code>Engin</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">Engin</span><span class="o">.</span><span class="nf">definition</span>
+</span><span class='line'>  <span class="s2">&quot;Un truc qui roule&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Engin</span><span class="o">.</span><span class="n">definition</span>
+</span><span class='line'><span class="c1"># =&gt; &quot;un truc qui roule&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Engin</span><span class="o">.</span><span class="n">singleton_methods</span>
+</span><span class='line'><span class="c1"># =&gt; [</span>
+</span><span class='line'><span class="c1"># =&gt;     [0] definition() Engin</span>
+</span><span class='line'><span class="c1"># =&gt; ]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tout pareil ! <code>definition</code> a été ajouté à l&#8217;eigenclass de <code>Engin</code>.
+Autrement dit, quand vous ajouter une méthode de classe à une classe, en fait
+vous l&#8217;ajouter à son eigenclass.</p>
+
+<p>À demain.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-11T10:24:00+02:00" pubdate data-updated="true">Jul 11<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/eigenclass/'>eigenclass</a>, <a class='category' href='/blog/categories/object/'>object</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/07/11/ruby-et-les-eigenclass/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/07/11/ruby-et-les-eigenclass/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/07/10/quel-est-linteret-de-cette-syntaxe/" title="Previous Post: Quel est l'intérêt de cette syntaxe ?">&laquo; Quel est l'intérêt de cette syntaxe ?</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/11/ruby-et-les-eigenclass/">Ruby Et Les Eigenclass</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/10/quel-est-linteret-de-cette-syntaxe/">Quel Est L'intérêt De Cette Syntaxe ?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/09/bien-debuter-avec-vim-conseil-numero-un/">Bien Débuter Avec Vim: Conseil Numéro Un</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">Nouveau Défi: Un Article Par Jour Pendant Un An</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/07/11/ruby-et-les-eigenclass/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/07/11/ruby-et-les-eigenclass/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
