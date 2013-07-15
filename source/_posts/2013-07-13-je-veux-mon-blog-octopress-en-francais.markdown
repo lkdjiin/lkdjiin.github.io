@@ -6,6 +6,8 @@ comments: true
 categories: [octopress, ruby, internationalization, localization]
 ---
 
+{% level 1 %}
+
 Octopress n'est pas prévu pour être internationnalisé et localisé. C'est
 comme ça. Je ne pense pas que ça change avant un moment, si jamais ça
 change. Suite à une

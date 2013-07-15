@@ -6,6 +6,8 @@ comments: true
 categories: [vim, conseil, débutant]
 ---
 
+{% level 1 %}
+
 Abandonnez la souris
 --------------------
 

@@ -6,6 +6,8 @@ comments: true
 categories: [ruby, code propre]
 ---
 
+{% level 2 %}
+
 En googlant sur `ruby design pattern factory` je suis tombé sur un
 [post intéressant]( http://blog.rubybestpractices.com/posts/gregory/059-issue-25-creational-design-patterns.html).
 Non, je ne vais pas vous parler de design pattern dans cet article. L'exemple

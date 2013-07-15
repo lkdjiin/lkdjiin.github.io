@@ -5,10 +5,10 @@ date: 2013-07-14 09:11
 comments: true
 categories: [vim, conseil, débutant]
 ---
+{% level 1 %}
 
 Ayez confiance dans le mode normal
 ----------------------------------
-
 Ça ne vous aura pas échappé, Vim est un éditeur modal.  C'est à dire qu'il
 possède plusieurs modes de fonctionnement, plusieurs manières de considérer les
 choses.  Comme par exemple, le mode normal pour éditer du texte, ou bien le mode

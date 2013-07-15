@@ -5,6 +5,9 @@ date: 2013-07-11 10:24
 comments: true
 categories: [ruby, eigenclass, object]
 ---
+
+{% level 2 %}
+
 Dans l'
 [article d'hier](http://lkdjiin.github.io/blog/2013/07/10/quel-est-linteret-de-cette-syntaxe/),
 je cherchais un intérêt à `class << self` dans la
