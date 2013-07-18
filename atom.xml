@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-07-17T09:08:07+02:00</updated>
+  <updated>2013-07-18T12:46:20+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,138 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Comment étendre Git avec ses propres scripts: la suite]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/07/18/comment-etendre-git-avec-ses-propres-scripts-la-suite/"/>
+    <updated>2013-07-18T07:39:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/07/18/comment-etendre-git-avec-ses-propres-scripts-la-suite</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p><em>Hier j&#8217;ai montré comment ajouter une commande à Git à l&#8217;aide d&#8217;un script.
+Aujourd&#8217;hui je fais quelque chose d&#8217;utile grâce à ce nouveau pouvoir.</em></p>
+
+<p>Ce que je fais régulierement avec Git c&#8217;est:</p>
+
+<ol>
+<li>ajouter une fonctionnalité dans la branche <code>ma_branche</code></li>
+<li>quand c&#8217;est terminé, passer sur la branche <code>master</code></li>
+<li>fusionner <code>ma_branche</code> dans <code>master</code></li>
+</ol>
+
+
+<p>Comme je ne travaille jamais directement dans la branche master, ce genre
+de <em>merge</em> n&#8217;offre jamais de conflits. J&#8217;aimerais regrouper les
+étapes 2 et 3 en une seule commande: <code>git merge-me</code>.</p>
+
+<!-- more -->
+
+
+<h2>Trouver la branche courante</h2>
+
+<p>La première étape consiste à retrouver
+et retenir le nom de la branche courante. Étant un grand fan de Sed, je
+procederais naturellement comme ça:</p>
+
+<pre><code>git branch | sed -n '/\* /s///p'
+</code></pre>
+
+<p>Mais je sais que Sed n&#8217;a pas les faveurs de tout le monde. J&#8217;ai donc fais une
+recherche sur StackOverflow pour trouver une autre manière d&#8217;obtenir le
+même résultat:</p>
+
+<pre><code>git rev-parse --abbrev-ref HEAD
+</code></pre>
+
+<p>Je pense que cette seconde solution est meilleure puisque moins fragile, même
+si il y a peu de chance que Git change la sortie de <code>git branch</code>. Pour
+retenir le nom de la branche, on place la sortie de cette commande dans une
+variable Bash:</p>
+
+<figure class='code'><figcaption><span>git-merge-me</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">BRANCH_TO_MERGE</span><span class="o">=</span><span class="sb">`</span>git rev-parse --abbrev-ref HEAD<span class="sb">`</span>
+</span><span class='line'><span class="nb">echo</span> <span class="nv">$BRANCH_TO_MERGE</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Comme en Ruby, les backticks déclenchent la commande et retournent sa
+sortie. Le résultat:</p>
+
+<pre><code>xavier:~$ git merge-me
+ma_branche
+</code></pre>
+
+<p>Maintenant que j&#8217;ai vu que ça fonctionnait bien, le reste est un jeu
+d&#8217;enfant.</p>
+
+<h2>Le script final</h2>
+
+<p>On ajoute les deux commandes Git, ce qui donne:</p>
+
+<figure class='code'><figcaption><span>git-merge-me</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">BRANCH_TO_MERGE</span><span class="o">=</span><span class="sb">`</span>git rev-parse --abbrev-ref HEAD<span class="sb">`</span>
+</span><span class='line'>git checkout master
+</span><span class='line'>git merge <span class="nv">$BRANCH_TO_MERGE</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici le script en action:</p>
+
+<pre><code>xavier:~$ git merge-me
+Switched to branch 'master'
+Updating 48540e6..c584593
+Fast-forward
+ TODO |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+xavier:~$ git branch
+* master
+  ma_branche
+</code></pre>
+
+<p>Ma nouvelle commande fait bien le travail que je lui demande.</p>
+
+<h2>Pour aller plus loin</h2>
+
+<p>Vous n&#8217;êtes pas limité à l&#8217;utilisation de Bash. Vous pouvez utiliser le
+langage que vous voulez. À titre d&#8217;exemple, voici l&#8217;équivalent du script
+précédent, cette fois en Ruby.
+Toutefois comme ce genre de script va utiliser beaucoup de commandes
+système, Ruby n&#8217;est peut-être pas le mieux placé. À vous de voir.</p>
+
+<figure class='code'><figcaption><span>git-merge-me version Ruby</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">branch_to_merge</span> <span class="o">=</span> <span class="sb">`git rev-parse --abbrev-ref HEAD`</span>
+</span><span class='line'><span class="nb">system</span> <span class="s1">&#39;git checkout master&#39;</span>
+</span><span class='line'><span class="nb">system</span> <span class="s2">&quot;git merge </span><span class="si">#{</span><span class="n">branch_to_merge</span><span class="o">.</span><span class="n">chomp</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut aussi combiner script et alias. On donne un nom bien explicite
+à notre fichier, comme <code>git-merge-me-into-master</code> et on crée un alias
+<code>mm = merge-me-into-master</code>. Ainsi on a une commande rapide sous les
+doigts et on peut facilement retrouver le fichier grâce à son nom quand
+on doit le modifier.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Comment étendre Git avec ses propres scripts]]></title>
@@ -891,7 +1023,7 @@ le précédent:</p>
 </span><span class='line'>
 </span><span class='line'>  <span class="nb">private_class_method</span> <span class="ss">:new</span>
 </span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initializedata</span><span class="p">,</span> <span class="n">directed</span><span class="o">=</span><span class="kp">false</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">directed</span><span class="o">=</span><span class="kp">false</span><span class="p">)</span>
 </span><span class='line'>    <span class="c1">#...  </span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'><span class="k">end</span>
