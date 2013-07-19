@@ -3,7 +3,7 @@ layout: post
 title: "Ruby et les eigenclass"
 date: 2013-07-11 10:24
 comments: true
-categories: [ruby, eigenclass, object]
+categories: [ruby, eigenclass, object, intermédiaire]
 ---
 
 {% level 2 %}

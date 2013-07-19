@@ -3,7 +3,7 @@ layout: post
 title: "Quel est l'intérêt de cette syntaxe ?"
 date: 2013-07-10 09:04
 comments: true
-categories: [ruby, code propre]
+categories: [ruby, code propre, intermédiaire]
 ---
 
 {% level 2 %}
@@ -59,7 +59,7 @@ class AdjacencyMatrix
 
   private_class_method :new
   
-  def initializedata, directed=false)  
+  def initialize(data, directed=false)  
     #...  
   end
 end  
