@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : elixir | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/elixir/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-07-23T10:11:01+02:00</updated>
+  <updated>2013-07-24T08:09:41+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,173 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elixir: calculer la somme des n premiers entiers - suite et fin]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/07/24/elixir-calculer-la-somme-des-n-premiers-entiers-suite-et-fin/"/>
+    <updated>2013-07-24T07:35:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/07/24/elixir-calculer-la-somme-des-n-premiers-entiers-suite-et-fin</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p><a href="http://lkdjiin.github.io/blog/2013/07/23/elixir-calculer-la-somme-des-n-premiers-entiers/">Hier</a>,
+je me suis arrêté sur cette version:</p>
+
+<p>``` elixir somme.exs version 1
+defmodule Somme do
+  def run(n, acc) do</p>
+
+<pre><code>somme = n + acc
+suivant = n - 1
+if suivant == 0 do
+  somme
+else
+  run(suivant, somme)
+end
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>IO.puts Somme.run(5, 0)
+```</p>
+
+<p>Aujourd'hui je vais raffiner ce programme petit à petit pour montrer
+quelques possibilités intéressantes du langage Elixir.</p>
+
+<!-- more -->
+
+
+<p>Pour commencer, je vais reécrire le if/else sur une seule ligne:</p>
+
+<p>``` elixir somme.exs version 2
+defmodule Somme do
+  def run(n, acc) do</p>
+
+<pre><code>somme = n + acc
+suivant = n - 1
+if suivant == 0, do: somme, else: run(suivant, somme)
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>IO.puts Somme.run(5, 0)
+```</p>
+
+<p>Ça ne change rien à la logique du programme. Je voulais seulement vous montrer
+une alternative. Il semblerait qu'Elixir n'aime pas trop les if, moi non plus
+ça tombe bien. Dans la version suivante, qui pourra vous paraitre très étrange
+de prime abord, je me débarasse de ce if/else qui pollue mon joli code:</p>
+
+<p>``` elixir somme.exs version 3
+defmodule Somme do
+  def run(n, acc) when n == 0 do</p>
+
+<pre><code>acc
+</code></pre>
+
+<p>  end</p>
+
+<p>  def run(n, acc) do</p>
+
+<pre><code>run(n - 1, n + acc)
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>IO.puts Somme.run(5, 0)
+```</p>
+
+<p>Ça peut surprendre, hein ? La condition qui était précédement dans le <code>if</code> se
+retrouve dans la définition de la fonction:</p>
+
+<p><code>elixir
+def run(n, acc) when n == 0 do
+</code></p>
+
+<p>C'est ce qu'Elixir appelle un <em>guard</em>. Cette version de la fonction <code>run</code> sera
+exécutée uniquement quand n vaut zéro. Dans les autres cas, c'est la seconde
+version, généraliste, <code>run(n, acc) do</code> qui sera exécutée. Je ne sais pas si ce
+truc existe dans d'autres langages, en tout cas je trouve ce comportement tout
+simplement génial. Mais Elixir ne s'arrête pas là. Voici une nouvelle version:</p>
+
+<p>``` elixir somme.exs version 4
+defmodule Somme do
+  def run(0, acc) do</p>
+
+<pre><code>acc
+</code></pre>
+
+<p>  end</p>
+
+<p>  def run(n, acc) do</p>
+
+<pre><code>run(n - 1, n + acc)
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>IO.puts Somme.run(5, 0)
+```</p>
+
+<p>Cette fois le <em>guard</em> est passé directement dans un argument de la fonction:</p>
+
+<p><code>elixir
+def run(0, acc) do
+</code></p>
+
+<p><code>def run(0, …</code> ne sera exécutée que quand le premier argument sera égal à zéro.
+Et si on écrit les fonctions sur une seule ligne, on obtient un résultat très
+compact:</p>
+
+<p>``` elixir somme.exs version 5
+defmodule Somme do
+  def run(0, acc), do: acc
+  def run(n, acc), do: run(n &ndash; 1, n + acc)
+end</p>
+
+<p>IO.puts Somme.run(5, 0)
+```</p>
+
+<p>Il reste encore une chose à prendre en compte: l'API. Devoir passer deux
+arguments à la méthode <code>run</code> n'est pas très intuitif. Comme la valeur initiale
+de l'accumulateur est toujours zéro, on s'arrange pour la cacher à
+l'utilisateur:</p>
+
+<p>``` elixir somme.exs version 6
+defmodule Somme do
+  def run(n), do: run_body(n, 0)
+  defp run_body(0, acc), do: acc
+  defp run_body(n, acc), do: run_body(n &ndash; 1, n + acc)
+end</p>
+
+<p>IO.puts Somme.run(5)
+```</p>
+
+<p><code>run</code> est maintenant une fonction <em>bootstrap</em> qui sert à amorcer le vrai
+travail. Mes deux anciennes fonctions <code>run</code> sont renommées <code>run_body</code> et
+passe dans l'espace privé du module grâce à <code>defp</code>.
+Pour finir, il faut noter qu'Elixir connait bien évidemment une
+fonction <code>reduce</code>, et que le programme pourrait donc s'écrire comme ça:</p>
+
+<p><code>elixir somme.exs version 7
+defmodule Somme do
+  def run(n), do: Enum.reduce(1..n, 0, fn(x, acc) -&gt; x + acc end)
+end
+IO.puts Somme.run(5)
+</code></p>
+
+<p>Mais avouez que ça aurait été moins drôle si j'avais commencé directement
+par là.</p>
+
+<p>Voilà, c'était un petit exemple de fonction récursive qui m'a permit de vous
+montrer certaines particularités d'Elixir.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Elixir: calculer la somme des n premiers entiers]]></title>
