@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-07-24T08:09:41+02:00</updated>
+  <updated>2013-07-25T09:27:12+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,270 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le problème des 100 portes en Elixir]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/"/>
+    <updated>2013-07-25T07:35:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Je continue mon périple parmi le <a href="http://rosettacode.org/wiki/">rosetta code</a>
+en m&#8217;attaquant au problème des «100 doors».</p>
+
+<blockquote><p>Problem: You have 100 doors in a row that are all initially closed. You make 100 passes by the doors. The first time through, you visit every door and toggle the door (if the door is closed, you open it; if it is open, you close it). The second time you only visit every 2nd door (door #2, #4, #6, &#8230;). The third time, every 3rd door (door #3, #6, #9, &#8230;), etc, until you only visit the 100th door.</p><p>Question: What state are the doors in after the last pass? Which are open, which are closed?</p><footer><strong>Rosetta Code</strong> <cite><a href='http://rosettacode.org/wiki/100_doors'>100 doors</a></cite></footer></blockquote>
+
+
+
+
+<!-- more -->
+
+
+<p>Je me dis que je vais d&#8217;abord le faire dans un langage que je connais bien
+pour voir de quoi il retourne, et si il n&#8217;y a pas de pièges cachés. En
+quelques lignes de Ruby, le tour est joué:</p>
+
+<figure class='code'><figcaption><span>100 doors en Ruby</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">doors</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">interval</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">doors</span><span class="o">.</span><span class="n">map!</span><span class="o">.</span><span class="n">with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">elem</span><span class="p">,</span> <span class="n">idx</span><span class="o">|</span>
+</span><span class='line'>    <span class="p">(</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">interval</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">?</span> <span class="o">!</span><span class="n">elem</span> <span class="p">:</span> <span class="n">elem</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Écrire le numéro des portes ouvertes.</span>
+</span><span class='line'><span class="n">doors</span><span class="o">.</span><span class="n">each_with_index</span> <span class="p">{</span><span class="o">|</span><span class="n">e</span><span class="p">,</span> <span class="n">i</span><span class="o">|</span> <span class="nb">puts</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span> <span class="k">if</span> <span class="n">e</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voyant cela j&#8217;ai pensé que ça allait être assez simple à implémenter en
+Elixir. Pas du tout. J&#8217;ai galéré longtemps avant de trouver la solution qui
+va suivre. Mon plus gros problème avec Elixir est que les variables sont
+non-mutables. Une fois définie, une variable ne change pas. Il faut donc
+faire appel constament à la récursivité. Je ne nie pas les avantages d&#8217;un
+tel système (pas d&#8217;effets de bords) mais ce n&#8217;est pas évident de s&#8217;y faire quand
+on vient comme moi du monde procédural ou objet. Trêve de baratin, voici
+ma solution avec Elixir:</p>
+
+<figure class='code'><figcaption><span>100 doors en Elixir</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Doors</span> <span class="k">do</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">  def</span> <span class="n">soluce</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">doors</span> <span class="o">=</span> <span class="no">Enum</span><span class="o">.</span><span class="n">map</span> <span class="m">1</span><span class="o">..</span><span class="m">100</span><span class="p">,</span> <span class="k">fn</span> <span class="n">_</span> <span class="o">-&gt;</span> <span class="no">false</span> <span class="k">end</span>
+</span><span class='line'>    <span class="n">run</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">run</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span> <span class="ow">when</span> <span class="n">interval</span> <span class="o">&gt;</span> <span class="m">100</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">doors</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">run</span> <span class="n">doors</span><span class="p">,</span> <span class="n">interval</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">run</span><span class="p">(</span><span class="n">switch_doors</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span><span class="n">interval</span><span class="p">),</span> <span class="n">interval</span> <span class="o">+</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">switch_doors</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">stream</span> <span class="o">=</span> <span class="no">Stream</span><span class="o">.</span><span class="n">with_index</span><span class="p">(</span><span class="n">doors</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">list</span> <span class="o">=</span> <span class="no">Enum</span><span class="o">.</span><span class="n">to_list</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+</span><span class='line'>    <span class="no">Enum</span><span class="o">.</span><span class="n">map</span> <span class="n">list</span><span class="p">,</span> <span class="k">fn</span> <span class="n">e</span> <span class="o">-&gt;</span>
+</span><span class='line'>      <span class="n">door</span> <span class="o">=</span> <span class="n">elem</span> <span class="n">e</span><span class="p">,</span> <span class="m">0</span>
+</span><span class='line'>      <span class="n">index</span> <span class="o">=</span> <span class="n">elem</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span> <span class="o">+</span> <span class="m">1</span>
+</span><span class='line'>      <span class="n">switch_door</span> <span class="n">rem</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">interval</span><span class="p">),</span> <span class="n">door</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">switch_door</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">door</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="ow">not</span> <span class="n">door</span>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">switch_door</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">door</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">door</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">soluce</span> <span class="o">=</span> <span class="no">Doors</span><span class="o">.</span><span class="n">soluce</span>
+</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="no">Enum</span><span class="o">.</span><span class="n">to_list</span><span class="p">(</span><span class="no">Stream</span><span class="o">.</span><span class="n">with_index</span><span class="p">(</span><span class="n">soluce</span><span class="p">)),</span> <span class="k">fn</span> <span class="n">e</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">elem</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span> <span class="o">==</span> <span class="no">true</span><span class="p">,</span> <span class="k">do</span><span class="p">:</span> <span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">elem</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span> <span class="o">+</span> <span class="m">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Plutôt long comparé à la version Ruby, hein ? Quoiqu&#8217;il en soit, j&#8217;en suis
+fier, j&#8217;ai mis du temps à la pondre, cette version. Je pense que quelqu&#8217;un
+connaissant bien Elixir doit pouvoir nettement améliorer mon code. Je
+vais le poster sur la mailing-list et demander ce qu&#8217;il en
+pense. Si j&#8217;ai des retours (ce dont je ne doute pas) je mettrais la
+version améliorée dans un prochain article. En attendant je vais
+commenter un peu mon code pour l&#8217;expliquer.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">def</span> <span class="n">soluce</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  </span><span class="n">doors</span> <span class="o">=</span> <span class="no">Enum</span><span class="o">.</span><span class="n">map</span> <span class="m">1</span><span class="o">..</span><span class="m">100</span><span class="p">,</span> <span class="k">fn</span> <span class="n">_</span> <span class="o">-&gt;</span> <span class="no">false</span> <span class="k">end</span>
+</span><span class='line'>  <span class="n">run</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>soluce</code> est la seule fonction publique du module. Elle initialise une liste
+de 100 éléments avec la valeur <code>false</code>. Puis elle commence le travail avec
+<code>run(doors, 1)</code>, <code>1</code> étant le premier intervalle de la série, c&#8217;est à dire
+qu&#8217;on passe par toutes les portes. Une fois la solution découverte, elle est
+renvoyée explicitement. Si vous connaissez Ruby, vous savez à quoi je fais
+référence, sinon, sachez qu&#8217;en Elixir toutes les fonctions renvoie une valeur,
+et qu&#8217;on a pas besoin de l&#8217;indiquer. C&#8217;est implicite, la dernière évaluation
+est renvoyée. Notez aussi l&#8217;usage de <code>_</code> qui indique qu&#8217;on se fiche du contenu
+de la variable.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defp</span> <span class="n">run</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span> <span class="ow">when</span> <span class="n">interval</span> <span class="o">&gt;</span> <span class="m">100</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  </span><span class="n">doors</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">defp</span> <span class="n">run</span> <span class="n">doors</span><span class="p">,</span> <span class="n">interval</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  </span><span class="n">run</span><span class="p">(</span><span class="n">switch_doors</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span><span class="n">interval</span><span class="p">),</span> <span class="n">interval</span> <span class="o">+</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La première version de <code>run</code> comporte un <em>guard</em>. Elle n&#8217;est utilisée que
+lorsque <code>interval</code> est supérieur à 100. C&#8217;est notre clause de sortie de la
+fonction récursive.</p>
+
+<p>La seconde version de <code>run</code> est utilisée dans tout les autres cas. Elle se
+contente de s&#8217;appeller elle-même (récursivité) avec une liste des portes
+mise à jour et un intervalle incrémenté.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defp</span> <span class="n">switch_doors</span><span class="p">(</span><span class="n">doors</span><span class="p">,</span> <span class="n">interval</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  </span><span class="n">stream</span> <span class="o">=</span> <span class="no">Stream</span><span class="o">.</span><span class="n">with_index</span><span class="p">(</span><span class="n">doors</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">list</span> <span class="o">=</span> <span class="no">Enum</span><span class="o">.</span><span class="n">to_list</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">Enum</span><span class="o">.</span><span class="n">map</span> <span class="n">list</span><span class="p">,</span> <span class="k">fn</span> <span class="n">e</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="n">door</span> <span class="o">=</span> <span class="n">elem</span> <span class="n">e</span><span class="p">,</span> <span class="m">0</span>
+</span><span class='line'>    <span class="n">index</span> <span class="o">=</span> <span class="n">elem</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span> <span class="o">+</span> <span class="m">1</span>
+</span><span class='line'>    <span class="n">switch_door</span> <span class="n">rem</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">interval</span><span class="p">),</span> <span class="n">door</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>switch_doors</code> est responsable de fabriquer une nouvelle liste de portes.
+C&#8217;est la fonction qui m&#8217;a tenu en échec pendant des heures, jusqu&#8217;à ce que
+je découvre le module <code>Stream</code>. Voyons <code>switch_doors</code> en détails:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">stream</span> <span class="o">=</span> <span class="no">Stream</span><span class="o">.</span><span class="n">with_index</span><span class="p">(</span><span class="n">doors</span><span class="p">)</span>
+</span><span class='line'><span class="n">list</span> <span class="o">=</span> <span class="no">Enum</span><span class="o">.</span><span class="n">to_list</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je crée une nouvelle liste qui va embarquer les valeurs de <code>doors</code>
+en les associant aux indexs. <code>list</code> va ressembler à ça:</p>
+
+<pre><code>[{false, 0}, {false, 1}, {false, 2}, ... {false, 99}]
+</code></pre>
+
+<p>Qui en Elixir peut aussi être représenté ainsi:</p>
+
+<pre><code>[false: 0, false: 1 ...
+</code></pre>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">map</span> <span class="n">list</span><span class="p">,</span> <span class="k">fn</span> <span class="n">e</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="n">door</span> <span class="o">=</span> <span class="n">elem</span> <span class="n">e</span><span class="p">,</span> <span class="m">0</span>
+</span><span class='line'>  <span class="n">index</span> <span class="o">=</span> <span class="n">elem</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span> <span class="o">+</span> <span class="m">1</span>
+</span><span class='line'>  <span class="n">switch_door</span> <span class="n">rem</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">interval</span><span class="p">),</span> <span class="n">door</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>Enum.map</code> fabrique et renvoie une nouvelle version de la liste des portes.
+Chaque élément de <code>list</code> (chaque <code>{false, 0}</code>) passe à travers une fonction
+anonyme qui renvoie false ou true, selon le résultat de index modulo interval.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defp</span> <span class="n">switch_door</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">door</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="ow">not</span> <span class="n">door</span>
+</span><span class='line'><span class="k">defp</span> <span class="n">switch_door</span><span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">door</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">door</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Si le modulo égal zéro, on inverse l&#8217;état de la porte. Sinon la porte doit
+rester dans le même état.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="no">Enum</span><span class="o">.</span><span class="n">to_list</span><span class="p">(</span><span class="no">Stream</span><span class="o">.</span><span class="n">with_index</span><span class="p">(</span><span class="n">soluce</span><span class="p">)),</span> <span class="k">fn</span> <span class="n">e</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">elem</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span> <span class="o">==</span> <span class="no">true</span><span class="p">,</span> <span class="k">do</span><span class="p">:</span> <span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">elem</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span> <span class="o">+</span> <span class="m">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;écris les numéros des portes ouvertes. Avec mes explications qui précèdent,
+j&#8217;espère que vous pourrez comprendre comment ça marche.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Elixir: calculer la somme des n premiers entiers - suite et fin]]></title>
