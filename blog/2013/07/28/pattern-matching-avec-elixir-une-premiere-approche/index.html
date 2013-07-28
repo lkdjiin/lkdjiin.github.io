@@ -1,0 +1,384 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Pattern matching avec Elixir: une première approche - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile Une tâche réccurente quand on utilise la récursivité pour résoudre un problème
+est de séparer une liste en deux parties. La première &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Pattern matching avec Elixir: une première approche</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-28T13:32:00+02:00" pubdate data-updated="true">28 juillet 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Une tâche réccurente quand on utilise la récursivité pour résoudre un problème
+est de séparer une liste en deux parties. La première partie étant le premier
+élément de la liste et la seconde partie étant ce qui reste. Pour faire cela,
+on peut utiliser le <em>pattern matching</em>, qu&#8217;on peut traduire par filtrage à
+l&#8217;aide de motifs.</p>
+
+<!-- more -->
+
+
+<p>Voyons la syntaxe pour séparer une liste en deux:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="p">[</span><span class="n">head</span> <span class="o">|</span> <span class="n">tail</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Après ça, <code>head</code> (la tête) vaut 1 et <code>tail</code> (la queue) vaut [2, 3].
+Maintenant les cas exceptionnels: Si on passe une liste d&#8217;un seul élément,
+<code>tail</code> sera une liste vide ([]). Si on passe une liste vide, et bien c&#8217;est
+une erreur. Voici une capture d&#8217;écran qui montre le résultat:</p>
+
+<p><img src="/images/2013-07-28-1.jpg" width="890" height="577" title="pattern matching avec Elixir" ></p>
+
+<p>Pour illustrer le <em>pattern matching</em> je vais écrire un module avec une fonction
+<code>minimum</code> qui doit trouver le plus petit élément dans une liste de nombres
+entiers.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Stats</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  def</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">])</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">candidate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="ow">when</span> <span class="n">head</span> <span class="o">&lt;</span> <span class="n">candidate</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">_</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">candidate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut l&#8217;utiliser comme ceci:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Stats</span><span class="o">.</span><span class="n">minimum</span><span class="p">([</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="o">-</span><span class="m">9</span><span class="p">,</span> <span class="m">3</span><span class="p">])</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voici une explication des différentes fonctions:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">def</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">])</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le <em>pattern matching</em> s&#8217;applique directement dans les arguments de la
+fonction. Pour cette première passe, on considère que <code>head</code> est à priori
+la plus petite valeur de la série.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">candidate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Là, c&#8217;est la clause de sortie de la fonction <code>minimum</code>. Si la liste est
+vide, c&#8217;est qu&#8217;on à trouvé la valeur minimum (<code>candidate</code>).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="ow">when</span> <span class="n">head</span> <span class="o">&lt;</span> <span class="n">candidate</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Quand la liste est encore remplie, on compare la valeur de tête à notre
+valeur candidate. Je rappelle que <code>candidate</code> est à ce moment la plus petite
+valeur trouvée jusqu&#8217;ici. Si la valeur de <code>head</code> est plus petite que
+la valeur de <code>candidate</code>, la première remplace la dernière.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">_</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">candidate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Dans les autres cas, la valeur de tête n&#8217;a pas d&#8217;intérêt, ce que souligne
+le caractère <code>_</code> dans <code>[_|tail]</code>. On remplace une variable par <code>_</code>
+lorsque cette variable est inutilisée.</p>
+
+<p>Nouveau venu en programmation fonctionnelle, je pense que je n&#8217;entrevois là
+que la surface du <em>pattern matching</em>.</p>
+
+<p>À demain.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-28T13:32:00+02:00" pubdate data-updated="true">28 juillet 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/elixir/'>elixir</a>, <a class='category' href='/blog/categories/pattern-matching/'>pattern matching</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/07/27/comment-ecrire-un-plugin-octopress/" title="Previous Post: Comment écrire un plugin Octopress">&laquo; Comment écrire un plugin Octopress</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/">Pattern matching avec Elixir: une première approche</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">Comment écrire un plugin Octopress</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/26/bien-debuter-avec-vim-conseil-numero-cinq/">Bien débuter avec Vim: conseil numéro cinq</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/">Le problème des 100 portes en Elixir</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/elixir-calculer-la-somme-des-n-premiers-entiers-suite-et-fin/">Elixir: calculer la somme des n premiers entiers - suite et fin</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
