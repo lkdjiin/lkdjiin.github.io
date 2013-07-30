@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : débutant | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/debutant/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-07-29T09:05:23+02:00</updated>
+  <updated>2013-07-30T08:42:46+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,149 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Comment écrire un plugin Octopress - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2/"/>
+    <updated>2013-07-30T08:18:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">la première partie</a>,
+je m'étais arrêté sur le code suivant:</p>
+
+<p>``` ruby
+module Jekyll
+  class LevelTag &lt; Liquid::Tag</p>
+
+<pre><code>def initialize(tagname, level, tokens)
+  @level = level
+end
+
+def render(context)
+  "Niveau : #{@level}"
+end
+</code></pre>
+
+<p>  end
+end
+Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
+```</p>
+
+<p>Aujourd'hui je montre comment permettre à l'utilisateur de personnaliser
+le contenu du code Html produit.</p>
+
+<!-- more -->
+
+
+<p>Tout d'abord, voici le code du plugin terminé. Je vous rappelle que vous
+pouvez trouver <a href="https://github.com/lkdjiin/octopress-level-tag">ce plugin sur Github</a>.</p>
+
+<p>``` ruby
+module Jekyll
+  class LevelTag &lt; Liquid::Tag</p>
+
+<pre><code>def initialize(tagname, level, tokens)
+  @level = level.strip
+end
+
+def render(context)
+  config = context.registers[:site].config
+  label = config['level_tag_level'] || "Level: "
+  level = case @level
+  when "1" then config['level_tag_level_1'] || "easy"
+  when "2" then config['level_tag_level_2'] || "medium"
+  when "3" then config['level_tag_level_3'] || "hard"
+  else
+    "unknown"
+  end
+  classes = "class='level-tag level-tag-#{@level}'"
+  "&lt;div #{classes}&gt;#{label}&lt;span&gt;#{level}&lt;/span&gt;&lt;/div&gt;"
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>end
+Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
+```</p>
+
+<p>L'appel du plugin dans les articles sera maintenant réalisé comme ceci:</p>
+
+<p><code>ruby
+<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+</code></p>
+
+<p>Par rapport à la première version, la méthode <code>render</code> a bien enflée. &ndash;
+<em>Je trouve qu'il y a trop de code dedans, mais ce sera peut-être le sujet
+d'un prochain article sur le refactoring.</em> &ndash; C'est cette méthode qui fait
+tout le travail, voici les explications:</p>
+
+<p>``` ruby</p>
+
+<pre><code>def render(context)
+  config = context.registers[:site].config
+  label = config['level_tag_level'] || "Level: "
+</code></pre>
+
+<p>```</p>
+
+<p>C'est l'objet <code>context</code> qui va permettre de récupérer les informations
+nécéssaires dans le fichier de configuration <code>_config.yml</code>. Voici par
+exemple ce que j'ai ajouté dans mon <code>_config.yml</code>:</p>
+
+<p>``` yaml</p>
+
+<h1>LevelTag plugin</h1>
+
+<p>level_tag_level: &ldquo;Niveau : &rdquo;
+level_tag_level_1: &ldquo;facile&rdquo;
+level_tag_level_2: &ldquo;intermédiaire&rdquo;
+level_tag_level_3: &ldquo;avancé&rdquo;
+```</p>
+
+<p>La ligne suivante:</p>
+
+<pre><code>label = config['level_tag_level'] || "Level: "
+</code></pre>
+
+<p>initialise la
+variable <code>label</code> avec le contenu de <code>level_tag_level</code>, trouvé dans le
+<code>_config.yml</code>. La partie du code <code>|| "Level: "</code> est là pour s'assurer que
+si <code>level_tag_level</code> n'existe pas dans le fichier de configuration, <code>label</code>
+sera bien initialisé avec une valeur par défaut.</p>
+
+<p>``` ruby</p>
+
+<pre><code>  level = case @level
+  when "1" then config['level_tag_level_1'] || "easy"
+  when "2" then config['level_tag_level_2'] || "medium"
+  when "3" then config['level_tag_level_3'] || "hard"
+  else
+    "unknown"
+  end
+</code></pre>
+
+<p>```</p>
+
+<p>C'est la même logique que précédement. La variable <code>level</code> sera initialisée
+avec du contenu trouvé dans <code>_config.yml</code> ou bien, avec une valeur par
+défaut.</p>
+
+<p>``` ruby</p>
+
+<pre><code>  classes = "class='level-tag level-tag-#{@level}'"
+  "&lt;div #{classes}&gt;#{label}&lt;span&gt;#{level}&lt;/span&gt;&lt;/div&gt;"
+</code></pre>
+
+<p>```</p>
+
+<p>Finalement, comme dans <a href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">la première partie</a>,
+on retrouve en fin de méthode la production du code Html.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Bien débuter avec Vim: conseil numéro six]]></title>
@@ -409,135 +552,6 @@ qu'il faut pour que j'utilise ces commandes sans y penser.</p>
 
 <p>Une fois le tutoriel fini, vous possédez les bases de vim … et une montagne
 de notes qui vous seront utiles dans les semaines qui vont suivre.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elixir: calculer la somme des n premiers entiers]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/23/elixir-calculer-la-somme-des-n-premiers-entiers/"/>
-    <updated>2013-07-23T07:43:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/23/elixir-calculer-la-somme-des-n-premiers-entiers</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Pour illustrer la programmation récursive avec Elixir et montrer quelques
-aspects sympathiques du langage, j'ai choisi un classique et très simple
-problème mathématique: calculer la somme des n premiers entiers.
-Par exemple:</p>
-
-<pre><code>Somme des n premiers entiers si n vaut 5
-
-5 + 4 + 3 + 2 + 1 = 15
-</code></pre>
-
-<p>Super simple. C'est comme la factorielle mais avec des additions. Pas de quoi
-choper des boutons, même si on déteste les maths. C'est un bon problème pour
-illustrer les fonctions récursives. En programmation procédurale on ferait
-quelque chose dans ce genre là:</p>
-
-<pre><code>somme = 0
-for(i = n; i &gt; 0; i--) {
-  somme += n
-}
-</code></pre>
-
-<p>Ma première tentative avec Elixir donne le programme suivant:</p>
-
-<!-- more -->
-
-
-<p>``` elixir somme.exs version 1
-defmodule Somme do</p>
-
-<p>  def run(n, acc) do</p>
-
-<pre><code>somme = n + acc
-suivant = n - 1
-if suivant == 0 do
-  somme
-else
-  run(suivant, somme)
-end
-</code></pre>
-
-<p>  end</p>
-
-<p>end</p>
-
-<p>IO.puts Somme.run(5, 0)
-```</p>
-
-<p>Vous le lancez comme ça:</p>
-
-<pre><code>$ elixir somme.exs 
-15
-</code></pre>
-
-<p><strong>Sachez dès maintenant que ce bout de code n'est pas dans l'esprit
-Elixir.</strong>  J'ai cherché à décomposer toutes les étapes, pas à faire quelque chose
-de beau, ou d'optimisé, ou de compact. Alors, que fais ce programme ?</p>
-
-<p><code>elixir
-def run(n, acc) do
-</code></p>
-
-<p>C'est la définition d'une méthode <code>run</code>. Le paramètre <code>acc</code> est le diminutif de
-accumulator. Avoir un accumulateur est un truc très utilisé dans ce type de
-fonction. On enregistre le résultat provisioire dans cet accumulateur, qui
-est propagé tout au long de la pile d'appels.</p>
-
-<p><code>elixir
-somme = n + acc
-suivant = n - 1
-</code></p>
-
-<p>Ici je calcule deux résultats temporaires. Dans <code>somme</code> je place la somme du
-nombre n actuel et de l'accumulateur. Quant à <code>suivant</code>, il contient la
-prochaine valeur du nombre n.</p>
-
-<p><code>elixir
-if suivant == 0 do
-  somme
-else
-  run(suivant, somme)
-end
-</code></p>
-
-<p>Dans une fonction récursive il faut évidemment un appel à cette même fonction.
-Mais surtout il faut une
-condition de sortie. Sans ce garde-fou, c'est la boucle infinie à tout les
-coups. Ici la condition de sortie est <code>suivant == 0</code>. Quand le prochain nombre
-à traiter atteint zéro, c'est le signe que la fonction a terminé son travail donc
-je renvois le résultat actuel, qui est la somme de tous les nombres traités
-jusqu'ici. Dans l'autre cas, c'est l'appel récursif: <code>run(suivant, somme)</code>.</p>
-
-<p>Si vous avez du mal à comprendre la logique de ce programme, vous pouvez
-ajouter un traçage:</p>
-
-<p>``` elixir
-defmodule Somme do
-  def run(n, acc) do</p>
-
-<pre><code>IO.puts "n: #{n} --- acc: #{acc}"
-# ...
-</code></pre>
-
-<p>```</p>
-
-<p>Ce qui donnera le résultat suivant:</p>
-
-<pre><code>$ elixir somme.exs 
-n: 5 --- acc: 0
-n: 4 --- acc: 5
-n: 3 --- acc: 9
-n: 2 --- acc: 12
-n: 1 --- acc: 14
-15
-</code></pre>
-
-<p>La prochaine fois je transformerais ce programme afin qu'il soit dans
-l'esprit Elixir.</p>
 
 <p>À demain.</p>
 ]]></content>

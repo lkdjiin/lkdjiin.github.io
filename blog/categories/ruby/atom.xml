@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-07-29T09:05:23+02:00</updated>
+  <updated>2013-07-30T08:42:46+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,149 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Comment écrire un plugin Octopress - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2/"/>
+    <updated>2013-07-30T08:18:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">la première partie</a>,
+je m'étais arrêté sur le code suivant:</p>
+
+<p>``` ruby
+module Jekyll
+  class LevelTag &lt; Liquid::Tag</p>
+
+<pre><code>def initialize(tagname, level, tokens)
+  @level = level
+end
+
+def render(context)
+  "Niveau : #{@level}"
+end
+</code></pre>
+
+<p>  end
+end
+Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
+```</p>
+
+<p>Aujourd'hui je montre comment permettre à l'utilisateur de personnaliser
+le contenu du code Html produit.</p>
+
+<!-- more -->
+
+
+<p>Tout d'abord, voici le code du plugin terminé. Je vous rappelle que vous
+pouvez trouver <a href="https://github.com/lkdjiin/octopress-level-tag">ce plugin sur Github</a>.</p>
+
+<p>``` ruby
+module Jekyll
+  class LevelTag &lt; Liquid::Tag</p>
+
+<pre><code>def initialize(tagname, level, tokens)
+  @level = level.strip
+end
+
+def render(context)
+  config = context.registers[:site].config
+  label = config['level_tag_level'] || "Level: "
+  level = case @level
+  when "1" then config['level_tag_level_1'] || "easy"
+  when "2" then config['level_tag_level_2'] || "medium"
+  when "3" then config['level_tag_level_3'] || "hard"
+  else
+    "unknown"
+  end
+  classes = "class='level-tag level-tag-#{@level}'"
+  "&lt;div #{classes}&gt;#{label}&lt;span&gt;#{level}&lt;/span&gt;&lt;/div&gt;"
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>end
+Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
+```</p>
+
+<p>L'appel du plugin dans les articles sera maintenant réalisé comme ceci:</p>
+
+<p><code>ruby
+<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+</code></p>
+
+<p>Par rapport à la première version, la méthode <code>render</code> a bien enflée. &ndash;
+<em>Je trouve qu'il y a trop de code dedans, mais ce sera peut-être le sujet
+d'un prochain article sur le refactoring.</em> &ndash; C'est cette méthode qui fait
+tout le travail, voici les explications:</p>
+
+<p>``` ruby</p>
+
+<pre><code>def render(context)
+  config = context.registers[:site].config
+  label = config['level_tag_level'] || "Level: "
+</code></pre>
+
+<p>```</p>
+
+<p>C'est l'objet <code>context</code> qui va permettre de récupérer les informations
+nécéssaires dans le fichier de configuration <code>_config.yml</code>. Voici par
+exemple ce que j'ai ajouté dans mon <code>_config.yml</code>:</p>
+
+<p>``` yaml</p>
+
+<h1>LevelTag plugin</h1>
+
+<p>level_tag_level: &ldquo;Niveau : &rdquo;
+level_tag_level_1: &ldquo;facile&rdquo;
+level_tag_level_2: &ldquo;intermédiaire&rdquo;
+level_tag_level_3: &ldquo;avancé&rdquo;
+```</p>
+
+<p>La ligne suivante:</p>
+
+<pre><code>label = config['level_tag_level'] || "Level: "
+</code></pre>
+
+<p>initialise la
+variable <code>label</code> avec le contenu de <code>level_tag_level</code>, trouvé dans le
+<code>_config.yml</code>. La partie du code <code>|| "Level: "</code> est là pour s'assurer que
+si <code>level_tag_level</code> n'existe pas dans le fichier de configuration, <code>label</code>
+sera bien initialisé avec une valeur par défaut.</p>
+
+<p>``` ruby</p>
+
+<pre><code>  level = case @level
+  when "1" then config['level_tag_level_1'] || "easy"
+  when "2" then config['level_tag_level_2'] || "medium"
+  when "3" then config['level_tag_level_3'] || "hard"
+  else
+    "unknown"
+  end
+</code></pre>
+
+<p>```</p>
+
+<p>C'est la même logique que précédement. La variable <code>level</code> sera initialisée
+avec du contenu trouvé dans <code>_config.yml</code> ou bien, avec une valeur par
+défaut.</p>
+
+<p>``` ruby</p>
+
+<pre><code>  classes = "class='level-tag level-tag-#{@level}'"
+  "&lt;div #{classes}&gt;#{label}&lt;span&gt;#{level}&lt;/span&gt;&lt;/div&gt;"
+</code></pre>
+
+<p>```</p>
+
+<p>Finalement, comme dans <a href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">la première partie</a>,
+on retrouve en fin de méthode la production du code Html.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Comment écrire un plugin Octopress]]></title>
