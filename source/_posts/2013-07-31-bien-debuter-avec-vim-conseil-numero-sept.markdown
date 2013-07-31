@@ -13,7 +13,7 @@ Lisez et utilisez la documentation
 La documentation de Vim est énorme. Elle comporte plusieurs
 dizaines de chapitres répartis sur deux manuels: le manuel utilisateur 
 et le manuel de référence. On y accède avec la touche F1.
-La documentation est complète et accéssible pour tous les niveaux.
+La documentation est complète et accessible pour tous les niveaux.
 Dans l'idéal, vous devriez la lire entièrement…
 
 <!-- more -->
