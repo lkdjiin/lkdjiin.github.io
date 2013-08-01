@@ -5,12 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Comment étendre Git avec ses propres scripts - lkdjiin's blog</title>
+  <title>Implémenter un langage sur la machine virtuelle Parrot: partie 1 - lkdjiin's blog</title>
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : facile Ces derniers jours j&#8217;ai montré comment étendre les fonctionnalités
-de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
+  <meta name="description" content="Niveau : intermédiaire Cela fait quelques années que j&#8217;ai envie d&#8217;essayer la
+machine virtuelle
+Parrot et j&#8217;ai toujours reporté à &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +20,7 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts">
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
@@ -82,7 +83,7 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Comment étendre Git avec ses propres scripts</h1>
+      <h1 class="entry-title">Implémenter un langage sur la machine virtuelle Parrot: partie 1</h1>
     
     
       <p class="meta">
@@ -98,7 +99,7 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   
 
 
-<time datetime="2013-07-17T08:03:00+02:00" pubdate data-updated="true">17 juillet 2013</time>
+<time datetime="2013-08-01T07:59:00+02:00" pubdate data-updated="true">1<span>er</span> août 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -107,76 +108,124 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
 
 
-<p>Ces derniers jours j&#8217;ai montré comment étendre les fonctionnalités
-de Git à l&#8217;aide des alias (voir les 2 articles précédents). Aujourd&#8217;hui
-on passe à la suite logique avec la création de nos propres scripts pour
-Git.</p>
+<p>Cela fait quelques années que j&#8217;ai envie d&#8217;essayer la
+<a href="https://fr.wikipedia.org/wiki/Machine_virtuelle">machine virtuelle</a>
+<a href="http://www.parrot.org/">Parrot</a> et j&#8217;ai toujours reporté à plus tard.
+Jusqu&#8217;à maintenant. Aujourd&#8217;hui, je commence à écrire un
+<a href="http://en.wikipedia.org/wiki/Toy_language">toy language</a>
+qui tournera sur Parrot.</p>
 
-<p><em>Ce qui suit fonctionne sur Linux et MacOS. Je ne sais pas si c&#8217;est
-possible sur Windows.</em></p>
+<p>Pour implémenter un langage sur Parrot, il faut d&#8217;abord … un langage.
+Simple de préférence, avec peu de fonctionnalités, au moins pour
+démarrer.
+Je vais en inventer un pour l&#8217;occasion, ce qui sera bien plus drôle que
+d&#8217;utiliser un sous-ensemble d&#8217;un langage déjà existant.</p>
 
 <!-- more -->
 
 
-<p>Un exemple vaut parfois mieux qu&#8217;un long discours. Alors créez donc le fichier
-<code>git-hello</code> suivant:</p>
+<h2>Le langage naam</h2>
 
-<figure class='code'><figcaption><span>git-hello</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">echo </span>Hello
-</span></code></pre></td></tr></table></div></figure>
+<p>Naam signifie No Assignment, Automatic Memoization.
+Je rappelle qu&#8217;il s&#8217;agit d&#8217;un <em>toy language</em>, l&#8217;objectif étant
+d&#8217;expérimenter, et non de produire le prochain succès planétaire.
+Pour le moment, et peut-être pour toujours, le langage sera limité
+à l&#8217;utilisation des nombres entiers. Pas de nombres à virgule, pas de
+chaînes, pas d&#8217;objets… Je viens de passer quelques jours à envisager
+une syntaxe. Mais la reflexion n&#8217;est pas terminée et elle pourrait
+changer d&#8217;ici à l&#8217;implémentation de naam. Voici des exemples:</p>
 
+<pre><code>sign(n)=
+1  if n &gt; 0
+-1 if n &lt; 0
+0  else
 
-<p>Donnez lui les droits d&#8217;exécution (<code>chmod +x git-hello</code>) et placez le dans
-votre PATH. Moi je le place dans <code>~/bin/</code> et j&#8217;ajoute la ligne suivante à
-<code>~/.bashrc</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">PATH</span><span class="o">=</span><span class="nv">$PATH</span>:/home/xavier/bin
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Si vous n&#8217;êtes pas sous Linux, vous devrez adapter ces directives pour
-votre OS. Une fois que c&#8217;est fait, vérifiez si tout fonctionne
-correctement:</p>
-
-<pre><code>xavier:~$ git-hello 
-Hello
+print sign(3)
 </code></pre>
 
-<p>Maintenant vous vous dites peut-être <em>«Bon d&#8217;accord, il vient d&#8217;écrire un
-script bidon, et alors ? Je vois toujours pas le rapport avec Git !»</em>
-Le fichier qu&#8217;on vient d&#8217;écrire n&#8217;est pas nommé n&#8217;importe comment. Il
-commence par <code>git-</code>. C&#8217;est ce qui va permettre à la magie d&#8217;opérer:</p>
+<p>Les détails:</p>
 
-<pre><code>xavier:~$ git h[Tab]
-hello   help    hist    
-xavier:~$ git hello
-Hello
+<pre><code>sign(n)=
 </code></pre>
 
-<p>La même chose en différé live &ndash;<em> c&#8217;est mon dixième article sur ce blog,
-je fête ça avec mon tout premier gif, je m&#8217;amuse comme je veux…</em> &ndash;</p>
+<p>C&#8217;est la définition d&#8217;une fonction <code>sign</code>.</p>
 
-<p><img src="/images/2013-07-17-1.gif"></p>
+<pre><code>1  if n &gt; 0
+-1 if n &lt; 0
+</code></pre>
 
-<p>La règle est simple:</p>
+<p>Si <code>n</code> est positif on renvoie 1. Si <code>n</code> est négatif on renvoie -1.</p>
 
-<blockquote><p>Un fichier nommé `git-foo` sera vu par Git comme étant une de ses propres<br/>commandes, nommée `foo`.</p></blockquote>
+<pre><code>0  else
+</code></pre>
 
+<p>Dans les autres cas (il reste le cas du zéro) on renvoie 0. Le mot <code>else</code>
+marque aussi la fin de la fonction.</p>
 
-<p>C&#8217;est possible grâce à l&#8217;auto complétion programmable de Bash, dont je
-parlerais une prochaine fois. Si vous avez défini des alias un peu
-complexe, vous auriez peut-être avantage à les placez dans un script pour
-profiter de la coloration syntaxique.
-Demain, je montrerais un script un
-peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idées.</p>
+<p>Voici maintenant ce que pourrait être la fonction factorielle:</p>
+
+<pre><code>!(n)=
+1            if 0
+n * .(n - 1) if n &gt; 0
+else
+
+print !(7)
+</code></pre>
+
+<p>Et le détail:</p>
+
+<pre><code>!(n)=
+</code></pre>
+
+<p>On définit la fonction <code>!</code>. Le nom d&#8217;une fonction n&#8217;a pas à être composé
+de lettres. Des signes font aussi bien l&#8217;affaire.</p>
+
+<pre><code>1            if 0
+</code></pre>
+
+<p>Quand l&#8217;argument vaut zéro, on renvoie 1.</p>
+
+<pre><code>n * .(n - 1) if n &gt; 0
+</code></pre>
+
+<p>Dans les cas où <code>n</code> est positif, on renvoie <code>n</code> multiplié
+par la factorielle de <code>n - 1</code>.
+Le point (<code>.</code>) signifie «la fonction elle-même».</p>
+
+<pre><code>else
+</code></pre>
+
+<p>Enfin, dans les autres cas (qui ici sont <code>n</code> est négatif) on renvoie du
+vide, rien, nada. Comme une fonction est dans l&#8217;obligation de renvoyer
+une valeur, cela provoquera une erreur (ce qui est voulu).</p>
+
+<p>Un dernier exemple pour terminer, la fonction d&#8217;Ackermann. Je ne vais pas
+la commenter, la seule différence avec ce que j&#8217;ai montré avant est
+qu&#8217;il y a deux arguments :</p>
+
+<pre><code>ackermann(m, n)=
+n + 1                 if 0, n
+.(m - 1, 1)           if m &gt; 0, 0
+.(m - 1, .(m, n - 1)) else
+
+print ackermann(2, 3)
+</code></pre>
+
+<p>On pourrait aussi écrire la même fonction de la manière suivante (je n&#8217;ai
+pas encore décidé si naam supporterait les deux syntaxes ou non):</p>
+
+<pre><code>ackermann(0, n)     = n + 1
+ackermann(m &gt; 0, 0) = .(m - 1, 1)
+ackermann(m, n)     = .(m - 1, .(m, n - 1))
+</code></pre>
+
+<p>Alors, qu&#8217;en pensez vous. Est-ce-que ça vous dit de voir naître un
+<em>toy language</em> au jour le jour ? Que pensez vous de naam ?</p>
+
+<p>La prochaine fois on installe Parrot et on joue un peu avec pour sentir le truc.</p>
 
 <p>À demain.</p>
 </div>
@@ -201,12 +250,12 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
   
 
 
-<time datetime="2013-07-17T08:03:00+02:00" pubdate data-updated="true">17 juillet 2013</time>
+<time datetime="2013-08-01T07:59:00+02:00" pubdate data-updated="true">1<span>er</span> août 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/git/'>git</a>, <a class='category' href='/blog/categories/script/'>script</a>, <a class='category' href='/blog/categories/tutoriel/'>tutoriel</a>
+    <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/naam/'>naam</a>, <a class='category' href='/blog/categories/parrot/'>parrot</a>
   
 </span>
 
@@ -215,7 +264,7 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/" >Tweet</a>
   
   
   
@@ -224,10 +273,8 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/07/16/git-et-les-alias-la-suite/" title="Previous Post: Git et les alias: la suite">&laquo; Git et les alias: la suite</a>
+        <a class="basic-alignment left" href="/blog/2013/07/31/bien-debuter-avec-vim-conseil-numero-sept/" title="Previous Post: Bien débuter avec Vim: conseil numéro sept">&laquo; Bien débuter avec Vim: conseil numéro sept</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/07/18/comment-etendre-git-avec-ses-propres-scripts-la-suite/" title="Next Post: Comment étendre Git avec ses propres scripts: la suite">Comment étendre Git avec ses propres scripts: la suite &raquo;</a>
       
     </p>
   </footer>
@@ -293,8 +340,8 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/';
-        var disqus_url = 'http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/';
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/';
         var disqus_script = 'embed.js';
       
     (function () {
