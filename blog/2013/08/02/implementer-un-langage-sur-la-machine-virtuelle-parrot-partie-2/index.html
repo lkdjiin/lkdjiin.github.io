@@ -5,12 +5,14 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Comment étendre Git avec ses propres scripts - lkdjiin's blog</title>
+  <title>Implémenter un langage sur la machine virtuelle Parrot: partie 2 - lkdjiin's blog</title>
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : facile Ces derniers jours j&#8217;ai montré comment étendre les fonctionnalités
-de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
+  <meta name="description" content="Niveau : intermédiaire Aujourd&#8217;hui je m&#8217;intéresse à
+Parrot.
+Après une brève description de cette
+machine virtuelle, on l&#8217;installe &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +21,7 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts">
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
@@ -82,7 +84,7 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Comment étendre Git avec ses propres scripts</h1>
+      <h1 class="entry-title">Implémenter un langage sur la machine virtuelle Parrot: partie 2</h1>
     
     
       <p class="meta">
@@ -98,7 +100,7 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   
 
 
-<time datetime="2013-07-17T08:03:00+02:00" pubdate data-updated="true">17 juillet 2013</time>
+<time datetime="2013-08-02T09:07:00+02:00" pubdate data-updated="true">2 août 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -107,76 +109,92 @@ de Git à l&#8217;aide des alias (voir les 2 articles &hellip;">
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
 
 
-<p>Ces derniers jours j&#8217;ai montré comment étendre les fonctionnalités
-de Git à l&#8217;aide des alias (voir les 2 articles précédents). Aujourd&#8217;hui
-on passe à la suite logique avec la création de nos propres scripts pour
-Git.</p>
-
-<p><em>Ce qui suit fonctionne sur Linux et MacOS. Je ne sais pas si c&#8217;est
-possible sur Windows.</em></p>
+<p><em>Aujourd&#8217;hui je m&#8217;intéresse à</em>
+<a href="http://www.parrot.org/">Parrot</a>.
+<em>Après une brève description de cette
+machine virtuelle, on l&#8217;installe et on écrit un premier programme.</em></p>
 
 <!-- more -->
 
 
-<p>Un exemple vaut parfois mieux qu&#8217;un long discours. Alors créez donc le fichier
-<code>git-hello</code> suivant:</p>
+<h2>Présentation de Parrot</h2>
 
-<figure class='code'><figcaption><span>git-hello</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p>La machine virtuelle Parrot offre un nombre illimité de registre,
+qui sont de 4 types différents:</p>
+
+<ul>
+<li>Integer, pour les nombres entiers</li>
+<li>Number, pour les nombres réels</li>
+<li>String, pour les chaînes de caractères</li>
+<li>PMC, pour, en gros, les objets (Polymorphic container)</li>
+</ul>
+
+
+<p>Les instructions peuvent être entrées sous 4 formes différentes, du plus
+haut-niveau vers le plus bas:</p>
+
+<ol>
+<li>PIR, <em>Parrot Intermediate Representation</em>, qui ressemble à un assembleur
+de haut-niveau.</li>
+<li>PASM, <em>Parrot Assembly</em>, qui est un assembleur classique, sans fioritures.</li>
+<li>PAST, <em>Parrot Abstract Syntax Tree</em>, qui accepte un
+<a href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> en entrée.</li>
+<li>PBC, <em>Parrot Byte Code</em>, le code machine de Parrot.</li>
+</ol>
+
+
+<p>Est-ce-que j&#8217;ai vraiment besoin de dire que, si possible, je me limiterais
+à PIR ?</p>
+
+<p>Enfin, Parrot possède un
+<a href="http://fr.wikipedia.org/wiki/Ramasse-miettes_%28informatique%29">Garbage Collector</a>.
+On aura pas besoin de s&#8217;acharner
+à libérer la mémoire, Parrot le fait pour nous.</p>
+
+<h2>Installation de Parrot</h2>
+
+<p>Avant de pouvoir jouer avec Parrot, il faut l&#8217;installer.
+Le point de départ est sur
+<a href="http://www.parrot.org/source.html">www.parrot.org/source.html</a>.
+Sur ma machine Debian, j&#8217;ai d&#8217;abord installé la version de Parrot qui se
+trouve dans les dépots. Le problème c&#8217;est que pas mal d&#8217;outils annexes
+demandent à avoir un <em>working repository</em>, ils ne sont pas inclus dans les
+paquets. De plus, les sources ont l&#8217;air de contenir pas mal d&#8217;exemples.
+J&#8217;ai donc désinstallé le package pour Debian et rapatrié les sources depuis
+Github : <a href="https://github.com/parrot/parrot">github.com/parrot/parrot</a>.
+L&#8217;installation s&#8217;est déroulée sans soucis particuliers. Comme je trouve la
+documentation un peu confuse sur ce point, voilà comment j&#8217;ai fait ; si ça
+peut vous éviter de chercher…</p>
+
+<pre><code>perl Configure.pl
+make
+make test
+sudo make install
+</code></pre>
+
+<h2>Hello Parrot</h2>
+
+<p>On s&#8217;attaque enfin à l&#8217;écriture du classique <em>hello world</em>:</p>
+
+<figure class='code'><figcaption><span>hello.pir</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">echo </span>Hello
+</pre></td><td class='code'><pre><code class='nasm'><span class='line'><span class="nf">.sub</span> <span class="nv">main</span>
+</span><span class='line'>  <span class="nf">say</span> <span class="s">&quot;Hello world&quot;</span>
+</span><span class='line'><span class="nf">.end</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Donnez lui les droits d&#8217;exécution (<code>chmod +x git-hello</code>) et placez le dans
-votre PATH. Moi je le place dans <code>~/bin/</code> et j&#8217;ajoute la ligne suivante à
-<code>~/.bashrc</code>:</p>
+<p>On le lance ainsi:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">PATH</span><span class="o">=</span><span class="nv">$PATH</span>:/home/xavier/bin
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Si vous n&#8217;êtes pas sous Linux, vous devrez adapter ces directives pour
-votre OS. Une fois que c&#8217;est fait, vérifiez si tout fonctionne
-correctement:</p>
-
-<pre><code>xavier:~$ git-hello 
-Hello
+<pre><code>parrot hello.pir
 </code></pre>
 
-<p>Maintenant vous vous dites peut-être <em>«Bon d&#8217;accord, il vient d&#8217;écrire un
-script bidon, et alors ? Je vois toujours pas le rapport avec Git !»</em>
-Le fichier qu&#8217;on vient d&#8217;écrire n&#8217;est pas nommé n&#8217;importe comment. Il
-commence par <code>git-</code>. C&#8217;est ce qui va permettre à la magie d&#8217;opérer:</p>
-
-<pre><code>xavier:~$ git h[Tab]
-hello   help    hist    
-xavier:~$ git hello
-Hello
-</code></pre>
-
-<p>La même chose en différé live &ndash;<em> c&#8217;est mon dixième article sur ce blog,
-je fête ça avec mon tout premier gif, je m&#8217;amuse comme je veux…</em> &ndash;</p>
-
-<p><img src="/images/2013-07-17-1.gif"></p>
-
-<p>La règle est simple:</p>
-
-<blockquote><p>Un fichier nommé `git-foo` sera vu par Git comme étant une de ses propres<br/>commandes, nommée `foo`.</p></blockquote>
-
-
-<p>C&#8217;est possible grâce à l&#8217;auto complétion programmable de Bash, dont je
-parlerais une prochaine fois. Si vous avez défini des alias un peu
-complexe, vous auriez peut-être avantage à les placez dans un script pour
-profiter de la coloration syntaxique.
-Demain, je montrerais un script un
-peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idées.</p>
+<p>Maintenant que Parrot est installé et fonctionnel, on va pouvoir écrire quelques
+petits programmes en PIR.</p>
 
 <p>À demain.</p>
 </div>
@@ -201,12 +219,12 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
   
 
 
-<time datetime="2013-07-17T08:03:00+02:00" pubdate data-updated="true">17 juillet 2013</time>
+<time datetime="2013-08-02T09:07:00+02:00" pubdate data-updated="true">2 août 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/git/'>git</a>, <a class='category' href='/blog/categories/script/'>script</a>, <a class='category' href='/blog/categories/tutoriel/'>tutoriel</a>
+    <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/parrot/'>parrot</a>
   
 </span>
 
@@ -215,7 +233,7 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/" >Tweet</a>
   
   
   
@@ -224,10 +242,8 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/07/16/git-et-les-alias-la-suite/" title="Previous Post: Git et les alias: la suite">&laquo; Git et les alias: la suite</a>
+        <a class="basic-alignment left" href="/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/" title="Previous Post: Implémenter un langage sur la machine virtuelle Parrot: partie 1">&laquo; Implémenter un langage sur la machine virtuelle Parrot: partie 1</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/07/18/comment-etendre-git-avec-ses-propres-scripts-la-suite/" title="Next Post: Comment étendre Git avec ses propres scripts: la suite">Comment étendre Git avec ses propres scripts: la suite &raquo;</a>
       
     </p>
   </footer>
@@ -293,8 +309,8 @@ peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idé
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/';
-        var disqus_url = 'http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/';
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/';
         var disqus_script = 'embed.js';
       
     (function () {
