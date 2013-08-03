@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-02T09:37:15+02:00</updated>
+  <updated>2013-08-03T09:07:15+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,164 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3/"/>
+    <updated>2013-08-03T08:16:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Après avoir vu
+<a href="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/">l'installation de Parrot</a>,
+il est temps d'écrire
+notre premier programme en PIR. On va réaliser une version simpliste
+d'une fonction qui renvoie le signe d'un nombre entier. On oublie
+momentanément l'existence du zéro pour n'avoir que deux cas à traiter:
+positif ou négatif.</p>
+
+<pre><code>simple_sign(n) = 1 si n &gt; 0
+simple_sign(n) = -1 sinon
+</code></pre>
+
+<!-- more -->
+
+
+<h2>La procédure simple_sign</h2>
+
+<p>Voici un programme PIR qui fait ça:</p>
+
+<p>``` gas simple_sign.pir
+.sub simple_sign
+  .param int n</p>
+
+<p>  .local int result</p>
+
+<p>  if n > 0 goto POSITIVE</p>
+
+<p>  result = -1
+  goto RETURN</p>
+
+<p>POSITIVE:
+  result = 1</p>
+
+<p>RETURN:
+  .return(result)
+.end</p>
+
+<p>.sub main :main
+  .local int f
+  f = simple_sign(4)
+  say f
+.end
+```</p>
+
+<p>Pour le lancer:</p>
+
+<pre><code>parrot simple_sign.pir
+</code></pre>
+
+<p>Comme c'est de l'assembleur, le plus simple est d'expliquer les lignes de
+code une par une.</p>
+
+<pre><code>.sub simple_sign
+</code></pre>
+
+<p>C'est la définition d'une procédure <code>simple_sign</code>.</p>
+
+<pre><code>.param int n
+</code></pre>
+
+<p>On signale à l'assembleur que notre fonction <code>simple_sign</code> prend un
+argument de type <code>int</code> et qu'on souhaite s'y réferer
+par la suite à l'aide du nom <code>n</code>. Ça ressemble donc fortement à une
+déclaration de variable.</p>
+
+<pre><code>.local int result
+</code></pre>
+
+<p>Cette fois on déclare une variable locale nommée. Elle est de type <code>int</code> et
+on pourra s'y réferer avec le nom <code>result</code>.</p>
+
+<pre><code>if n &gt; 0 goto POSITIVE
+</code></pre>
+
+<p>Littéralement: Si la valeur de n est supérieur à zéro, sauter à l'adresse
+réferencée par le label POSITIVE. Le saut conditionnel ou non est la seule
+instruction de branchement dont on dispose avec PIR. Vous avez surement
+appris que «goto c'est mal !». Oubliez le:</p>
+
+<p><blockquote><p>En assembleur, goto est normal.</p></blockquote></p>
+
+<p>Et c'est souvent la seule façon d'obtenir le résultat voulu.</p>
+
+<pre><code>result = -1
+</code></pre>
+
+<p>Voilà comment affecter une valeur.</p>
+
+<pre><code>goto RETURN
+</code></pre>
+
+<p>Voilà un saut inconditionnel vers l'adresse réferencée par le label
+RETURN.</p>
+
+<pre><code>POSITIVE:
+  result = 1
+</code></pre>
+
+<p><code>POSITIVE:</code> définit une adresse. Chaque fois qu'on écrit <code>goto POSITIVE</code>, le
+programme débranche à cette adresse (en fait à la ligne de code suivante).
+Notez qu'on peut écrire les deux lignes précédentes en une seule :
+<code>POSITIVE: result = 1</code>.</p>
+
+<pre><code>RETURN:
+  .return(result)
+</code></pre>
+
+<p>Définition du label RETURN puis renvoi du résultat avec la directive
+<code>.return</code>. Les instructions qui commencent par un <code>.</code> sont des directives.
+Ce qui veut dire qu'elles seront remplacées dans notre dos par plusieurs
+instructions de plus bas niveau.</p>
+
+<pre><code>.end
+</code></pre>
+
+<p>Fin de notre procédure <code>simple_sign</code>.</p>
+
+<pre><code>.sub main :main
+</code></pre>
+
+<p>Nouvelle procédure, nommée <code>main</code>. Le <code>:main</code> dit à Parrot que c'est cette
+procédure qu'il faut lancer à l'ouverture du programme. Si on ne le fait
+pas, Parrot lance la première procédure qu'il rencontre.</p>
+
+<pre><code>.local int f
+f = simple_sign(4)
+say f
+.end
+</code></pre>
+
+<p>La fin du programme se comprend maintenant facilement.</p>
+
+<p>Voilà, si vous avez déjà travaillé en assembleur, la syntaxe PIR ne
+devrait pas vous poser de problèmes particuliers car c'est un
+assembleur de plutôt haut niveau ; par exemple on n'a pas encore eu
+besoin de manipuler directement les registres. Si au contraire c'est
+votre première rencontre avec un assembleur, vous allez devoir apprendre
+à décomposer vos actions/pensées. Par exemple vous pourriez être tenté
+d'écrire la procédure <code>main</code> de cette façon:</p>
+
+<pre><code>.sub main :main
+  say simple_sign(4)
+.end
+</code></pre>
+
+<p>Mais ça ne marcheras pas, il faut décomposer…</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 2]]></title>
@@ -545,158 +703,6 @@ les problèmes.
 vous avez besoin de faire quelque chose d'un peu élaboré. Dans un
 prochain article je montrerais comment créer vos propres commandes Git
 à l'aide de scripts, et non plus simplement d'alias.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby et les eigenclass]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/11/ruby-et-les-eigenclass/"/>
-    <updated>2013-07-11T10:24:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/11/ruby-et-les-eigenclass</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Dans l'
-<a href="http://lkdjiin.github.io/blog/2013/07/10/quel-est-linteret-de-cette-syntaxe/">article d'hier</a>,
-je cherchais un intérêt à <code>class &lt;&lt; self</code> dans la
-définition d'une classe, et je n'en ai pas trouvé.
-Aujourd'hui je vais appronfondir le sujet et parler des eigenclass(es) en Ruby.
-Il se trouve que Ruby est un langage orienté objet, contrairement à…
-(au hasard) Java…</p>
-
-<!-- more -->
-
-
-<p>Ok, c'est pour rire. Bien sûr que Java est un langage OO. Mais quand même,
-par rapport à Ruby je dirais plutôt que Java est un langage orienté classe.
-Avec Ruby, tout est objet, même les classes ! Je re-dis ça autrement
-pour que ce soit
-bien clair : en Ruby les classes sont des objets comme les autres.
-Voyons comment ça fonctionne, au travers des eigenclass(es):</p>
-
-<p>``` ruby
-class Engin
-  def roule</p>
-
-<pre><code>"Je roule"
-</code></pre>
-
-<p>  end
-end</p>
-
-<p>voiture = Engin.new
-moto = Engin.new</p>
-
-<p>voiture.roule</p>
-
-<h1>=> &ldquo;Je roule&rdquo;</h1>
-
-<p>moto.roule</p>
-
-<h1>=> &ldquo;Je roule&rdquo;</h1>
-
-<p>```</p>
-
-<p>On a créé une classe <code>Engin</code> et instancié deux objets à partir de cette
-classe, <code>voiture</code> et <code>moto</code>. La classe a joué le rôle d'un moule, à partir
-duquel les deux objets ont été fabriqués et leurs comportements sont
-identiques. Maintenant, si on veut spécialiser le comportement de <code>moto</code>,
-on pourrait utiliser l'héritage ou les mixins. Ce qui serait très bien si
-on devait gérer des dizaines d'objets au comportement similaire. Mais si on
-a un seul objet qui diffère, devoir écrire une nouvelle classe pour un seul
-objet est un peu lourd. Grâce au eigenclass(es), Ruby permet de changer le
-comportement d'un objet pendant l'execution.</p>
-
-<p>``` ruby
-class &lt;&lt; moto
-  def wheeling</p>
-
-<pre><code>"Wahooo"
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Ou bien avec la syntaxe suivante, qui fait la même chose:</p>
-
-<p><code>ruby
-def moto.wheeling
-  "Wahooo"
-end
-</code></p>
-
-<p>On vient d'ajouter une méthode à l'objet <code>moto</code> de classe <code>Engin</code>, mais pas
-à l'objet <code>voiture</code>, pourtant lui aussi de classe <code>Engin</code>. Pour vérifier:</p>
-
-<p>``` ruby
-moto.wheeling</p>
-
-<h1>=> &ldquo;Wahooo&rdquo;</h1>
-
-<p>voiture.wheeling</p>
-
-<h1>=> NoMethodError: undefined method `wheeling'</h1>
-
-<p>voiture.class == moto.class</p>
-
-<h1>=> true</h1>
-
-<p>```</p>
-
-<p>Comment Ruby gère ce système ? C'est surprenant de simplicité. Ruby interpose
-une nouvelle classe, anonyme, entre l'objet et sa hiérarchie de classes. C'est
-cette nouvelle classe, qu'on appelle eigenclass.
-L'eigenclass ne comprend que les comportements ajoutés à «son» objet.  Dans
-notre exemple, l'eigenclass de <code>moto</code> ne comporte que la méthode <code>wheeling</code>.
-Le système de classe de Ruby est complexe, mais pour la partie qui nous
-intéresse ici cela donne ça:</p>
-
-<pre><code>moto &lt; eigenclass &lt; Engin &lt; Object
-</code></pre>
-
-<p>À la place de «eigenclass», on peut lire et entendre parfois «singleton» ou
-«metaclass», c'est la même chose. D'ailleurs, pour obtenir la liste des
-méthodes de la «ghost class» (encore un autre nom) on peut utiliser la
-méthode <code>singleton_methods</code>:</p>
-
-<p>``` ruby
-moto.singleton_methods</p>
-
-<h1>=> [</h1>
-
-<h1>=>   [0] wheeling() #&lt;Engin:0xa05585c></h1>
-
-<h1>=> ]</h1>
-
-<p>```</p>
-
-<p>J'ai dit au début qu'une classe est un objet comme un autre. Donc ce qui
-fonctionne pour <code>moto</code> doit aussi fonctionner pour <code>Engin</code>:</p>
-
-<p>``` ruby
-def Engin.definition
-  &ldquo;Un truc qui roule&rdquo;
-end</p>
-
-<p>Engin.definition</p>
-
-<h1>=> &ldquo;un truc qui roule&rdquo;</h1>
-
-<p>Engin.singleton_methods</p>
-
-<h1>=> [</h1>
-
-<h1>=>     [0] definition() Engin</h1>
-
-<h1>=> ]</h1>
-
-<p>```</p>
-
-<p>Tout pareil ! <code>definition</code> a été ajouté à l'eigenclass de <code>Engin</code>.
-Autrement dit, quand vous ajouter une méthode de classe à une classe, en fait
-vous l'ajouter à son eigenclass.</p>
 
 <p>À demain.</p>
 ]]></content>

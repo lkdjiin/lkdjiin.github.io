@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parrot | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parrot/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-02T09:37:15+02:00</updated>
+  <updated>2013-08-03T09:07:15+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,164 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3/"/>
+    <updated>2013-08-03T08:16:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Après avoir vu
+<a href="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/">l'installation de Parrot</a>,
+il est temps d'écrire
+notre premier programme en PIR. On va réaliser une version simpliste
+d'une fonction qui renvoie le signe d'un nombre entier. On oublie
+momentanément l'existence du zéro pour n'avoir que deux cas à traiter:
+positif ou négatif.</p>
+
+<pre><code>simple_sign(n) = 1 si n &gt; 0
+simple_sign(n) = -1 sinon
+</code></pre>
+
+<!-- more -->
+
+
+<h2>La procédure simple_sign</h2>
+
+<p>Voici un programme PIR qui fait ça:</p>
+
+<p>``` gas simple_sign.pir
+.sub simple_sign
+  .param int n</p>
+
+<p>  .local int result</p>
+
+<p>  if n > 0 goto POSITIVE</p>
+
+<p>  result = -1
+  goto RETURN</p>
+
+<p>POSITIVE:
+  result = 1</p>
+
+<p>RETURN:
+  .return(result)
+.end</p>
+
+<p>.sub main :main
+  .local int f
+  f = simple_sign(4)
+  say f
+.end
+```</p>
+
+<p>Pour le lancer:</p>
+
+<pre><code>parrot simple_sign.pir
+</code></pre>
+
+<p>Comme c'est de l'assembleur, le plus simple est d'expliquer les lignes de
+code une par une.</p>
+
+<pre><code>.sub simple_sign
+</code></pre>
+
+<p>C'est la définition d'une procédure <code>simple_sign</code>.</p>
+
+<pre><code>.param int n
+</code></pre>
+
+<p>On signale à l'assembleur que notre fonction <code>simple_sign</code> prend un
+argument de type <code>int</code> et qu'on souhaite s'y réferer
+par la suite à l'aide du nom <code>n</code>. Ça ressemble donc fortement à une
+déclaration de variable.</p>
+
+<pre><code>.local int result
+</code></pre>
+
+<p>Cette fois on déclare une variable locale nommée. Elle est de type <code>int</code> et
+on pourra s'y réferer avec le nom <code>result</code>.</p>
+
+<pre><code>if n &gt; 0 goto POSITIVE
+</code></pre>
+
+<p>Littéralement: Si la valeur de n est supérieur à zéro, sauter à l'adresse
+réferencée par le label POSITIVE. Le saut conditionnel ou non est la seule
+instruction de branchement dont on dispose avec PIR. Vous avez surement
+appris que «goto c'est mal !». Oubliez le:</p>
+
+<p><blockquote><p>En assembleur, goto est normal.</p></blockquote></p>
+
+<p>Et c'est souvent la seule façon d'obtenir le résultat voulu.</p>
+
+<pre><code>result = -1
+</code></pre>
+
+<p>Voilà comment affecter une valeur.</p>
+
+<pre><code>goto RETURN
+</code></pre>
+
+<p>Voilà un saut inconditionnel vers l'adresse réferencée par le label
+RETURN.</p>
+
+<pre><code>POSITIVE:
+  result = 1
+</code></pre>
+
+<p><code>POSITIVE:</code> définit une adresse. Chaque fois qu'on écrit <code>goto POSITIVE</code>, le
+programme débranche à cette adresse (en fait à la ligne de code suivante).
+Notez qu'on peut écrire les deux lignes précédentes en une seule :
+<code>POSITIVE: result = 1</code>.</p>
+
+<pre><code>RETURN:
+  .return(result)
+</code></pre>
+
+<p>Définition du label RETURN puis renvoi du résultat avec la directive
+<code>.return</code>. Les instructions qui commencent par un <code>.</code> sont des directives.
+Ce qui veut dire qu'elles seront remplacées dans notre dos par plusieurs
+instructions de plus bas niveau.</p>
+
+<pre><code>.end
+</code></pre>
+
+<p>Fin de notre procédure <code>simple_sign</code>.</p>
+
+<pre><code>.sub main :main
+</code></pre>
+
+<p>Nouvelle procédure, nommée <code>main</code>. Le <code>:main</code> dit à Parrot que c'est cette
+procédure qu'il faut lancer à l'ouverture du programme. Si on ne le fait
+pas, Parrot lance la première procédure qu'il rencontre.</p>
+
+<pre><code>.local int f
+f = simple_sign(4)
+say f
+.end
+</code></pre>
+
+<p>La fin du programme se comprend maintenant facilement.</p>
+
+<p>Voilà, si vous avez déjà travaillé en assembleur, la syntaxe PIR ne
+devrait pas vous poser de problèmes particuliers car c'est un
+assembleur de plutôt haut niveau ; par exemple on n'a pas encore eu
+besoin de manipuler directement les registres. Si au contraire c'est
+votre première rencontre avec un assembleur, vous allez devoir apprendre
+à décomposer vos actions/pensées. Par exemple vous pourriez être tenté
+d'écrire la procédure <code>main</code> de cette façon:</p>
+
+<pre><code>.sub main :main
+  say simple_sign(4)
+.end
+</code></pre>
+
+<p>Mais ça ne marcheras pas, il faut décomposer…</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 2]]></title>

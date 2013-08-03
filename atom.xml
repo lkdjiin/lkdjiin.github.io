@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-02T09:37:15+02:00</updated>
+  <updated>2013-08-03T09:07:15+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,188 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3/"/>
+    <updated>2013-08-03T08:16:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Après avoir vu
+<a href="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/">l&#8217;installation de Parrot</a>,
+il est temps d&#8217;écrire
+notre premier programme en PIR. On va réaliser une version simpliste
+d&#8217;une fonction qui renvoie le signe d&#8217;un nombre entier. On oublie
+momentanément l&#8217;existence du zéro pour n&#8217;avoir que deux cas à traiter:
+positif ou négatif.</p>
+
+<pre><code>simple_sign(n) = 1 si n &gt; 0
+simple_sign(n) = -1 sinon
+</code></pre>
+
+<!-- more -->
+
+
+<h2>La procédure simple_sign</h2>
+
+<p>Voici un programme PIR qui fait ça:</p>
+
+<figure class='code'><figcaption><span>simple_sign.pir</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='gas'><span class='line'><span class="na">.sub</span> <span class="no">simple_sign</span>
+</span><span class='line'>  <span class="na">.param</span> <span class="no">int</span> <span class="no">n</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="na">.local</span> <span class="no">int</span> <span class="no">result</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nf">if</span> <span class="no">n</span> <span class="err">&gt;</span> <span class="mi">0</span> <span class="no">goto</span> <span class="no">POSITIVE</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nf">result</span> <span class="err">=</span> <span class="p">-</span><span class="mi">1</span>
+</span><span class='line'>  <span class="nf">goto</span> <span class="no">RETURN</span>
+</span><span class='line'>
+</span><span class='line'><span class="nl">POSITIVE:</span>
+</span><span class='line'>  <span class="nf">result</span> <span class="err">=</span> <span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'><span class="nl">RETURN:</span>
+</span><span class='line'>  <span class="na">.return</span><span class="p">(</span><span class="no">result</span><span class="p">)</span>
+</span><span class='line'><span class="na">.end</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">.sub</span> <span class="no">main</span> <span class="p">:</span><span class="no">main</span>
+</span><span class='line'>  <span class="na">.local</span> <span class="no">int</span> <span class="no">f</span>
+</span><span class='line'>  <span class="nf">f</span> <span class="err">=</span> <span class="no">simple_sign</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>  <span class="nf">say</span> <span class="no">f</span>
+</span><span class='line'><span class="na">.end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour le lancer:</p>
+
+<pre><code>parrot simple_sign.pir
+</code></pre>
+
+<p>Comme c&#8217;est de l&#8217;assembleur, le plus simple est d&#8217;expliquer les lignes de
+code une par une.</p>
+
+<pre><code>.sub simple_sign
+</code></pre>
+
+<p>C&#8217;est la définition d&#8217;une procédure <code>simple_sign</code>.</p>
+
+<pre><code>.param int n
+</code></pre>
+
+<p>On signale à l&#8217;assembleur que notre fonction <code>simple_sign</code> prend un
+argument de type <code>int</code> et qu&#8217;on souhaite s&#8217;y réferer
+par la suite à l&#8217;aide du nom <code>n</code>. Ça ressemble donc fortement à une
+déclaration de variable.</p>
+
+<pre><code>.local int result
+</code></pre>
+
+<p>Cette fois on déclare une variable locale nommée. Elle est de type <code>int</code> et
+on pourra s&#8217;y réferer avec le nom <code>result</code>.</p>
+
+<pre><code>if n &gt; 0 goto POSITIVE
+</code></pre>
+
+<p>Littéralement: Si la valeur de n est supérieur à zéro, sauter à l&#8217;adresse
+réferencée par le label POSITIVE. Le saut conditionnel ou non est la seule
+instruction de branchement dont on dispose avec PIR. Vous avez surement
+appris que «goto c&#8217;est mal !». Oubliez le:</p>
+
+<blockquote><p>En assembleur, goto est normal.</p></blockquote>
+
+
+<p>Et c&#8217;est souvent la seule façon d&#8217;obtenir le résultat voulu.</p>
+
+<pre><code>result = -1
+</code></pre>
+
+<p>Voilà comment affecter une valeur.</p>
+
+<pre><code>goto RETURN
+</code></pre>
+
+<p>Voilà un saut inconditionnel vers l&#8217;adresse réferencée par le label
+RETURN.</p>
+
+<pre><code>POSITIVE:
+  result = 1
+</code></pre>
+
+<p><code>POSITIVE:</code> définit une adresse. Chaque fois qu&#8217;on écrit <code>goto POSITIVE</code>, le
+programme débranche à cette adresse (en fait à la ligne de code suivante).
+Notez qu&#8217;on peut écrire les deux lignes précédentes en une seule :
+<code>POSITIVE: result = 1</code>.</p>
+
+<pre><code>RETURN:
+  .return(result)
+</code></pre>
+
+<p>Définition du label RETURN puis renvoi du résultat avec la directive
+<code>.return</code>. Les instructions qui commencent par un <code>.</code> sont des directives.
+Ce qui veut dire qu&#8217;elles seront remplacées dans notre dos par plusieurs
+instructions de plus bas niveau.</p>
+
+<pre><code>.end
+</code></pre>
+
+<p>Fin de notre procédure <code>simple_sign</code>.</p>
+
+<pre><code>.sub main :main
+</code></pre>
+
+<p>Nouvelle procédure, nommée <code>main</code>. Le <code>:main</code> dit à Parrot que c&#8217;est cette
+procédure qu&#8217;il faut lancer à l&#8217;ouverture du programme. Si on ne le fait
+pas, Parrot lance la première procédure qu&#8217;il rencontre.</p>
+
+<pre><code>.local int f
+f = simple_sign(4)
+say f
+.end
+</code></pre>
+
+<p>La fin du programme se comprend maintenant facilement.</p>
+
+<p>Voilà, si vous avez déjà travaillé en assembleur, la syntaxe PIR ne
+devrait pas vous poser de problèmes particuliers car c&#8217;est un
+assembleur de plutôt haut niveau ; par exemple on n&#8217;a pas encore eu
+besoin de manipuler directement les registres. Si au contraire c&#8217;est
+votre première rencontre avec un assembleur, vous allez devoir apprendre
+à décomposer vos actions/pensées. Par exemple vous pourriez être tenté
+d&#8217;écrire la procédure <code>main</code> de cette façon:</p>
+
+<pre><code>.sub main :main
+  say simple_sign(4)
+.end
+</code></pre>
+
+<p>Mais ça ne marcheras pas, il faut décomposer…</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 2]]></title>
@@ -2455,56 +2637,6 @@ le sujet, si vous
 cherchez un peu sur internet vous trouverez des tas de définitions
 d&#8217;alias, certaines très utiles et d&#8217;autres moins. À vous de faire le tri
 selon vos besoins.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Bien débuter avec Vim: conseil numéro trois]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/14/bien-debuter-avec-vim-conseil-numero-trois/"/>
-    <updated>2013-07-14T09:11:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/14/bien-debuter-avec-vim-conseil-numero-trois</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<h2>Ayez confiance dans le mode normal</h2>
-
-<p>Ça ne vous aura pas échappé, Vim est un éditeur modal.  C&#8217;est à dire qu&#8217;il
-possède plusieurs modes de fonctionnement, plusieurs manières de considérer les
-choses.  Comme par exemple, le mode normal pour éditer du texte, ou bien le mode
-commande pour lancer des fonctions, ou encore le mode insertion pour saisir du
-nouveau texte, etc.  C&#8217;est une des grandes différences de Vim par rapport aux
-éditeurs dits «classiques», qui restent la plupart du temps en insertion.</p>
-
-<!-- more -->
-
-
-<p>Il semblerait qu&#8217;une erreur courante chez les nouveaux utilisateurs de Vim soit
-de rester en mode insertion, et de ne passer en mode normal que lorsque cela
-s&#8217;avère absolument necessaire.  Si vous agissez de la sorte, vous passerez
-totalement à côté de vim. Au contraire, vous devez rester le plus longtemps
-possible en mode normal. Entrez dans un autre mode uniquement quand c&#8217;est
-nécessaire et repassez en normal le plus tôt possible.</p>
-
-<blockquote><p>La première chose que fait un Vimiste qui revient d&#8217;une pause café, c&#8217;est<br/>appuyer sur ESC pour être sûr d&#8217;être à la maison.</p></blockquote>
-
-
-<p><span class='pullquote-right' data-pullquote='Si vous restez en mode insertion, vous ne serez jamais à l&#8217;aise avec
-Vim,'>
-Un débutant aura tendance à faire le contraire, à rester trop
-longtemps en mode insertion, puisqu&#8217;il va s&#8217;y sentir à l&#8217;aise. Il va utiliser la
-souris et les touches fléchées pour se déplacer dans et parmi ses documents :
-c&#8217;est ainsi que fonctionnait son ancien éditeur. C&#8217;est une grosse perte
-de temps. Si vous restez en mode insertion, vous ne serez jamais à l&#8217;aise avec
-Vim, et vous finirez par retourner dans les bras de votre ancien éditeur.  Vim
-vous permet de vous déplacer bien plus rapidement grâce au clavier.
-Faites lui un peu confiance ! Rester le
-plus possible en mode normal et y repasser dès que possible vous forcera à
-utiliser la <em>vim way</em>. Au début, ça semble totalement anti-naturel, il
-faut persévérer. Que cela prenne 3 jours ou 3 semaines, le mode normal finira
-par vous sembler … normal.
-</span></p>
 
 <p>À demain.</p>
 ]]></content>
