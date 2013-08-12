@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-11T10:54:13+02:00</updated>
+  <updated>2013-08-12T09:23:03+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,349 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Parrot 6: Écrire le tokenizer]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/"/>
+    <updated>2013-08-12T09:05:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Après avoir défini un semblant de
+<a href="http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/">méthode de travail</a>
+on s&#8217;attaque aujourd&#8217;hui à l&#8217;écriture d&#8217;un
+<a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>
+pour Naam.</p>
+
+<!-- more -->
+
+
+<h2>Le tokenizer</h2>
+
+<p>Le code du projet est en ligne sur Github à l&#8217;adresse suivante:
+<a href="https://github.com/lkdjiin/naam">naam</a>.
+N&#8217;hésitez pas à le consulter. Les extraits qui suivront sont tirés de la
+version 0.0.1.</p>
+
+<p>La <em>tokenization</em> est le processus de séparation des éléments
+basiques d&#8217;un langage.
+C&#8217;est la première étape de l&#8217;analyse lexicale.
+Par exemple, à partir du programme suivant:</p>
+
+<pre><code>sign(n)=
+1  if n &gt; 0
+-1 if n &lt; 0
+0  else
+
+print sign(4)
+</code></pre>
+
+<p>Je veut obtenir la suite de tokens suivante:</p>
+
+<pre><code>sign
+(
+n
+)
+=
+
+1
+if
+n
+&gt;
+0
+
+-1
+if
+n
+&lt;
+0
+
+0
+else
+
+
+print
+sign
+(
+4
+)
+</code></pre>
+
+<p>Je vais d&#8217;abord introduire la classe <code>Main</code>, qui est certainement
+temporaire et aussi (exceptionnellement) la seule à ne pas être
+testée. Elle est juste là pour me permettre de visualiser les
+résultats.
+Le principe est très simple:</p>
+
+<figure class='code'><figcaption><span>lib/naam/main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Main</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">source_lines</span> <span class="o">=</span> <span class="no">Reader</span><span class="o">.</span><span class="n">read</span> <span class="n">filename</span>
+</span><span class='line'>    <span class="n">source_lines</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">tkr</span> <span class="o">=</span> <span class="ss">Parser</span><span class="p">:</span><span class="ss">:Tokenizer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">while</span> <span class="n">tkr</span><span class="o">.</span><span class="n">has_more_token?</span>
+</span><span class='line'>        <span class="nb">puts</span> <span class="n">tkr</span><span class="o">.</span><span class="n">next_token</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Maintenant, on passe au truc intéressant, le tokenizer
+proprement dit:</p>
+
+<figure class='code'><figcaption><span>lib/naam/parser/tokenizer.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam::Parser</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># Internal: Tokenize a string of naam code.</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Tokenizer</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Public: Initialize a new Tokenizer object, ready to</span>
+</span><span class='line'>    <span class="c1"># tokenize a string of naam code.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># code - A String of naam code.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span> <span class="n">code</span>
+</span><span class='line'>      <span class="vi">@index</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>      <span class="vi">@token</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>      <span class="vi">@look_ahead</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>      <span class="vi">@codeline</span> <span class="o">=</span> <span class="n">code</span>
+</span><span class='line'>      <span class="n">forward_look_ahead</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Public: Get the next token from the code.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns The String token.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">next_token</span>
+</span><span class='line'>      <span class="n">token</span> <span class="o">=</span> <span class="n">produce_next_token</span>
+</span><span class='line'>      <span class="n">skip_white</span>
+</span><span class='line'>      <span class="vi">@token</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>      <span class="n">token</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Public: Tells if a token is available.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns Boolean.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">has_more_token?</span>
+</span><span class='line'>      <span class="vi">@index</span> <span class="o">&lt;=</span> <span class="vi">@codeline</span><span class="o">.</span><span class="n">size</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Look to the next character in the code.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">forward_look_ahead</span>
+</span><span class='line'>      <span class="vi">@look_ahead</span> <span class="o">=</span> <span class="vi">@codeline</span><span class="o">[</span><span class="vi">@index</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
+</span><span class='line'>      <span class="vi">@index</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns the String next available token.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">produce_next_token</span>
+</span><span class='line'>      <span class="k">if</span> <span class="vi">@look_ahead</span> <span class="o">=~</span> <span class="sr">/[0-9]/</span>
+</span><span class='line'>        <span class="n">get_integer</span>
+</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39;(&#39;</span>
+</span><span class='line'>        <span class="n">get_paro</span>
+</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39;)&#39;</span>
+</span><span class='line'>        <span class="n">get_parc</span>
+</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39;=&#39;</span>
+</span><span class='line'>        <span class="n">get_eq</span>
+</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span class='line'>        <span class="n">get_eol</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="n">get_word</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Skip all «white» characters until next non-white one.</span>
+</span><span class='line'>    <span class="c1"># Currently only spaces are considered as white.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">skip_white</span>
+</span><span class='line'>      <span class="n">forward_look_ahead</span> <span class="k">while</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns a String of what naam considered an integer.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get_integer</span>
+</span><span class='line'>      <span class="n">add_look_ahead</span> <span class="k">while</span> <span class="vi">@look_ahead</span> <span class="o">=~</span> <span class="sr">/[0-9]/</span>
+</span><span class='line'>      <span class="vi">@token</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns String opened parenthesis.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get_paro</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns String closed parenthesis.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get_parc</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns String equal symbol &quot;=&quot;.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get_eq</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns String end of line &quot;\n&quot;.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get_eol</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Add current character to the current token and return it.</span>
+</span><span class='line'>    <span class="c1"># Usefull shorthand for single character&#39;s tokens.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns the String current token.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">add_this_char</span>
+</span><span class='line'>      <span class="n">add_look_ahead</span>
+</span><span class='line'>      <span class="vi">@token</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># If it&#39;s not anything else, it&#39;s what naam language call a word.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns String.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">get_word</span>
+</span><span class='line'>      <span class="n">add_look_ahead</span> <span class="k">while</span> <span class="ow">not</span> <span class="vi">@look_ahead</span> <span class="o">=~</span> <span class="sr">/[\(\)=\n ]/</span>
+</span><span class='line'>      <span class="vi">@token</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Add current character to current token, then look for the</span>
+</span><span class='line'>    <span class="c1"># next char, ready for another cycle.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">add_look_ahead</span>
+</span><span class='line'>      <span class="vi">@token</span> <span class="o">&lt;&lt;</span> <span class="vi">@look_ahead</span>
+</span><span class='line'>      <span class="n">forward_look_ahead</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Chaque méthode est suffisament documentée pour que vous puissiez
+comprendre la logique de la bestiole. La prochaine fois on s&#8217;attaque
+au <em>lexer</em>.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Parrot 5: un plan pour écrire un compilateur]]></title>
@@ -2457,159 +2800,6 @@ par là.</p>
 
 <p>Voilà, c&#8217;était un petit exemple de fonction récursive qui m&#8217;a permit de vous
 montrer certaines particularités d&#8217;Elixir.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elixir: calculer la somme des n premiers entiers]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/23/elixir-calculer-la-somme-des-n-premiers-entiers/"/>
-    <updated>2013-07-23T07:43:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/23/elixir-calculer-la-somme-des-n-premiers-entiers</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Pour illustrer la programmation récursive avec Elixir et montrer quelques
-aspects sympathiques du langage, j&#8217;ai choisi un classique et très simple
-problème mathématique: calculer la somme des n premiers entiers.
-Par exemple:</p>
-
-<pre><code>Somme des n premiers entiers si n vaut 5
-
-5 + 4 + 3 + 2 + 1 = 15
-</code></pre>
-
-<p>Super simple. C&#8217;est comme la factorielle mais avec des additions. Pas de quoi
-choper des boutons, même si on déteste les maths. C&#8217;est un bon problème pour
-illustrer les fonctions récursives. En programmation procédurale on ferait
-quelque chose dans ce genre là:</p>
-
-<pre><code>somme = 0
-for(i = n; i &gt; 0; i--) {
-  somme += n
-}
-</code></pre>
-
-<p>Ma première tentative avec Elixir donne le programme suivant:</p>
-
-<!-- more -->
-
-
-
-
-<figure class='code'><figcaption><span>somme.exs version 1</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">somme</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span>
-</span><span class='line'>    <span class="n">suivant</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="m">1</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">suivant</span> <span class="o">==</span> <span class="m">0</span> <span class="k">do</span>
-</span><span class='line'><span class="k">      </span><span class="n">somme</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="n">run</span><span class="p">(</span><span class="n">suivant</span><span class="p">,</span> <span class="n">somme</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Somme</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Vous le lancez comme ça:</p>
-
-<pre><code>$ elixir somme.exs 
-15
-</code></pre>
-
-<p><strong>Sachez dès maintenant que ce bout de code n&#8217;est pas dans l&#8217;esprit
-Elixir.</strong>  J&#8217;ai cherché à décomposer toutes les étapes, pas à faire quelque chose
-de beau, ou d&#8217;optimisé, ou de compact. Alors, que fais ce programme ?</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">)</span> <span class="k">do</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>C&#8217;est la définition d&#8217;une méthode <code>run</code>. Le paramètre <code>acc</code> est le diminutif de
-accumulator. Avoir un accumulateur est un truc très utilisé dans ce type de
-fonction. On enregistre le résultat provisioire dans cet accumulateur, qui
-est propagé tout au long de la pile d&#8217;appels.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span>
-</span><span class='line'><span class="n">suivant</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="m">1</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ici je calcule deux résultats temporaires. Dans <code>somme</code> je place la somme du
-nombre n actuel et de l&#8217;accumulateur. Quant à <code>suivant</code>, il contient la
-prochaine valeur du nombre n.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">if</span> <span class="n">suivant</span> <span class="o">==</span> <span class="m">0</span> <span class="k">do</span>
-</span><span class='line'><span class="k">  </span><span class="n">somme</span>
-</span><span class='line'><span class="k">else</span>
-</span><span class='line'>  <span class="n">run</span><span class="p">(</span><span class="n">suivant</span><span class="p">,</span> <span class="n">somme</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Dans une fonction récursive il faut évidemment un appel à cette même fonction.
-Mais surtout il faut une
-condition de sortie. Sans ce garde-fou, c&#8217;est la boucle infinie à tout les
-coups. Ici la condition de sortie est <code>suivant == 0</code>. Quand le prochain nombre
-à traiter atteint zéro, c&#8217;est le signe que la fonction a terminé son travail donc
-je renvois le résultat actuel, qui est la somme de tous les nombres traités
-jusqu&#8217;ici. Dans l&#8217;autre cas, c&#8217;est l&#8217;appel récursif: <code>run(suivant, somme)</code>.</p>
-
-<p>Si vous avez du mal à comprendre la logique de ce programme, vous pouvez
-ajouter un traçage:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
-</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;n: </span><span class="si">#{</span><span class="n">n</span><span class="si">}</span><span class="s2"> --- acc: </span><span class="si">#{</span><span class="n">acc</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="c1"># ...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ce qui donnera le résultat suivant:</p>
-
-<pre><code>$ elixir somme.exs 
-n: 5 --- acc: 0
-n: 4 --- acc: 5
-n: 3 --- acc: 9
-n: 2 --- acc: 12
-n: 1 --- acc: 14
-15
-</code></pre>
-
-<p>La prochaine fois je transformerais ce programme afin qu&#8217;il soit dans
-l&#8217;esprit Elixir.</p>
 
 <p>À demain.</p>
 ]]></content>

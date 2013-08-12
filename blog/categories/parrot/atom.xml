@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parrot | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parrot/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-11T10:54:13+02:00</updated>
+  <updated>2013-08-12T09:23:03+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,226 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Parrot 6: Écrire le tokenizer]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/"/>
+    <updated>2013-08-12T09:05:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Après avoir défini un semblant de
+<a href="http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/">méthode de travail</a>
+on s'attaque aujourd'hui à l'écriture d'un
+<a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>
+pour Naam.</p>
+
+<!-- more -->
+
+
+<h2>Le tokenizer</h2>
+
+<p>Le code du projet est en ligne sur Github à l'adresse suivante:
+<a href="https://github.com/lkdjiin/naam">naam</a>.
+N'hésitez pas à le consulter. Les extraits qui suivront sont tirés de la
+version 0.0.1.</p>
+
+<p>La <em>tokenization</em> est le processus de séparation des éléments
+basiques d'un langage.
+C'est la première étape de l'analyse lexicale.
+Par exemple, à partir du programme suivant:</p>
+
+<pre><code>sign(n)=
+1  if n &gt; 0
+-1 if n &lt; 0
+0  else
+
+print sign(4)
+</code></pre>
+
+<p>Je veut obtenir la suite de tokens suivante:</p>
+
+<pre><code>sign
+(
+n
+)
+=
+
+1
+if
+n
+&gt;
+0
+
+-1
+if
+n
+&lt;
+0
+
+0
+else
+
+
+print
+sign
+(
+4
+)
+</code></pre>
+
+<p>Je vais d'abord introduire la classe <code>Main</code>, qui est certainement
+temporaire et aussi (exceptionnellement) la seule à ne pas être
+testée. Elle est juste là pour me permettre de visualiser les
+résultats.
+Le principe est très simple:</p>
+
+<p>``` ruby lib/naam/main.rb
+class Main
+  def self.run(filename)</p>
+
+<pre><code>source_lines = Reader.read filename
+source_lines.each do |line|
+  tkr = Parser::Tokenizer.new(line)
+  while tkr.has_more_token?
+    puts tkr.next_token
+  end
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Maintenant, on passe au truc intéressant, le tokenizer
+proprement dit:</p>
+
+<p>``` ruby lib/naam/parser/tokenizer.rb
+module Naam::Parser</p>
+
+<p>  # Internal: Tokenize a string of naam code.
+  class Tokenizer</p>
+
+<pre><code># Public: Initialize a new Tokenizer object, ready to
+# tokenize a string of naam code.
+#
+# code - A String of naam code.
+def initialize code
+  @index = 0
+  @token = ''
+  @look_ahead = ''
+  @codeline = code
+  forward_look_ahead
+end
+
+# Public: Get the next token from the code.
+#
+# Returns The String token.
+def next_token
+  token = produce_next_token
+  skip_white
+  @token = ''
+  token
+end
+
+# Public: Tells if a token is available.
+#
+# Returns Boolean.
+def has_more_token?
+  @index &lt;= @codeline.size
+end
+
+private
+
+# Look to the next character in the code.
+#
+# Returns nothing.
+def forward_look_ahead
+  @look_ahead = @codeline[@index, 1]
+  @index += 1
+end
+
+# Returns the String next available token.
+def produce_next_token
+  if @look_ahead =~ /[0-9]/
+    get_integer
+  elsif @look_ahead == '('
+    get_paro
+  elsif @look_ahead == ')'
+    get_parc
+  elsif @look_ahead == '='
+    get_eq
+  elsif @look_ahead == "\n"
+    get_eol
+  else
+    get_word
+  end
+end
+
+# Skip all «white» characters until next non-white one.
+# Currently only spaces are considered as white.
+#
+# Returns nothing.
+def skip_white
+  forward_look_ahead while @look_ahead == ' '
+end
+
+# Returns a String of what naam considered an integer.
+def get_integer
+  add_look_ahead while @look_ahead =~ /[0-9]/
+  @token
+end
+
+# Returns String opened parenthesis.
+def get_paro; add_this_char; end
+
+# Returns String closed parenthesis.
+def get_parc; add_this_char; end
+
+# Returns String equal symbol "=".
+def get_eq; add_this_char; end
+
+# Returns String end of line "\n".
+def get_eol; add_this_char; end
+
+# Add current character to the current token and return it.
+# Usefull shorthand for single character's tokens.
+#
+# Returns the String current token.
+def add_this_char
+  add_look_ahead
+  @token
+end
+
+# If it's not anything else, it's what naam language call a word.
+#
+# Returns String.
+def get_word
+  add_look_ahead while not @look_ahead =~ /[\(\)=\n ]/
+  @token
+end
+
+# Add current character to current token, then look for the
+# next char, ready for another cycle.
+#
+# Returns nothing.
+def add_look_ahead
+  @token &lt;&lt; @look_ahead
+  forward_look_ahead
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Chaque méthode est suffisament documentée pour que vous puissiez
+comprendre la logique de la bestiole. La prochaine fois on s'attaque
+au <em>lexer</em>.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Parrot 5: un plan pour écrire un compilateur]]></title>
@@ -429,133 +649,6 @@ sudo make install
 
 <p>Maintenant que Parrot est installé et fonctionnel, on va pouvoir écrire quelques
 petits programmes en PIR.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 1]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/"/>
-    <updated>2013-08-01T07:59:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Cela fait quelques années que j'ai envie d'essayer la
-<a href="https://fr.wikipedia.org/wiki/Machine_virtuelle">machine virtuelle</a>
-<a href="http://www.parrot.org/">Parrot</a> et j'ai toujours reporté à plus tard.
-Jusqu'à maintenant. Aujourd'hui, je commence à écrire un
-<a href="http://en.wikipedia.org/wiki/Toy_language">toy language</a>
-qui tournera sur Parrot.</p>
-
-<p>Pour implémenter un langage sur Parrot, il faut d'abord … un langage.
-Simple de préférence, avec peu de fonctionnalités, au moins pour
-démarrer.
-Je vais en inventer un pour l'occasion, ce qui sera bien plus drôle que
-d'utiliser un sous-ensemble d'un langage déjà existant.</p>
-
-<!-- more -->
-
-
-<h2>Le langage naam</h2>
-
-<p>Naam signifie No Assignment, Automatic Memoization.
-Je rappelle qu'il s'agit d'un <em>toy language</em>, l'objectif étant
-d'expérimenter, et non de produire le prochain succès planétaire.
-Pour le moment, et peut-être pour toujours, le langage sera limité
-à l'utilisation des nombres entiers. Pas de nombres à virgule, pas de
-chaînes, pas d'objets… Je viens de passer quelques jours à envisager
-une syntaxe. Mais la reflexion n'est pas terminée et elle pourrait
-changer d'ici à l'implémentation de naam. Voici des exemples:</p>
-
-<pre><code>sign(n)=
-1  if n &gt; 0
--1 if n &lt; 0
-0  else
-
-print sign(3)
-</code></pre>
-
-<p>Les détails:</p>
-
-<pre><code>sign(n)=
-</code></pre>
-
-<p>C'est la définition d'une fonction <code>sign</code>.</p>
-
-<pre><code>1  if n &gt; 0
--1 if n &lt; 0
-</code></pre>
-
-<p>Si <code>n</code> est positif on renvoie 1. Si <code>n</code> est négatif on renvoie -1.</p>
-
-<pre><code>0  else
-</code></pre>
-
-<p>Dans les autres cas (il reste le cas du zéro) on renvoie 0. Le mot <code>else</code>
-marque aussi la fin de la fonction.</p>
-
-<p>Voici maintenant ce que pourrait être la fonction factorielle:</p>
-
-<pre><code>!(n)=
-1            if 0
-n * .(n - 1) if n &gt; 0
-else
-
-print !(7)
-</code></pre>
-
-<p>Et le détail:</p>
-
-<pre><code>!(n)=
-</code></pre>
-
-<p>On définit la fonction <code>!</code>. Le nom d'une fonction n'a pas à être composé
-de lettres. Des signes font aussi bien l'affaire.</p>
-
-<pre><code>1            if 0
-</code></pre>
-
-<p>Quand l'argument vaut zéro, on renvoie 1.</p>
-
-<pre><code>n * .(n - 1) if n &gt; 0
-</code></pre>
-
-<p>Dans les cas où <code>n</code> est positif, on renvoie <code>n</code> multiplié
-par la factorielle de <code>n - 1</code>.
-Le point (<code>.</code>) signifie «la fonction elle-même».</p>
-
-<pre><code>else
-</code></pre>
-
-<p>Enfin, dans les autres cas (qui ici sont <code>n</code> est négatif) on renvoie du
-vide, rien, nada. Comme une fonction est dans l'obligation de renvoyer
-une valeur, cela provoquera une erreur (ce qui est voulu).</p>
-
-<p>Un dernier exemple pour terminer, la fonction d'Ackermann. Je ne vais pas
-la commenter, la seule différence avec ce que j'ai montré avant est
-qu'il y a deux arguments :</p>
-
-<pre><code>ackermann(m, n)=
-n + 1                 if 0, n
-.(m - 1, 1)           if m &gt; 0, 0
-.(m - 1, .(m, n - 1)) else
-
-print ackermann(2, 3)
-</code></pre>
-
-<p>On pourrait aussi écrire la même fonction de la manière suivante (je n'ai
-pas encore décidé si naam supporterait les deux syntaxes ou non):</p>
-
-<pre><code>ackermann(0, n)     = n + 1
-ackermann(m &gt; 0, 0) = .(m - 1, 1)
-ackermann(m, n)     = .(m - 1, .(m, n - 1))
-</code></pre>
-
-<p>Alors, qu'en pensez vous. Est-ce-que ça vous dit de voir naître un
-<em>toy language</em> au jour le jour ? Que pensez vous de naam ?</p>
-
-<p>La prochaine fois on installe Parrot et on joue un peu avec pour sentir le truc.</p>
 
 <p>À demain.</p>
 ]]></content>
