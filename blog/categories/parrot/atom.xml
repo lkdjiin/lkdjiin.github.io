@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parrot | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parrot/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-12T09:23:03+02:00</updated>
+  <updated>2013-08-13T10:33:08+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,157 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 7: le lexer]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/"/>
+    <updated>2013-08-13T10:27:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Après avoir vu
+<a href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/">la tokenisation</a>,
+on continue aujourd'hui l'analyse
+lexicale avec la production des lexèmes.</p>
+
+<!-- more -->
+
+
+<h2>Qu'est-ce qu'un lexème ?</h2>
+
+<p>Si vous avez le temps, lisez <a href="http://fr.wikipedia.org/wiki/Lex%C3%A8me">l'article de wikipédia</a>.
+Sinon voici ma définition pour le domaine qui nous intéresse:</p>
+
+<p><blockquote><p>Un lexème (unité lexicale) est un token auquel on attache un type<br/>très basique.</p></blockquote></p>
+
+<p>Par exemple, la phrase «Je mange.» donnerait:</p>
+
+<pre><code>mot:         Je
+mot:         mange
+ponctuation: .
+</code></pre>
+
+<p>On pourrait produire un <em>lexer</em> plus intelligent qui donnerait:</p>
+
+<pre><code>mot:         Je
+verbe:       mange
+ponctuation: .
+</code></pre>
+
+<p>Les langages informatiques étant beaucoup moins complexe que les
+langages humains, écrire un <em>lexer</em> est souvent une formalité.</p>
+
+<h2>Objectif</h2>
+
+<p>L'objectif d'aujourd'hui est d'obtenir quelque chose comme ça:</p>
+
+<p>``` console
+[~/devel/ruby/naam]$ bin/naam spec/fixtures/sign.naam</p>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fca2f8 @type=:word, @value=&ldquo;sign&rdquo;></h1>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fca258 @type=:paro, @value=&ldquo;(&rdquo;></h1>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fca0b4 @type=:word, @value=&ldquo;n&rdquo;></h1>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9fec @type=:parc, @value=&ldquo;)&rdquo;></h1>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9ee8 @type=:affect, @value=&ldquo;=&rdquo;></h1>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9de4 @type=:eol, @value=&ldquo;\n&rdquo;></h1>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9b8c @type=:int, @value=&ldquo;1&rdquo;></h1>
+
+<h1>&lt;Naam::Parser::LexicalUnit:0x8fc99d4 @type=:keyword, @value=&ldquo;if&rdquo;></h1>
+
+<p>&hellip;
+```</p>
+
+<h2>Le code</h2>
+
+<p>Le code source du projet est sur Github, à la
+<a href="https://github.com/lkdjiin/naam/tree/v0.0.2">version 0.0.2</a>.</p>
+
+<p>Bien souvent l'étape de tokenisation et de lexification peuvent être
+regroupées en une seule et même étape. Là, j'ai choisi de les séparer pour
+avoir un code plus simple à montrer. Tout d'abord, voici la classe
+<code>lexical_unit</code>:</p>
+
+<p>``` ruby lib/naam/parser/lexical_unit.rb
+module Naam::Parser</p>
+
+<p>  # A container for lexical units.
+  class LexicalUnit</p>
+
+<pre><code>private_class_method :new
+
+attr_reader :type, :value
+
+# type  - Symbol
+# value - String
+def initialize type, value
+  @type = type
+  @value = value
+end
+
+def self.int value ; new(:int, value) ; end
+def self.word value ; new(:word, value) ; end
+def self.keyword value ; new(:keyword, value) ; end
+def self.op value ; new(:op, value) ; end
+def self.paro ; new(:paro, "(") ; end
+def self.parc ; new(:parc, ")") ; end
+def self.eol ; new(:eol, "\n") ; end
+def self.affect ; new(:affect, "=") ; end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>J'ai beau chercher, je ne trouve rien à dire d'intelligent sur cette classe.
+J'avais prévenu: c'est très simple. Et ça continue, on passe maintenant au
+<em>lexer</em> proprement dit, qui est tout aussi simple:</p>
+
+<p>``` ruby lib/naam/parser/lexer.rb
+module Naam::Parser
+  class Lexer</p>
+
+<pre><code>def from_token(token)
+  if token == '('
+    LexicalUnit.paro()
+  elsif token == ')'
+    LexicalUnit.parc()
+  elsif token == "\n"
+    LexicalUnit.eol()
+  elsif token == '='
+    LexicalUnit.affect()
+  elsif token == '&lt;'
+    LexicalUnit.op(token)
+  elsif token == '&gt;'
+    LexicalUnit.op(token)
+  elsif token == 'if'
+    LexicalUnit.keyword(token)
+  elsif token == 'else'
+    LexicalUnit.keyword(token)
+  elsif token =~ /[+|-]?\d+/
+    LexicalUnit.int(token)
+  else
+    LexicalUnit.word(token)
+  end
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voilà, on a fini l'analyse lexicale, c'est à dire la première phase
+de l'écriture d'un compilateur. La prochaine fois je parlerais de la
+grammaire de Naam, ce qui enclenchera la phase d'analyse syntaxique.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Parrot 6: Écrire le tokenizer]]></title>
@@ -557,98 +708,6 @@ d'écrire la procédure <code>main</code> de cette façon:</p>
 </code></pre>
 
 <p>Mais ça ne marcheras pas, il faut décomposer…</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/"/>
-    <updated>2013-08-02T09:07:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p><em>Aujourd'hui je m'intéresse à</em>
-<a href="http://www.parrot.org/">Parrot</a>.
-<em>Après une brève description de cette
-machine virtuelle, on l'installe et on écrit un premier programme.</em></p>
-
-<!-- more -->
-
-
-<h2>Présentation de Parrot</h2>
-
-<p>La machine virtuelle Parrot offre un nombre illimité de registre,
-qui sont de 4 types différents:</p>
-
-<ul>
-<li>Integer, pour les nombres entiers</li>
-<li>Number, pour les nombres réels</li>
-<li>String, pour les chaînes de caractères</li>
-<li>PMC, pour, en gros, les objets (Polymorphic container)</li>
-</ul>
-
-
-<p>Les instructions peuvent être entrées sous 4 formes différentes, du plus
-haut-niveau vers le plus bas:</p>
-
-<ol>
-<li>PIR, <em>Parrot Intermediate Representation</em>, qui ressemble à un assembleur
-de haut-niveau.</li>
-<li>PASM, <em>Parrot Assembly</em>, qui est un assembleur classique, sans fioritures.</li>
-<li>PAST, <em>Parrot Abstract Syntax Tree</em>, qui accepte un
-<a href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> en entrée.</li>
-<li>PBC, <em>Parrot Byte Code</em>, le code machine de Parrot.</li>
-</ol>
-
-
-<p>Est-ce-que j'ai vraiment besoin de dire que, si possible, je me limiterais
-à PIR ?</p>
-
-<p>Enfin, Parrot possède un
-<a href="http://fr.wikipedia.org/wiki/Ramasse-miettes_%28informatique%29">Garbage Collector</a>.
-On aura pas besoin de s'acharner
-à libérer la mémoire, Parrot le fait pour nous.</p>
-
-<h2>Installation de Parrot</h2>
-
-<p>Avant de pouvoir jouer avec Parrot, il faut l'installer.
-Le point de départ est sur
-<a href="http://www.parrot.org/source.html">www.parrot.org/source.html</a>.
-Sur ma machine Debian, j'ai d'abord installé la version de Parrot qui se
-trouve dans les dépots. Le problème c'est que pas mal d'outils annexes
-demandent à avoir un <em>working repository</em>, ils ne sont pas inclus dans les
-paquets. De plus, les sources ont l'air de contenir pas mal d'exemples.
-J'ai donc désinstallé le package pour Debian et rapatrié les sources depuis
-Github : <a href="https://github.com/parrot/parrot">github.com/parrot/parrot</a>.
-L'installation s'est déroulée sans soucis particuliers. Comme je trouve la
-documentation un peu confuse sur ce point, voilà comment j'ai fait ; si ça
-peut vous éviter de chercher…</p>
-
-<pre><code>perl Configure.pl
-make
-make test
-sudo make install
-</code></pre>
-
-<h2>Hello Parrot</h2>
-
-<p>On s'attaque enfin à l'écriture du classique <em>hello world</em>:</p>
-
-<p><code>nasm hello.pir
-.sub main
-  say "Hello world"
-.end
-</code></p>
-
-<p>On le lance ainsi:</p>
-
-<pre><code>parrot hello.pir
-</code></pre>
-
-<p>Maintenant que Parrot est installé et fonctionnel, on va pouvoir écrire quelques
-petits programmes en PIR.</p>
 
 <p>À demain.</p>
 ]]></content>
