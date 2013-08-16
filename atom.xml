@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-15T10:53:28+02:00</updated>
+  <updated>2013-08-16T09:31:17+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,256 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Une définition de la programmation fonctionnelle avec Elixir]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/"/>
+    <updated>2013-08-16T09:17:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<h2>Ou ma tentative désespérée de comprendre la non mutabilité</h2>
+
+<p>Cet article est un article égoiste ! Depuis que je joue un peu avec Elixir, je
+m&#8217;aperçois que j&#8217;ai des soucis à comprendre <em>vraiment</em> la programmation
+fonctionnelle.
+J&#8217;ai entre autres, des difficultés à me faire au coté immuable, non-mutable,
+de la chose (<em>immutable</em> en anglais). Je tente donc aujourd&#8217;hui de
+mettre au clair mes idées sur la question. Ce qui suit peut ressembler
+à un dialogue de fou, vous êtes prévenus.</p>
+
+<!-- more -->
+
+
+<p>Revoici le module Somme, que j&#8217;ai utilisé dans un <a href="http://lkdjiin.github.io/blog/2013/07/24/elixir-calculer-la-somme-des-n-premiers-entiers-suite-et-fin/">précédent article</a>.</p>
+
+<figure class='code'><figcaption><span>somme.exs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">acc</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Somme</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je vais l&#8217;écrire dans un bon vieux langage procédural, et analyser ce qu&#8217;il
+s&#8217;y passe.</p>
+
+<figure class='code'><figcaption><span>somme.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include&lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">somme</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%i</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On compile et on lance:</p>
+
+<pre><code>$ gcc somme.c -std=c99
+$ ./a.out 
+15
+</code></pre>
+
+<p>Ici pas de récursivité mais une simple itération. Une boucle qui change la
+variable <code>somme</code> à chaque passage. Je crois qu&#8217;on devrait d&#8217;abord définir
+ce qu&#8217;est une variable. Une variable, c&#8217;est un concept. Une variable définit
+à la fois un contenant, un contenu et un type, tout cela accessible par un
+nom. Notre variable a ici pour nom <code>somme</code>. Son type est <code>int</code>. Son contenu,
+ou encore sa valeur est initialement 0 et change à chaque itération. Son
+contenant est un emplacement en mémoire, qui lui ne change pas. «<em>Et tu sais ça
+comment que ça change pas ?</em>» Bon, puisque j&#8217;ai besoin d&#8217;une preuve,
+j&#8217;ajoute un traceur qui affiche l&#8217;emplacement mémoire de <code>somme</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include&lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">somme</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%i</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ gcc somme.c -std=c99
+$ ./a.out 
+-1081032008
+-1081032008
+-1081032008
+-1081032008
+-1081032008
+-1081032008
+15
+</code></pre>
+
+<p>Voilà, on le sait maintenant: la <em>valeur</em> de <code>somme</code> change, mais son
+<em>emplacement</em> (son contenant) reste identique.</p>
+
+<p>Si je tente maintenant de mimer ce comportement avec Elixir, je serais tenté
+d&#8217;écrire:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">0</span>
+</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="n">somme</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ elixir somme.exs 
+/home/xavier/somme.exs:3: variable somme is unused
+0
+</code></pre>
+
+<p>Comme Elixir est sympa, il tente de me prévenir que quelque chose ne
+tourne pas rond. On peut penser à un problème de <em>scope</em>, se dire que le
+<code>somme</code> à l&#8217;intérieur de la fonction anonyme n&#8217;est pas le même que le
+<code>somme</code> à l&#8217;extérieur de cette fonction. Mais c&#8217;est pas ça. Ou
+plus exactement ce n&#8217;est pas <em>seulement</em> ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">100</span>
+</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="n">somme</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
+</span><span class='line'>  <span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ elixir somme.exs 
+105
+104
+103
+102
+101
+100
+</code></pre>
+
+<p>La valeur du <code>somme</code> de l&#8217;intérieur est initialisée à chaque
+itération par la valeur du <code>somme</code> de l&#8217;extérieur.
+Donc le <code>somme</code> extérieur est connu dans la fonction anonyme.
+Ce comportement me
+fais m&#8217;arracher les cheveux, je sens que je passe complètement à coté
+d&#8217;un truc essentiel. Je sais qu&#8217;on n&#8217;écrirait pas cette fonction de
+cette manière, mais je veux comprendre <em>pourquoi</em> ce comportement
+quand je fais ça. En fait donner le même nom à ces deux variables est
+une illusion.
+Pour Elixir le contenu de <code>somme</code> est immuable, il ne peut pas changer.
+Il serait donc plus juste d&#8217;écrire ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">0</span>
+</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="n">temp</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ce qui, évidemment, ne mène à rien. Je commence peut-être à comprendre.
+Si je reprend le programme du départ:</p>
+
+<figure class='code'><figcaption><span>somme.exs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">acc</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Somme</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On voit bien que les variables ne changent (ne mutent) jamais. Ce sont à
+chaque fois de <em>nouvelle création</em> qui sont passées dans les paramètres.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Lors d&#8217;un passage précis dans cette fonction, on se fiche royalement de savoir
+quel était l&#8217;état de <code>n</code> et de <code>acc</code> lors des passages précédents. Ce qui
+n&#8217;est pas le cas dans l&#8217;exemple en C:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>À chaque passage dans la boucle, il faut connaître l&#8217;état de <code>somme</code> dans
+l&#8217;itération précédente.</p>
+
+<p>On m&#8217;avait pourtant bien dit que la programmation fonctionnelle s&#8217;occupait
+des <em>transformations</em> et pas des <em>états</em>. Mais je ne voyais pas du tout
+ce que ça pouvait bien signifier. C&#8217;est maintenant un peu plus clair,
+même s&#8217;il me reste encore du chemin à parcourir pour bien saisir tout
+ce qu&#8217;implique la programmation fonctionnelle…</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Bien débuter avec Vim: la touche Escape]]></title>
@@ -2542,195 +2792,6 @@ lorsque cette variable est inutilisée.</p>
 
 <p>Nouveau venu en programmation fonctionnelle, je pense que je n&#8217;entrevois là
 que la surface du <em>pattern matching</em>.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Comment écrire un plugin Octopress]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/"/>
-    <updated>2013-07-27T12:56:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Pour mon blog Octopress, je voulais un repère visuel qui marque le niveau de
-difficulté des articles. Un truc comme «Niveau : débutant» ou bien «Niveau :
-confirmé» avec un peu de couleur. Rien de bien compliqué en fait. Si passer par
-l&#8217;écriture d&#8217;un plugin pour obtenir ce genre d&#8217;effet n&#8217;est pas absolument
-neccéssaire, ça rendra l&#8217;écriture des articles plus agréable et plus
-rapide. Et puis je vais apprendre quelque chose de nouveau : comment écrire
-un plugin pour Octopress ?</p>
-
-<!-- more -->
-
-
-<p>Tout d&#8217;abord, le site d&#8217;Octopress ne propose pas de documentation sur
-l&#8217;écriture de plugins. Par contre, le wiki fournit
-<a href="https://github.com/imathis/octopress/wiki/3rd-party-plugins">une longue liste de plugins</a>
- dont les sources sont les bienvenues. Jekyll, le programme sur lequel est
-construit Octopress, est assez spartiate en ce qui concerne
-<a href="http://jekyllrb.com/docs/plugins/">l&#8217;écriture de plugin pour Jekyll</a>. Malgré
-tout, ce lien peut s&#8217;avérer utile. J&#8217;ai trouvé que la meilleure source
-d&#8217;information pour commencer est le contenu du dossier <code>plugin</code> de votre
-blog Octopress.</p>
-
-<p>Si vous voulez tout de suite jetez un coup d&#8217;oeil sur le
-<a href="https://github.com/lkdjiin/octopress-level-tag/releases">code source du plugin</a>
-terminé, vous pouvez le trouver sur Github, à la version 0.1.0.</p>
-
-<p>Démarront avec le plugin le plus simple auquel je puisse penser. Créer un
-fichier <code>plugins/level_tag.rb</code> et placez y le contenu suivant:</p>
-
-<figure class='code'><figcaption><span>plugins/level_tag.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Jekyll</span>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">LevelTag</span> <span class="o">&lt;</span> <span class="ss">Liquid</span><span class="p">:</span><span class="ss">:Tag</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span class='line'>      <span class="s2">&quot;Niveau : facile&quot;</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="ss">Liquid</span><span class="p">:</span><span class="ss">:Template</span><span class="o">.</span><span class="n">register_tag</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span> <span class="ss">Jekyll</span><span class="p">:</span><span class="ss">:LevelTag</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ensuite, dans un post, appelez le plugin de cette façon:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="p">{</span><span class="o">%</span> <span class="n">level</span> <span class="o">%</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Puis lancez Octopress:</p>
-
-<pre><code>rake generate
-rake preview
-</code></pre>
-
-<p>Pointez votre navigateur sur <code>localhost:4000</code> et voilà. Un beau label
-«Niveau : facile» apparait dans votre post. Voyons maintenant comment ça
-marche.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Jekyll</span>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">LevelTag</span> <span class="o">&lt;</span> <span class="ss">Liquid</span><span class="p">:</span><span class="ss">:Tag</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Un plugin pour Octopress est avant tout un plugin pour Jekyll.
-Et Jekyll se sert du
-<a href="http://rubydoc.info/gems/liquid">moteur de template Liquid</a>. Notre classe
-<code>LevelTag</code> va donc hériter de <code>Liquid::Tag</code>, et être placée dans le
-module Jekyll. La classe <code>Liquid::Tag</code> nous offre tout ce qu&#8217;il faut
-pour générer du html, récupérer des arguments, etc.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span class='line'>  <span class="s2">&quot;Niveau : facile&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La seule méthode de <code>Liquid::Tag</code> qu&#8217;il faut absolument implémenter est
-<code>render</code>. C&#8217;est elle qui va produire le code html qui sera placé dans
-notre article, à la place de l&#8217;appel du plugin.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="ss">Liquid</span><span class="p">:</span><span class="ss">:Template</span><span class="o">.</span><span class="n">register_tag</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span> <span class="ss">Jekyll</span><span class="p">:</span><span class="ss">:LevelTag</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Finalement, il faut enregistrer notre plugin auprès de <code>Liquid::Template</code>.
-Le premier argument passé à <code>register_tag</code> est le nom sous lequel nous
-voulons appeler le plugin dans nos articles. Le second argument est la
-classe de notre plugin.</p>
-
-<p>Pour aller plus loin, il va falloir passer des arguments depuis l&#8217;appel du
-plugin jusqu&#8217;à notre classe <code>LevelTag</code>. On change donc l&#8217;appel ainsi:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="p">{</span><span class="o">%</span> <span class="n">level</span> <span class="n">facile</span> <span class="o">%</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et on transforme le plugin de cette façon:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Jekyll</span>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">LevelTag</span> <span class="o">&lt;</span> <span class="ss">Liquid</span><span class="p">:</span><span class="ss">:Tag</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">tagname</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">tokens</span><span class="p">)</span>
-</span><span class='line'>      <span class="vi">@level</span> <span class="o">=</span> <span class="n">level</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span class='line'>      <span class="s2">&quot;Niveau : </span><span class="si">#{</span><span class="vi">@level</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="ss">Liquid</span><span class="p">:</span><span class="ss">:Template</span><span class="o">.</span><span class="n">register_tag</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span> <span class="ss">Jekyll</span><span class="p">:</span><span class="ss">:LevelTag</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voyons les changements en détails.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">tagname</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">tokens</span><span class="p">)</span>
-</span><span class='line'>  <span class="vi">@level</span> <span class="o">=</span> <span class="n">level</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La variable <code>level</code> va contenir l&#8217;argument passé lors de l&#8217;appel du
-plugin (<code>facile</code>), donc <code>level == 'facile'</code>. On sauvegarde
-cette valeur dans un membre pour pouvoir la réutiliser plus tard.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span class='line'>  <span class="s2">&quot;Niveau : </span><span class="si">#{</span><span class="vi">@level</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Grâce à <code>@level</code> on a les moyens de faire sortir à <code>render</code> l&#8217;argument
-passé lors de l&#8217;appel du plugin.</p>
-
-<p>Comme certains voudront «Niveau : facile» et d&#8217;autres voudront
-«Niveau : débutant», il va nous falloir un moyen de personnaliser tout ça.
-C&#8217;est ce qu&#8217;on découvrira dans un prochain numéro.</p>
 
 <p>À demain.</p>
 ]]></content>

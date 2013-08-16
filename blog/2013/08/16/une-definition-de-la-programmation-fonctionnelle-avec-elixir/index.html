@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Une définition de la programmation fonctionnelle avec Elixir - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Ou ma tentative désespérée de comprendre la non mutabilité Cet article est un article égoiste ! Depuis que je joue un peu avec &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Une définition de la programmation fonctionnelle avec Elixir</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-16T09:17:00+02:00" pubdate data-updated="true">16 août 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<h2>Ou ma tentative désespérée de comprendre la non mutabilité</h2>
+
+<p>Cet article est un article égoiste ! Depuis que je joue un peu avec Elixir, je
+m&#8217;aperçois que j&#8217;ai des soucis à comprendre <em>vraiment</em> la programmation
+fonctionnelle.
+J&#8217;ai entre autres, des difficultés à me faire au coté immuable, non-mutable,
+de la chose (<em>immutable</em> en anglais). Je tente donc aujourd&#8217;hui de
+mettre au clair mes idées sur la question. Ce qui suit peut ressembler
+à un dialogue de fou, vous êtes prévenus.</p>
+
+<!-- more -->
+
+
+<p>Revoici le module Somme, que j&#8217;ai utilisé dans un <a href="http://lkdjiin.github.io/blog/2013/07/24/elixir-calculer-la-somme-des-n-premiers-entiers-suite-et-fin/">précédent article</a>.</p>
+
+<figure class='code'><figcaption><span>somme.exs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">acc</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Somme</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je vais l&#8217;écrire dans un bon vieux langage procédural, et analyser ce qu&#8217;il
+s&#8217;y passe.</p>
+
+<figure class='code'><figcaption><span>somme.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include&lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">somme</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%i</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On compile et on lance:</p>
+
+<pre><code>$ gcc somme.c -std=c99
+$ ./a.out 
+15
+</code></pre>
+
+<p>Ici pas de récursivité mais une simple itération. Une boucle qui change la
+variable <code>somme</code> à chaque passage. Je crois qu&#8217;on devrait d&#8217;abord définir
+ce qu&#8217;est une variable. Une variable, c&#8217;est un concept. Une variable définit
+à la fois un contenant, un contenu et un type, tout cela accessible par un
+nom. Notre variable a ici pour nom <code>somme</code>. Son type est <code>int</code>. Son contenu,
+ou encore sa valeur est initialement 0 et change à chaque itération. Son
+contenant est un emplacement en mémoire, qui lui ne change pas. «<em>Et tu sais ça
+comment que ça change pas ?</em>» Bon, puisque j&#8217;ai besoin d&#8217;une preuve,
+j&#8217;ajoute un traceur qui affiche l&#8217;emplacement mémoire de <code>somme</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include&lt;stdio.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">somme</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%i</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">somme</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ gcc somme.c -std=c99
+$ ./a.out 
+-1081032008
+-1081032008
+-1081032008
+-1081032008
+-1081032008
+-1081032008
+15
+</code></pre>
+
+<p>Voilà, on le sait maintenant: la <em>valeur</em> de <code>somme</code> change, mais son
+<em>emplacement</em> (son contenant) reste identique.</p>
+
+<p>Si je tente maintenant de mimer ce comportement avec Elixir, je serais tenté
+d&#8217;écrire:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">0</span>
+</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="n">somme</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ elixir somme.exs 
+/home/xavier/somme.exs:3: variable somme is unused
+0
+</code></pre>
+
+<p>Comme Elixir est sympa, il tente de me prévenir que quelque chose ne
+tourne pas rond. On peut penser à un problème de <em>scope</em>, se dire que le
+<code>somme</code> à l&#8217;intérieur de la fonction anonyme n&#8217;est pas le même que le
+<code>somme</code> à l&#8217;extérieur de cette fonction. Mais c&#8217;est pas ça. Ou
+plus exactement ce n&#8217;est pas <em>seulement</em> ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">100</span>
+</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="n">somme</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
+</span><span class='line'>  <span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ elixir somme.exs 
+105
+104
+103
+102
+101
+100
+</code></pre>
+
+<p>La valeur du <code>somme</code> de l&#8217;intérieur est initialisée à chaque
+itération par la valeur du <code>somme</code> de l&#8217;extérieur.
+Donc le <code>somme</code> extérieur est connu dans la fonction anonyme.
+Ce comportement me
+fais m&#8217;arracher les cheveux, je sens que je passe complètement à coté
+d&#8217;un truc essentiel. Je sais qu&#8217;on n&#8217;écrirait pas cette fonction de
+cette manière, mais je veux comprendre <em>pourquoi</em> ce comportement
+quand je fais ça. En fait donner le même nom à ces deux variables est
+une illusion.
+Pour Elixir le contenu de <code>somme</code> est immuable, il ne peut pas changer.
+Il serait donc plus juste d&#8217;écrire ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">0</span>
+</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
+</span><span class='line'>  <span class="n">temp</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ce qui, évidemment, ne mène à rien. Je commence peut-être à comprendre.
+Si je reprend le programme du départ:</p>
+
+<figure class='code'><figcaption><span>somme.exs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
+</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">acc</span>
+</span><span class='line'>  <span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Somme</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On voit bien que les variables ne changent (ne mutent) jamais. Ce sont à
+chaque fois de <em>nouvelle création</em> qui sont passées dans les paramètres.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Lors d&#8217;un passage précis dans cette fonction, on se fiche royalement de savoir
+quel était l&#8217;état de <code>n</code> et de <code>acc</code> lors des passages précédents. Ce qui
+n&#8217;est pas le cas dans l&#8217;exemple en C:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>À chaque passage dans la boucle, il faut connaître l&#8217;état de <code>somme</code> dans
+l&#8217;itération précédente.</p>
+
+<p>On m&#8217;avait pourtant bien dit que la programmation fonctionnelle s&#8217;occupait
+des <em>transformations</em> et pas des <em>états</em>. Mais je ne voyais pas du tout
+ce que ça pouvait bien signifier. C&#8217;est maintenant un peu plus clair,
+même s&#8217;il me reste encore du chemin à parcourir pour bien saisir tout
+ce qu&#8217;implique la programmation fonctionnelle…</p>
+
+<p>À demain.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-16T09:17:00+02:00" pubdate data-updated="true">16 août 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/elixir/'>elixir</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/programmation-fonctionnelle/'>programmation fonctionnelle</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/08/15/bien-debuter-avec-vim-la-touche-escape/" title="Previous Post: Bien débuter avec Vim: la touche Escape">&laquo; Bien débuter avec Vim: la touche Escape</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/">Une définition de la programmation fonctionnelle avec Elixir</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/15/bien-debuter-avec-vim-la-touche-escape/">Bien débuter avec Vim: la touche Escape</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/14/ecrire-un-dsl-en-ruby-facilement-avec-docile/">Écrire un DSL en Ruby facilement avec Docile</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/">Implémenter un langage sur Parrot - partie 7: le lexer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/">Parrot 6: Écrire le tokenizer</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
