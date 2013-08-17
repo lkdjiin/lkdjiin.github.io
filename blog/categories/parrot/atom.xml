@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parrot | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parrot/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-16T09:31:17+02:00</updated>
+  <updated>2013-08-17T09:40:19+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,87 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 8: la grammaire]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/"/>
+    <updated>2013-08-17T09:29:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Écrire un langage sans en spécificier la grammaire c'est un peu comme se
+tirer une balle dans le pied. Même quand le langage est aussi simple et
+petit que
+Naam (voir l'<a href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/">article originel</a>),
+c'est un gain de temps pour la suite.</p>
+
+<!-- more -->
+
+
+<p>Pour spécificier la grammaire d'un langage informatique, on utilise
+généralement la
+<a href="http://fr.wikipedia.org/wiki/Forme_de_Backus-Naur">BNF</a>,
+(Backus Naur Form) ou l'une de ses extensions. Il n'est pas rare qu'un auteur
+utilise une version personnalisée de la BNF, et c'est ce que je vais faire
+pour Naam.</p>
+
+<p>Voici les quelques règles de la méta-syntaxe:</p>
+
+<pre><code>{foo}         zero or more foo
+foo | bar     foo or bar
+foo           a non-terminal foo
+'foo'         keyword foo
+[foo]         zero or one foo
+---           free speech
+</code></pre>
+
+<p>Et voici la grammaire de Naam:</p>
+
+<pre><code>program           ::= {instruction | eol}
+
+instruction       ::= function_def | print_statement
+
+print_statement   ::= 'print' word ( int ) eol
+
+function_def      ::= word ( word ) = eol {if_clause} else_clause
+
+if_clause         ::= int 'if' test eol
+
+test              ::= word op int
+
+else_clause       ::= int 'else' eol
+
+op                ::= &lt; | &gt;
+
+eol               ::= --- End of line
+int               ::= --- Integer
+word              ::= --- Anything else
+</code></pre>
+
+<p>Cette grammaire est vraiment toute petite, mais suffisante pour spécifier
+le programme suivant, qui est ce que j'ai choisi pour commencer à écrire
+le compilateur Naam:</p>
+
+<pre><code>sign(n)=
+1 if n &gt; 0
+-1 if n &lt; 0
+0 else
+</code></pre>
+
+<p>Alors pourquoi écrire une grammaire ? Pourquoi ne pas commencer à coder
+directement le compilateur ? Parce qu'il faut bien avouer qu'écrire une
+telle grammaire n'a rien d'amusant. Tout d'abord une grammaire, même petite,
+possède toujours un certain niveau de complexité qu'il est difficile de
+faire tenir entièrement dans sa tête. En l'écrivant on met à jour certains
+problèmes qui sinon resteraient cachés longtemps. Autre intéret d'écrire la
+grammaire: chaque règle va devenir un morceau de code ; écrire la grammaire
+c'est un peu comme avoir déjà écrit une partie du compilateur.
+Dans un prochain article je suivrais cette grammaire pour effectuer la
+vérification de la syntaxe.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 7: le lexer]]></title>
@@ -550,164 +631,6 @@ goto RETURN
 <p>Voilà, même si PIR permet de faire d'autres choses, je pense que j'en sais
 suffisament sur lui pour commencer à
 <a href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/">implémenter Naam</a>.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3/"/>
-    <updated>2013-08-03T08:16:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir vu
-<a href="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/">l'installation de Parrot</a>,
-il est temps d'écrire
-notre premier programme en PIR. On va réaliser une version simpliste
-d'une fonction qui renvoie le signe d'un nombre entier. On oublie
-momentanément l'existence du zéro pour n'avoir que deux cas à traiter:
-positif ou négatif.</p>
-
-<pre><code>simple_sign(n) = 1 si n &gt; 0
-simple_sign(n) = -1 sinon
-</code></pre>
-
-<!-- more -->
-
-
-<h2>La procédure simple_sign</h2>
-
-<p>Voici un programme PIR qui fait ça:</p>
-
-<p>``` gas simple_sign.pir
-.sub simple_sign
-  .param int n</p>
-
-<p>  .local int result</p>
-
-<p>  if n > 0 goto POSITIVE</p>
-
-<p>  result = -1
-  goto RETURN</p>
-
-<p>POSITIVE:
-  result = 1</p>
-
-<p>RETURN:
-  .return(result)
-.end</p>
-
-<p>.sub main :main
-  .local int f
-  f = simple_sign(4)
-  say f
-.end
-```</p>
-
-<p>Pour le lancer:</p>
-
-<pre><code>parrot simple_sign.pir
-</code></pre>
-
-<p>Comme c'est de l'assembleur, le plus simple est d'expliquer les lignes de
-code une par une.</p>
-
-<pre><code>.sub simple_sign
-</code></pre>
-
-<p>C'est la définition d'une procédure <code>simple_sign</code>.</p>
-
-<pre><code>.param int n
-</code></pre>
-
-<p>On signale à l'assembleur que notre fonction <code>simple_sign</code> prend un
-argument de type <code>int</code> et qu'on souhaite s'y réferer
-par la suite à l'aide du nom <code>n</code>. Ça ressemble donc fortement à une
-déclaration de variable.</p>
-
-<pre><code>.local int result
-</code></pre>
-
-<p>Cette fois on déclare une variable locale nommée. Elle est de type <code>int</code> et
-on pourra s'y réferer avec le nom <code>result</code>.</p>
-
-<pre><code>if n &gt; 0 goto POSITIVE
-</code></pre>
-
-<p>Littéralement: Si la valeur de n est supérieur à zéro, sauter à l'adresse
-réferencée par le label POSITIVE. Le saut conditionnel ou non est la seule
-instruction de branchement dont on dispose avec PIR. Vous avez surement
-appris que «goto c'est mal !». Oubliez le:</p>
-
-<p><blockquote><p>En assembleur, goto est normal.</p></blockquote></p>
-
-<p>Et c'est souvent la seule façon d'obtenir le résultat voulu.</p>
-
-<pre><code>result = -1
-</code></pre>
-
-<p>Voilà comment affecter une valeur.</p>
-
-<pre><code>goto RETURN
-</code></pre>
-
-<p>Voilà un saut inconditionnel vers l'adresse réferencée par le label
-RETURN.</p>
-
-<pre><code>POSITIVE:
-  result = 1
-</code></pre>
-
-<p><code>POSITIVE:</code> définit une adresse. Chaque fois qu'on écrit <code>goto POSITIVE</code>, le
-programme débranche à cette adresse (en fait à la ligne de code suivante).
-Notez qu'on peut écrire les deux lignes précédentes en une seule :
-<code>POSITIVE: result = 1</code>.</p>
-
-<pre><code>RETURN:
-  .return(result)
-</code></pre>
-
-<p>Définition du label RETURN puis renvoi du résultat avec la directive
-<code>.return</code>. Les instructions qui commencent par un <code>.</code> sont des directives.
-Ce qui veut dire qu'elles seront remplacées dans notre dos par plusieurs
-instructions de plus bas niveau.</p>
-
-<pre><code>.end
-</code></pre>
-
-<p>Fin de notre procédure <code>simple_sign</code>.</p>
-
-<pre><code>.sub main :main
-</code></pre>
-
-<p>Nouvelle procédure, nommée <code>main</code>. Le <code>:main</code> dit à Parrot que c'est cette
-procédure qu'il faut lancer à l'ouverture du programme. Si on ne le fait
-pas, Parrot lance la première procédure qu'il rencontre.</p>
-
-<pre><code>.local int f
-f = simple_sign(4)
-say f
-.end
-</code></pre>
-
-<p>La fin du programme se comprend maintenant facilement.</p>
-
-<p>Voilà, si vous avez déjà travaillé en assembleur, la syntaxe PIR ne
-devrait pas vous poser de problèmes particuliers car c'est un
-assembleur de plutôt haut niveau ; par exemple on n'a pas encore eu
-besoin de manipuler directement les registres. Si au contraire c'est
-votre première rencontre avec un assembleur, vous allez devoir apprendre
-à décomposer vos actions/pensées. Par exemple vous pourriez être tenté
-d'écrire la procédure <code>main</code> de cette façon:</p>
-
-<pre><code>.sub main :main
-  say simple_sign(4)
-.end
-</code></pre>
-
-<p>Mais ça ne marcheras pas, il faut décomposer…</p>
 
 <p>À demain.</p>
 ]]></content>

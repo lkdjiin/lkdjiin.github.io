@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-16T09:31:17+02:00</updated>
+  <updated>2013-08-17T09:40:19+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,88 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 8: la grammaire]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/"/>
+    <updated>2013-08-17T09:29:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Écrire un langage sans en spécificier la grammaire c&#8217;est un peu comme se
+tirer une balle dans le pied. Même quand le langage est aussi simple et
+petit que
+Naam (voir l&#8217;<a href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/">article originel</a>),
+c&#8217;est un gain de temps pour la suite.</p>
+
+<!-- more -->
+
+
+<p>Pour spécificier la grammaire d&#8217;un langage informatique, on utilise
+généralement la
+<a href="http://fr.wikipedia.org/wiki/Forme_de_Backus-Naur">BNF</a>,
+(Backus Naur Form) ou l&#8217;une de ses extensions. Il n&#8217;est pas rare qu&#8217;un auteur
+utilise une version personnalisée de la BNF, et c&#8217;est ce que je vais faire
+pour Naam.</p>
+
+<p>Voici les quelques règles de la méta-syntaxe:</p>
+
+<pre><code>{foo}         zero or more foo
+foo | bar     foo or bar
+foo           a non-terminal foo
+'foo'         keyword foo
+[foo]         zero or one foo
+---           free speech
+</code></pre>
+
+<p>Et voici la grammaire de Naam:</p>
+
+<pre><code>program           ::= {instruction | eol}
+
+instruction       ::= function_def | print_statement
+
+print_statement   ::= 'print' word ( int ) eol
+
+function_def      ::= word ( word ) = eol {if_clause} else_clause
+
+if_clause         ::= int 'if' test eol
+
+test              ::= word op int
+
+else_clause       ::= int 'else' eol
+
+op                ::= &lt; | &gt;
+
+eol               ::= --- End of line
+int               ::= --- Integer
+word              ::= --- Anything else
+</code></pre>
+
+<p>Cette grammaire est vraiment toute petite, mais suffisante pour spécifier
+le programme suivant, qui est ce que j&#8217;ai choisi pour commencer à écrire
+le compilateur Naam:</p>
+
+<pre><code>sign(n)=
+1 if n &gt; 0
+-1 if n &lt; 0
+0 else
+</code></pre>
+
+<p>Alors pourquoi écrire une grammaire ? Pourquoi ne pas commencer à coder
+directement le compilateur ? Parce qu&#8217;il faut bien avouer qu&#8217;écrire une
+telle grammaire n&#8217;a rien d&#8217;amusant. Tout d&#8217;abord une grammaire, même petite,
+possède toujours un certain niveau de complexité qu&#8217;il est difficile de
+faire tenir entièrement dans sa tête. En l&#8217;écrivant on met à jour certains
+problèmes qui sinon resteraient cachés longtemps. Autre intéret d&#8217;écrire la
+grammaire: chaque règle va devenir un morceau de code ; écrire la grammaire
+c&#8217;est un peu comme avoir déjà écrit une partie du compilateur.
+Dans un prochain article je suivrais cette grammaire pour effectuer la
+vérification de la syntaxe.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Une définition de la programmation fonctionnelle avec Elixir]]></title>
@@ -2652,146 +2734,6 @@ Pour cela, ajoutez les lignes suivantes dans votre <code>.vimrc</code> :</p>
 
 <p>N&#8217;hésitez pas à consulter l&#8217;aide de vim pour bien comprendre ce que font ces
 lignes de code <em>avant</em> de les ajouter dans votre <code>.vimrc</code> ;)</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Pattern matching avec Elixir: une première approche]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/"/>
-    <updated>2013-07-28T13:32:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Une tâche réccurente quand on utilise la récursivité pour résoudre un problème
-est de séparer une liste en deux parties. La première partie étant le premier
-élément de la liste et la seconde partie étant ce qui reste. Pour faire cela,
-on peut utiliser le <em>pattern matching</em>, qu&#8217;on peut traduire par filtrage à
-l&#8217;aide de motifs.</p>
-
-<!-- more -->
-
-
-<p>Voyons la syntaxe pour séparer une liste en deux:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="p">[</span><span class="n">head</span> <span class="o">|</span> <span class="n">tail</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Après ça, <code>head</code> (la tête) vaut 1 et <code>tail</code> (la queue) vaut [2, 3].
-Maintenant les cas exceptionnels: Si on passe une liste d&#8217;un seul élément,
-<code>tail</code> sera une liste vide ([]). Si on passe une liste vide, et bien c&#8217;est
-une erreur. Voici une capture d&#8217;écran qui montre le résultat:</p>
-
-<p><img src="http://lkdjiin.github.io/images/2013-07-28-1.jpg" width="890" height="577" title="pattern matching avec Elixir" ></p>
-
-<p>Pour illustrer le <em>pattern matching</em> je vais écrire un module avec une fonction
-<code>minimum</code> qui doit trouver le plus petit élément dans une liste de nombres
-entiers.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Stats</span> <span class="k">do</span>
-</span><span class='line'><span class="k">  def</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">])</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">candidate</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="ow">when</span> <span class="n">head</span> <span class="o">&lt;</span> <span class="n">candidate</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">_</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">candidate</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On peut l&#8217;utiliser comme ceci:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Stats</span><span class="o">.</span><span class="n">minimum</span><span class="p">([</span><span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="o">-</span><span class="m">9</span><span class="p">,</span> <span class="m">3</span><span class="p">])</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voici une explication des différentes fonctions:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">def</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">])</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le <em>pattern matching</em> s&#8217;applique directement dans les arguments de la
-fonction. Pour cette première passe, on considère que <code>head</code> est à priori
-la plus petite valeur de la série.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">candidate</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Là, c&#8217;est la clause de sortie de la fonction <code>minimum</code>. Si la liste est
-vide, c&#8217;est qu&#8217;on à trouvé la valeur minimum (<code>candidate</code>).</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">head</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="ow">when</span> <span class="n">head</span> <span class="o">&lt;</span> <span class="n">candidate</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">head</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Quand la liste est encore remplie, on compare la valeur de tête à notre
-valeur candidate. Je rappelle que <code>candidate</code> est à ce moment la plus petite
-valeur trouvée jusqu&#8217;ici. Si la valeur de <code>head</code> est plus petite que
-la valeur de <code>candidate</code>, la première remplace la dernière.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'>  <span class="k">defp</span> <span class="n">minimum</span><span class="p">([</span><span class="n">_</span><span class="o">|</span><span class="n">tail</span><span class="p">],</span> <span class="n">candidate</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'><span class="k">    </span><span class="n">minimum</span> <span class="n">tail</span><span class="p">,</span> <span class="n">candidate</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Dans les autres cas, la valeur de tête n&#8217;a pas d&#8217;intérêt, ce que souligne
-le caractère <code>_</code> dans <code>[_|tail]</code>. On remplace une variable par <code>_</code>
-lorsque cette variable est inutilisée.</p>
-
-<p>Nouveau venu en programmation fonctionnelle, je pense que je n&#8217;entrevois là
-que la surface du <em>pattern matching</em>.</p>
 
 <p>À demain.</p>
 ]]></content>
