@@ -3,7 +3,7 @@ layout: post
 title: "Implémenter un langage sur la machine virtuelle Parrot: partie 3"
 date: 2013-08-03 08:16
 comments: true
-categories: [intermédiaire, parrot]
+categories: [intermédiaire, parrot, assembleur]
 ---
 
 {% level 2 %}

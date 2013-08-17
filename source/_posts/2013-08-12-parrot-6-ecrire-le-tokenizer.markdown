@@ -3,7 +3,7 @@ layout: post
 title: "Parrot 6: Écrire le tokenizer"
 date: 2013-08-12 09:05
 comments: true
-categories: [intermédiaire, parrot, tokenizer, naam]
+categories: [intermédiaire, parrot, compilateur, naam]
 ---
 
 {% level 2 %}

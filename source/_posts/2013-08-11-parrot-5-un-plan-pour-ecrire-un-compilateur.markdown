@@ -3,7 +3,7 @@ layout: post
 title: "Parrot 5: un plan pour écrire un compilateur"
 date: 2013-08-11 10:47
 comments: true
-categories: [intermédiaire, parrot, naam]
+categories: [intermédiaire, parrot, compilateur, naam]
 ---
 
 {% level 2 %}

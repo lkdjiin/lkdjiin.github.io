@@ -3,7 +3,7 @@ layout: post
 title: "Implémenter un langage sur Parrot - partie 7: le lexer"
 date: 2013-08-13 10:27
 comments: true
-categories: [intermédiaire, parrot, lexer, naam, ruby]
+categories: [intermédiaire, parrot, compilateur, naam, ruby]
 ---
 
 {% level 2 %}

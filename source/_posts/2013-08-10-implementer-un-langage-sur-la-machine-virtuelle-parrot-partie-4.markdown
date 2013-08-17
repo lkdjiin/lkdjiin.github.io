@@ -3,7 +3,7 @@ layout: post
 title: "Implémenter un langage sur la machine virtuelle Parrot - partie 4"
 date: 2013-08-10 11:21
 comments: true
-categories: [intermédiaire, parrot]
+categories: [intermédiaire, parrot, compilateur]
 ---
 
 {% level 2 %}
