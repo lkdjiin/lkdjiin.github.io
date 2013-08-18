@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : compilateur | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/compilateur/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-17T09:40:19+02:00</updated>
+  <updated>2013-08-18T08:25:56+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,176 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 9: la syntaxe]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/"/>
+    <updated>2013-08-18T08:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe</id>
+    <content type="html"><![CDATA[<p>Après avoir écrit un
+<a href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/">tokenizer</a>,
+avoir produit les <a href="http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/">unités lexicales</a>
+et avoir défini
+<a href="http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/">une grammaire</a>
+pour le langage Naam, je passe maintenant à la vérification de la syntaxe.</p>
+
+<!-- more -->
+
+
+<p>La vérification de la syntaxe se passe dans la classe <code>Compiler</code>. <em>&ndash; C'est pas
+le meilleur choix de nom et ça changera par la suite &ndash;</em>. Basiquement, cette
+classe ne fait que suivre la logique de la grammaire.</p>
+
+<p>``` ruby lib/naam/compiler.rb
+class Compiler</p>
+
+<p>  # units &ndash; Array of LexicalUnits
+  def compile units</p>
+
+<pre><code>@units = units
+program
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def program</p>
+
+<pre><code>while @units.size &gt; 0
+  case @units.first.type
+  when :eol then accept(:eol)
+  else
+    instruction
+  end
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def instruction</p>
+
+<pre><code>case @units.first.type
+when :keyword then print_statement
+when :word then function_def
+else
+  raise Error
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def print_statement</p>
+
+<pre><code>accept(:keyword, 'print')
+accept_series(:word, :paro, :int, :parc, :eol)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def function_def</p>
+
+<pre><code>accept_series(:word, :paro, :word, :parc, :affect, :eol)
+if_clause while if_clause?
+else_clause
+</code></pre>
+
+<p>  end</p>
+
+<p>  def if_clause</p>
+
+<pre><code>accept(:int)
+accept(:keyword, 'if')
+test
+accept(:eol)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def else_clause</p>
+
+<pre><code>accept(:int)
+accept(:keyword, 'else')
+accept(:eol)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def test</p>
+
+<pre><code>accept_series(:word, :op, :int)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def accept(type, value = &lsquo;&rsquo;)</p>
+
+<pre><code>unit = @units.slice!(0)
+raise Error unless unit.type == type
+if value != ''
+  raise Error unless unit.value == value
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def accept_series(*args)</p>
+
+<pre><code>args.each {|arg| accept(arg) }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def if_clause?</p>
+
+<pre><code>@units[1].type == :keyword &amp;&amp; @units[1].value == 'if'
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Quelques commentaires sur ce code:</p>
+
+<p>``` ruby
+def instruction
+  # &hellip;
+  else</p>
+
+<pre><code>raise Error
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Plusieurs fois j'utilise la classe <code>Error</code>, qui n'existe pas. C'est parce que
+je ne veux pas encore réfléchir à la gestion des erreurs. Les seuls cas qui
+m'intéressent pour l'instant sont ceux où ça fonctionne.</p>
+
+<p>`&ldquo; ruby
+def accept(type, value = &rdquo;)
+  unit = @units.slice!(0)
+  raise Error unless unit.type == type
+  if value != &lsquo;&rsquo;</p>
+
+<pre><code>raise Error unless unit.value == value
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>C'est la méthode <code>accept</code>, toute simple, qui effectue la vérification
+de la syntaxe en comparant l'unité lexicale attendue avec celle réellement
+disponible. On constate que les unités lexicales (représentées par <code>@units</code>)
+sont détruites au fur et à mesure de leur consommation.</p>
+
+<p>La prochaine, il sera enfin temps d'émettre le code PIR.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 8: la grammaire]]></title>
@@ -535,102 +705,6 @@ print sign(-123)
 
 <p>La prochaine fois on commence par le commencement en écrivant le
 <a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot - partie 4]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/10/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-4/"/>
-    <updated>2013-08-10T11:21:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/10/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-4</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir vu un premier
-<a href="http://lkdjiin.github.io/blog/2013/08/03/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-3/">programme très simple</a>
-en PIR la dernière fois, on s'attaque aujourd'hui au calcul de la
-factorielle. C'est pas beaucoup plus compliqué, mais
-on va employer les registres de la VM Parrot.</p>
-
-<!-- more -->
-
-
-<h2>La procédure factorial</h2>
-
-<p>``` gas
-.sub factorial
-  .param int n
-  .local int result</p>
-
-<p>  if n == 0 goto ONE</p>
-
-<p>  $I0 = n &ndash; 1
-  $I1 = factorial($I0)
-  result = n * $I1
-  goto RETURN</p>
-
-<p>ONE:
-  result = 1</p>
-
-<p>RETURN:
-  .return(result)
-.end</p>
-
-<p>.sub main :main
-  .local int out
-  out = factorial(10)
-  say out
-.end
-```</p>
-
-<p>Ce qui est nouveau, c'est qu'ici j'utilise les registres:</p>
-
-<pre><code>$I0 = n - 1
-$I1 = factorial($I0)
-result = n * $I1
-goto RETURN
-</code></pre>
-
-<p>En PIR, il n'est pas possible d'écrire directement:</p>
-
-<pre><code>factorial(n - 1)
-</code></pre>
-
-<p>et encore moins:</p>
-
-<pre><code>result = n * factorial(n - 1)
-</code></pre>
-
-<p>J'utilise donc les registres pour stocker les résultats temporaires.
-Ils sont simples à utiliser et leur nombre est illimité.</p>
-
-<p>Il faut noter qu'il n'y a pas d'obligation à utiliser les registres ici.
-J'aurais aussi bien pu écrire le programme ainsi:</p>
-
-<p>``` gas
-.sub factorial</p>
-
-<pre><code>.param int n
-.local int result, temp1, temp2
-
-if n == 0 goto ONE
-
-temp1 = n - 1
-temp2 = factorial(temp1)
-result = n * temp2
-goto RETURN
-
-...
-</code></pre>
-
-<p>```</p>
-
-<p>Mais je voulais montrer l'utilisation des registres.</p>
-
-<p>Voilà, même si PIR permet de faire d'autres choses, je pense que j'en sais
-suffisament sur lui pour commencer à
-<a href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/">implémenter Naam</a>.</p>
 
 <p>À demain.</p>
 ]]></content>

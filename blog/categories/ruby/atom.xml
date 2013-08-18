@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-17T09:40:19+02:00</updated>
+  <updated>2013-08-18T08:25:56+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,176 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 9: la syntaxe]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/"/>
+    <updated>2013-08-18T08:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe</id>
+    <content type="html"><![CDATA[<p>Après avoir écrit un
+<a href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/">tokenizer</a>,
+avoir produit les <a href="http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/">unités lexicales</a>
+et avoir défini
+<a href="http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/">une grammaire</a>
+pour le langage Naam, je passe maintenant à la vérification de la syntaxe.</p>
+
+<!-- more -->
+
+
+<p>La vérification de la syntaxe se passe dans la classe <code>Compiler</code>. <em>&ndash; C'est pas
+le meilleur choix de nom et ça changera par la suite &ndash;</em>. Basiquement, cette
+classe ne fait que suivre la logique de la grammaire.</p>
+
+<p>``` ruby lib/naam/compiler.rb
+class Compiler</p>
+
+<p>  # units &ndash; Array of LexicalUnits
+  def compile units</p>
+
+<pre><code>@units = units
+program
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def program</p>
+
+<pre><code>while @units.size &gt; 0
+  case @units.first.type
+  when :eol then accept(:eol)
+  else
+    instruction
+  end
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def instruction</p>
+
+<pre><code>case @units.first.type
+when :keyword then print_statement
+when :word then function_def
+else
+  raise Error
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def print_statement</p>
+
+<pre><code>accept(:keyword, 'print')
+accept_series(:word, :paro, :int, :parc, :eol)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def function_def</p>
+
+<pre><code>accept_series(:word, :paro, :word, :parc, :affect, :eol)
+if_clause while if_clause?
+else_clause
+</code></pre>
+
+<p>  end</p>
+
+<p>  def if_clause</p>
+
+<pre><code>accept(:int)
+accept(:keyword, 'if')
+test
+accept(:eol)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def else_clause</p>
+
+<pre><code>accept(:int)
+accept(:keyword, 'else')
+accept(:eol)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def test</p>
+
+<pre><code>accept_series(:word, :op, :int)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def accept(type, value = &lsquo;&rsquo;)</p>
+
+<pre><code>unit = @units.slice!(0)
+raise Error unless unit.type == type
+if value != ''
+  raise Error unless unit.value == value
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def accept_series(*args)</p>
+
+<pre><code>args.each {|arg| accept(arg) }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def if_clause?</p>
+
+<pre><code>@units[1].type == :keyword &amp;&amp; @units[1].value == 'if'
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Quelques commentaires sur ce code:</p>
+
+<p>``` ruby
+def instruction
+  # &hellip;
+  else</p>
+
+<pre><code>raise Error
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Plusieurs fois j'utilise la classe <code>Error</code>, qui n'existe pas. C'est parce que
+je ne veux pas encore réfléchir à la gestion des erreurs. Les seuls cas qui
+m'intéressent pour l'instant sont ceux où ça fonctionne.</p>
+
+<p>`&ldquo; ruby
+def accept(type, value = &rdquo;)
+  unit = @units.slice!(0)
+  raise Error unless unit.type == type
+  if value != &lsquo;&rsquo;</p>
+
+<pre><code>raise Error unless unit.value == value
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>C'est la méthode <code>accept</code>, toute simple, qui effectue la vérification
+de la syntaxe en comparant l'unité lexicale attendue avec celle réellement
+disponible. On constate que les unités lexicales (représentées par <code>@units</code>)
+sont détruites au fur et à mesure de leur consommation.</p>
+
+<p>La prochaine, il sera enfin temps d'émettre le code PIR.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un DSL en Ruby facilement avec Docile]]></title>
@@ -732,167 +902,6 @@ défaut.</p>
 
 <p>Finalement, comme dans <a href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">la première partie</a>,
 on retrouve en fin de méthode la production du code Html.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Comment écrire un plugin Octopress]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/"/>
-    <updated>2013-07-27T12:56:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Pour mon blog Octopress, je voulais un repère visuel qui marque le niveau de
-difficulté des articles. Un truc comme «Niveau : débutant» ou bien «Niveau :
-confirmé» avec un peu de couleur. Rien de bien compliqué en fait. Si passer par
-l'écriture d'un plugin pour obtenir ce genre d'effet n'est pas absolument
-neccéssaire, ça rendra l'écriture des articles plus agréable et plus
-rapide. Et puis je vais apprendre quelque chose de nouveau : comment écrire
-un plugin pour Octopress ?</p>
-
-<!-- more -->
-
-
-<p>Tout d'abord, le site d'Octopress ne propose pas de documentation sur
-l'écriture de plugins. Par contre, le wiki fournit
-<a href="https://github.com/imathis/octopress/wiki/3rd-party-plugins">une longue liste de plugins</a>
- dont les sources sont les bienvenues. Jekyll, le programme sur lequel est
-construit Octopress, est assez spartiate en ce qui concerne
-<a href="http://jekyllrb.com/docs/plugins/">l'écriture de plugin pour Jekyll</a>. Malgré
-tout, ce lien peut s'avérer utile. J'ai trouvé que la meilleure source
-d'information pour commencer est le contenu du dossier <code>plugin</code> de votre
-blog Octopress.</p>
-
-<p>Si vous voulez tout de suite jetez un coup d'oeil sur le
-<a href="https://github.com/lkdjiin/octopress-level-tag/releases">code source du plugin</a>
-terminé, vous pouvez le trouver sur Github, à la version 0.1.0.</p>
-
-<p>Démarront avec le plugin le plus simple auquel je puisse penser. Créer un
-fichier <code>plugins/level_tag.rb</code> et placez y le contenu suivant:</p>
-
-<p>``` ruby plugins/level_tag.rb
-module Jekyll
-  class LevelTag &lt; Liquid::Tag</p>
-
-<pre><code>def render(context)
-  "Niveau : facile"
-end
-</code></pre>
-
-<p>  end
-end
-Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
-```</p>
-
-<p>Ensuite, dans un post, appelez le plugin de cette façon:</p>
-
-<p><code>ruby
-<div class='level-tag level-tag-'>Niveau : <span>unknown</span></div>
-</code></p>
-
-<p>Puis lancez Octopress:</p>
-
-<pre><code>rake generate
-rake preview
-</code></pre>
-
-<p>Pointez votre navigateur sur <code>localhost:4000</code> et voilà. Un beau label
-«Niveau : facile» apparait dans votre post. Voyons maintenant comment ça
-marche.</p>
-
-<p><code>ruby
-module Jekyll
-  class LevelTag &lt; Liquid::Tag
-</code></p>
-
-<p>Un plugin pour Octopress est avant tout un plugin pour Jekyll.
-Et Jekyll se sert du
-<a href="http://rubydoc.info/gems/liquid">moteur de template Liquid</a>. Notre classe
-<code>LevelTag</code> va donc hériter de <code>Liquid::Tag</code>, et être placée dans le
-module Jekyll. La classe <code>Liquid::Tag</code> nous offre tout ce qu'il faut
-pour générer du html, récupérer des arguments, etc.</p>
-
-<p>``` ruby</p>
-
-<pre><code>def render(context)
-  "Niveau : facile"
-end
-</code></pre>
-
-<p>```</p>
-
-<p>La seule méthode de <code>Liquid::Tag</code> qu'il faut absolument implémenter est
-<code>render</code>. C'est elle qui va produire le code html qui sera placé dans
-notre article, à la place de l'appel du plugin.</p>
-
-<p><code>ruby
-Liquid::Template.register_tag('level', Jekyll::LevelTag)
-</code></p>
-
-<p>Finalement, il faut enregistrer notre plugin auprès de <code>Liquid::Template</code>.
-Le premier argument passé à <code>register_tag</code> est le nom sous lequel nous
-voulons appeler le plugin dans nos articles. Le second argument est la
-classe de notre plugin.</p>
-
-<p>Pour aller plus loin, il va falloir passer des arguments depuis l'appel du
-plugin jusqu'à notre classe <code>LevelTag</code>. On change donc l'appel ainsi:</p>
-
-<p><code>ruby
-<div class='level-tag level-tag-facile'>Niveau : <span>unknown</span></div>
-</code></p>
-
-<p>Et on transforme le plugin de cette façon:</p>
-
-<p>``` ruby
-module Jekyll
-  class LevelTag &lt; Liquid::Tag</p>
-
-<pre><code>def initialize(tagname, level, tokens)
-  @level = level
-end
-
-def render(context)
-  "Niveau : #{@level}"
-end
-</code></pre>
-
-<p>  end
-end
-Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
-```</p>
-
-<p>Voyons les changements en détails.</p>
-
-<p>``` ruby</p>
-
-<pre><code>def initialize(tagname, level, tokens)
-  @level = level
-end
-</code></pre>
-
-<p>```</p>
-
-<p>La variable <code>level</code> va contenir l'argument passé lors de l'appel du
-plugin (<code>facile</code>), donc <code>level == 'facile'</code>. On sauvegarde
-cette valeur dans un membre pour pouvoir la réutiliser plus tard.</p>
-
-<p>``` ruby</p>
-
-<pre><code>def render(context)
-  "Niveau : #{@level}"
-end
-</code></pre>
-
-<p>```</p>
-
-<p>Grâce à <code>@level</code> on a les moyens de faire sortir à <code>render</code> l'argument
-passé lors de l'appel du plugin.</p>
-
-<p>Comme certains voudront «Niveau : facile» et d'autres voudront
-«Niveau : débutant», il va nous falloir un moyen de personnaliser tout ça.
-C'est ce qu'on découvrira dans un prochain numéro.</p>
 
 <p>À demain.</p>
 ]]></content>
