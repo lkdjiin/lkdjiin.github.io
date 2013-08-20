@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-19T15:10:49+02:00</updated>
+  <updated>2013-08-20T10:26:31+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,232 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 10: émettre le code assembleur]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/"/>
+    <updated>2013-08-20T10:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Maintenant qu'on a
+<a href="http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/">vérifié la syntaxe</a>
+de notre petit programme, on peut sortir le code assembleur PIR:</p>
+
+<p><code>ruby lib/naam/main.rb
+def self.run(filename)
+  # ...
+  comp = Compiler.new
+  comp.compile(units.dup)
+end
+</code></p>
+
+<!-- more -->
+
+
+<p>Voici le module Emitter:</p>
+
+<p>``` ruby lib/naam/emitter.rb
+module Naam
+  module Emitter</p>
+
+<pre><code># Output the main procedure.
+#
+# series - An Array of String.
+#
+# Examples
+#
+#   Emitter.main(["foo(4)", "bar(-1)"]
+#   # =&gt; .sub main :main
+#   # =&gt;     .local int f
+#   # =&gt;     f = foo(4)
+#   # =&gt;     say f
+#   # =&gt;     f = bar(-1)
+#   # =&gt;     say f
+#   # =&gt; .end
+#
+# Returns nothing.
+def self.main(series)
+  unless series.empty?
+    puts
+    puts ".sub main :main"
+    puts "    .local int f"
+    series.each do |str|
+      puts "    f = #{str}"
+      puts "    say f"
+    end
+    puts ".end"
+  end
+end
+
+# Dispatch different kind of emit message.
+#
+# type   - A Symbol in :function_header, :function_footer,
+#          :if_clause, :else_clause and :label.
+# series - An Array of LexicalUnit.
+# label  - Hash like { label: "NAME", value: "123" }. Could be nil.
+#
+# Returns nothing.
+def self.emit(type, series, label)
+  case type
+  when :function_header then function_header(series)
+  when :function_footer then function_footer
+  when :if_clause then if_clause(series, label)
+  when :else_clause then else_clause(series)
+  when :label then label(series, label)
+  else
+    raise Error
+  end
+end
+
+def self.function_header(series)
+  puts ".sub " + series[0].value
+  puts "    .param int " + series[2].value
+  puts "    .local int result"
+  puts
+end
+
+def self.function_footer
+  puts "RETURN:"
+  puts "    .return(result)"
+  puts ".end"
+end
+
+def self.if_clause(series, label)
+  puts "    if #{series[2].value} #{series[3].value} #{series[4].value} " +
+       "goto #{label[:label]}"
+end
+
+def self.else_clause(series)
+  puts "    result = #{series[0].value}"
+  puts "    goto RETURN"
+end
+
+def self.label(series, label)
+  puts label[:label] + ":"
+  puts "    result = #{label[:value]}"
+  puts "    goto RETURN"
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Et voilà quelques morceaux choisis dans la class Compiler pour montrer
+son utilisation:</p>
+
+<p>``` ruby lib/naam/compiler.rb
+module Naam</p>
+
+<p>  # Public: Here we transform a list of lexical units in a PIR source
+  # code. At least this is the goal.
+  #
+  # The logic of this class try follow the grammar of Naam (see the file
+  # grammar.md).
+  class Compiler</p>
+
+<pre><code>def initialize
+  @series = []
+  @current_label = "LABEL0000"
+  @labels = []
+  @main = []
+end
+
+# Public: Compile lexical units from a Naam program in a PIR
+# program.
+#
+# units - Array of LexicalUnits
+#
+# Returns nothing.
+def compile units
+  @units = units
+  program
+end
+
+private
+
+# This is the entry rule.
+#
+# Returns nothing.
+def program
+  while @units.size &gt; 0
+    @series = []
+    case @units.first.type
+    when :eol then accept(:eol)
+    else
+      instruction
+    end
+  end
+  @labels.each {|lbl| emit(:label, lbl) }
+  emit(:function_footer)
+  Emitter.main(@main)
+end
+
+# ...
+
+# Returns nothing.
+def function_def
+  accept_series(:word, :paro, :word, :parc, :affect, :eol)
+  emit(:function_header)
+  if_clause while if_clause?
+  else_clause
+end
+
+# ...
+
+# Send a message to Emitter module.
+#
+# type  - A Symbol (see Emitter).
+# label - A Hash composed of:
+#         :label - The label name as a String.
+#         :value - The String value that will be returned by
+#                  PIR instructions for this label.
+#         By default, label is nil and unused.
+#
+# Returns nothing.
+def emit(type, label = nil)
+  Emitter.emit(type, @series, label)
+  @series = []
+end
+
+# Get a label.
+#
+# value - String value associated to the label.
+#
+# Examples
+#
+#   next_label("123")
+#   # =&gt; { label: "LABEL0000", value: "123" }
+#   next_label("-9")
+#   # =&gt; { label: "LABEL0001", value: "-9" }
+#
+# Returns the Hash label.
+def next_label(value)
+  temp = { label: @current_label, value: value }
+  @labels &lt;&lt; temp
+  @current_label = @current_label.next
+  temp
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Maintenant que je le montre, je me rends compte que ce code n'est pas
+terrible. Bien que le fichier source à compiler soit extremement simple,
+je suis déjà obligé de faire un tas de contorsions, notamment pour sortir
+la procédure main. Je pensais que c'était une bonne idée de méler
+vérification de la syntaxe et production du code assembleur pour montrer
+les relations entre ces deux phases, mais visiblement ça n'aide pas
+à la clarté du code. La meilleure solution pour m'en sortir est, je pense,
+de me servir d'un AST (Arbre syntaxique abstrait). La prochaine fois je
+parlerais donc de l'AST.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 9: la syntaxe]]></title>
@@ -759,149 +985,6 @@ require &lsquo;pygments&rsquo;</p>
   puts &ldquo;%-25s &rdquo; % e[1][:name] + &ldquo;#{e[1][:aliases]}&rdquo;
 end
 ```</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Comment écrire un plugin Octopress - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2/"/>
-    <updated>2013-07-30T08:18:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Dans <a href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">la première partie</a>,
-je m'étais arrêté sur le code suivant:</p>
-
-<p>``` ruby
-module Jekyll
-  class LevelTag &lt; Liquid::Tag</p>
-
-<pre><code>def initialize(tagname, level, tokens)
-  @level = level
-end
-
-def render(context)
-  "Niveau : #{@level}"
-end
-</code></pre>
-
-<p>  end
-end
-Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
-```</p>
-
-<p>Aujourd'hui je montre comment permettre à l'utilisateur de personnaliser
-le contenu du code Html produit.</p>
-
-<!-- more -->
-
-
-<p>Tout d'abord, voici le code du plugin terminé. Je vous rappelle que vous
-pouvez trouver <a href="https://github.com/lkdjiin/octopress-level-tag">ce plugin sur Github</a>.</p>
-
-<p>``` ruby
-module Jekyll
-  class LevelTag &lt; Liquid::Tag</p>
-
-<pre><code>def initialize(tagname, level, tokens)
-  @level = level.strip
-end
-
-def render(context)
-  config = context.registers[:site].config
-  label = config['level_tag_level'] || "Level: "
-  level = case @level
-  when "1" then config['level_tag_level_1'] || "easy"
-  when "2" then config['level_tag_level_2'] || "medium"
-  when "3" then config['level_tag_level_3'] || "hard"
-  else
-    "unknown"
-  end
-  classes = "class='level-tag level-tag-#{@level}'"
-  "&lt;div #{classes}&gt;#{label}&lt;span&gt;#{level}&lt;/span&gt;&lt;/div&gt;"
-end
-</code></pre>
-
-<p>  end</p>
-
-<p>end
-Liquid::Template.register_tag(&lsquo;level&rsquo;, Jekyll::LevelTag)
-```</p>
-
-<p>L'appel du plugin dans les articles sera maintenant réalisé comme ceci:</p>
-
-<p><code>ruby
-<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-</code></p>
-
-<p>Par rapport à la première version, la méthode <code>render</code> a bien enflée. &ndash;
-<em>Je trouve qu'il y a trop de code dedans, mais ce sera peut-être le sujet
-d'un prochain article sur le refactoring.</em> &ndash; C'est cette méthode qui fait
-tout le travail, voici les explications:</p>
-
-<p>``` ruby</p>
-
-<pre><code>def render(context)
-  config = context.registers[:site].config
-  label = config['level_tag_level'] || "Level: "
-</code></pre>
-
-<p>```</p>
-
-<p>C'est l'objet <code>context</code> qui va permettre de récupérer les informations
-nécéssaires dans le fichier de configuration <code>_config.yml</code>. Voici par
-exemple ce que j'ai ajouté dans mon <code>_config.yml</code>:</p>
-
-<p>``` yaml</p>
-
-<h1>LevelTag plugin</h1>
-
-<p>level_tag_level: &ldquo;Niveau : &rdquo;
-level_tag_level_1: &ldquo;facile&rdquo;
-level_tag_level_2: &ldquo;intermédiaire&rdquo;
-level_tag_level_3: &ldquo;avancé&rdquo;
-```</p>
-
-<p>La ligne suivante:</p>
-
-<pre><code>label = config['level_tag_level'] || "Level: "
-</code></pre>
-
-<p>initialise la
-variable <code>label</code> avec le contenu de <code>level_tag_level</code>, trouvé dans le
-<code>_config.yml</code>. La partie du code <code>|| "Level: "</code> est là pour s'assurer que
-si <code>level_tag_level</code> n'existe pas dans le fichier de configuration, <code>label</code>
-sera bien initialisé avec une valeur par défaut.</p>
-
-<p>``` ruby</p>
-
-<pre><code>  level = case @level
-  when "1" then config['level_tag_level_1'] || "easy"
-  when "2" then config['level_tag_level_2'] || "medium"
-  when "3" then config['level_tag_level_3'] || "hard"
-  else
-    "unknown"
-  end
-</code></pre>
-
-<p>```</p>
-
-<p>C'est la même logique que précédement. La variable <code>level</code> sera initialisée
-avec du contenu trouvé dans <code>_config.yml</code> ou bien, avec une valeur par
-défaut.</p>
-
-<p>``` ruby</p>
-
-<pre><code>  classes = "class='level-tag level-tag-#{@level}'"
-  "&lt;div #{classes}&gt;#{label}&lt;span&gt;#{level}&lt;/span&gt;&lt;/div&gt;"
-</code></pre>
-
-<p>```</p>
-
-<p>Finalement, comme dans <a href="http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/">la première partie</a>,
-on retrouve en fin de méthode la production du code Html.</p>
 
 <p>À demain.</p>
 ]]></content>

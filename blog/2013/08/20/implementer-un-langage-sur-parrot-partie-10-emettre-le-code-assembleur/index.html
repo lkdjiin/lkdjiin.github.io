@@ -1,0 +1,669 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Implémenter un langage sur Parrot - partie 10: émettre le code assembleur - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Maintenant qu&#8217;on a
+vérifié la syntaxe
+de notre petit programme, on peut sortir le code assembleur PIR: lib/naam/main.rb1 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Implémenter un langage sur Parrot - partie 10: émettre le code assembleur</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-20T10:01:00+02:00" pubdate data-updated="true">20 août 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Maintenant qu&#8217;on a
+<a href="http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/">vérifié la syntaxe</a>
+de notre petit programme, on peut sortir le code assembleur PIR:</p>
+
+<figure class='code'><figcaption><span>lib/naam/main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>  <span class="n">comp</span> <span class="o">=</span> <span class="no">Compiler</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>  <span class="n">comp</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">dup</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!-- more -->
+
+
+<p>Voici le module Emitter:</p>
+
+<figure class='code'><figcaption><span>lib/naam/emitter.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Emitter</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Output the main procedure.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># series - An Array of String.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Examples</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#   Emitter.main([&quot;foo(4)&quot;, &quot;bar(-1)&quot;]</span>
+</span><span class='line'>    <span class="c1">#   # =&gt; .sub main :main</span>
+</span><span class='line'>    <span class="c1">#   # =&gt;     .local int f</span>
+</span><span class='line'>    <span class="c1">#   # =&gt;     f = foo(4)</span>
+</span><span class='line'>    <span class="c1">#   # =&gt;     say f</span>
+</span><span class='line'>    <span class="c1">#   # =&gt;     f = bar(-1)</span>
+</span><span class='line'>    <span class="c1">#   # =&gt;     say f</span>
+</span><span class='line'>    <span class="c1">#   # =&gt; .end</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">main</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">unless</span> <span class="n">series</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>        <span class="nb">puts</span>
+</span><span class='line'>        <span class="nb">puts</span> <span class="s2">&quot;.sub main :main&quot;</span>
+</span><span class='line'>        <span class="nb">puts</span> <span class="s2">&quot;    .local int f&quot;</span>
+</span><span class='line'>        <span class="n">series</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">str</span><span class="o">|</span>
+</span><span class='line'>          <span class="nb">puts</span> <span class="s2">&quot;    f = </span><span class="si">#{</span><span class="n">str</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>          <span class="nb">puts</span> <span class="s2">&quot;    say f&quot;</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>        <span class="nb">puts</span> <span class="s2">&quot;.end&quot;</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Dispatch different kind of emit message.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># type   - A Symbol in :function_header, :function_footer,</span>
+</span><span class='line'>    <span class="c1">#          :if_clause, :else_clause and :label.</span>
+</span><span class='line'>    <span class="c1"># series - An Array of LexicalUnit.</span>
+</span><span class='line'>    <span class="c1"># label  - Hash like { label: &quot;NAME&quot;, value: &quot;123&quot; }. Could be nil.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">emit</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">series</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">case</span> <span class="n">type</span>
+</span><span class='line'>      <span class="k">when</span> <span class="ss">:function_header</span> <span class="k">then</span> <span class="n">function_header</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">when</span> <span class="ss">:function_footer</span> <span class="k">then</span> <span class="n">function_footer</span>
+</span><span class='line'>      <span class="k">when</span> <span class="ss">:if_clause</span> <span class="k">then</span> <span class="n">if_clause</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">when</span> <span class="ss">:else_clause</span> <span class="k">then</span> <span class="n">else_clause</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">when</span> <span class="ss">:label</span> <span class="k">then</span> <span class="n">label</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="k">raise</span> <span class="no">Error</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">function_header</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;.sub &quot;</span> <span class="o">+</span> <span class="n">series</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">value</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    .param int &quot;</span> <span class="o">+</span> <span class="n">series</span><span class="o">[</span><span class="mi">2</span><span class="o">].</span><span class="n">value</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    .local int result&quot;</span>
+</span><span class='line'>      <span class="nb">puts</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">function_footer</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;RETURN:&quot;</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    .return(result)&quot;</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;.end&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">if_clause</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    if </span><span class="si">#{</span><span class="n">series</span><span class="o">[</span><span class="mi">2</span><span class="o">].</span><span class="n">value</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">series</span><span class="o">[</span><span class="mi">3</span><span class="o">].</span><span class="n">value</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">series</span><span class="o">[</span><span class="mi">4</span><span class="o">].</span><span class="n">value</span><span class="si">}</span><span class="s2"> &quot;</span> <span class="o">+</span>
+</span><span class='line'>           <span class="s2">&quot;goto </span><span class="si">#{</span><span class="n">label</span><span class="o">[</span><span class="ss">:label</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">else_clause</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    result = </span><span class="si">#{</span><span class="n">series</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    goto RETURN&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">label</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="n">label</span><span class="o">[</span><span class="ss">:label</span><span class="o">]</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    result = </span><span class="si">#{</span><span class="n">label</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;    goto RETURN&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voilà quelques morceaux choisis dans la class Compiler pour montrer
+son utilisation:</p>
+
+<figure class='code'><figcaption><span>lib/naam/compiler.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># Public: Here we transform a list of lexical units in a PIR source</span>
+</span><span class='line'>  <span class="c1"># code. At least this is the goal.</span>
+</span><span class='line'>  <span class="c1">#</span>
+</span><span class='line'>  <span class="c1"># The logic of this class try follow the grammar of Naam (see the file</span>
+</span><span class='line'>  <span class="c1"># grammar.md).</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Compiler</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>      <span class="vi">@series</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>      <span class="vi">@current_label</span> <span class="o">=</span> <span class="s2">&quot;LABEL0000&quot;</span>
+</span><span class='line'>      <span class="vi">@labels</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>      <span class="vi">@main</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Public: Compile lexical units from a Naam program in a PIR</span>
+</span><span class='line'>    <span class="c1"># program.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># units - Array of LexicalUnits</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">compile</span> <span class="n">units</span>
+</span><span class='line'>      <span class="vi">@units</span> <span class="o">=</span> <span class="n">units</span>
+</span><span class='line'>      <span class="n">program</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># This is the entry rule.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">program</span>
+</span><span class='line'>      <span class="k">while</span> <span class="vi">@units</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</span><span class='line'>        <span class="vi">@series</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>        <span class="k">case</span> <span class="vi">@units</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">type</span>
+</span><span class='line'>        <span class="k">when</span> <span class="ss">:eol</span> <span class="k">then</span> <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>          <span class="n">instruction</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="vi">@labels</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">lbl</span><span class="o">|</span> <span class="n">emit</span><span class="p">(</span><span class="ss">:label</span><span class="p">,</span> <span class="n">lbl</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>      <span class="n">emit</span><span class="p">(</span><span class="ss">:function_footer</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">Emitter</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="vi">@main</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">function_def</span>
+</span><span class='line'>      <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:paro</span><span class="p">,</span> <span class="ss">:word</span><span class="p">,</span> <span class="ss">:parc</span><span class="p">,</span> <span class="ss">:affect</span><span class="p">,</span> <span class="ss">:eol</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">emit</span><span class="p">(</span><span class="ss">:function_header</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">if_clause</span> <span class="k">while</span> <span class="n">if_clause?</span>
+</span><span class='line'>      <span class="n">else_clause</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Send a message to Emitter module.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># type  - A Symbol (see Emitter).</span>
+</span><span class='line'>    <span class="c1"># label - A Hash composed of:</span>
+</span><span class='line'>    <span class="c1">#         :label - The label name as a String.</span>
+</span><span class='line'>    <span class="c1">#         :value - The String value that will be returned by</span>
+</span><span class='line'>    <span class="c1">#                  PIR instructions for this label.</span>
+</span><span class='line'>    <span class="c1">#         By default, label is nil and unused.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns nothing.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">emit</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">Emitter</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="vi">@series</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@series</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Get a label.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># value - String value associated to the label.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Examples</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#   next_label(&quot;123&quot;)</span>
+</span><span class='line'>    <span class="c1">#   # =&gt; { label: &quot;LABEL0000&quot;, value: &quot;123&quot; }</span>
+</span><span class='line'>    <span class="c1">#   next_label(&quot;-9&quot;)</span>
+</span><span class='line'>    <span class="c1">#   # =&gt; { label: &quot;LABEL0001&quot;, value: &quot;-9&quot; }</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns the Hash label.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">next_label</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">temp</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">label</span><span class="p">:</span> <span class="vi">@current_label</span><span class="p">,</span> <span class="ss">value</span><span class="p">:</span> <span class="n">value</span> <span class="p">}</span>
+</span><span class='line'>      <span class="vi">@labels</span> <span class="o">&lt;&lt;</span> <span class="n">temp</span>
+</span><span class='line'>      <span class="vi">@current_label</span> <span class="o">=</span> <span class="vi">@current_label</span><span class="o">.</span><span class="n">next</span>
+</span><span class='line'>      <span class="n">temp</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Maintenant que je le montre, je me rends compte que ce code n&#8217;est pas
+terrible. Bien que le fichier source à compiler soit extremement simple,
+je suis déjà obligé de faire un tas de contorsions, notamment pour sortir
+la procédure main. Je pensais que c&#8217;était une bonne idée de méler
+vérification de la syntaxe et production du code assembleur pour montrer
+les relations entre ces deux phases, mais visiblement ça n&#8217;aide pas
+à la clarté du code. La meilleure solution pour m&#8217;en sortir est, je pense,
+de me servir d&#8217;un AST (Arbre syntaxique abstrait). La prochaine fois je
+parlerais donc de l&#8217;AST.</p>
+
+<p>À demain.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-20T10:01:00+02:00" pubdate data-updated="true">20 août 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/compilateur/'>compilateur</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/parrot/'>parrot</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/" data-via="@lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/08/19/vos-captures-decrans-dans-un-environnement-realiste/" title="Previous Post: Vos captures d'écrans dans un environnement réaliste">&laquo; Vos captures d'écrans dans un environnement réaliste</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim et Ruby.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/">Implémenter un langage sur Parrot - partie 10: émettre le code assembleur</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/19/vos-captures-decrans-dans-un-environnement-realiste/">Vos captures d'écrans dans un environnement réaliste</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/">Implémenter un langage sur Parrot - partie 9: la syntaxe</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/">Implémenter un langage sur Parrot - partie 8: la grammaire</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/">Une définition de la programmation fonctionnelle avec Elixir</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/15/bien-debuter-avec-vim-la-touche-escape/">Bien débuter avec Vim: la touche Escape</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/14/ecrire-un-dsl-en-ruby-facilement-avec-docile/">Écrire un DSL en Ruby facilement avec Docile</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

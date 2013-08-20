@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parrot | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parrot/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-19T15:10:49+02:00</updated>
+  <updated>2013-08-20T10:26:31+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,232 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 10: émettre le code assembleur]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/"/>
+    <updated>2013-08-20T10:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Maintenant qu'on a
+<a href="http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/">vérifié la syntaxe</a>
+de notre petit programme, on peut sortir le code assembleur PIR:</p>
+
+<p><code>ruby lib/naam/main.rb
+def self.run(filename)
+  # ...
+  comp = Compiler.new
+  comp.compile(units.dup)
+end
+</code></p>
+
+<!-- more -->
+
+
+<p>Voici le module Emitter:</p>
+
+<p>``` ruby lib/naam/emitter.rb
+module Naam
+  module Emitter</p>
+
+<pre><code># Output the main procedure.
+#
+# series - An Array of String.
+#
+# Examples
+#
+#   Emitter.main(["foo(4)", "bar(-1)"]
+#   # =&gt; .sub main :main
+#   # =&gt;     .local int f
+#   # =&gt;     f = foo(4)
+#   # =&gt;     say f
+#   # =&gt;     f = bar(-1)
+#   # =&gt;     say f
+#   # =&gt; .end
+#
+# Returns nothing.
+def self.main(series)
+  unless series.empty?
+    puts
+    puts ".sub main :main"
+    puts "    .local int f"
+    series.each do |str|
+      puts "    f = #{str}"
+      puts "    say f"
+    end
+    puts ".end"
+  end
+end
+
+# Dispatch different kind of emit message.
+#
+# type   - A Symbol in :function_header, :function_footer,
+#          :if_clause, :else_clause and :label.
+# series - An Array of LexicalUnit.
+# label  - Hash like { label: "NAME", value: "123" }. Could be nil.
+#
+# Returns nothing.
+def self.emit(type, series, label)
+  case type
+  when :function_header then function_header(series)
+  when :function_footer then function_footer
+  when :if_clause then if_clause(series, label)
+  when :else_clause then else_clause(series)
+  when :label then label(series, label)
+  else
+    raise Error
+  end
+end
+
+def self.function_header(series)
+  puts ".sub " + series[0].value
+  puts "    .param int " + series[2].value
+  puts "    .local int result"
+  puts
+end
+
+def self.function_footer
+  puts "RETURN:"
+  puts "    .return(result)"
+  puts ".end"
+end
+
+def self.if_clause(series, label)
+  puts "    if #{series[2].value} #{series[3].value} #{series[4].value} " +
+       "goto #{label[:label]}"
+end
+
+def self.else_clause(series)
+  puts "    result = #{series[0].value}"
+  puts "    goto RETURN"
+end
+
+def self.label(series, label)
+  puts label[:label] + ":"
+  puts "    result = #{label[:value]}"
+  puts "    goto RETURN"
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Et voilà quelques morceaux choisis dans la class Compiler pour montrer
+son utilisation:</p>
+
+<p>``` ruby lib/naam/compiler.rb
+module Naam</p>
+
+<p>  # Public: Here we transform a list of lexical units in a PIR source
+  # code. At least this is the goal.
+  #
+  # The logic of this class try follow the grammar of Naam (see the file
+  # grammar.md).
+  class Compiler</p>
+
+<pre><code>def initialize
+  @series = []
+  @current_label = "LABEL0000"
+  @labels = []
+  @main = []
+end
+
+# Public: Compile lexical units from a Naam program in a PIR
+# program.
+#
+# units - Array of LexicalUnits
+#
+# Returns nothing.
+def compile units
+  @units = units
+  program
+end
+
+private
+
+# This is the entry rule.
+#
+# Returns nothing.
+def program
+  while @units.size &gt; 0
+    @series = []
+    case @units.first.type
+    when :eol then accept(:eol)
+    else
+      instruction
+    end
+  end
+  @labels.each {|lbl| emit(:label, lbl) }
+  emit(:function_footer)
+  Emitter.main(@main)
+end
+
+# ...
+
+# Returns nothing.
+def function_def
+  accept_series(:word, :paro, :word, :parc, :affect, :eol)
+  emit(:function_header)
+  if_clause while if_clause?
+  else_clause
+end
+
+# ...
+
+# Send a message to Emitter module.
+#
+# type  - A Symbol (see Emitter).
+# label - A Hash composed of:
+#         :label - The label name as a String.
+#         :value - The String value that will be returned by
+#                  PIR instructions for this label.
+#         By default, label is nil and unused.
+#
+# Returns nothing.
+def emit(type, label = nil)
+  Emitter.emit(type, @series, label)
+  @series = []
+end
+
+# Get a label.
+#
+# value - String value associated to the label.
+#
+# Examples
+#
+#   next_label("123")
+#   # =&gt; { label: "LABEL0000", value: "123" }
+#   next_label("-9")
+#   # =&gt; { label: "LABEL0001", value: "-9" }
+#
+# Returns the Hash label.
+def next_label(value)
+  temp = { label: @current_label, value: value }
+  @labels &lt;&lt; temp
+  @current_label = @current_label.next
+  temp
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Maintenant que je le montre, je me rends compte que ce code n'est pas
+terrible. Bien que le fichier source à compiler soit extremement simple,
+je suis déjà obligé de faire un tas de contorsions, notamment pour sortir
+la procédure main. Je pensais que c'était une bonne idée de méler
+vérification de la syntaxe et production du code assembleur pour montrer
+les relations entre ces deux phases, mais visiblement ça n'aide pas
+à la clarté du code. La meilleure solution pour m'en sortir est, je pense,
+de me servir d'un AST (Arbre syntaxique abstrait). La prochaine fois je
+parlerais donc de l'AST.</p>
+
+<p>À demain.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 9: la syntaxe]]></title>
@@ -630,81 +856,6 @@ end
 <p>Chaque méthode est suffisament documentée pour que vous puissiez
 comprendre la logique de la bestiole. La prochaine fois on s'attaque
 au <em>lexer</em>.</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Parrot 5: un plan pour écrire un compilateur]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/"/>
-    <updated>2013-08-11T10:47:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir fini le tour d'horizon de l'assembleur PIR dans
-<a href="http://lkdjiin.github.io/blog/2013/08/10/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-4/">la quatrième partie</a>
-je digresse un peu sur ce qui nous attends dans les prochains épisodes.</p>
-
-<!-- more -->
-
-
-<h2>Un plan pour écrire un compilateur</h2>
-
-<p>Maintenant qu'on sait écrire des programmes en PIR suffisament
-évolués pour fournir un début de support au magnifique langage Naam,
-il est plus que temps d'écrire le compilateur Naam vers PIR.
-Pour ça, il y a plusieurs solutions.</p>
-
-<p>La première est d'utiliser les outils fournis avec Parrot sous le nom
-de PCT: Parrot Compiler Tools. PCT a vraiment l'air très bien et devrait
-faire l'affaire pour certains. Malheureusement pour moi, les outils PCT
-sont écrits en Perl, langage que je ne connais vraiment pas assez. J'ai
-essayé mais y a pas eu moyen. Si vous connaissez bien Perl, je pense que
-vous serez très heureux avec les PCT. Sinon, il faut se tourner
-vers autre chose.</p>
-
-<p>La seconde solution est plus old-school. On écrit un compilateur en C à l'aide
-de Lex et Yacc,
-<a href="http://flex.sourceforge.net/">Flex</a>
-et <a href="http://www.gnu.org/software/bison/">Bison</a>, etc. Encore une fois, comme
-pour PCT, ce sont de très bons outils. Mais j'ai déjà donné, ils
-sont aussi ennuyeux qu'ils sont excellents. Pour mémoire,
-j'écris un <em>toy language</em> pour le fun.</p>
-
-<p>Ça me laisse une troisième solution: tout écrire <em>from scratch</em> en Ruby.
-Ça c'est fun.</p>
-
-<p>J'ai une certaine expérience dans le domaine. J'ai écrit des assembleurs,
-des compilateurs, des interpréteurs. En C, en python, en Java, en Ruby.
-Avec ou sans outils tiers. Certains projets ont aboutis et d'autres ont
-échoués mais à chaque fois j'appris quelque chose. Tout ça pour vous dire
-que je sais assez bien dans quoi je m'embarque. Naam est, et restera, un
-langage très simple. Comme je sais où je vais, écrire un compilateur
-Naam vers PIR en Ruby ne sera pas trop difficile.
-Je n'écrirais surement pas un code performant. Au contraire, je
-m'attacherais uniquement à produire un code facile à lire.
-Il nous faudra un analyseur lexical (un <em>tokenizer</em> et un <em>lexer</em>), un
-analyseur syntaxique (pour les fameuses <em>Syntax Error</em>). On aura peut-être
-besoin de produire un AST (<em>Abstract Syntax Tree</em>) mais surement pas dès
-le début. On aura aussi intêret à écrire la grammaire du langage. Il y
-arrivera un moment où il faudra se pencher sur les messages d'erreurs
-du compilateur. Après ça on avisera.</p>
-
-<p>Un compilateur est après tout un programme comme un autre, donc je ne vois
-pas de raisons de ne pas l'écrire par améliorations successives. L'objectif
-initial sera donc simplement de compiler et faire tourner le programme suivant:</p>
-
-<pre><code>sign(n)=
-1  if n &gt; 0
--1 if n &lt; 0
-0  else
-
-print sign(-123)
-</code></pre>
-
-<p>La prochaine fois on commence par le commencement en écrivant le
-<a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>.</p>
 
 <p>À demain.</p>
 ]]></content>
