@@ -220,4 +220,3 @@ de me servir d'un AST (Arbre syntaxique abstrait). La prochaine fois je
 parlerais donc de l'AST.
 
 À demain.
-

@@ -5,8 +5,9 @@ module Jekyll
     end
 
     def render(context)
-      categories = get_categories(context)
-      posts = get_posts(context)
+      # categories = get_categories(context)
+      # posts = get_posts(context)
+
       # 1 Supprimer les posts qui n'ont pas au moins une
       #   catégorie commune.
       # posts = posts.select do |post|
@@ -22,7 +23,8 @@ module Jekyll
 
       # 3 Attribuer un poid.
 
-      categories.size
+      # categories.size
+      context.environments.first["page"]["categories"].size
     end
 
     private
