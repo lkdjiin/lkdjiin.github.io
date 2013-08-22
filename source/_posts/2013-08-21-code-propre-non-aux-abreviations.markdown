@@ -74,12 +74,12 @@ la compréhension d'une trentaine de lignes comme celles-ci. Et maintenant
 comparez avec ce qui suit:
 
 ``` ruby
-an_operator = @operators.pop
-if an_operator.type == :left_parenthesis
-  @operators << an_operator if priority > 0
+operator = @operators.pop
+if operator.type == :left_parenthesis
+  @operators << operator if priority > 0
   return
 end
-@output.operator(an_operator)
+@output.operator(operator)
 ```
 
 C'est plus verbeux, mais même si vous ne connaissez pas Ruby, une simple
