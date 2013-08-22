@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-22T15:40:52+02:00</updated>
+  <updated>2013-08-22T16:22:27+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,95 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un plugin Octopress pour les articles connexes]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/22/un-plugin-octopress-pour-les-articles-connexes/"/>
+    <updated>2013-08-22T15:56:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/22/un-plugin-octopress-pour-les-articles-connexes</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Je cherchais un plugin Octopress pour embarquer une section d'articles
+connexes (<em>related posts</em>) dans certains articles et, curieusement, je
+n'en ai pas trouvé. C'est donc l'occasion d'écrire mon second plugin pour
+Octopress.</p>
+
+<!-- more -->
+
+
+<p>Pour voir ce que fait ce plugin, il vous suffit de regarder la section
+«Articles connexes» à la fin de cet article. Le code est sur Github:
+<a href="https://github.com/lkdjiin/octopress-connexe">octopress-connexe</a>.</p>
+
+<p>Je vais commenter quelques unes des méthodes:</p>
+
+<p>``` ruby
+def my_categories(context)
+  context.environments.first[&ldquo;page&rdquo;][&ldquo;categories&rdquo;]
+end</p>
+
+<p>def my_url(context)
+  context.environments.first[&ldquo;page&rdquo;][&ldquo;url&rdquo;]
+end
+```</p>
+
+<p>J'ai séché un certain temps là-dessus. Pour connaitre les informations
+relative à l'article courant, on se sert de
+<code>context.environments.first["page"]</code>.</p>
+
+<p>Et voici comment je fais la sélection des articles connexes:</p>
+
+<p>``` ruby
+def build_posts(context)
+  remove_unrelated_posts
+  remove_current_post(context)
+  sort_posts
+end</p>
+
+<p>def remove_unrelated_posts
+  @posts = @posts.select do |post|</p>
+
+<pre><code>result = false
+@categories.each do |category|
+  result = true if post.categories.include?(category)
+end
+result
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def remove_current_post(context)
+  @posts.delete_if {|post| post.url == my_url(context)}
+end</p>
+
+<p>def sort_posts
+  @posts = @posts.map do |post|</p>
+
+<pre><code>weight = 0
+@categories.each do |category|
+  weight += 1 if post.categories.include?(category)
+end
+[weight, post]
+</code></pre>
+
+<p>  end
+  @posts = @posts.sort.reverse
+end
+```</p>
+
+<p>Dans un premier temps, j'écarte les articles qui n'ont pas au moins
+une catégorie commune avec l'article courant. C'est le rôle de la méthode
+<code>remove_unrelated_posts</code>. Puis après avoir écarter de la liste l'article
+courant, il ne reste plus qu'à trier avec la méthode <code>sort_posts</code>. Dans cette
+méthode, j'attribue un poid à chaque article en fonction du nombre de
+catégories communes. C'est ce poid qui sert de référence pour le tri.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Code propre: Non aux abréviations]]></title>
@@ -637,157 +726,6 @@ Test Automaton running
 </code></pre>
 
 <p>Et voilà. C'est presque trop facile d'écrire un DSL avec Docile…</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 7: le lexer]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/"/>
-    <updated>2013-08-13T10:27:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir vu
-<a href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/">la tokenisation</a>,
-on continue aujourd'hui l'analyse
-lexicale avec la production des lexèmes.</p>
-
-<!-- more -->
-
-
-<h2>Qu'est-ce qu'un lexème ?</h2>
-
-<p>Si vous avez le temps, lisez <a href="http://fr.wikipedia.org/wiki/Lex%C3%A8me">l'article de wikipédia</a>.
-Sinon voici ma définition pour le domaine qui nous intéresse:</p>
-
-<p><blockquote><p>Un lexème (unité lexicale) est un token auquel on attache un type<br/>très basique.</p></blockquote></p>
-
-<p>Par exemple, la phrase «Je mange.» donnerait:</p>
-
-<pre><code>mot:         Je
-mot:         mange
-ponctuation: .
-</code></pre>
-
-<p>On pourrait produire un <em>lexer</em> plus intelligent qui donnerait:</p>
-
-<pre><code>mot:         Je
-verbe:       mange
-ponctuation: .
-</code></pre>
-
-<p>Les langages informatiques étant beaucoup moins complexe que les
-langages humains, écrire un <em>lexer</em> est souvent une formalité.</p>
-
-<h2>Objectif</h2>
-
-<p>L'objectif d'aujourd'hui est d'obtenir quelque chose comme ça:</p>
-
-<p>``` console
-[~/devel/ruby/naam]$ bin/naam spec/fixtures/sign.naam</p>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fca2f8 @type=:word, @value=&ldquo;sign&rdquo;></h1>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fca258 @type=:paro, @value=&ldquo;(&rdquo;></h1>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fca0b4 @type=:word, @value=&ldquo;n&rdquo;></h1>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9fec @type=:parc, @value=&ldquo;)&rdquo;></h1>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9ee8 @type=:affect, @value=&ldquo;=&rdquo;></h1>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9de4 @type=:eol, @value=&ldquo;\n&rdquo;></h1>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fc9b8c @type=:int, @value=&ldquo;1&rdquo;></h1>
-
-<h1>&lt;Naam::Parser::LexicalUnit:0x8fc99d4 @type=:keyword, @value=&ldquo;if&rdquo;></h1>
-
-<p>&hellip;
-```</p>
-
-<h2>Le code</h2>
-
-<p>Le code source du projet est sur Github, à la
-<a href="https://github.com/lkdjiin/naam/tree/v0.0.2">version 0.0.2</a>.</p>
-
-<p>Bien souvent l'étape de tokenisation et de lexification peuvent être
-regroupées en une seule et même étape. Là, j'ai choisi de les séparer pour
-avoir un code plus simple à montrer. Tout d'abord, voici la classe
-<code>lexical_unit</code>:</p>
-
-<p>``` ruby lib/naam/parser/lexical_unit.rb
-module Naam::Parser</p>
-
-<p>  # A container for lexical units.
-  class LexicalUnit</p>
-
-<pre><code>private_class_method :new
-
-attr_reader :type, :value
-
-# type  - Symbol
-# value - String
-def initialize type, value
-  @type = type
-  @value = value
-end
-
-def self.int value ; new(:int, value) ; end
-def self.word value ; new(:word, value) ; end
-def self.keyword value ; new(:keyword, value) ; end
-def self.op value ; new(:op, value) ; end
-def self.paro ; new(:paro, "(") ; end
-def self.parc ; new(:parc, ")") ; end
-def self.eol ; new(:eol, "\n") ; end
-def self.affect ; new(:affect, "=") ; end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>J'ai beau chercher, je ne trouve rien à dire d'intelligent sur cette classe.
-J'avais prévenu: c'est très simple. Et ça continue, on passe maintenant au
-<em>lexer</em> proprement dit, qui est tout aussi simple:</p>
-
-<p>``` ruby lib/naam/parser/lexer.rb
-module Naam::Parser
-  class Lexer</p>
-
-<pre><code>def from_token(token)
-  if token == '('
-    LexicalUnit.paro()
-  elsif token == ')'
-    LexicalUnit.parc()
-  elsif token == "\n"
-    LexicalUnit.eol()
-  elsif token == '='
-    LexicalUnit.affect()
-  elsif token == '&lt;'
-    LexicalUnit.op(token)
-  elsif token == '&gt;'
-    LexicalUnit.op(token)
-  elsif token == 'if'
-    LexicalUnit.keyword(token)
-  elsif token == 'else'
-    LexicalUnit.keyword(token)
-  elsif token =~ /[+|-]?\d+/
-    LexicalUnit.int(token)
-  else
-    LexicalUnit.word(token)
-  end
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Voilà, on a fini l'analyse lexicale, c'est à dire la première phase
-de l'écriture d'un compilateur. La prochaine fois je parlerais de la
-grammaire de Naam, ce qui enclenchera la phase d'analyse syntaxique.</p>
 
 <p>À demain.</p>
 ]]></content>

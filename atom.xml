@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-22T15:40:52+02:00</updated>
+  <updated>2013-08-22T16:22:27+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,127 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un plugin Octopress pour les articles connexes]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/22/un-plugin-octopress-pour-les-articles-connexes/"/>
+    <updated>2013-08-22T15:56:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/22/un-plugin-octopress-pour-les-articles-connexes</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Je cherchais un plugin Octopress pour embarquer une section d&#8217;articles
+connexes (<em>related posts</em>) dans certains articles et, curieusement, je
+n&#8217;en ai pas trouvé. C&#8217;est donc l&#8217;occasion d&#8217;écrire mon second plugin pour
+Octopress.</p>
+
+<!-- more -->
+
+
+<p>Pour voir ce que fait ce plugin, il vous suffit de regarder la section
+«Articles connexes» à la fin de cet article. Le code est sur Github:
+<a href="https://github.com/lkdjiin/octopress-connexe">octopress-connexe</a>.</p>
+
+<p>Je vais commenter quelques unes des méthodes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">my_categories</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">context</span><span class="o">.</span><span class="n">environments</span><span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="s2">&quot;page&quot;</span><span class="o">][</span><span class="s2">&quot;categories&quot;</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">my_url</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">context</span><span class="o">.</span><span class="n">environments</span><span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="s2">&quot;page&quot;</span><span class="o">][</span><span class="s2">&quot;url&quot;</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;ai séché un certain temps là-dessus. Pour connaitre les informations
+relative à l&#8217;article courant, on se sert de
+<code>context.environments.first["page"]</code>.</p>
+
+<p>Et voici comment je fais la sélection des articles connexes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">build_posts</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">remove_unrelated_posts</span>
+</span><span class='line'>  <span class="n">remove_current_post</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">sort_posts</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">remove_unrelated_posts</span>
+</span><span class='line'>  <span class="vi">@posts</span> <span class="o">=</span> <span class="vi">@posts</span><span class="o">.</span><span class="n">select</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="vi">@categories</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">category</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">result</span> <span class="o">=</span> <span class="kp">true</span> <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">category</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">result</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">remove_current_post</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@posts</span><span class="o">.</span><span class="n">delete_if</span> <span class="p">{</span><span class="o">|</span><span class="n">post</span><span class="o">|</span> <span class="n">post</span><span class="o">.</span><span class="n">url</span> <span class="o">==</span> <span class="n">my_url</span><span class="p">(</span><span class="n">context</span><span class="p">)}</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">sort_posts</span>
+</span><span class='line'>  <span class="vi">@posts</span> <span class="o">=</span> <span class="vi">@posts</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">weight</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="vi">@categories</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">category</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">weight</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">categories</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">category</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="o">[</span><span class="n">weight</span><span class="p">,</span> <span class="n">post</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="vi">@posts</span> <span class="o">=</span> <span class="vi">@posts</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">reverse</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Dans un premier temps, j&#8217;écarte les articles qui n&#8217;ont pas au moins
+une catégorie commune avec l&#8217;article courant. C&#8217;est le rôle de la méthode
+<code>remove_unrelated_posts</code>. Puis après avoir écarter de la liste l&#8217;article
+courant, il ne reste plus qu&#8217;à trier avec la méthode <code>sort_posts</code>. Dans cette
+méthode, j&#8217;attribue un poid à chaque article en fonction du nombre de
+catégories communes. C&#8217;est ce poid qui sert de référence pour le tri.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2/'>Comment écrire un plugin Octopress &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/'>Comment écrire un plugin Octopress</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/13/je-veux-mon-blog-octopress-en-francais/'>Je veux mon blog Octopress en français</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Code propre: Non aux abréviations]]></title>
@@ -121,7 +242,7 @@ bien trop d&#8217;abréviations dans mon code. À partir d&#8217;aujourd&#8217;h
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/14/ecrire-un-dsl-en-ruby-facilement-avec-docile/'>Écrire un DSL en Ruby facilement avec Docile</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/22/un-plugin-octopress-pour-les-articles-connexes/'>Un plugin Octopress pour les articles connexes</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2965,102 +3086,6 @@ d&#8217;écrire la procédure <code>main</code> de cette façon:</p>
 </code></pre>
 
 <p>Mais ça ne marcheras pas, il faut décomposer…</p>
-
-<p>À demain.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2/"/>
-    <updated>2013-08-02T09:07:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/02/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-2</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p><em>Aujourd&#8217;hui je m&#8217;intéresse à</em>
-<a href="http://www.parrot.org/">Parrot</a>.
-<em>Après une brève description de cette
-machine virtuelle, on l&#8217;installe et on écrit un premier programme.</em></p>
-
-<!-- more -->
-
-
-<h2>Présentation de Parrot</h2>
-
-<p>La machine virtuelle Parrot offre un nombre illimité de registre,
-qui sont de 4 types différents:</p>
-
-<ul>
-<li>Integer, pour les nombres entiers</li>
-<li>Number, pour les nombres réels</li>
-<li>String, pour les chaînes de caractères</li>
-<li>PMC, pour, en gros, les objets (Polymorphic container)</li>
-</ul>
-
-
-<p>Les instructions peuvent être entrées sous 4 formes différentes, du plus
-haut-niveau vers le plus bas:</p>
-
-<ol>
-<li>PIR, <em>Parrot Intermediate Representation</em>, qui ressemble à un assembleur
-de haut-niveau.</li>
-<li>PASM, <em>Parrot Assembly</em>, qui est un assembleur classique, sans fioritures.</li>
-<li>PAST, <em>Parrot Abstract Syntax Tree</em>, qui accepte un
-<a href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> en entrée.</li>
-<li>PBC, <em>Parrot Byte Code</em>, le code machine de Parrot.</li>
-</ol>
-
-
-<p>Est-ce-que j&#8217;ai vraiment besoin de dire que, si possible, je me limiterais
-à PIR ?</p>
-
-<p>Enfin, Parrot possède un
-<a href="http://fr.wikipedia.org/wiki/Ramasse-miettes_%28informatique%29">Garbage Collector</a>.
-On aura pas besoin de s&#8217;acharner
-à libérer la mémoire, Parrot le fait pour nous.</p>
-
-<h2>Installation de Parrot</h2>
-
-<p>Avant de pouvoir jouer avec Parrot, il faut l&#8217;installer.
-Le point de départ est sur
-<a href="http://www.parrot.org/source.html">www.parrot.org/source.html</a>.
-Sur ma machine Debian, j&#8217;ai d&#8217;abord installé la version de Parrot qui se
-trouve dans les dépots. Le problème c&#8217;est que pas mal d&#8217;outils annexes
-demandent à avoir un <em>working repository</em>, ils ne sont pas inclus dans les
-paquets. De plus, les sources ont l&#8217;air de contenir pas mal d&#8217;exemples.
-J&#8217;ai donc désinstallé le package pour Debian et rapatrié les sources depuis
-Github : <a href="https://github.com/parrot/parrot">github.com/parrot/parrot</a>.
-L&#8217;installation s&#8217;est déroulée sans soucis particuliers. Comme je trouve la
-documentation un peu confuse sur ce point, voilà comment j&#8217;ai fait ; si ça
-peut vous éviter de chercher…</p>
-
-<pre><code>perl Configure.pl
-make
-make test
-sudo make install
-</code></pre>
-
-<h2>Hello Parrot</h2>
-
-<p>On s&#8217;attaque enfin à l&#8217;écriture du classique <em>hello world</em>:</p>
-
-<figure class='code'><figcaption><span>hello.pir</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='nasm'><span class='line'><span class="nf">.sub</span> <span class="nv">main</span>
-</span><span class='line'>  <span class="nf">say</span> <span class="s">&quot;Hello world&quot;</span>
-</span><span class='line'><span class="nf">.end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On le lance ainsi:</p>
-
-<pre><code>parrot hello.pir
-</code></pre>
-
-<p>Maintenant que Parrot est installé et fonctionnel, on va pouvoir écrire quelques
-petits programmes en PIR.</p>
 
 <p>À demain.</p>
 ]]></content>
