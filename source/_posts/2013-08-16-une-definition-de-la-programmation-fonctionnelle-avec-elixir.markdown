@@ -189,3 +189,4 @@ ce qu'implique la programmation fonctionnelle…
 
 À demain.
 
+{% connexe %}

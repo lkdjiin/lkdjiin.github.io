@@ -42,3 +42,4 @@ Une fois le tutoriel fini, vous possédez les bases de vim … et une montagne
 de notes qui vous seront utiles dans les semaines qui vont suivre.
 
 À demain.
+{% connexe %}

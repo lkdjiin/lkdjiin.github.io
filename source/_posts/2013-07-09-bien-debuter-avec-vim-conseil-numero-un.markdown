@@ -49,3 +49,4 @@ façons, dans quelques temps vous ne voudrez plus entendre parler des autres
 {% endpullquote %}
 
 À demain.
+{% connexe %}

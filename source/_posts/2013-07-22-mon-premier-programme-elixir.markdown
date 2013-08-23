@@ -129,3 +129,4 @@ Voilà pour une première approche d'Elixir, un langage qui ressemble
 beaucoup à Ruby, et en même temps pas vraiment ;)
 
 À demain.
+{% connexe %}

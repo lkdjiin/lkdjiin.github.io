@@ -120,3 +120,4 @@ Et voilà. C'est presque trop facile d'écrire un DSL avec Docile…
 
 À demain.
 
+{% connexe %}

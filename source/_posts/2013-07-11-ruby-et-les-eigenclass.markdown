@@ -126,3 +126,4 @@ Autrement dit, quand vous ajouter une méthode de classe à une classe, en fait
 vous l'ajouter à son eigenclass.
 
 À demain.
+{% connexe %}

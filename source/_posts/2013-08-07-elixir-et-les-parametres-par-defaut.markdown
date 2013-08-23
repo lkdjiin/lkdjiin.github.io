@@ -75,3 +75,4 @@ au moins c'est possible. Si vous connaissez d'autres langages qui permettent
 ce truc, laissez moi un commentaire, je suis curieux.
 
 À demain.
+{% connexe %}

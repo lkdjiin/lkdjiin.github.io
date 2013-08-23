@@ -128,3 +128,4 @@ on retrouve en fin de méthode la production du code Html.
 
 À demain.
 
+{% connexe %}

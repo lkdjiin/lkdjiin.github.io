@@ -114,3 +114,4 @@ La prochaine fois on installe Parrot et on joue un peu avec pour sentir le truc.
 
 À demain.
 
+{% connexe %}

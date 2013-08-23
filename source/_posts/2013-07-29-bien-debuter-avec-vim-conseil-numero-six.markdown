@@ -59,3 +59,4 @@ N'hésitez pas à consulter l'aide de vim pour bien comprendre ce que font ces
 lignes de code *avant* de les ajouter dans votre `.vimrc` ;)
 
 À demain.
+{% connexe %}

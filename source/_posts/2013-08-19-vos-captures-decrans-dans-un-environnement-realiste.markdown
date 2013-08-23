@@ -26,3 +26,4 @@ de la partager avec vous. Si vous en connaissez d'autres dans le même genre,
 je suis preneur.
 
 À demain.
+{% connexe %}

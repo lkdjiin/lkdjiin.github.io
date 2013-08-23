@@ -54,3 +54,4 @@ Je vous accorde que ça n'est pas aussi agréable que d'utiliser un plugin,
 mais ça marche. Et ça peut être utile quand on doit utiliser un Vim de base.
 
 À demain.
+{% connexe %}

@@ -128,3 +128,4 @@ sont détruites au fur et à mesure de leur consommation.
 La prochaine, il sera enfin temps d'émettre le code PIR.
 
 À demain.
+{% connexe %}

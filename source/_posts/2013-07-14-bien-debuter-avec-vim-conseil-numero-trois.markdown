@@ -46,3 +46,4 @@ par vous sembler … normal.
 {% endpullquote %}
 
 À demain.
+{% connexe %}

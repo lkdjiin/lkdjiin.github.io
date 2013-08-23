@@ -75,3 +75,4 @@ vérification de la syntaxe.
 
 À demain.
 
+{% connexe %}

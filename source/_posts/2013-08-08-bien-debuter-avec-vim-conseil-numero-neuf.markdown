@@ -35,3 +35,4 @@ dactylographie (il y en a plein de libre) et apprenez à écrire sans regarder
 votre clavier. Vous aurez alors accès à toute la puissance de Vim.
 
 À demain.
+{% connexe %}

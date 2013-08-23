@@ -72,3 +72,4 @@ Demain, je montrerais un script un
 peu plus utile et étoffé que celui-ci :) En attendant, testez vos propres idées.
 
 À demain.
+{% connexe %}

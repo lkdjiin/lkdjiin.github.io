@@ -39,3 +39,4 @@ Je suis même prêt à parier que dans quelques temps, vous chercherez
 les moyens d'utiliser vos autres logiciels sans la souris …
 
 À demain.
+{% connexe %}

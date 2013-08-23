@@ -106,3 +106,4 @@ des années: [ievms](https://github.com/xdissent/ievms) le script qui fonctionne
 *P.S. Ça fait des mois que je pense à écrire cet article. Ça fait du bien
 quand ça sort.*
 
+{% connexe %}

@@ -146,3 +146,4 @@ Voilà, c'était un petit exemple de fonction récursive qui m'a permit de vous
 montrer certaines particularités d'Elixir.
 
 À demain.
+{% connexe %}
