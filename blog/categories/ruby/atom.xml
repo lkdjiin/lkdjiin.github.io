@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-25T20:48:06+02:00</updated>
+  <updated>2013-08-26T09:04:34+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,183 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 11: Arbre syntaxique abstrait]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/"/>
+    <updated>2013-08-26T08:48:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans le dernier épisode, je me suis rendu compte que j'aurais intéret
+à utiliser un arbre syntaxique abstrait pour mon petit langage. En
+voici une première implémentation.</p>
+
+<!-- more -->
+
+
+<p>Un arbre syntaxique abstrait (<em>Abstract Syntax Tree</em> en anglais, ou AST)
+est avant tout une manière de structurer des données:</p>
+
+<pre><code>    A
+   / \
+  B   C
+ / \   \
+D   E   F
+   /
+  G
+</code></pre>
+
+<p>On part d'un noeud racine (ici <code>A</code>) et on ajoute des branches qui mènent à
+d'autres noeuds. On peut distinguer les noeuds terminaux (<code>D</code>, <code>F</code> et <code>G</code>) des
+noeuds non-terminaux.
+Les noeuds terminaux, aussi appelés feuilles, contiennent une valeur. Les noeuds
+non-terminaux contiennent d'autres noeuds.
+C'est une manière pratique de représenter un code source,
+l'AST étant (assez) facilement manipulable. Il est dit abstrait dans le sens
+où il ne contient pas chaque éléments du langage source. Par exemple, les
+parenthèses, les virgules, ou encore les débuts et fins de blocs sont
+souvent absents de l'AST. Si vous voulez en savoir plus sur les AST:
+<a href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">http://en.wikipedia.org/wiki/Abstract_syntax_tree</a>.</p>
+
+<p>Le code qui suit est sur <a href="https://github.com/lkdjiin/naam">Github</a>,
+à la version 0.0.5.</p>
+
+<p>L'objectif est de créer l'AST et de le visualiser ainsi:</p>
+
+<pre><code>program
+  function definition
+    header
+      name ::= sign
+      argument ::= n
+    if clause
+      return value ::= 1
+      test
+        left value ::= n
+        operator value ::= &gt;
+        right value ::= 0
+    if clause
+      return value ::= -1
+      test
+        left value ::= n
+        operator value ::= &lt;
+        right value ::= 0
+    else clause
+      return value ::= 0
+  print statement ::= sign(4)
+</code></pre>
+
+<p>Voici la classe de base de l'AST:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Node</p>
+
+<pre><code>def initialize name
+  @name = name
+  @children = []
+end
+
+attr_reader :children, :name
+
+def add_child child; @children &lt;&lt; child; end
+
+def leaf?; @children.empty?; end
+
+def display(indent = 0)
+  print " " * indent + @name
+  print " ::= #{@value}" if leaf?
+  puts
+  @children.each {|child| child.display(indent + 2) }
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Elle permet entre autres d'ajouter un noeud enfant avec <code>add_child</code> et de
+déterminer si un noeud est une feuille avec <code>leaf?</code>. La méthode <code>display</code>,
+appliquée sur le noeud racine permettra d'afficher l'arbre complet.</p>
+
+<p>Un noeud non-terminal ressemblera à ça:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Program &lt; Node</p>
+
+<pre><code>def initialize
+  super("program")
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Pour un noeud terminal (une feuille), on ajoutera simplement une valeur:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Argument &lt; Node</p>
+
+<pre><code>def initialize value
+  super("argument")
+  @value = value
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Comment appliquer tout ça ? Directement dans le <em>syntaxer</em>. En voici
+quelques extraits:</p>
+
+<p>``` ruby
+module Naam::Parser
+  class Syntaxer</p>
+
+<pre><code>def initialize
+  # ...
+  @ast = Naam::AST::Program.new
+end
+
+# ...
+
+def function_def
+  node = Naam::AST::FunctionDef.new
+  @ast.add_child node
+  function_header(node)
+  if_clause(node) while if_clause?
+  else_clause(node)
+end
+
+def function_header(node)
+  @series = []
+  accept_series(:word, :paro, :word, :parc, :affect, :eol)
+  f_header = Naam::AST::FunctionHeader.new
+  f_header.add_child(Naam::AST::Name.new(@series[0].value))
+  f_header.add_child(Naam::AST::Arg.new(@series[2].value))
+  node.add_child(f_header)
+end
+
+# ...
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>L'AST va me permettre de faire un truc plus propre (même si cette classe
+<code>Syntaxer</code> demande toujours un gros <em>refactoring</em>) et de manipuler plus
+aisement le code source.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un plugin Octopress pour les articles connexes]]></title>
@@ -597,142 +774,6 @@ sont détruites au fur et à mesure de leur consommation.</p>
 
 <p>À demain.
 </p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un DSL en Ruby facilement avec Docile]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/14/ecrire-un-dsl-en-ruby-facilement-avec-docile/"/>
-    <updated>2013-08-14T10:41:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/14/ecrire-un-dsl-en-ruby-facilement-avec-docile</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Je suis en train de lire «<a href="http://www.wolframscience.com/">A new kind of science</a>» de Stephen Wolfram
-et ça me donne envie de me replonger dans les <a href="https://fr.wikipedia.org/wiki/Automate_cellulaire">automates cellulaires</a>.
-Le jeu de la vie est sûrement le programme que j'ai écrit le plus souvent,
-mais curieusement jamais en Ruby.</p>
-
-<!-- more -->
-
-
-<p>J'ai commencé à écrire un
-<a href="https://github.com/lkdjiin/cellula">framework pour automate cellulaire</a>,
-qui n'aboutira peut-être pas faute de temps. Quoiqu'il en soit, je voudrais
-que ce framework soit utilisable par des non-développeurs, d'où le recours
-à un DSL (Domain Specific Language). Et pour développer mon DSL, je n'ai
-pas trouver plus simple que la gem
-<a href="https://github.com/ms-ati/docile">docile</a>.</p>
-
-<p>Voici le DSL que je voudrais:</p>
-
-<p><code>ruby my_automaton.rb
-automaton "Test Automaton" do
-  dimensions       2
-  type             :elementary
-  width            100
-  height           100
-  rule             :b36s26
-  pattern          :random
-  live_probability 0.1789
-end
-</code></p>
-
-<p>Docile encourage l'utilisation du design pattern builder. Alors allons-y
-pour une classe builder qui va contenir les valeurs par défaut de notre
-futur Automaton:</p>
-
-<p>``` ruby automaton_builder.rb
-class AutomatonBuilder
-  def initialize(name)</p>
-
-<pre><code>@name = name
-@dimensions = 2
-@type = :elementary
-@width = 0
-@height = 0
-@rule = :b3s23
-@pattern = :random
-@live_probability = 0.5
-</code></pre>
-
-<p>  end</p>
-
-<p>  def dimensions(val); @dimensions = val; self; end
-  def type(val); @type = val; self; end
-  def width(val); @width = val; self; end
-  def height(val); @height = val; self; end
-  def rule(val); @rule = val; self; end
-  def pattern(val); @pattern = val; self; end
-  def live_probability(val); @live_probability = val; self; end</p>
-
-<p>  def build</p>
-
-<pre><code>Automaton.new(@name, @dimensions, @type, @width, @height,
-              @rule, @pattern, @live_probability)
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Il nous faut maintenant une classe Automaton:</p>
-
-<p>``` ruby automaton.rb
-class Automaton
-  def initialize(name, dimensions, type, width, height, rule,</p>
-
-<pre><code>            pattern, live_probability)
-@name = name
-@dimensions = dimensions
-@type = type
-@width = width
-@height = height
-@rule = rule
-@pattern = pattern
-@live_probability = live_probability
-</code></pre>
-
-<p>  end</p>
-
-<p>  def run</p>
-
-<pre><code>puts "#{@name} running"
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Et pour finir, on demande à Docile d'évaluer notre DSL puis on charge le
-fichier <code>my_automaton.rb</code>. Il ne reste plus qu'à lancer la machine:</p>
-
-<p>``` ruby main.rb
-require &lsquo;docile&rsquo;
-require &lsquo;./automaton_builder&rsquo;
-require &lsquo;./automaton&rsquo;</p>
-
-<p>def automaton(name, &amp;block)
-  @auto = Docile.dsl_eval(AutomatonBuilder.new(name), &amp;block).build
-end</p>
-
-<p>load ARGV[0]</p>
-
-<p>@auto.run
-```</p>
-
-<p>La boucle est bouclée. Vous remarquerez que la méthode <code>automaton</code> définie
-dans <code>main.rb</code> ci-dessus est celle qui est utilisée dans le DSL
-(<code>my_automaton.rb</code>).</p>
-
-<pre><code>$ ruby ./main.rb my_automaton.rb 
-Test Automaton running
-</code></pre>
-
-<p>Et voilà. C'est presque trop facile d'écrire un DSL avec Docile…</p>
-
-<p>À demain.</p>
-
-<p></p>
 ]]></content>
   </entry>
   

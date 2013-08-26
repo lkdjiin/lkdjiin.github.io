@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-25T20:48:06+02:00</updated>
+  <updated>2013-08-26T09:04:34+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,243 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 11: Arbre syntaxique abstrait]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/"/>
+    <updated>2013-08-26T08:48:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Dans le dernier épisode, je me suis rendu compte que j&#8217;aurais intéret
+à utiliser un arbre syntaxique abstrait pour mon petit langage. En
+voici une première implémentation.</p>
+
+<!-- more -->
+
+
+<p>Un arbre syntaxique abstrait (<em>Abstract Syntax Tree</em> en anglais, ou AST)
+est avant tout une manière de structurer des données:</p>
+
+<pre><code>    A
+   / \
+  B   C
+ / \   \
+D   E   F
+   /
+  G
+</code></pre>
+
+<p>On part d&#8217;un noeud racine (ici <code>A</code>) et on ajoute des branches qui mènent à
+d&#8217;autres noeuds. On peut distinguer les noeuds terminaux (<code>D</code>, <code>F</code> et <code>G</code>) des
+noeuds non-terminaux.
+Les noeuds terminaux, aussi appelés feuilles, contiennent une valeur. Les noeuds
+non-terminaux contiennent d&#8217;autres noeuds.
+C&#8217;est une manière pratique de représenter un code source,
+l&#8217;AST étant (assez) facilement manipulable. Il est dit abstrait dans le sens
+où il ne contient pas chaque éléments du langage source. Par exemple, les
+parenthèses, les virgules, ou encore les débuts et fins de blocs sont
+souvent absents de l&#8217;AST. Si vous voulez en savoir plus sur les AST:
+<a href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">http://en.wikipedia.org/wiki/Abstract_syntax_tree</a>.</p>
+
+<p>Le code qui suit est sur <a href="https://github.com/lkdjiin/naam">Github</a>,
+à la version 0.0.5.</p>
+
+<p>L&#8217;objectif est de créer l&#8217;AST et de le visualiser ainsi:</p>
+
+<pre><code>program
+  function definition
+    header
+      name ::= sign
+      argument ::= n
+    if clause
+      return value ::= 1
+      test
+        left value ::= n
+        operator value ::= &gt;
+        right value ::= 0
+    if clause
+      return value ::= -1
+      test
+        left value ::= n
+        operator value ::= &lt;
+        right value ::= 0
+    else clause
+      return value ::= 0
+  print statement ::= sign(4)
+</code></pre>
+
+<p>Voici la classe de base de l&#8217;AST:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam::AST</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Node</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span> <span class="nb">name</span>
+</span><span class='line'>      <span class="vi">@name</span> <span class="o">=</span> <span class="nb">name</span>
+</span><span class='line'>      <span class="vi">@children</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">attr_reader</span> <span class="ss">:children</span><span class="p">,</span> <span class="ss">:name</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">add_child</span> <span class="n">child</span><span class="p">;</span> <span class="vi">@children</span> <span class="o">&lt;&lt;</span> <span class="n">child</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">leaf?</span><span class="p">;</span> <span class="vi">@children</span><span class="o">.</span><span class="n">empty?</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">display</span><span class="p">(</span><span class="n">indent</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">print</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="n">indent</span> <span class="o">+</span> <span class="vi">@name</span>
+</span><span class='line'>      <span class="nb">print</span> <span class="s2">&quot; ::= </span><span class="si">#{</span><span class="vi">@value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">leaf?</span>
+</span><span class='line'>      <span class="nb">puts</span>
+</span><span class='line'>      <span class="vi">@children</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">child</span><span class="o">|</span> <span class="n">child</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">indent</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Elle permet entre autres d&#8217;ajouter un noeud enfant avec <code>add_child</code> et de
+déterminer si un noeud est une feuille avec <code>leaf?</code>. La méthode <code>display</code>,
+appliquée sur le noeud racine permettra d&#8217;afficher l&#8217;arbre complet.</p>
+
+<p>Un noeud non-terminal ressemblera à ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam::AST</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Program</span> <span class="o">&lt;</span> <span class="no">Node</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>      <span class="k">super</span><span class="p">(</span><span class="s2">&quot;program&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour un noeud terminal (une feuille), on ajoutera simplement une valeur:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam::AST</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Argument</span> <span class="o">&lt;</span> <span class="no">Node</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span> <span class="n">value</span>
+</span><span class='line'>      <span class="k">super</span><span class="p">(</span><span class="s2">&quot;argument&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@value</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Comment appliquer tout ça ? Directement dans le <em>syntaxer</em>. En voici
+quelques extraits:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam::Parser</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Syntaxer</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>      <span class="c1"># ...</span>
+</span><span class='line'>      <span class="vi">@ast</span> <span class="o">=</span> <span class="ss">Naam</span><span class="p">:</span><span class="ss">:AST</span><span class="o">::</span><span class="no">Program</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">function_def</span>
+</span><span class='line'>      <span class="n">node</span> <span class="o">=</span> <span class="ss">Naam</span><span class="p">:</span><span class="ss">:AST</span><span class="o">::</span><span class="no">FunctionDef</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>      <span class="vi">@ast</span><span class="o">.</span><span class="n">add_child</span> <span class="n">node</span>
+</span><span class='line'>      <span class="n">function_header</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">if_clause</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">while</span> <span class="n">if_clause?</span>
+</span><span class='line'>      <span class="n">else_clause</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">function_header</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@series</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>      <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:paro</span><span class="p">,</span> <span class="ss">:word</span><span class="p">,</span> <span class="ss">:parc</span><span class="p">,</span> <span class="ss">:affect</span><span class="p">,</span> <span class="ss">:eol</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">f_header</span> <span class="o">=</span> <span class="ss">Naam</span><span class="p">:</span><span class="ss">:AST</span><span class="o">::</span><span class="no">FunctionHeader</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>      <span class="n">f_header</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="ss">Naam</span><span class="p">:</span><span class="ss">:AST</span><span class="o">::</span><span class="no">Name</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@series</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">value</span><span class="p">))</span>
+</span><span class='line'>      <span class="n">f_header</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="ss">Naam</span><span class="p">:</span><span class="ss">:AST</span><span class="o">::</span><span class="no">Arg</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@series</span><span class="o">[</span><span class="mi">2</span><span class="o">].</span><span class="n">value</span><span class="p">))</span>
+</span><span class='line'>      <span class="n">node</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">f_header</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>L&#8217;AST va me permettre de faire un truc plus propre (même si cette classe
+<code>Syntaxer</code> demande toujours un gros <em>refactoring</em>) et de manipuler plus
+aisement le code source.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Mon générateur d'ombres CSS]]></title>
@@ -484,7 +721,7 @@ bien trop d&#8217;abréviations dans mon code. À partir d&#8217;aujourd&#8217;h
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/22/un-plugin-octopress-pour-les-articles-connexes/'>Un plugin Octopress pour les articles connexes</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/22/un-plugin-octopress-pour-les-articles-connexes/'>Un plugin Octopress pour les articles connexes</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -893,9 +1130,9 @@ parlerais donc de l&#8217;AST.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/'>Implémenter un langage sur Parrot &ndash; partie 8: la grammaire</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/'>Implémenter un langage sur Parrot &ndash; partie 8: la grammaire</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1143,7 +1380,7 @@ sont détruites au fur et à mesure de leur consommation.</p>
 <p>La prochaine, il sera enfin temps d&#8217;émettre le code PIR.</p>
 
 <p>À demain.
-<section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/'>Implémenter un langage sur Parrot &ndash; partie 8: la grammaire</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1479,7 +1716,7 @@ ce qu&#8217;implique la programmation fonctionnelle…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/'>Le problème des 100 portes en Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/24/quelques-ressources-libres-pour-elixir/'>Quelques ressources libres pour Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/'>Le problème des 100 portes en Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/24/quelques-ressources-libres-pour-elixir/'>Quelques ressources libres pour Elixir</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1739,7 +1976,7 @@ Test Automaton running
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1941,7 +2178,7 @@ grammaire de Naam, ce qui enclenchera la phase d&#8217;analyse syntaxique.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/'>Implémenter un langage sur Parrot &ndash; partie 8: la grammaire</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2695,123 +2932,6 @@ ce truc, laissez moi un commentaire, je suis curieux.</p>
 
 <p>À demain.
 <section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/24/quelques-ressources-libres-pour-elixir/'>Quelques ressources libres pour Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/06/comment-lire-et-ecrire-un-fichier-texte-avec-elixir/'>Comment lire et écrire un fichier texte avec Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/'>Pattern matching avec Elixir: une première approche</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Comment lire et écrire un fichier texte avec Elixir]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/06/comment-lire-et-ecrire-un-fichier-texte-avec-elixir/"/>
-    <updated>2013-08-06T08:43:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/06/comment-lire-et-ecrire-un-fichier-texte-avec-elixir</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Quand j&#8217;aborde un nouveau langage j&#8217;aime bien regarder l&#8217;API pour les
-entrées/sorties. Je trouve que ça donne le ton.
-Aujourd&#8217;hui on voit comment ouvrir, lire et écrire des fichiers texte.</p>
-
-<!-- more -->
-
-
-<h2>Lire un fichier</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="p">{</span><span class="n">result</span><span class="p">,</span> <span class="n">device</span><span class="p">}</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;file.ext&quot;</span><span class="p">,</span> <span class="p">[</span><span class="ss">:read</span><span class="p">,</span> <span class="ss">:utf8</span><span class="p">])</span>
-</span><span class='line'><span class="n">data</span> <span class="o">=</span> <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="ss">:line</span><span class="p">)</span>
-</span><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>result</code> contiendra <code>:ok</code> ou <code>:error</code>. On peut tester ce résultat après
-coup ou bien se servir du
-<a href="http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/">pattern matching</a> ainsi:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="p">{</span><span class="ss">:ok</span><span class="p">,</span> <span class="n">device</span><span class="p">}</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;file.ext&quot;</span><span class="p">,</span> <span class="p">[</span><span class="ss">:read</span><span class="p">,</span> <span class="ss">:utf8</span><span class="p">])</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Lorsque la fin du fichier est atteinte, <code>IO.read</code> retourne <code>:eof</code>.
-Si on veut lire un certain nombre de caractères au lieu d&#8217;une ligne
-complète, on passe le nombre de caractères à lire à la fonction <code>IO.read</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">chars</span> <span class="o">=</span> <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="m">3</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On notera qu&#8217;il faut penser à fermer le fichier après utilisation, ce que
-je trouve toujours bizarre avec un langage moderne. J&#8217;attends vraiment que
-le runtime fasse ça pour moi.</p>
-
-<h2>Écrire un fichier</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="p">{</span><span class="ss">:ok</span><span class="p">,</span> <span class="n">device</span><span class="p">}</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="p">[</span><span class="ss">:write</span><span class="p">,</span> <span class="ss">:utf8</span><span class="p">])</span>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="s2">&quot;foo\n&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="s2">&quot;bar&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Pas grand chose à dire, c&#8217;est clair. La seule différence entre <code>IO.write</code>
-et <code>IO.puts</code> est que cette dernière ajoute le caractère de fin de ligne.</p>
-
-<h2>Les entrées/sorties console</h2>
-
-<p>Pour lire sur la console on utilise <code>IO.gets</code>. Le <em>device</em> est <code>:stdio</code>
-par défaut:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='iex'><span class='line'><span class="go">iex(46)&gt; str = IO.gets(:stdio, &quot;Votre nom: &quot;)</span>
-</span><span class='line'><span class="go">Votre nom: xavier</span>
-</span><span class='line'><span class="go">&quot;xavier\n&quot;</span>
-</span><span class='line'><span class="go">iex(47)&gt; str = IO.gets(&quot;Votre nom: &quot;)        </span>
-</span><span class='line'><span class="go">Votre nom: foobar</span>
-</span><span class='line'><span class="go">&quot;foobar\n&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Pour écrire sur la console on utilise <code>IO.puts</code>, mais ça vous le saviez déjà.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='iex'><span class='line'><span class="go">iex(48)&gt; IO.puts(:stdio, str)        </span>
-</span><span class='line'><span class="go">foobar</span>
-</span><span class='line'>
-</span><span class='line'><span class="go">:ok</span>
-</span><span class='line'><span class="go">iex(49)&gt; IO.puts(str)        </span>
-</span><span class='line'><span class="go">foobar</span>
-</span><span class='line'>
-</span><span class='line'><span class="go">:ok</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Pour finir</h2>
-
-<p>Voilà, c&#8217;est suffisant pour commencer à bidouiller. Pour aller plus loin,
-on pourra lire la documentation des modules IO et File, qui permettent de
-faire bien d&#8217;autres choses…</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/24/quelques-ressources-libres-pour-elixir/'>Quelques ressources libres pour Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/07/elixir-et-les-parametres-par-defaut/'>Elixir et les paramètres par défaut</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/'>Pattern matching avec Elixir: une première approche</a></li></ul></section></p>
 ]]></content>
   </entry>
   

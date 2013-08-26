@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parrot | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parrot/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-25T20:48:06+02:00</updated>
+  <updated>2013-08-26T09:04:34+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,183 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 11: Arbre syntaxique abstrait]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/"/>
+    <updated>2013-08-26T08:48:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans le dernier épisode, je me suis rendu compte que j'aurais intéret
+à utiliser un arbre syntaxique abstrait pour mon petit langage. En
+voici une première implémentation.</p>
+
+<!-- more -->
+
+
+<p>Un arbre syntaxique abstrait (<em>Abstract Syntax Tree</em> en anglais, ou AST)
+est avant tout une manière de structurer des données:</p>
+
+<pre><code>    A
+   / \
+  B   C
+ / \   \
+D   E   F
+   /
+  G
+</code></pre>
+
+<p>On part d'un noeud racine (ici <code>A</code>) et on ajoute des branches qui mènent à
+d'autres noeuds. On peut distinguer les noeuds terminaux (<code>D</code>, <code>F</code> et <code>G</code>) des
+noeuds non-terminaux.
+Les noeuds terminaux, aussi appelés feuilles, contiennent une valeur. Les noeuds
+non-terminaux contiennent d'autres noeuds.
+C'est une manière pratique de représenter un code source,
+l'AST étant (assez) facilement manipulable. Il est dit abstrait dans le sens
+où il ne contient pas chaque éléments du langage source. Par exemple, les
+parenthèses, les virgules, ou encore les débuts et fins de blocs sont
+souvent absents de l'AST. Si vous voulez en savoir plus sur les AST:
+<a href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">http://en.wikipedia.org/wiki/Abstract_syntax_tree</a>.</p>
+
+<p>Le code qui suit est sur <a href="https://github.com/lkdjiin/naam">Github</a>,
+à la version 0.0.5.</p>
+
+<p>L'objectif est de créer l'AST et de le visualiser ainsi:</p>
+
+<pre><code>program
+  function definition
+    header
+      name ::= sign
+      argument ::= n
+    if clause
+      return value ::= 1
+      test
+        left value ::= n
+        operator value ::= &gt;
+        right value ::= 0
+    if clause
+      return value ::= -1
+      test
+        left value ::= n
+        operator value ::= &lt;
+        right value ::= 0
+    else clause
+      return value ::= 0
+  print statement ::= sign(4)
+</code></pre>
+
+<p>Voici la classe de base de l'AST:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Node</p>
+
+<pre><code>def initialize name
+  @name = name
+  @children = []
+end
+
+attr_reader :children, :name
+
+def add_child child; @children &lt;&lt; child; end
+
+def leaf?; @children.empty?; end
+
+def display(indent = 0)
+  print " " * indent + @name
+  print " ::= #{@value}" if leaf?
+  puts
+  @children.each {|child| child.display(indent + 2) }
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Elle permet entre autres d'ajouter un noeud enfant avec <code>add_child</code> et de
+déterminer si un noeud est une feuille avec <code>leaf?</code>. La méthode <code>display</code>,
+appliquée sur le noeud racine permettra d'afficher l'arbre complet.</p>
+
+<p>Un noeud non-terminal ressemblera à ça:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Program &lt; Node</p>
+
+<pre><code>def initialize
+  super("program")
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Pour un noeud terminal (une feuille), on ajoutera simplement une valeur:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Argument &lt; Node</p>
+
+<pre><code>def initialize value
+  super("argument")
+  @value = value
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Comment appliquer tout ça ? Directement dans le <em>syntaxer</em>. En voici
+quelques extraits:</p>
+
+<p>``` ruby
+module Naam::Parser
+  class Syntaxer</p>
+
+<pre><code>def initialize
+  # ...
+  @ast = Naam::AST::Program.new
+end
+
+# ...
+
+def function_def
+  node = Naam::AST::FunctionDef.new
+  @ast.add_child node
+  function_header(node)
+  if_clause(node) while if_clause?
+  else_clause(node)
+end
+
+def function_header(node)
+  @series = []
+  accept_series(:word, :paro, :word, :parc, :affect, :eol)
+  f_header = Naam::AST::FunctionHeader.new
+  f_header.add_child(Naam::AST::Name.new(@series[0].value))
+  f_header.add_child(Naam::AST::Arg.new(@series[2].value))
+  node.add_child(f_header)
+end
+
+# ...
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>L'AST va me permettre de faire un truc plus propre (même si cette classe
+<code>Syntaxer</code> demande toujours un gros <em>refactoring</em>) et de manipuler plus
+aisement le code source.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 10: émettre le code assembleur]]></title>
@@ -643,228 +820,6 @@ end
 <p>Voilà, on a fini l'analyse lexicale, c'est à dire la première phase
 de l'écriture d'un compilateur. La prochaine fois je parlerais de la
 grammaire de Naam, ce qui enclenchera la phase d'analyse syntaxique.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Parrot 6: Écrire le tokenizer]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/"/>
-    <updated>2013-08-12T09:05:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir défini un semblant de
-<a href="http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/">méthode de travail</a>
-on s'attaque aujourd'hui à l'écriture d'un
-<a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>
-pour Naam.</p>
-
-<!-- more -->
-
-
-<h2>Le tokenizer</h2>
-
-<p>Le code du projet est en ligne sur Github à l'adresse suivante:
-<a href="https://github.com/lkdjiin/naam">naam</a>.
-N'hésitez pas à le consulter. Les extraits qui suivront sont tirés de la
-version 0.0.1.</p>
-
-<p>La <em>tokenization</em> est le processus de séparation des éléments
-basiques d'un langage.
-C'est la première étape de l'analyse lexicale.
-Par exemple, à partir du programme suivant:</p>
-
-<pre><code>sign(n)=
-1  if n &gt; 0
--1 if n &lt; 0
-0  else
-
-print sign(4)
-</code></pre>
-
-<p>Je veut obtenir la suite de tokens suivante:</p>
-
-<pre><code>sign
-(
-n
-)
-=
-
-1
-if
-n
-&gt;
-0
-
--1
-if
-n
-&lt;
-0
-
-0
-else
-
-
-print
-sign
-(
-4
-)
-</code></pre>
-
-<p>Je vais d'abord introduire la classe <code>Main</code>, qui est certainement
-temporaire et aussi (exceptionnellement) la seule à ne pas être
-testée. Elle est juste là pour me permettre de visualiser les
-résultats.
-Le principe est très simple:</p>
-
-<p>``` ruby lib/naam/main.rb
-class Main
-  def self.run(filename)</p>
-
-<pre><code>source_lines = Reader.read filename
-source_lines.each do |line|
-  tkr = Parser::Tokenizer.new(line)
-  while tkr.has_more_token?
-    puts tkr.next_token
-  end
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Maintenant, on passe au truc intéressant, le tokenizer
-proprement dit:</p>
-
-<p>``` ruby lib/naam/parser/tokenizer.rb
-module Naam::Parser</p>
-
-<p>  # Internal: Tokenize a string of naam code.
-  class Tokenizer</p>
-
-<pre><code># Public: Initialize a new Tokenizer object, ready to
-# tokenize a string of naam code.
-#
-# code - A String of naam code.
-def initialize code
-  @index = 0
-  @token = ''
-  @look_ahead = ''
-  @codeline = code
-  forward_look_ahead
-end
-
-# Public: Get the next token from the code.
-#
-# Returns The String token.
-def next_token
-  token = produce_next_token
-  skip_white
-  @token = ''
-  token
-end
-
-# Public: Tells if a token is available.
-#
-# Returns Boolean.
-def has_more_token?
-  @index &lt;= @codeline.size
-end
-
-private
-
-# Look to the next character in the code.
-#
-# Returns nothing.
-def forward_look_ahead
-  @look_ahead = @codeline[@index, 1]
-  @index += 1
-end
-
-# Returns the String next available token.
-def produce_next_token
-  if @look_ahead =~ /[0-9]/
-    get_integer
-  elsif @look_ahead == '('
-    get_paro
-  elsif @look_ahead == ')'
-    get_parc
-  elsif @look_ahead == '='
-    get_eq
-  elsif @look_ahead == "\n"
-    get_eol
-  else
-    get_word
-  end
-end
-
-# Skip all «white» characters until next non-white one.
-# Currently only spaces are considered as white.
-#
-# Returns nothing.
-def skip_white
-  forward_look_ahead while @look_ahead == ' '
-end
-
-# Returns a String of what naam considered an integer.
-def get_integer
-  add_look_ahead while @look_ahead =~ /[0-9]/
-  @token
-end
-
-# Returns String opened parenthesis.
-def get_paro; add_this_char; end
-
-# Returns String closed parenthesis.
-def get_parc; add_this_char; end
-
-# Returns String equal symbol "=".
-def get_eq; add_this_char; end
-
-# Returns String end of line "\n".
-def get_eol; add_this_char; end
-
-# Add current character to the current token and return it.
-# Usefull shorthand for single character's tokens.
-#
-# Returns the String current token.
-def add_this_char
-  add_look_ahead
-  @token
-end
-
-# If it's not anything else, it's what naam language call a word.
-#
-# Returns String.
-def get_word
-  add_look_ahead while not @look_ahead =~ /[\(\)=\n ]/
-  @token
-end
-
-# Add current character to current token, then look for the
-# next char, ready for another cycle.
-#
-# Returns nothing.
-def add_look_ahead
-  @token &lt;&lt; @look_ahead
-  forward_look_ahead
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Chaque méthode est suffisament documentée pour que vous puissiez
-comprendre la logique de la bestiole. La prochaine fois on s'attaque
-au <em>lexer</em>.</p>
 
 <p>À demain.</p>
 

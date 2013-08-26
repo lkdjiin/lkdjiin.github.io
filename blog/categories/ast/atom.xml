@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : ast | lkdjiin's blog]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/ast/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2013-08-26T09:04:34+02:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 11: Arbre syntaxique abstrait]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/"/>
+    <updated>2013-08-26T08:48:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans le dernier épisode, je me suis rendu compte que j'aurais intéret
+à utiliser un arbre syntaxique abstrait pour mon petit langage. En
+voici une première implémentation.</p>
+
+<!-- more -->
+
+
+<p>Un arbre syntaxique abstrait (<em>Abstract Syntax Tree</em> en anglais, ou AST)
+est avant tout une manière de structurer des données:</p>
+
+<pre><code>    A
+   / \
+  B   C
+ / \   \
+D   E   F
+   /
+  G
+</code></pre>
+
+<p>On part d'un noeud racine (ici <code>A</code>) et on ajoute des branches qui mènent à
+d'autres noeuds. On peut distinguer les noeuds terminaux (<code>D</code>, <code>F</code> et <code>G</code>) des
+noeuds non-terminaux.
+Les noeuds terminaux, aussi appelés feuilles, contiennent une valeur. Les noeuds
+non-terminaux contiennent d'autres noeuds.
+C'est une manière pratique de représenter un code source,
+l'AST étant (assez) facilement manipulable. Il est dit abstrait dans le sens
+où il ne contient pas chaque éléments du langage source. Par exemple, les
+parenthèses, les virgules, ou encore les débuts et fins de blocs sont
+souvent absents de l'AST. Si vous voulez en savoir plus sur les AST:
+<a href="http://en.wikipedia.org/wiki/Abstract_syntax_tree">http://en.wikipedia.org/wiki/Abstract_syntax_tree</a>.</p>
+
+<p>Le code qui suit est sur <a href="https://github.com/lkdjiin/naam">Github</a>,
+à la version 0.0.5.</p>
+
+<p>L'objectif est de créer l'AST et de le visualiser ainsi:</p>
+
+<pre><code>program
+  function definition
+    header
+      name ::= sign
+      argument ::= n
+    if clause
+      return value ::= 1
+      test
+        left value ::= n
+        operator value ::= &gt;
+        right value ::= 0
+    if clause
+      return value ::= -1
+      test
+        left value ::= n
+        operator value ::= &lt;
+        right value ::= 0
+    else clause
+      return value ::= 0
+  print statement ::= sign(4)
+</code></pre>
+
+<p>Voici la classe de base de l'AST:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Node</p>
+
+<pre><code>def initialize name
+  @name = name
+  @children = []
+end
+
+attr_reader :children, :name
+
+def add_child child; @children &lt;&lt; child; end
+
+def leaf?; @children.empty?; end
+
+def display(indent = 0)
+  print " " * indent + @name
+  print " ::= #{@value}" if leaf?
+  puts
+  @children.each {|child| child.display(indent + 2) }
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Elle permet entre autres d'ajouter un noeud enfant avec <code>add_child</code> et de
+déterminer si un noeud est une feuille avec <code>leaf?</code>. La méthode <code>display</code>,
+appliquée sur le noeud racine permettra d'afficher l'arbre complet.</p>
+
+<p>Un noeud non-terminal ressemblera à ça:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Program &lt; Node</p>
+
+<pre><code>def initialize
+  super("program")
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Pour un noeud terminal (une feuille), on ajoutera simplement une valeur:</p>
+
+<p>``` ruby
+module Naam::AST
+  class Argument &lt; Node</p>
+
+<pre><code>def initialize value
+  super("argument")
+  @value = value
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Comment appliquer tout ça ? Directement dans le <em>syntaxer</em>. En voici
+quelques extraits:</p>
+
+<p>``` ruby
+module Naam::Parser
+  class Syntaxer</p>
+
+<pre><code>def initialize
+  # ...
+  @ast = Naam::AST::Program.new
+end
+
+# ...
+
+def function_def
+  node = Naam::AST::FunctionDef.new
+  @ast.add_child node
+  function_header(node)
+  if_clause(node) while if_clause?
+  else_clause(node)
+end
+
+def function_header(node)
+  @series = []
+  accept_series(:word, :paro, :word, :parc, :affect, :eol)
+  f_header = Naam::AST::FunctionHeader.new
+  f_header.add_child(Naam::AST::Name.new(@series[0].value))
+  f_header.add_child(Naam::AST::Arg.new(@series[2].value))
+  node.add_child(f_header)
+end
+
+# ...
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>L'AST va me permettre de faire un truc plus propre (même si cette classe
+<code>Syntaxer</code> demande toujours un gros <em>refactoring</em>) et de manipuler plus
+aisement le code source.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>
