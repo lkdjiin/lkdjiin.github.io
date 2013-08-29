@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-28T09:57:56+02:00</updated>
+  <updated>2013-08-29T09:47:23+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,197 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/"/>
+    <updated>2013-08-29T09:29:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans cette seconde partie, on commence à coder…</p>
+
+<p>J'ai choisi un problème simple: trouver une expression qui vaut 987 en
+mélangeant les chiffres de 0 à 9 et les symboles +, &ndash;, / et %, respectivement
+pour addition, soustraction, division entière et reste de la division.
+L'expression comportera 12 caractères/symboles maximum. Par exemple:</p>
+
+<ul>
+<li>&ldquo;987&rdquo;</li>
+<li>&ldquo;900+87&rdquo;</li>
+<li>&ldquo;2000/2-13&rdquo;</li>
+</ul>
+
+
+<p>sont différentes solutions possibles au problème posé.</p>
+
+<!-- more -->
+
+
+<p>Je n'utilise pas la multiplication pour éviter d'avoir des nombres trop
+grands (<code>**</code> est l'opérateur de puissance en Ruby, comme dans certains
+autres langages).</p>
+
+<p>La première chose à faire est de définir comment on va coder les gènes.
+Traditionnellement, ils sont représentés sous la forme d'une chaîne de bits.
+Comme on a 14 symboles (10 chiffres et 4 opérateurs mathématiques) à
+coder, 4 bits sont suffisants. Les 2 derniers encodages sont des gènes qui
+ne font rien:</p>
+
+<pre><code>0000 0
+0001 1
+0010 2
+0011 3
+0100 4
+0101 5
+0110 6
+0111 7
+1000 8
+1001 9
+1010 +
+1011 -
+1100 /
+1101 %
+1110 ne rien faire
+1111 ne rien faire
+</code></pre>
+
+<p>L'expression recherchée devant faire au maximum 12 caractères de long, nos
+chromosomes mesureront 48 bits (12 caractères multiplié par 4 bits).</p>
+
+<p>Le problème est posé,
+c'est parti pour le code. Il est en Ruby mais je vais faire en sorte
+qu'il soit compréhensible par tous et facilement transposable dans
+votre langage de prédilection.</p>
+
+<p>On doit pouvoir créer un chromosome au hasard:</p>
+
+<p><code>ruby
+def make_chromosome
+  value = ""
+  48.times { value += rand(0..1).to_s }
+  [nil, value]
+end
+</code></p>
+
+<p>Cette fonction renvoie une liste avec <code>nil</code>, qui sera plus tard utilisé
+pour mémoriser l'évaluation du chromosome (son score) et une chaîne de
+48 caractères au hasard parmi &ldquo;1&rdquo; et &ldquo;0&rdquo;.</p>
+
+<p>On peut maintenant fabriquer une population complète:</p>
+
+<p><code>ruby
+def make_population
+  population = []
+  100.times { population &lt;&lt; make_chromosome }
+  population
+end
+</code></p>
+
+<p>La fonction <code>make_population</code> renvoie une liste de 100 chromosomes.</p>
+
+<p>On peut voir ce que ça donne avec <code>make_population.each {|x| puts x.inspect}</code>:</p>
+
+<pre><code>[nil, "110111010010111000000001011001111000100010101111"]
+[nil, "101100010001001000011000111011000001100010000000"]
+...
+[nil, "111110110011110111111110110000010100100100000100"]
+[nil, "000010101001000010011001101010101110011100010010"]
+</code></pre>
+
+<p>Maintenant qu'on a créé une population de 100 solutions potentielles, il
+faut pouvoir évaluer chaque solution. Pour cela, il faut d'abord être en
+mesure de séparer une suite de 48 bits (le chromosome) en 12 parties de
+4 bits (les gènes):</p>
+
+<p><code>ruby
+def chromosome_to_gene(chromosome)
+  chromosome.last.scan /.{4}/
+end
+</code></p>
+
+<p>La fonction <code>chromosome_to_gene</code> prend en entrée un chromosome (créé avec
+<code>make_chromosome</code>) et renvoie une liste des 12 gènes qui le compose.</p>
+
+<p>Pour décrypter l'expression composée par les 12 gènes, il faut tout
+d'abord décrypter un seul gène:</p>
+
+<p><code>ruby
+def gene_to_operand(gene)
+  case gene
+  when "0000" then 0
+  when "0001" then 1
+  when "0010" then 2
+  when "0011" then 3
+  when "0100" then 4
+  when "0101" then 5
+  when "0110" then 6
+  when "0111" then 7
+  when "1000" then 8
+  when "1001" then 9
+  when "1010" then "+"
+  when "1011" then "-"
+  when "1100" then "/"
+  when "1101" then "%"
+  end
+end
+</code></p>
+
+<p>On peut maintenant decrypter la formule complète (l'expression):</p>
+
+<p><code>ruby
+def genes_to_formula(genes)
+  formula = []
+  genes.each {|gene| formula &lt;&lt; gene_to_operand(gene) }
+  formula.join
+end
+</code></p>
+
+<p><code>genes_to_formula</code> prend en entrée la liste des 12 gènes d'un chromosome
+et renvoie l'expression sous la forme d'une chaîne de caractères.</p>
+
+<p>L'évaluation proprement dite se passe ainsi:</p>
+
+<p>``` ruby
+def evaluation(genes)
+  formula = genes_to_formula(genes)
+  begin</p>
+
+<pre><code>result = (@search_value - eval(formula)).abs
+</code></pre>
+
+<p>  rescue Exception</p>
+
+<pre><code>result = 999_999_999_999
+</code></pre>
+
+<p>  end
+  result = 999_999_999_999 unless result.is_a?(Integer)
+  result
+end
+```</p>
+
+<p>Cette fonction mérite quelques d'explications. L'expression (<code>formula</code>)
+est évaluée avec <code>eval</code>. En ruby, <code>eval</code> evalue une chaîne de caractères
+comme si c'était du code source (comme en Javascript, etc).
+On ôte ce résultat de <code>@search_value</code>, qui
+contient le nombre qu'on cherche (notre problème) et on garde la valeur
+absolue. Ainsi zéro signifie une solution et plus on s'éloigne de zéro,
+plus on est loin d'une solution. On pourra donc facilement classer nos
+individus. Si <code>eval</code> provoque une exception (à cause d'une formule/expression
+incompréhensible), on place une grande valeur
+comme résultat puisqu'on est très loin de la solution. On peut voir
+le nombre 999.999.999.999 comme étant l'infini. Enfin je regarde si
+le résultat de <code>eval</code> est bien un nombre et dans le cas contraire, je
+change le résultat pour refleter ce souci. Qu'est ce que ça peut être
+d'autre qu'un nombre ? En ruby, une chaîne placée entre <code>/</code> est une
+expression régulière. Voilà pour aujourd'hui.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un langage sur Parrot - partie 11: Arbre syntaxique abstrait]]></title>
@@ -603,177 +794,6 @@ parlerais donc de l'AST.</p>
 <p></p>
 
 <p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 9: la syntaxe]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/"/>
-    <updated>2013-08-18T08:01:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe</id>
-    <content type="html"><![CDATA[<p>Après avoir écrit un
-<a href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/">tokenizer</a>,
-avoir produit les <a href="http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/">unités lexicales</a>
-et avoir défini
-<a href="http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/">une grammaire</a>
-pour le langage Naam, je passe maintenant à la vérification de la syntaxe.</p>
-
-<!-- more -->
-
-
-<p>La vérification de la syntaxe se passe dans la classe <code>Compiler</code>. <em>&ndash; C'est pas
-le meilleur choix de nom et ça changera par la suite &ndash;</em>. Basiquement, cette
-classe ne fait que suivre la logique de la grammaire.</p>
-
-<p>``` ruby lib/naam/compiler.rb
-class Compiler</p>
-
-<p>  # units &ndash; Array of LexicalUnits
-  def compile units</p>
-
-<pre><code>@units = units
-program
-</code></pre>
-
-<p>  end</p>
-
-<p>  private</p>
-
-<p>  def program</p>
-
-<pre><code>while @units.size &gt; 0
-  case @units.first.type
-  when :eol then accept(:eol)
-  else
-    instruction
-  end
-end
-</code></pre>
-
-<p>  end</p>
-
-<p>  def instruction</p>
-
-<pre><code>case @units.first.type
-when :keyword then print_statement
-when :word then function_def
-else
-  raise Error
-end
-</code></pre>
-
-<p>  end</p>
-
-<p>  def print_statement</p>
-
-<pre><code>accept(:keyword, 'print')
-accept_series(:word, :paro, :int, :parc, :eol)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def function_def</p>
-
-<pre><code>accept_series(:word, :paro, :word, :parc, :affect, :eol)
-if_clause while if_clause?
-else_clause
-</code></pre>
-
-<p>  end</p>
-
-<p>  def if_clause</p>
-
-<pre><code>accept(:int)
-accept(:keyword, 'if')
-test
-accept(:eol)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def else_clause</p>
-
-<pre><code>accept(:int)
-accept(:keyword, 'else')
-accept(:eol)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def test</p>
-
-<pre><code>accept_series(:word, :op, :int)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def accept(type, value = &lsquo;&rsquo;)</p>
-
-<pre><code>unit = @units.slice!(0)
-raise Error unless unit.type == type
-if value != ''
-  raise Error unless unit.value == value
-end
-</code></pre>
-
-<p>  end</p>
-
-<p>  def accept_series(*args)</p>
-
-<pre><code>args.each {|arg| accept(arg) }
-</code></pre>
-
-<p>  end</p>
-
-<p>  def if_clause?</p>
-
-<pre><code>@units[1].type == :keyword &amp;&amp; @units[1].value == 'if'
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Quelques commentaires sur ce code:</p>
-
-<p>``` ruby
-def instruction
-  # &hellip;
-  else</p>
-
-<pre><code>raise Error
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Plusieurs fois j'utilise la classe <code>Error</code>, qui n'existe pas. C'est parce que
-je ne veux pas encore réfléchir à la gestion des erreurs. Les seuls cas qui
-m'intéressent pour l'instant sont ceux où ça fonctionne.</p>
-
-<p>`&ldquo; ruby
-def accept(type, value = &rdquo;)
-  unit = @units.slice!(0)
-  raise Error unless unit.type == type
-  if value != &lsquo;&rsquo;</p>
-
-<pre><code>raise Error unless unit.value == value
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>C'est la méthode <code>accept</code>, toute simple, qui effectue la vérification
-de la syntaxe en comparant l'unité lexicale attendue avec celle réellement
-disponible. On constate que les unités lexicales (représentées par <code>@units</code>)
-sont détruites au fur et à mesure de leur consommation.</p>
-
-<p>La prochaine, il sera enfin temps d'émettre le code PIR.</p>
-
-<p>À demain.
-</p>
 ]]></content>
   </entry>
   

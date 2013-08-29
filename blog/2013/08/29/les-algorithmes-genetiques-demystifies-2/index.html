@@ -1,0 +1,492 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Les algorithmes génétiques démystifiés 2 - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Dans cette seconde partie, on commence à coder… J&#8217;ai choisi un problème simple: trouver une expression qui vaut 987 en &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Les algorithmes génétiques démystifiés 2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-29T09:29:00+02:00" pubdate data-updated="true">29 août 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Dans cette seconde partie, on commence à coder…</p>
+
+<p>J&#8217;ai choisi un problème simple: trouver une expression qui vaut 987 en
+mélangeant les chiffres de 0 à 9 et les symboles +, &ndash;, / et %, respectivement
+pour addition, soustraction, division entière et reste de la division.
+L&#8217;expression comportera 12 caractères/symboles maximum. Par exemple:</p>
+
+<ul>
+<li>&ldquo;987&rdquo;</li>
+<li>&ldquo;900+87&rdquo;</li>
+<li>&ldquo;2000/2-13&rdquo;</li>
+</ul>
+
+
+<p>sont différentes solutions possibles au problème posé.</p>
+
+<!-- more -->
+
+
+<p>Je n&#8217;utilise pas la multiplication pour éviter d&#8217;avoir des nombres trop
+grands (<code>**</code> est l&#8217;opérateur de puissance en Ruby, comme dans certains
+autres langages).</p>
+
+<p>La première chose à faire est de définir comment on va coder les gènes.
+Traditionnellement, ils sont représentés sous la forme d&#8217;une chaîne de bits.
+Comme on a 14 symboles (10 chiffres et 4 opérateurs mathématiques) à
+coder, 4 bits sont suffisants. Les 2 derniers encodages sont des gènes qui
+ne font rien:</p>
+
+<pre><code>0000 0
+0001 1
+0010 2
+0011 3
+0100 4
+0101 5
+0110 6
+0111 7
+1000 8
+1001 9
+1010 +
+1011 -
+1100 /
+1101 %
+1110 ne rien faire
+1111 ne rien faire
+</code></pre>
+
+<p>L&#8217;expression recherchée devant faire au maximum 12 caractères de long, nos
+chromosomes mesureront 48 bits (12 caractères multiplié par 4 bits).</p>
+
+<p>Le problème est posé,
+c&#8217;est parti pour le code. Il est en Ruby mais je vais faire en sorte
+qu&#8217;il soit compréhensible par tous et facilement transposable dans
+votre langage de prédilection.</p>
+
+<p>On doit pouvoir créer un chromosome au hasard:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">make_chromosome</span>
+</span><span class='line'>  <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'>  <span class="mi">48</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">value</span> <span class="o">+=</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_s</span> <span class="p">}</span>
+</span><span class='line'>  <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cette fonction renvoie une liste avec <code>nil</code>, qui sera plus tard utilisé
+pour mémoriser l&#8217;évaluation du chromosome (son score) et une chaîne de
+48 caractères au hasard parmi &ldquo;1&rdquo; et &ldquo;0&rdquo;.</p>
+
+<p>On peut maintenant fabriquer une population complète:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">make_population</span>
+</span><span class='line'>  <span class="n">population</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="mi">100</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">population</span> <span class="o">&lt;&lt;</span> <span class="n">make_chromosome</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">population</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La fonction <code>make_population</code> renvoie une liste de 100 chromosomes.</p>
+
+<p>On peut voir ce que ça donne avec <code>make_population.each {|x| puts x.inspect}</code>:</p>
+
+<pre><code>[nil, "110111010010111000000001011001111000100010101111"]
+[nil, "101100010001001000011000111011000001100010000000"]
+...
+[nil, "111110110011110111111110110000010100100100000100"]
+[nil, "000010101001000010011001101010101110011100010010"]
+</code></pre>
+
+<p>Maintenant qu&#8217;on a créé une population de 100 solutions potentielles, il
+faut pouvoir évaluer chaque solution. Pour cela, il faut d&#8217;abord être en
+mesure de séparer une suite de 48 bits (le chromosome) en 12 parties de
+4 bits (les gènes):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">chromosome_to_gene</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">chromosome</span><span class="o">.</span><span class="n">last</span><span class="o">.</span><span class="n">scan</span> <span class="sr">/.{4}/</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La fonction <code>chromosome_to_gene</code> prend en entrée un chromosome (créé avec
+<code>make_chromosome</code>) et renvoie une liste des 12 gènes qui le compose.</p>
+
+<p>Pour décrypter l&#8217;expression composée par les 12 gènes, il faut tout
+d&#8217;abord décrypter un seul gène:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">gene_to_operand</span><span class="p">(</span><span class="n">gene</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">case</span> <span class="n">gene</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0000&quot;</span> <span class="k">then</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0001&quot;</span> <span class="k">then</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0010&quot;</span> <span class="k">then</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0011&quot;</span> <span class="k">then</span> <span class="mi">3</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0100&quot;</span> <span class="k">then</span> <span class="mi">4</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0101&quot;</span> <span class="k">then</span> <span class="mi">5</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0110&quot;</span> <span class="k">then</span> <span class="mi">6</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0111&quot;</span> <span class="k">then</span> <span class="mi">7</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1000&quot;</span> <span class="k">then</span> <span class="mi">8</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1001&quot;</span> <span class="k">then</span> <span class="mi">9</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1010&quot;</span> <span class="k">then</span> <span class="s2">&quot;+&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1011&quot;</span> <span class="k">then</span> <span class="s2">&quot;-&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1100&quot;</span> <span class="k">then</span> <span class="s2">&quot;/&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1101&quot;</span> <span class="k">then</span> <span class="s2">&quot;%&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut maintenant decrypter la formule complète (l&#8217;expression):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">genes_to_formula</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">formula</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="n">genes</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">gene</span><span class="o">|</span> <span class="n">formula</span> <span class="o">&lt;&lt;</span> <span class="n">gene_to_operand</span><span class="p">(</span><span class="n">gene</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">formula</span><span class="o">.</span><span class="n">join</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>genes_to_formula</code> prend en entrée la liste des 12 gènes d&#8217;un chromosome
+et renvoie l&#8217;expression sous la forme d&#8217;une chaîne de caractères.</p>
+
+<p>L&#8217;évaluation proprement dite se passe ainsi:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">evaluation</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">formula</span> <span class="o">=</span> <span class="n">genes_to_formula</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">begin</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="vi">@search_value</span> <span class="o">-</span> <span class="nb">eval</span><span class="p">(</span><span class="n">formula</span><span class="p">))</span><span class="o">.</span><span class="n">abs</span>
+</span><span class='line'>  <span class="k">rescue</span> <span class="no">Exception</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="mi">999_999_999_999</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">result</span> <span class="o">=</span> <span class="mi">999_999_999_999</span> <span class="k">unless</span> <span class="n">result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">Integer</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">result</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cette fonction mérite quelques d&#8217;explications. L&#8217;expression (<code>formula</code>)
+est évaluée avec <code>eval</code>. En ruby, <code>eval</code> evalue une chaîne de caractères
+comme si c&#8217;était du code source (comme en Javascript, etc).
+On ôte ce résultat de <code>@search_value</code>, qui
+contient le nombre qu&#8217;on cherche (notre problème) et on garde la valeur
+absolue. Ainsi zéro signifie une solution et plus on s&#8217;éloigne de zéro,
+plus on est loin d&#8217;une solution. On pourra donc facilement classer nos
+individus. Si <code>eval</code> provoque une exception (à cause d&#8217;une formule/expression
+incompréhensible), on place une grande valeur
+comme résultat puisqu&#8217;on est très loin de la solution. On peut voir
+le nombre 999.999.999.999 comme étant l&#8217;infini. Enfin je regarde si
+le résultat de <code>eval</code> est bien un nombre et dans le cas contraire, je
+change le résultat pour refleter ce souci. Qu&#8217;est ce que ça peut être
+d&#8217;autre qu&#8217;un nombre ? En ruby, une chaîne placée entre <code>/</code> est une
+expression régulière. Voilà pour aujourd&#8217;hui.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/08/28/les-algorithmes-genetiques-demystifies/'>Les algorithmes génétiques démystifiés</a></li><li><a href='/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-08-29T09:29:00+02:00" pubdate data-updated="true">29 août 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/" data-via="@lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/08/28/les-algorithmes-genetiques-demystifies/" title="Previous Post: Les algorithmes génétiques démystifiés">&laquo; Les algorithmes génétiques démystifiés</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim et Ruby.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">Les algorithmes génétiques démystifiés 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/28/les-algorithmes-genetiques-demystifies/">Les algorithmes génétiques démystifiés</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/27/bien-debuter-avec-vim-recherche-de-texte/">Bien débuter avec Vim: Recherche de texte</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/">Un langage sur Parrot - partie 11: Arbre syntaxique abstrait</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/25/mon-generateur-dombres-css/">Mon générateur d'ombres CSS</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/24/quelques-ressources-libres-pour-elixir/">Quelques ressources libres pour Elixir</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/23/bash-ajouter-une-ligne-a-la-fin-de-plusieurs-fichiers/">Bash: ajouter une ligne à la fin de plusieurs fichiers</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
