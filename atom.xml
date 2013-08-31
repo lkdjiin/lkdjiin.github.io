@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-30T10:08:41+02:00</updated>
+  <updated>2013-08-31T12:01:02+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,172 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 12]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/"/>
+    <updated>2013-08-31T11:02:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Dans le dernier épisode, j&#8217;utilisais un AST pour capturer la grammaire
+de Naam, et le code n&#8217;était pas très propre. Cette fois je nettoie un peu
+tout ça en mettant les règles de grammaire dans leur propres classes.</p>
+
+<!-- more -->
+
+
+<p>De ce fait, le syntaxer a beaucoup maigri puisqu&#8217;il se contente
+maintenant de lancer la première règle:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># Public: Here we transform a list of lexical units in an AST.</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Syntaxer</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>      <span class="vi">@ast</span> <span class="o">=</span> <span class="no">AST</span><span class="o">.</span><span class="n">new</span> <span class="s2">&quot;ast&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Public: Compile lexical units from a Naam program in an AST.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># units - Array of LexicalUnits</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns the AST.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">run</span> <span class="n">units</span>
+</span><span class='line'>      <span class="no">ProgramRule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="vi">@ast</span><span class="p">)</span><span class="o">.</span><span class="n">apply!</span>
+</span><span class='line'>      <span class="vi">@ast</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voici la règle de base:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">BaseRule</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">ast_node</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@units</span> <span class="o">=</span> <span class="n">units</span>
+</span><span class='line'>      <span class="vi">@ast_node</span> <span class="o">=</span> <span class="n">ast_node</span>
+</span><span class='line'>      <span class="vi">@series</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">apply!</span>
+</span><span class='line'>      <span class="k">raise</span> <span class="no">NotImplementedError</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">accept</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">unit</span> <span class="o">=</span> <span class="vi">@units</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@series</span> <span class="o">&lt;&lt;</span> <span class="n">unit</span>
+</span><span class='line'>      <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">type</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'>        <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">value</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">accept_series</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">args</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">arg</span><span class="o">|</span> <span class="n">accept</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Reste à écrire une classe par règle de grammaire. Voici par exemple la
+règle pour la <code>else clause</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">ElseClauseRule</span> <span class="o">&lt;</span> <span class="no">BaseRule</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">apply!</span>
+</span><span class='line'>      <span class="n">accept</span><span class="p">(</span><span class="ss">:int</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">accept</span><span class="p">(</span><span class="ss">:keyword</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">else_node</span> <span class="o">=</span> <span class="no">ElseClauseAST</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>      <span class="n">else_node</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="no">ReturnValueAST</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@series</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="n">value</span><span class="p">))</span>
+</span><span class='line'>      <span class="vi">@ast_node</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">else_node</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La prochaine étape sera de sortir le code PIR à partir de l&#8217;AST.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 3]]></title>
@@ -141,7 +307,7 @@ très bien écrit.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/'>Les algorithmes génétiques démystifiés</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/'>Les algorithmes génétiques démystifiés</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -373,7 +539,7 @@ expression régulière. Voilà pour aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/'>Les algorithmes génétiques démystifiés</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/'>Les algorithmes génétiques démystifiés</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -441,7 +607,7 @@ algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -785,7 +951,7 @@ aisement le code source.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1260,7 +1426,7 @@ bien trop d&#8217;abréviations dans mon code. À partir d&#8217;aujourd&#8217;h
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1669,9 +1835,9 @@ parlerais donc de l&#8217;AST.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1919,7 +2085,7 @@ sont détruites au fur et à mesure de leur consommation.</p>
 <p>La prochaine, il sera enfin temps d&#8217;émettre le code PIR.</p>
 
 <p>À demain.
-<section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2255,7 +2421,7 @@ ce qu&#8217;implique la programmation fonctionnelle…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/'>Le problème des 100 portes en Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/'>Le problème des 100 portes en Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2515,7 +2681,7 @@ Test Automaton running
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2717,7 +2883,7 @@ grammaire de Naam, ce qui enclenchera la phase d&#8217;analyse syntaxique.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3063,84 +3229,6 @@ au <em>lexer</em>.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/'>Implémenter un langage sur Parrot &ndash; partie 8: la grammaire</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/'>Parrot 5: un plan pour écrire un compilateur</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Parrot 5: un plan pour écrire un compilateur]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/"/>
-    <updated>2013-08-11T10:47:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Après avoir fini le tour d&#8217;horizon de l&#8217;assembleur PIR dans
-<a href="http://lkdjiin.github.io/blog/2013/08/10/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-4/">la quatrième partie</a>
-je digresse un peu sur ce qui nous attends dans les prochains épisodes.</p>
-
-<!-- more -->
-
-
-<h2>Un plan pour écrire un compilateur</h2>
-
-<p>Maintenant qu&#8217;on sait écrire des programmes en PIR suffisament
-évolués pour fournir un début de support au magnifique langage Naam,
-il est plus que temps d&#8217;écrire le compilateur Naam vers PIR.
-Pour ça, il y a plusieurs solutions.</p>
-
-<p>La première est d&#8217;utiliser les outils fournis avec Parrot sous le nom
-de PCT: Parrot Compiler Tools. PCT a vraiment l&#8217;air très bien et devrait
-faire l&#8217;affaire pour certains. Malheureusement pour moi, les outils PCT
-sont écrits en Perl, langage que je ne connais vraiment pas assez. J&#8217;ai
-essayé mais y a pas eu moyen. Si vous connaissez bien Perl, je pense que
-vous serez très heureux avec les PCT. Sinon, il faut se tourner
-vers autre chose.</p>
-
-<p>La seconde solution est plus old-school. On écrit un compilateur en C à l&#8217;aide
-de Lex et Yacc,
-<a href="http://flex.sourceforge.net/">Flex</a>
-et <a href="http://www.gnu.org/software/bison/">Bison</a>, etc. Encore une fois, comme
-pour PCT, ce sont de très bons outils. Mais j&#8217;ai déjà donné, ils
-sont aussi ennuyeux qu&#8217;ils sont excellents. Pour mémoire,
-j&#8217;écris un <em>toy language</em> pour le fun.</p>
-
-<p>Ça me laisse une troisième solution: tout écrire <em>from scratch</em> en Ruby.
-Ça c&#8217;est fun.</p>
-
-<p>J&#8217;ai une certaine expérience dans le domaine. J&#8217;ai écrit des assembleurs,
-des compilateurs, des interpréteurs. En C, en python, en Java, en Ruby.
-Avec ou sans outils tiers. Certains projets ont aboutis et d&#8217;autres ont
-échoués mais à chaque fois j&#8217;appris quelque chose. Tout ça pour vous dire
-que je sais assez bien dans quoi je m&#8217;embarque. Naam est, et restera, un
-langage très simple. Comme je sais où je vais, écrire un compilateur
-Naam vers PIR en Ruby ne sera pas trop difficile.
-Je n&#8217;écrirais surement pas un code performant. Au contraire, je
-m&#8217;attacherais uniquement à produire un code facile à lire.
-Il nous faudra un analyseur lexical (un <em>tokenizer</em> et un <em>lexer</em>), un
-analyseur syntaxique (pour les fameuses <em>Syntax Error</em>). On aura peut-être
-besoin de produire un AST (<em>Abstract Syntax Tree</em>) mais surement pas dès
-le début. On aura aussi intêret à écrire la grammaire du langage. Il y
-arrivera un moment où il faudra se pencher sur les messages d&#8217;erreurs
-du compilateur. Après ça on avisera.</p>
-
-<p>Un compilateur est après tout un programme comme un autre, donc je ne vois
-pas de raisons de ne pas l&#8217;écrire par améliorations successives. L&#8217;objectif
-initial sera donc simplement de compiler et faire tourner le programme suivant:</p>
-
-<pre><code>sign(n)=
-1  if n &gt; 0
--1 if n &lt; 0
-0  else
-
-print sign(-123)
-</code></pre>
-
-<p>La prochaine fois on commence par le commencement en écrivant le
-<a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/'>Implémenter un langage sur Parrot &ndash; partie 8: la grammaire</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/'>Parrot 6: Écrire le tokenizer</a></li></ul></section></p>
 ]]></content>
   </entry>
   

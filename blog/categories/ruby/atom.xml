@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-30T10:08:41+02:00</updated>
+  <updated>2013-08-31T12:01:02+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,113 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 12]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/"/>
+    <updated>2013-08-31T11:02:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans le dernier épisode, j'utilisais un AST pour capturer la grammaire
+de Naam, et le code n'était pas très propre. Cette fois je nettoie un peu
+tout ça en mettant les règles de grammaire dans leur propres classes.</p>
+
+<!-- more -->
+
+
+<p>De ce fait, le syntaxer a beaucoup maigri puisqu'il se contente
+maintenant de lancer la première règle:</p>
+
+<p>``` ruby
+module Naam</p>
+
+<p>  # Public: Here we transform a list of lexical units in an AST.
+  class Syntaxer</p>
+
+<pre><code>def initialize
+  @ast = AST.new "ast"
+end
+
+# Public: Compile lexical units from a Naam program in an AST.
+#
+# units - Array of LexicalUnits
+#
+# Returns the AST.
+def run units
+  ProgramRule.new(units, @ast).apply!
+  @ast
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voici la règle de base:</p>
+
+<p>``` ruby
+module Naam
+  class BaseRule</p>
+
+<pre><code>def initialize(units, ast_node)
+  @units = units
+  @ast_node = ast_node
+  @series = []
+end
+
+def apply!
+  raise NotImplementedError
+end
+
+private
+
+def accept(type, value = '')
+  unit = @units.slice!(0)
+  @series &lt;&lt; unit
+  raise Error unless unit.type == type
+  if value != ''
+    raise Error unless unit.value == value
+  end
+end
+
+def accept_series(*args)
+  args.each {|arg| accept(arg) }
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Reste à écrire une classe par règle de grammaire. Voici par exemple la
+règle pour la <code>else clause</code>:</p>
+
+<p>``` ruby
+module Naam
+  class ElseClauseRule &lt; BaseRule</p>
+
+<pre><code>def apply!
+  accept(:int)
+  accept(:keyword, 'else')
+  accept(:eol)
+  else_node = ElseClauseAST.new
+  else_node.add_child(ReturnValueAST.new(@series[0].value))
+  @ast_node.add_child(else_node)
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>La prochaine étape sera de sortir le code PIR à partir de l'AST.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 3]]></title>
@@ -582,103 +689,6 @@ une catégorie commune avec l'article courant. C'est le rôle de la méthode
 courant, il ne reste plus qu'à trier avec la méthode <code>sort_posts</code>. Dans cette
 méthode, j'attribue un poid à chaque article en fonction du nombre de
 catégories communes. C'est ce poid qui sert de référence pour le tri.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Code propre: Non aux abréviations]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/21/code-propre-non-aux-abreviations/"/>
-    <updated>2013-08-21T14:46:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/21/code-propre-non-aux-abreviations</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Pour l'écriture du
-<a href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/">langage Naam</a>,
-je cherchais une implémentation toute
-prête de l'algorithme
-<a href="http://en.wikipedia.org/wiki/Shunting_yard_algorithm">Shunting Yard</a>
-en Ruby. Je suis tombé sur
-<a href="http://www.hokstad.com/operator-precedence-parser">cet article</a>
-qui a retenu mon attention car l'auteur propose en plus
-la sortie dans un arbre syntaxique. Ce qui est exactement ce que je voulais.
-Par contre le code est une horreur à lire. Ça m'a donné l'idée d'une série
-d'articles sur le refactoring (et ce que je pense être un code propre),
-à partir d'exemples réels.</p>
-
-<!-- more -->
-
-
-<h2>Une abréviation ne veut pas forcement dire ce que vous pensez</h2>
-
-<p>Du moins 99 fois sur 100 une abréviation est ambigue. Voyez le code suivant:</p>
-
-<p><code>ruby
-Oper = Struct.new(:pri,:sym,:type)
-</code></p>
-
-<p>Une seule ligne de code et trois abréviations (même quatre en comptant le
-<code>Struct</code>, mais là dessus je n'ai pas la main). Que peut bien vouloir dire
-<code>Oper</code> ? Operator, Operand, Operation ? Et que veut dire <code>pri</code> ? Primary,
-priority, private ? Et pour <code>sym</code>, est-ce symbol ou symlink ou autre chose ?</p>
-
-<p>Comparez avec la version suivante:</p>
-
-<p><code>ruby
-Operator = Struct.new(:priority, :symbol, :type)
-</code></p>
-
-<p>Laquelle vous semble la plus lisible ?  De prime abord on peut penser qu'il est
-simple de déduire la signification d'un nom grâce au contexte. Mais je suis
-persuadé du contraire.</p>
-
-<p>D'abord, penser au contexte demande au lecteur de fournir un effort
-intellectuel. Et cette énergie serait mieux utilisée à résoudre un
-problème, à étendre le code, plutôt qu'à le décrypter.
-Un code est souvent assez complexe par lui-même, pourquoi
-demander un effort supplémentaire inutile au lecteur ?</p>
-
-<p>Ensuite ça n'est pas seulement une question de contexte, mais aussi
-de personne. Pour untel, oper est clairement l'abréviation d'operand, alors
-que pour tel autre c'est clairement l'abréviation d'operator. Tout dépend
-du vécu de la personne en question. Pourquoi mettre de l'ambiguité dans
-nos codes ?</p>
-
-<p>Voici un autre exemple:</p>
-
-<p><code>ruby
-o = @ostack.pop
-if o.type == :lp
-  @ostack &lt;&lt; o if pri &gt; 0
-  return
-end
-@out.oper(o)
-</code></p>
-
-<p>Qu'est-ce que <code>o</code>, <code>lp</code>, <code>ostack</code> ? Imaginez le temps que prendra
-la compréhension d'une trentaine de lignes comme celles-ci. Et maintenant
-comparez avec ce qui suit:</p>
-
-<p><code>ruby
-operator = @operators.pop
-if operator.type == :left_parenthesis
-  @operators &lt;&lt; operator if priority &gt; 0
-  return
-end
-@output.operator(operator)
-</code></p>
-
-<p>C'est plus verbeux, mais même si vous ne connaissez pas Ruby, une simple
-lecture suffit pour comprendre ce que fait le code. Remarquez que j'ai
-seulement supprimé les abréviations, il y aurait d'autres choses à dire
-sur le refactoring de ce code mais ce sera pour un autre article.</p>
-
-<p>J'espère avoir convaincu les sceptiques.
-Pour finir je dois faire mon meaculpa: je me rends compte que j'utilise
-bien trop d'abréviations dans mon code. À partir d'aujourd'hui, j'arrête ;)</p>
 
 <p>À demain.</p>
 

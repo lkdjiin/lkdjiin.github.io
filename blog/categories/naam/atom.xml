@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : naam | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/naam/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-30T10:08:41+02:00</updated>
+  <updated>2013-08-31T12:01:02+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,113 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 12]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/"/>
+    <updated>2013-08-31T11:02:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans le dernier épisode, j'utilisais un AST pour capturer la grammaire
+de Naam, et le code n'était pas très propre. Cette fois je nettoie un peu
+tout ça en mettant les règles de grammaire dans leur propres classes.</p>
+
+<!-- more -->
+
+
+<p>De ce fait, le syntaxer a beaucoup maigri puisqu'il se contente
+maintenant de lancer la première règle:</p>
+
+<p>``` ruby
+module Naam</p>
+
+<p>  # Public: Here we transform a list of lexical units in an AST.
+  class Syntaxer</p>
+
+<pre><code>def initialize
+  @ast = AST.new "ast"
+end
+
+# Public: Compile lexical units from a Naam program in an AST.
+#
+# units - Array of LexicalUnits
+#
+# Returns the AST.
+def run units
+  ProgramRule.new(units, @ast).apply!
+  @ast
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voici la règle de base:</p>
+
+<p>``` ruby
+module Naam
+  class BaseRule</p>
+
+<pre><code>def initialize(units, ast_node)
+  @units = units
+  @ast_node = ast_node
+  @series = []
+end
+
+def apply!
+  raise NotImplementedError
+end
+
+private
+
+def accept(type, value = '')
+  unit = @units.slice!(0)
+  @series &lt;&lt; unit
+  raise Error unless unit.type == type
+  if value != ''
+    raise Error unless unit.value == value
+  end
+end
+
+def accept_series(*args)
+  args.each {|arg| accept(arg) }
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Reste à écrire une classe par règle de grammaire. Voici par exemple la
+règle pour la <code>else clause</code>:</p>
+
+<p>``` ruby
+module Naam
+  class ElseClauseRule &lt; BaseRule</p>
+
+<pre><code>def apply!
+  accept(:int)
+  accept(:keyword, 'else')
+  accept(:eol)
+  else_node = ElseClauseAST.new
+  else_node.add_child(ReturnValueAST.new(@series[0].value))
+  @ast_node.add_child(else_node)
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>La prochaine étape sera de sortir le code PIR à partir de l'AST.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un langage sur Parrot - partie 11: Arbre syntaxique abstrait]]></title>
@@ -641,83 +748,6 @@ end
 <p>Chaque méthode est suffisament documentée pour que vous puissiez
 comprendre la logique de la bestiole. La prochaine fois on s'attaque
 au <em>lexer</em>.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Parrot 5: un plan pour écrire un compilateur]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/"/>
-    <updated>2013-08-11T10:47:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir fini le tour d'horizon de l'assembleur PIR dans
-<a href="http://lkdjiin.github.io/blog/2013/08/10/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-4/">la quatrième partie</a>
-je digresse un peu sur ce qui nous attends dans les prochains épisodes.</p>
-
-<!-- more -->
-
-
-<h2>Un plan pour écrire un compilateur</h2>
-
-<p>Maintenant qu'on sait écrire des programmes en PIR suffisament
-évolués pour fournir un début de support au magnifique langage Naam,
-il est plus que temps d'écrire le compilateur Naam vers PIR.
-Pour ça, il y a plusieurs solutions.</p>
-
-<p>La première est d'utiliser les outils fournis avec Parrot sous le nom
-de PCT: Parrot Compiler Tools. PCT a vraiment l'air très bien et devrait
-faire l'affaire pour certains. Malheureusement pour moi, les outils PCT
-sont écrits en Perl, langage que je ne connais vraiment pas assez. J'ai
-essayé mais y a pas eu moyen. Si vous connaissez bien Perl, je pense que
-vous serez très heureux avec les PCT. Sinon, il faut se tourner
-vers autre chose.</p>
-
-<p>La seconde solution est plus old-school. On écrit un compilateur en C à l'aide
-de Lex et Yacc,
-<a href="http://flex.sourceforge.net/">Flex</a>
-et <a href="http://www.gnu.org/software/bison/">Bison</a>, etc. Encore une fois, comme
-pour PCT, ce sont de très bons outils. Mais j'ai déjà donné, ils
-sont aussi ennuyeux qu'ils sont excellents. Pour mémoire,
-j'écris un <em>toy language</em> pour le fun.</p>
-
-<p>Ça me laisse une troisième solution: tout écrire <em>from scratch</em> en Ruby.
-Ça c'est fun.</p>
-
-<p>J'ai une certaine expérience dans le domaine. J'ai écrit des assembleurs,
-des compilateurs, des interpréteurs. En C, en python, en Java, en Ruby.
-Avec ou sans outils tiers. Certains projets ont aboutis et d'autres ont
-échoués mais à chaque fois j'appris quelque chose. Tout ça pour vous dire
-que je sais assez bien dans quoi je m'embarque. Naam est, et restera, un
-langage très simple. Comme je sais où je vais, écrire un compilateur
-Naam vers PIR en Ruby ne sera pas trop difficile.
-Je n'écrirais surement pas un code performant. Au contraire, je
-m'attacherais uniquement à produire un code facile à lire.
-Il nous faudra un analyseur lexical (un <em>tokenizer</em> et un <em>lexer</em>), un
-analyseur syntaxique (pour les fameuses <em>Syntax Error</em>). On aura peut-être
-besoin de produire un AST (<em>Abstract Syntax Tree</em>) mais surement pas dès
-le début. On aura aussi intêret à écrire la grammaire du langage. Il y
-arrivera un moment où il faudra se pencher sur les messages d'erreurs
-du compilateur. Après ça on avisera.</p>
-
-<p>Un compilateur est après tout un programme comme un autre, donc je ne vois
-pas de raisons de ne pas l'écrire par améliorations successives. L'objectif
-initial sera donc simplement de compiler et faire tourner le programme suivant:</p>
-
-<pre><code>sign(n)=
-1  if n &gt; 0
--1 if n &lt; 0
-0  else
-
-print sign(-123)
-</code></pre>
-
-<p>La prochaine fois on commence par le commencement en écrivant le
-<a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>.</p>
 
 <p>À demain.</p>
 

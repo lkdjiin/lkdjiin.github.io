@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-30T10:08:41+02:00</updated>
+  <updated>2013-08-31T12:01:02+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,113 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 12]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/"/>
+    <updated>2013-08-31T11:02:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans le dernier épisode, j'utilisais un AST pour capturer la grammaire
+de Naam, et le code n'était pas très propre. Cette fois je nettoie un peu
+tout ça en mettant les règles de grammaire dans leur propres classes.</p>
+
+<!-- more -->
+
+
+<p>De ce fait, le syntaxer a beaucoup maigri puisqu'il se contente
+maintenant de lancer la première règle:</p>
+
+<p>``` ruby
+module Naam</p>
+
+<p>  # Public: Here we transform a list of lexical units in an AST.
+  class Syntaxer</p>
+
+<pre><code>def initialize
+  @ast = AST.new "ast"
+end
+
+# Public: Compile lexical units from a Naam program in an AST.
+#
+# units - Array of LexicalUnits
+#
+# Returns the AST.
+def run units
+  ProgramRule.new(units, @ast).apply!
+  @ast
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voici la règle de base:</p>
+
+<p>``` ruby
+module Naam
+  class BaseRule</p>
+
+<pre><code>def initialize(units, ast_node)
+  @units = units
+  @ast_node = ast_node
+  @series = []
+end
+
+def apply!
+  raise NotImplementedError
+end
+
+private
+
+def accept(type, value = '')
+  unit = @units.slice!(0)
+  @series &lt;&lt; unit
+  raise Error unless unit.type == type
+  if value != ''
+    raise Error unless unit.value == value
+  end
+end
+
+def accept_series(*args)
+  args.each {|arg| accept(arg) }
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Reste à écrire une classe par règle de grammaire. Voici par exemple la
+règle pour la <code>else clause</code>:</p>
+
+<p>``` ruby
+module Naam
+  class ElseClauseRule &lt; BaseRule</p>
+
+<pre><code>def apply!
+  accept(:int)
+  accept(:keyword, 'else')
+  accept(:eol)
+  else_node = ElseClauseAST.new
+  else_node.add_child(ReturnValueAST.new(@series[0].value))
+  @ast_node.add_child(else_node)
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>La prochaine étape sera de sortir le code PIR à partir de l'AST.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 3]]></title>
@@ -560,236 +667,6 @@ end
 aisement le code source.</p>
 
 <p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 10: émettre le code assembleur]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/"/>
-    <updated>2013-08-20T10:01:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Maintenant qu'on a
-<a href="http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/">vérifié la syntaxe</a>
-de notre petit programme, on peut sortir le code assembleur PIR:</p>
-
-<p><code>ruby lib/naam/main.rb
-def self.run(filename)
-  # ...
-  comp = Compiler.new
-  comp.compile(units.dup)
-end
-</code></p>
-
-<!-- more -->
-
-
-<p>Voici le module Emitter:</p>
-
-<p>``` ruby lib/naam/emitter.rb
-module Naam
-  module Emitter</p>
-
-<pre><code># Output the main procedure.
-#
-# series - An Array of String.
-#
-# Examples
-#
-#   Emitter.main(["foo(4)", "bar(-1)"]
-#   # =&gt; .sub main :main
-#   # =&gt;     .local int f
-#   # =&gt;     f = foo(4)
-#   # =&gt;     say f
-#   # =&gt;     f = bar(-1)
-#   # =&gt;     say f
-#   # =&gt; .end
-#
-# Returns nothing.
-def self.main(series)
-  unless series.empty?
-    puts
-    puts ".sub main :main"
-    puts "    .local int f"
-    series.each do |str|
-      puts "    f = #{str}"
-      puts "    say f"
-    end
-    puts ".end"
-  end
-end
-
-# Dispatch different kind of emit message.
-#
-# type   - A Symbol in :function_header, :function_footer,
-#          :if_clause, :else_clause and :label.
-# series - An Array of LexicalUnit.
-# label  - Hash like { label: "NAME", value: "123" }. Could be nil.
-#
-# Returns nothing.
-def self.emit(type, series, label)
-  case type
-  when :function_header then function_header(series)
-  when :function_footer then function_footer
-  when :if_clause then if_clause(series, label)
-  when :else_clause then else_clause(series)
-  when :label then label(series, label)
-  else
-    raise Error
-  end
-end
-
-def self.function_header(series)
-  puts ".sub " + series[0].value
-  puts "    .param int " + series[2].value
-  puts "    .local int result"
-  puts
-end
-
-def self.function_footer
-  puts "RETURN:"
-  puts "    .return(result)"
-  puts ".end"
-end
-
-def self.if_clause(series, label)
-  puts "    if #{series[2].value} #{series[3].value} #{series[4].value} " +
-       "goto #{label[:label]}"
-end
-
-def self.else_clause(series)
-  puts "    result = #{series[0].value}"
-  puts "    goto RETURN"
-end
-
-def self.label(series, label)
-  puts label[:label] + ":"
-  puts "    result = #{label[:value]}"
-  puts "    goto RETURN"
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Et voilà quelques morceaux choisis dans la class Compiler pour montrer
-son utilisation:</p>
-
-<p>``` ruby lib/naam/compiler.rb
-module Naam</p>
-
-<p>  # Public: Here we transform a list of lexical units in a PIR source
-  # code. At least this is the goal.
-  #
-  # The logic of this class try follow the grammar of Naam (see the file
-  # grammar.md).
-  class Compiler</p>
-
-<pre><code>def initialize
-  @series = []
-  @current_label = "LABEL0000"
-  @labels = []
-  @main = []
-end
-
-# Public: Compile lexical units from a Naam program in a PIR
-# program.
-#
-# units - Array of LexicalUnits
-#
-# Returns nothing.
-def compile units
-  @units = units
-  program
-end
-
-private
-
-# This is the entry rule.
-#
-# Returns nothing.
-def program
-  while @units.size &gt; 0
-    @series = []
-    case @units.first.type
-    when :eol then accept(:eol)
-    else
-      instruction
-    end
-  end
-  @labels.each {|lbl| emit(:label, lbl) }
-  emit(:function_footer)
-  Emitter.main(@main)
-end
-
-# ...
-
-# Returns nothing.
-def function_def
-  accept_series(:word, :paro, :word, :parc, :affect, :eol)
-  emit(:function_header)
-  if_clause while if_clause?
-  else_clause
-end
-
-# ...
-
-# Send a message to Emitter module.
-#
-# type  - A Symbol (see Emitter).
-# label - A Hash composed of:
-#         :label - The label name as a String.
-#         :value - The String value that will be returned by
-#                  PIR instructions for this label.
-#         By default, label is nil and unused.
-#
-# Returns nothing.
-def emit(type, label = nil)
-  Emitter.emit(type, @series, label)
-  @series = []
-end
-
-# Get a label.
-#
-# value - String value associated to the label.
-#
-# Examples
-#
-#   next_label("123")
-#   # =&gt; { label: "LABEL0000", value: "123" }
-#   next_label("-9")
-#   # =&gt; { label: "LABEL0001", value: "-9" }
-#
-# Returns the Hash label.
-def next_label(value)
-  temp = { label: @current_label, value: value }
-  @labels &lt;&lt; temp
-  @current_label = @current_label.next
-  temp
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Maintenant que je le montre, je me rends compte que ce code n'est pas
-terrible. Bien que le fichier source à compiler soit extremement simple,
-je suis déjà obligé de faire un tas de contorsions, notamment pour sortir
-la procédure main. Je pensais que c'était une bonne idée de méler
-vérification de la syntaxe et production du code assembleur pour montrer
-les relations entre ces deux phases, mais visiblement ça n'aide pas
-à la clarté du code. La meilleure solution pour m'en sortir est, je pense,
-de me servir d'un AST (Arbre syntaxique abstrait). La prochaine fois je
-parlerais donc de l'AST.</p>
-
-<p>À demain.</p>
-
-<p></p>
 
 <p></p>
 ]]></content>
