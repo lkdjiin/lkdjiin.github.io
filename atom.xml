@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-31T12:01:02+02:00</updated>
+  <updated>2013-09-01T21:08:23+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,196 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 13]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/"/>
+    <updated>2013-09-01T21:02:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Après avoir utilisé un AST pour représenter le code source de Naam,
+je parcours cet AST pour sortir le code assembleur PIR pour la machine
+virtuelle Parrot.</p>
+
+<!-- more -->
+
+
+<p>Voici la méthode principale (et temporaire):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>  <span class="o">.</span>
+</span><span class='line'>  <span class="o">.</span>
+</span><span class='line'>  <span class="o">.</span>
+</span><span class='line'>  <span class="n">syntaxer</span> <span class="o">=</span> <span class="no">Syntaxer</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>  <span class="n">ast</span> <span class="o">=</span> <span class="n">syntaxer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">dup</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">organizer</span> <span class="o">=</span> <span class="no">Organizer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">ast</span> <span class="o">=</span> <span class="n">organizer</span><span class="o">.</span><span class="n">reorganize</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">emitter</span> <span class="o">=</span> <span class="no">Emitter</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">pir_code</span> <span class="o">=</span> <span class="n">emitter</span><span class="o">.</span><span class="n">pir_code</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="n">pir_code</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La classe Syntaxer se charge de transformer la suite d&#8217;unités lexicales
+en un arbre syntaxique abstrait (AST). La classe Organizer va en
+quelque sorte réorganiser l&#8217;arbre, par exemple en regroupant les instructions
+qui ne sont pas dans une fonction à l&#8217;intérieur d&#8217;une fonction principale
+PIR.
+Quant à la classe Emitter, elle est chargée de transformer l&#8217;AST en code PIR.</p>
+
+<p>Voici un extrait de cette classe Emitter:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Emitter</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">ast</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@ast</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">dup</span>
+</span><span class='line'>      <span class="vi">@code</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'>      <span class="vi">@label</span> <span class="o">=</span> <span class="s2">&quot;LABEL0000&quot;</span>
+</span><span class='line'>      <span class="vi">@labels</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Public: Get PIR code.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns PIR code as a String.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">pir_code</span>
+</span><span class='line'>      <span class="n">compile</span><span class="p">(</span><span class="vi">@ast</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@code</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">compile</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">case</span> <span class="n">node</span>
+</span><span class='line'>      <span class="k">when</span> <span class="no">MainAST</span> <span class="k">then</span> <span class="n">compile_main</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">when</span> <span class="no">FunctionHeaderAST</span> <span class="k">then</span> <span class="n">compile_header</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">when</span> <span class="no">IfClauseAST</span> <span class="k">then</span> <span class="n">compile_if_clause</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">when</span> <span class="no">ElseClauseAST</span> <span class="k">then</span> <span class="n">compile_else_clause</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">when</span> <span class="no">FunctionFooterAST</span> <span class="k">then</span> <span class="n">compile_footer</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">child</span><span class="o">|</span> <span class="n">compile</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">compile_header</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">name</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">value</span>
+</span><span class='line'>      <span class="n">arg</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">last</span><span class="o">.</span><span class="n">value</span>
+</span><span class='line'>      <span class="vi">@code</span> <span class="o">+=</span> <span class="s2">&quot;.sub </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="vi">@code</span> <span class="o">+=</span> <span class="s2">&quot;    .param int </span><span class="si">#{</span><span class="n">arg</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="vi">@code</span> <span class="o">+=</span> <span class="s2">&quot;    .local int result</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Get the next label.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># value - The String value attached to the label.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Examples</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#   next_label</span>
+</span><span class='line'>    <span class="c1">#   # =&gt; {name: &quot;LABEL0001&quot;, value: &quot;123&quot;}.</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># Returns a Hash.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">next_label</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">label</span> <span class="o">=</span> <span class="p">{</span><span class="nb">name</span><span class="p">:</span> <span class="vi">@label</span><span class="o">.</span><span class="n">next!</span><span class="o">.</span><span class="n">dup</span><span class="p">,</span> <span class="ss">value</span><span class="p">:</span> <span class="n">value</span><span class="p">}</span>
+</span><span class='line'>      <span class="vi">@labels</span> <span class="o">&lt;&lt;</span> <span class="n">label</span>
+</span><span class='line'>      <span class="n">label</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La prochaine fois, le compilateur sera fonctionnel.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un langage sur Parrot - partie 12]]></title>
@@ -175,7 +365,7 @@ règle pour la <code>else clause</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -307,7 +497,7 @@ très bien écrit.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/'>Les algorithmes génétiques démystifiés</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -539,7 +729,7 @@ expression régulière. Voilà pour aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/'>Les algorithmes génétiques démystifiés</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -607,7 +797,7 @@ algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -951,7 +1141,7 @@ aisement le code source.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1426,7 +1616,7 @@ bien trop d&#8217;abréviations dans mon code. À partir d&#8217;aujourd&#8217;h
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1835,9 +2025,9 @@ parlerais donc de l&#8217;AST.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2085,7 +2275,7 @@ sont détruites au fur et à mesure de leur consommation.</p>
 <p>La prochaine, il sera enfin temps d&#8217;émettre le code PIR.</p>
 
 <p>À demain.
-<section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2421,7 +2611,7 @@ ce qu&#8217;implique la programmation fonctionnelle…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/'>Le problème des 100 portes en Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/'>Le problème des 100 portes en Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2681,7 +2871,7 @@ Test Automaton running
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2883,352 +3073,7 @@ grammaire de Naam, ce qui enclenchera la phase d&#8217;analyse syntaxique.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Parrot 6: Écrire le tokenizer]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/"/>
-    <updated>2013-08-12T09:05:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Après avoir défini un semblant de
-<a href="http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/">méthode de travail</a>
-on s&#8217;attaque aujourd&#8217;hui à l&#8217;écriture d&#8217;un
-<a href="http://en.wikipedia.org/wiki/Tokenization">tokenizer</a>
-pour Naam.</p>
-
-<!-- more -->
-
-
-<h2>Le tokenizer</h2>
-
-<p>Le code du projet est en ligne sur Github à l&#8217;adresse suivante:
-<a href="https://github.com/lkdjiin/naam">naam</a>.
-N&#8217;hésitez pas à le consulter. Les extraits qui suivront sont tirés de la
-version 0.0.1.</p>
-
-<p>La <em>tokenization</em> est le processus de séparation des éléments
-basiques d&#8217;un langage.
-C&#8217;est la première étape de l&#8217;analyse lexicale.
-Par exemple, à partir du programme suivant:</p>
-
-<pre><code>sign(n)=
-1  if n &gt; 0
--1 if n &lt; 0
-0  else
-
-print sign(4)
-</code></pre>
-
-<p>Je veut obtenir la suite de tokens suivante:</p>
-
-<pre><code>sign
-(
-n
-)
-=
-
-1
-if
-n
-&gt;
-0
-
--1
-if
-n
-&lt;
-0
-
-0
-else
-
-
-print
-sign
-(
-4
-)
-</code></pre>
-
-<p>Je vais d&#8217;abord introduire la classe <code>Main</code>, qui est certainement
-temporaire et aussi (exceptionnellement) la seule à ne pas être
-testée. Elle est juste là pour me permettre de visualiser les
-résultats.
-Le principe est très simple:</p>
-
-<figure class='code'><figcaption><span>lib/naam/main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Main</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">run</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">source_lines</span> <span class="o">=</span> <span class="no">Reader</span><span class="o">.</span><span class="n">read</span> <span class="n">filename</span>
-</span><span class='line'>    <span class="n">source_lines</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
-</span><span class='line'>      <span class="n">tkr</span> <span class="o">=</span> <span class="ss">Parser</span><span class="p">:</span><span class="ss">:Tokenizer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">while</span> <span class="n">tkr</span><span class="o">.</span><span class="n">has_more_token?</span>
-</span><span class='line'>        <span class="nb">puts</span> <span class="n">tkr</span><span class="o">.</span><span class="n">next_token</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Maintenant, on passe au truc intéressant, le tokenizer
-proprement dit:</p>
-
-<figure class='code'><figcaption><span>lib/naam/parser/tokenizer.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-<span class='line-number'>106</span>
-<span class='line-number'>107</span>
-<span class='line-number'>108</span>
-<span class='line-number'>109</span>
-<span class='line-number'>110</span>
-<span class='line-number'>111</span>
-<span class='line-number'>112</span>
-<span class='line-number'>113</span>
-<span class='line-number'>114</span>
-<span class='line-number'>115</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Naam::Parser</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1"># Internal: Tokenize a string of naam code.</span>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">Tokenizer</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Public: Initialize a new Tokenizer object, ready to</span>
-</span><span class='line'>    <span class="c1"># tokenize a string of naam code.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># code - A String of naam code.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span> <span class="n">code</span>
-</span><span class='line'>      <span class="vi">@index</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class='line'>      <span class="vi">@token</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'>      <span class="vi">@look_ahead</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'>      <span class="vi">@codeline</span> <span class="o">=</span> <span class="n">code</span>
-</span><span class='line'>      <span class="n">forward_look_ahead</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Public: Get the next token from the code.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># Returns The String token.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">next_token</span>
-</span><span class='line'>      <span class="n">token</span> <span class="o">=</span> <span class="n">produce_next_token</span>
-</span><span class='line'>      <span class="n">skip_white</span>
-</span><span class='line'>      <span class="vi">@token</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'>      <span class="n">token</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Public: Tells if a token is available.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># Returns Boolean.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">has_more_token?</span>
-</span><span class='line'>      <span class="vi">@index</span> <span class="o">&lt;=</span> <span class="vi">@codeline</span><span class="o">.</span><span class="n">size</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kp">private</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Look to the next character in the code.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># Returns nothing.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">forward_look_ahead</span>
-</span><span class='line'>      <span class="vi">@look_ahead</span> <span class="o">=</span> <span class="vi">@codeline</span><span class="o">[</span><span class="vi">@index</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>      <span class="vi">@index</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Returns the String next available token.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">produce_next_token</span>
-</span><span class='line'>      <span class="k">if</span> <span class="vi">@look_ahead</span> <span class="o">=~</span> <span class="sr">/[0-9]/</span>
-</span><span class='line'>        <span class="n">get_integer</span>
-</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39;(&#39;</span>
-</span><span class='line'>        <span class="n">get_paro</span>
-</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39;)&#39;</span>
-</span><span class='line'>        <span class="n">get_parc</span>
-</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39;=&#39;</span>
-</span><span class='line'>        <span class="n">get_eq</span>
-</span><span class='line'>      <span class="k">elsif</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span class='line'>        <span class="n">get_eol</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="n">get_word</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Skip all «white» characters until next non-white one.</span>
-</span><span class='line'>    <span class="c1"># Currently only spaces are considered as white.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># Returns nothing.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">skip_white</span>
-</span><span class='line'>      <span class="n">forward_look_ahead</span> <span class="k">while</span> <span class="vi">@look_ahead</span> <span class="o">==</span> <span class="s1">&#39; &#39;</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Returns a String of what naam considered an integer.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get_integer</span>
-</span><span class='line'>      <span class="n">add_look_ahead</span> <span class="k">while</span> <span class="vi">@look_ahead</span> <span class="o">=~</span> <span class="sr">/[0-9]/</span>
-</span><span class='line'>      <span class="vi">@token</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Returns String opened parenthesis.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get_paro</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Returns String closed parenthesis.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get_parc</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Returns String equal symbol &quot;=&quot;.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get_eq</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Returns String end of line &quot;\n&quot;.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get_eol</span><span class="p">;</span> <span class="n">add_this_char</span><span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Add current character to the current token and return it.</span>
-</span><span class='line'>    <span class="c1"># Usefull shorthand for single character&#39;s tokens.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># Returns the String current token.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">add_this_char</span>
-</span><span class='line'>      <span class="n">add_look_ahead</span>
-</span><span class='line'>      <span class="vi">@token</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># If it&#39;s not anything else, it&#39;s what naam language call a word.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># Returns String.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">get_word</span>
-</span><span class='line'>      <span class="n">add_look_ahead</span> <span class="k">while</span> <span class="ow">not</span> <span class="vi">@look_ahead</span> <span class="o">=~</span> <span class="sr">/[\(\)=\n ]/</span>
-</span><span class='line'>      <span class="vi">@token</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1"># Add current character to current token, then look for the</span>
-</span><span class='line'>    <span class="c1"># next char, ready for another cycle.</span>
-</span><span class='line'>    <span class="c1">#</span>
-</span><span class='line'>    <span class="c1"># Returns nothing.</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">add_look_ahead</span>
-</span><span class='line'>      <span class="vi">@token</span> <span class="o">&lt;&lt;</span> <span class="vi">@look_ahead</span>
-</span><span class='line'>      <span class="n">forward_look_ahead</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Chaque méthode est suffisament documentée pour que vous puissiez
-comprendre la logique de la bestiole. La prochaine fois on s&#8217;attaque
-au <em>lexer</em>.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/'>Implémenter un langage sur Parrot &ndash; partie 8: la grammaire</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/'>Parrot 5: un plan pour écrire un compilateur</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/31/un-langage-sur-parrot-partie-12/'>Un langage sur Parrot &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/26/un-langage-sur-parrot-partie-11-arbre-syntaxique-abstrait/'>Un langage sur Parrot &ndash; partie 11: Arbre syntaxique abstrait</a></li></ul></section></p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parrot | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parrot/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-08-31T12:01:02+02:00</updated>
+  <updated>2013-09-01T21:08:23+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,121 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un langage sur Parrot - partie 13]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/"/>
+    <updated>2013-09-01T21:02:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Après avoir utilisé un AST pour représenter le code source de Naam,
+je parcours cet AST pour sortir le code assembleur PIR pour la machine
+virtuelle Parrot.</p>
+
+<!-- more -->
+
+
+<p>Voici la méthode principale (et temporaire):</p>
+
+<p>``` ruby
+def self.run(filename)
+  .
+  .
+  .
+  syntaxer = Syntaxer.new
+  ast = syntaxer.run(units.dup)</p>
+
+<p>  organizer = Organizer.new(ast)
+  ast = organizer.reorganize</p>
+
+<p>  emitter = Emitter.new(ast)
+  pir_code = emitter.pir_code
+  puts pir_code
+end
+```</p>
+
+<p>La classe Syntaxer se charge de transformer la suite d'unités lexicales
+en un arbre syntaxique abstrait (AST). La classe Organizer va en
+quelque sorte réorganiser l'arbre, par exemple en regroupant les instructions
+qui ne sont pas dans une fonction à l'intérieur d'une fonction principale
+PIR.
+Quant à la classe Emitter, elle est chargée de transformer l'AST en code PIR.</p>
+
+<p>Voici un extrait de cette classe Emitter:</p>
+
+<p>``` ruby
+module Naam
+  class Emitter</p>
+
+<pre><code>def initialize(ast)
+  @ast = ast.dup
+  @code = ""
+  @label = "LABEL0000"
+  @labels = []
+end
+
+# Public: Get PIR code.
+#
+# Returns PIR code as a String.
+def pir_code
+  compile(@ast)
+  @code
+end
+
+private
+
+def compile(node)
+  case node
+  when MainAST then compile_main(node)
+  when FunctionHeaderAST then compile_header(node)
+  when IfClauseAST then compile_if_clause(node)
+  when ElseClauseAST then compile_else_clause(node)
+  when FunctionFooterAST then compile_footer(node)
+  end
+  node.children.each {|child| compile(child) }
+end
+
+...
+
+def compile_header(node)
+  name = node.children.first.value
+  arg = node.children.last.value
+  @code += ".sub #{name}\n"
+  @code += "    .param int #{arg}\n"
+  @code += "    .local int result\n"
+end
+
+...
+
+# Get the next label.
+#
+# value - The String value attached to the label.
+#
+# Examples
+#
+#   next_label
+#   # =&gt; {name: "LABEL0001", value: "123"}.
+#
+# Returns a Hash.
+def next_label(value)
+  label = {name: @label.next!.dup, value: value}
+  @labels &lt;&lt; label
+  label
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>La prochaine fois, le compilateur sera fonctionnel.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un langage sur Parrot - partie 12]]></title>
@@ -695,89 +810,6 @@ sont détruites au fur et à mesure de leur consommation.</p>
 
 <p>À demain.
 </p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Implémenter un langage sur Parrot - partie 8: la grammaire]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire/"/>
-    <updated>2013-08-17T09:29:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/17/implementer-un-langage-sur-parrot-partie-8-la-grammaire</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Écrire un langage sans en spécificier la grammaire c'est un peu comme se
-tirer une balle dans le pied. Même quand le langage est aussi simple et
-petit que
-Naam (voir l'<a href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/">article originel</a>),
-c'est un gain de temps pour la suite.</p>
-
-<!-- more -->
-
-
-<p>Pour spécificier la grammaire d'un langage informatique, on utilise
-généralement la
-<a href="http://fr.wikipedia.org/wiki/Forme_de_Backus-Naur">BNF</a>,
-(Backus Naur Form) ou l'une de ses extensions. Il n'est pas rare qu'un auteur
-utilise une version personnalisée de la BNF, et c'est ce que je vais faire
-pour Naam.</p>
-
-<p>Voici les quelques règles de la méta-syntaxe:</p>
-
-<pre><code>{foo}         zero or more foo
-foo | bar     foo or bar
-foo           a non-terminal foo
-'foo'         keyword foo
-[foo]         zero or one foo
----           free speech
-</code></pre>
-
-<p>Et voici la grammaire de Naam:</p>
-
-<pre><code>program           ::= {instruction | eol}
-
-instruction       ::= function_def | print_statement
-
-print_statement   ::= 'print' word ( int ) eol
-
-function_def      ::= word ( word ) = eol {if_clause} else_clause
-
-if_clause         ::= int 'if' test eol
-
-test              ::= word op int
-
-else_clause       ::= int 'else' eol
-
-op                ::= &lt; | &gt;
-
-eol               ::= --- End of line
-int               ::= --- Integer
-word              ::= --- Anything else
-</code></pre>
-
-<p>Cette grammaire est vraiment toute petite, mais suffisante pour spécifier
-le programme suivant, qui est ce que j'ai choisi pour commencer à écrire
-le compilateur Naam:</p>
-
-<pre><code>sign(n)=
-1 if n &gt; 0
--1 if n &lt; 0
-0 else
-</code></pre>
-
-<p>Alors pourquoi écrire une grammaire ? Pourquoi ne pas commencer à coder
-directement le compilateur ? Parce qu'il faut bien avouer qu'écrire une
-telle grammaire n'a rien d'amusant. Tout d'abord une grammaire, même petite,
-possède toujours un certain niveau de complexité qu'il est difficile de
-faire tenir entièrement dans sa tête. En l'écrivant on met à jour certains
-problèmes qui sinon resteraient cachés longtemps. Autre intéret d'écrire la
-grammaire: chaque règle va devenir un morceau de code ; écrire la grammaire
-c'est un peu comme avoir déjà écrit une partie du compilateur.
-Dans un prochain article je suivrais cette grammaire pour effectuer la
-vérification de la syntaxe.</p>
-
-<p>À demain.</p>
-
-<p></p>
 ]]></content>
   </entry>
   
