@@ -1,0 +1,357 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Les algorithmes génétiques démystifiés 4 - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Après en avoir terminer avec la création de la population et la sélection,
+on passe à la reproduction. Pour imiter ce qu&#8217 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Les algorithmes génétiques démystifiés 4</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-02T08:26:00+02:00" pubdate data-updated="true">2 septembre 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Après en avoir terminer avec la création de la population et la sélection,
+on passe à la reproduction.</p>
+
+<!-- more -->
+
+
+<p>Pour imiter ce qu&#8217;il se passe dans la nature, de manière fort simple,
+on va définir une fonction <code>crossover</code> (croisé, croisement) qui prend
+en entrée deux chromosomes, les parents, et qui produit en sortie une liste
+de deux autres chromosomes, les enfants. Le principe est de couper chaque
+chromosomes parents en deux parties A et B, puis d&#8217;assembler la partie A
+du parent 1 avec la partie B du parent 2 et vice-versa. Voici une illustration
+du processus avec des chromosomes de 8 bits (symbolisés par des lettres):</p>
+
+<pre><code>parent1  aaabbbbb
+parent2  xxxyyyyy
+
+enfant1  aaayyyyy
+enfant2  xxxbbbbb
+</code></pre>
+
+<p>Voici donc la fonction:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">point</span> <span class="o">=</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">47</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">child1</span> <span class="o">=</span> <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">parent1</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">point</span><span class="o">]</span> <span class="o">+</span> <span class="n">parent2</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="n">point</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'>  <span class="n">child2</span> <span class="o">=</span> <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">parent2</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">point</span><span class="o">]</span> <span class="o">+</span> <span class="n">parent1</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="n">point</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'>  <span class="o">[</span><span class="n">child1</span><span class="p">,</span> <span class="n">child2</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tout d&#8217;abord on défini le point de croisement avec <code>point = rand(1..47)</code>.
+Puis on assemble les deux chromosomes enfants et on les renvoient sous
+la forme d&#8217;une liste. Ce mode de reproduction est le plus simple, mais
+pas forcement le plus efficace (on en reparle un autre jour).</p>
+
+<p>On a maintenant tout ce qu&#8217;il faut pour produire la génération suivante:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">next_generation</span>
+</span><span class='line'>  <span class="vi">@selection</span> <span class="o">=</span> <span class="n">selection</span>
+</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="mi">25</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span> <span class="o">=</span> <span class="vi">@selection</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">child1</span><span class="p">,</span> <span class="n">child2</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">child3</span><span class="p">,</span> <span class="n">child4</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@population</span> <span class="o">+=</span> <span class="o">[</span><span class="n">child1</span><span class="p">,</span> <span class="n">child2</span><span class="p">,</span> <span class="n">child3</span><span class="p">,</span> <span class="n">child4</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Après avoir sélectionné les 50 meilleures solutions (voir
+<a href="http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/">article précédent</a>) je crée une nouvelle population : Avec 50
+individus on forme 25 couples qui vont chacun produire 4 enfants et
+on retrouve une population de 100 solutions, sensée être globalement
+meilleure que la génération précédente.</p>
+
+<p>Même si c&#8217;est peu représentatif des phénomènes naturels, dans un algorithme
+génétique les générations successives restent généralement stable en taille.
+Ça évite aussi bien la croissance infinie (mémoire des ordinateurs limitée)
+que le dépérissement de la population.</p>
+
+<p>La prochaine fois on assemblera le tout pour voir notre algorithme
+génétique à l&#8217;oeuvre.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li><li><a href='/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-02T08:26:00+02:00" pubdate data-updated="true">2 septembre 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/" data-via="@lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/09/01/un-langage-sur-parrot-partie-13/" title="Previous Post: Un langage sur Parrot - partie 13">&laquo; Un langage sur Parrot - partie 13</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim et Ruby.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/">Les algorithmes génétiques démystifiés 4</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/01/un-langage-sur-parrot-partie-13/">Un langage sur Parrot - partie 13</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/31/un-langage-sur-parrot-partie-12/">Un langage sur Parrot - partie 12</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/">Les algorithmes génétiques démystifiés 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">Les algorithmes génétiques démystifiés 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/28/les-algorithmes-genetiques-demystifies/">Les algorithmes génétiques démystifiés</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/27/bien-debuter-avec-vim-recherche-de-texte/">Bien débuter avec Vim: Recherche de texte</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

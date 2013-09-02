@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-01T21:08:23+02:00</updated>
+  <updated>2013-09-02T09:06:56+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,88 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 4]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/"/>
+    <updated>2013-09-02T08:26:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Après en avoir terminer avec la création de la population et la sélection,
+on passe à la reproduction.</p>
+
+<!-- more -->
+
+
+<p>Pour imiter ce qu'il se passe dans la nature, de manière fort simple,
+on va définir une fonction <code>crossover</code> (croisé, croisement) qui prend
+en entrée deux chromosomes, les parents, et qui produit en sortie une liste
+de deux autres chromosomes, les enfants. Le principe est de couper chaque
+chromosomes parents en deux parties A et B, puis d'assembler la partie A
+du parent 1 avec la partie B du parent 2 et vice-versa. Voici une illustration
+du processus avec des chromosomes de 8 bits (symbolisés par des lettres):</p>
+
+<pre><code>parent1  aaabbbbb
+parent2  xxxyyyyy
+
+enfant1  aaayyyyy
+enfant2  xxxbbbbb
+</code></pre>
+
+<p>Voici donc la fonction:</p>
+
+<p><code>ruby
+def crossover(parent1, parent2)
+  point = rand(1..47)
+  child1 = [nil, parent1.last[0...point] + parent2.last[point..-1]]
+  child2 = [nil, parent2.last[0...point] + parent1.last[point..-1]]
+  [child1, child2]
+end
+</code></p>
+
+<p>Tout d'abord on défini le point de croisement avec <code>point = rand(1..47)</code>.
+Puis on assemble les deux chromosomes enfants et on les renvoient sous
+la forme d'une liste. Ce mode de reproduction est le plus simple, mais
+pas forcement le plus efficace (on en reparle un autre jour).</p>
+
+<p>On a maintenant tout ce qu'il faut pour produire la génération suivante:</p>
+
+<p>``` ruby
+def next_generation
+  @selection = selection
+  @population = []
+  25.times do</p>
+
+<pre><code>parent1, parent2 = @selection.slice!(0, 2)
+child1, child2 = crossover(parent1, parent2)
+child3, child4 = crossover(parent1, parent2)
+@population += [child1, child2, child3, child4]
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Après avoir sélectionné les 50 meilleures solutions (voir
+<a href="http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/">article précédent</a>) je crée une nouvelle population : Avec 50
+individus on forme 25 couples qui vont chacun produire 4 enfants et
+on retrouve une population de 100 solutions, sensée être globalement
+meilleure que la génération précédente.</p>
+
+<p>Même si c'est peu représentatif des phénomènes naturels, dans un algorithme
+génétique les générations successives restent généralement stable en taille.
+Ça évite aussi bien la croissance infinie (mémoire des ordinateurs limitée)
+que le dépérissement de la population.</p>
+
+<p>La prochaine fois on assemblera le tout pour voir notre algorithme
+génétique à l'oeuvre.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un langage sur Parrot - partie 13]]></title>
@@ -538,71 +620,6 @@ le résultat de <code>eval</code> est bien un nombre et dans le cas contraire, j
 change le résultat pour refleter ce souci. Qu'est ce que ça peut être
 d'autre qu'un nombre ? En ruby, une chaîne placée entre <code>/</code> est une
 expression régulière. Voilà pour aujourd'hui.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/"/>
-    <updated>2013-08-28T09:49:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p><strong>démystifié</strong>:
-<blockquote><p>Enlever le caractère mystérieux.</p></blockquote></p>
-
-<p>Un algorithme génétique c'est quoi ? Comment ça marche ? À quoi ça sert ?
-Si vous vous posez une de ces questions, cette
-nouvelle série d'articles peut vous
-intéresser.</p>
-
-<!-- more -->
-
-
-<h2>Une définition simple</h2>
-
-<p>Tout d'abord, un algorithme génétique est un <em>algorithme</em>. Autrement dit
-c'est une suite d'instructions, ou encore une recette, pour résoudre un
-problème. C'est peut-être bidon pour certains d'entre vous, mais ça va mieux
-en le disant.</p>
-
-<p>Ensuite, pourquoi génétique ? Et bien parce que pour résoudre un problème,
-cette catégorie d'algorithmes s'inspire de la biologie, de la génétique,
-et notamment du mécanisme de la séléction naturelle et/ou artificielle.</p>
-
-<h2>La démarche</h2>
-
-<p>Pour faire court:</p>
-
-<ol>
-<li>On crée une population au hasard. Chaque individu représente une solution
-possible au problème posé.</li>
-<li>On évalue chaque individu (solution) de la population. En clair, on leur
-donne une note.</li>
-<li>On selectionne certains individus parmi les plus adaptés.</li>
-<li>Les individus (solutions) sélectionnés se reproduisent pour donner
-naissance à la nouvelle génération, qui est globalement plus adaptée.</li>
-<li>On recommence au point 2 jusqu'à ce qu'on trouve la solution du
-problème.</li>
-</ol>
-
-
-<h2>Les domaines d'application</h2>
-
-<p>Tous, ou presque. Trouver le meilleur profil pour une hélice de bateau ou
-une aile d'avion, apprendre à marcher à un robot, adapter le comportement
-d'un personnage dans un jeu vidéo, maximiser l'exploitation du volume
-d'un hangar, etc. Comme chaque nouvelle génération produit globalement
-une meilleure solution, les algorithmes génétiques peuvent être très
-intéressants lorsqu'on veut obtenir une <em>bonne</em> solution rapidement (et
-pas forcement la <em>meilleure</em> solution).</p>
-
-<p>Dans mes prochains articles, je parlerais plus en détails de ces
-algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 
