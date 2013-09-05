@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-04T11:31:14+02:00</updated>
+  <updated>2013-09-05T13:08:49+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,304 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 6]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/"/>
+    <updated>2013-09-05T13:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>La dernière fois on était resté sur un algorithme parfois <em>bloqué</em> par
+l'extremum local. Aujourd'hui on arrange cela grâce à la mutation génétique.</p>
+
+<!-- more -->
+
+
+<p>Tout d'abord un petit mot sur la mutation génétique. Vous voyez peut-être
+cela comme de sombres expériences de laboratoire, ou bien vous pensez à
+Peter Parker mordu par une araignée radioactive et devenant Spiderman…
+En fait, la mutation génétique est un phénomène tout à fait naturel, et
+à l'origine de l'évolution des espèces. Pour ce qui nous intéresse ici, on
+imaginera que, de temps en temps, un gène est <em>mal recopié</em>, ce qui va se
+traduire par une inversion d'un bit dans un chromosome.</p>
+
+<p>Voici la méthode qui est chargée de muter un chromosome:</p>
+
+<p>``` ruby
+def mutate(chromosome)
+  bit = rand(48)
+  value = chromosome.last
+  if value[bit] == &ldquo;0&rdquo;</p>
+
+<pre><code>value[bit] = "1"
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>value[bit] = "0"
+</code></pre>
+
+<p>  end
+  [nil, value]
+end
+```</p>
+
+<p>On sélectionne au hasard un bit parmi les 48 que comporte le chromosome,
+puis on l'inverse. Enfin on retourne le nouveau chromosome. Pour voir ce
+code à l'oeuvre, on peut écrire ceci:</p>
+
+<p><code>ruby
+c = make_chromosome
+puts c.inspect
+c = mutate(c)
+puts c.inspect
+</code></p>
+
+<p>On peut voir qu'un bit a été inversé:</p>
+
+<pre><code>[~/genetic]⇒ ruby test.rb 
+[nil, "101000101001011110110000011000010000110011011110"]
+[nil, "101000101001011110110000011000010000110010011110"]
+</code></pre>
+
+<p>Reste à savoir <em>quand</em> muter ? On considère généralement que le bon taux
+de mutation se trouve entre 1/1000 et 1/100000. Ce qui nous donne la
+méthode suivante:</p>
+
+<p>``` ruby
+def mutation
+  @population.map do |individual|</p>
+
+<pre><code>if rand(1000) == 0
+  mutate(individual)
+else
+  individual
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Un individu sur 1000 va recevoir une mutation, ce qui va permettre d'apporter
+du nouveau matériel génétique et, en théorie, d'éviter de tomber dans un
+extremum local. Pour voir ce que ça donne, il faut modifier le code du
+dernier article pour appliquer la mutation:</p>
+
+<p>``` ruby
+10000.times do |generation|
+  score_population
+  @population = @population.sort
+  best = @population.first.first
+  puts &ldquo;Generation: #{generation} Best: #{best}&rdquo;
+  if best == 0</p>
+
+<pre><code>genes = chromosome_to_gene(@population.first)
+puts "Formula: #{genes_to_formula(genes)}"
+exit
+</code></pre>
+
+<p>  end
+  next_generation
+  @population = mutation
+end
+```</p>
+
+<p>Vous noterez au passage que je suis passé de 50 générations à 10000. Les
+algorithmes génétiques n'ont vraiment de sens que sur un grand nombre de
+générations. Voyons le résultat:</p>
+
+<pre><code>[~/genetic]⇒ ruby test.rb 
+Generation: 0 Best: 39
+Generation: 1 Best: 100
+Generation: 2 Best: 34
+Generation: 3 Best: 88
+Generation: 4 Best: 44
+Generation: 5 Best: 19
+Generation: 6 Best: 105
+Generation: 7 Best: 47
+Generation: 8 Best: 13
+Generation: 9 Best: 13
+Generation: 10 Best: 13
+Generation: 11 Best: 2
+Generation: 12 Best: 1
+Generation: 13 Best: 3
+Generation: 14 Best: 33
+Generation: 15 Best: 19
+Generation: 16 Best: 7
+Generation: 17 Best: 9
+Generation: 18 Best: 1
+...
+Generation: 465 Best: 1
+Generation: 466 Best: 0
+Formula: 88-1%3+900
+</code></pre>
+
+<p>Ça fonctionne ! Sauf que parfois…</p>
+
+<p>Parfois on atteint la 10.000ème génération sans avoir la solution. Je l'ai
+déjà dit et je le répète : un algorithme génétique ne peut pas garantir
+que l'on trouvera la meilleure solution. Le problème avec notre algorithme
+(dont je donne le code complet à la fin de l'article) tient sûrement dans
+sa méthode de sélection ainsi que dans la manière dont on produit une
+nouvelle génération. Il serait intéressant de voir ce qu'il se passe
+en introduisant du sang frais, c'est à dire quelques individus produits
+au hasard. Peut-être le sujet d'un prochain article ?</p>
+
+<h2>Le code source entier</h2>
+
+<p>``` ruby
+def make_chromosome
+  value = &ldquo;&rdquo;
+  48.times { value += rand(0..1).to_s }
+  [nil, value]
+end</p>
+
+<p>def make_population
+  population = []
+  100.times { population &lt;&lt; make_chromosome }
+  population
+end</p>
+
+<p>def chromosome_to_gene(chromosome)
+  chromosome.last.scan /.{4}/
+end</p>
+
+<p>def gene_to_operand(gene)
+  case gene
+  when &ldquo;0000&rdquo; then 0
+  when &ldquo;0001&rdquo; then 1
+  when &ldquo;0010&rdquo; then 2
+  when &ldquo;0011&rdquo; then 3
+  when &ldquo;0100&rdquo; then 4
+  when &ldquo;0101&rdquo; then 5
+  when &ldquo;0110&rdquo; then 6
+  when &ldquo;0111&rdquo; then 7
+  when &ldquo;1000&rdquo; then 8
+  when &ldquo;1001&rdquo; then 9
+  when &ldquo;1010&rdquo; then &ldquo;+&rdquo;
+  when &ldquo;1011&rdquo; then &ldquo;&ndash;&rdquo;
+  when &ldquo;1100&rdquo; then &ldquo;/&rdquo;
+  when &ldquo;1101&rdquo; then &ldquo;%&rdquo;
+  end
+end</p>
+
+<p>def selection
+  @selected = @population[0&hellip;50].shuffle
+end</p>
+
+<p>def genes_to_formula(genes)
+  formula = []
+  genes.each {|gene| formula &lt;&lt; gene_to_operand(gene) }
+  formula.join
+end</p>
+
+<p>def evaluation(genes)
+  formula = genes_to_formula(genes)
+  begin</p>
+
+<pre><code>result = (@search_value - eval(formula)).abs
+</code></pre>
+
+<p>  rescue Exception</p>
+
+<pre><code>result = 999_999_999_999
+</code></pre>
+
+<p>  end
+  result = 999_999_999_999 unless result.is_a?(Integer)
+  result
+end</p>
+
+<p>def score_population
+  @population = @population.map do |individual|</p>
+
+<pre><code>genes = chromosome_to_gene(individual)
+individual[0] = evaluation(genes)
+individual
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def crossover(parent1, parent2)
+  point = rand(1..47)
+  child1 = [nil, parent1.last[0&hellip;point] + parent2.last[point..-1]]
+  child2 = [nil, parent2.last[0&hellip;point] + parent1.last[point..-1]]
+  [child1, child2]
+end</p>
+
+<p>def next_generation
+  @selection = selection
+  @population = []
+  25.times do</p>
+
+<pre><code>parent1, parent2 = @selection.slice!(0, 2)
+child1, child2 = crossover(parent1, parent2)
+child3, child4 = crossover(parent1, parent2)
+@population += [child1, child2, child3, child4]
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def mutation
+  @population.map do |individual|</p>
+
+<pre><code>if rand(1000) == 0
+  mutate(individual)
+else
+  individual
+end
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def mutate(chromosome)
+  bit = rand(48)
+  value = chromosome.last
+  if value[bit] == &ldquo;0&rdquo;</p>
+
+<pre><code>value[bit] = "1"
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>value[bit] = "0"
+</code></pre>
+
+<p>  end
+  [nil, value]
+end</p>
+
+<p>@search_value = 987
+@population = make_population</p>
+
+<p>10000.times do |generation|
+  score_population
+  @population = @population.sort
+  best = @population.first.first
+  puts &ldquo;Generation: #{generation} Best: #{best}&rdquo;
+  if best == 0</p>
+
+<pre><code>genes = chromosome_to_gene(@population.first)
+puts "Formula: #{genes_to_formula(genes)}"
+exit
+</code></pre>
+
+<p>  end
+  next_generation
+  @population = mutation
+end
+```</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 5]]></title>
@@ -615,71 +913,6 @@ le résultat de <code>eval</code> est bien un nombre et dans le cas contraire, j
 change le résultat pour refleter ce souci. Qu'est ce que ça peut être
 d'autre qu'un nombre ? En ruby, une chaîne placée entre <code>/</code> est une
 expression régulière. Voilà pour aujourd'hui.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies/"/>
-    <updated>2013-08-28T09:49:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/28/les-algorithmes-genetiques-demystifies</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p><strong>démystifié</strong>:
-<blockquote><p>Enlever le caractère mystérieux.</p></blockquote></p>
-
-<p>Un algorithme génétique c'est quoi ? Comment ça marche ? À quoi ça sert ?
-Si vous vous posez une de ces questions, cette
-nouvelle série d'articles peut vous
-intéresser.</p>
-
-<!-- more -->
-
-
-<h2>Une définition simple</h2>
-
-<p>Tout d'abord, un algorithme génétique est un <em>algorithme</em>. Autrement dit
-c'est une suite d'instructions, ou encore une recette, pour résoudre un
-problème. C'est peut-être bidon pour certains d'entre vous, mais ça va mieux
-en le disant.</p>
-
-<p>Ensuite, pourquoi génétique ? Et bien parce que pour résoudre un problème,
-cette catégorie d'algorithmes s'inspire de la biologie, de la génétique,
-et notamment du mécanisme de la séléction naturelle et/ou artificielle.</p>
-
-<h2>La démarche</h2>
-
-<p>Pour faire court:</p>
-
-<ol>
-<li>On crée une population au hasard. Chaque individu représente une solution
-possible au problème posé.</li>
-<li>On évalue chaque individu (solution) de la population. En clair, on leur
-donne une note.</li>
-<li>On selectionne certains individus parmi les plus adaptés.</li>
-<li>Les individus (solutions) sélectionnés se reproduisent pour donner
-naissance à la nouvelle génération, qui est globalement plus adaptée.</li>
-<li>On recommence au point 2 jusqu'à ce qu'on trouve la solution du
-problème.</li>
-</ol>
-
-
-<h2>Les domaines d'application</h2>
-
-<p>Tous, ou presque. Trouver le meilleur profil pour une hélice de bateau ou
-une aile d'avion, apprendre à marcher à un robot, adapter le comportement
-d'un personnage dans un jeu vidéo, maximiser l'exploitation du volume
-d'un hangar, etc. Comme chaque nouvelle génération produit globalement
-une meilleure solution, les algorithmes génétiques peuvent être très
-intéressants lorsqu'on veut obtenir une <em>bonne</em> solution rapidement (et
-pas forcement la <em>meilleure</em> solution).</p>
-
-<p>Dans mes prochains articles, je parlerais plus en détails de ces
-algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 

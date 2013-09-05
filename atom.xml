@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-04T11:31:14+02:00</updated>
+  <updated>2013-09-05T13:08:49+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,424 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 6]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/"/>
+    <updated>2013-09-05T13:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>La dernière fois on était resté sur un algorithme parfois <em>bloqué</em> par
+l&#8217;extremum local. Aujourd&#8217;hui on arrange cela grâce à la mutation génétique.</p>
+
+<!-- more -->
+
+
+<p>Tout d&#8217;abord un petit mot sur la mutation génétique. Vous voyez peut-être
+cela comme de sombres expériences de laboratoire, ou bien vous pensez à
+Peter Parker mordu par une araignée radioactive et devenant Spiderman…
+En fait, la mutation génétique est un phénomène tout à fait naturel, et
+à l&#8217;origine de l&#8217;évolution des espèces. Pour ce qui nous intéresse ici, on
+imaginera que, de temps en temps, un gène est <em>mal recopié</em>, ce qui va se
+traduire par une inversion d&#8217;un bit dans un chromosome.</p>
+
+<p>Voici la méthode qui est chargée de muter un chromosome:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">bit</span> <span class="o">=</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">48</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">value</span> <span class="o">=</span> <span class="n">chromosome</span><span class="o">.</span><span class="n">last</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">value</span><span class="o">[</span><span class="n">bit</span><span class="o">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span>
+</span><span class='line'>    <span class="n">value</span><span class="o">[</span><span class="n">bit</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">value</span><span class="o">[</span><span class="n">bit</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On sélectionne au hasard un bit parmi les 48 que comporte le chromosome,
+puis on l&#8217;inverse. Enfin on retourne le nouveau chromosome. Pour voir ce
+code à l&#8217;oeuvre, on peut écrire ceci:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="n">make_chromosome</span>
+</span><span class='line'><span class="nb">puts</span> <span class="n">c</span><span class="o">.</span><span class="n">inspect</span>
+</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="n">mutate</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+</span><span class='line'><span class="nb">puts</span> <span class="n">c</span><span class="o">.</span><span class="n">inspect</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut voir qu&#8217;un bit a été inversé:</p>
+
+<pre><code>[~/genetic]⇒ ruby test.rb 
+[nil, "101000101001011110110000011000010000110011011110"]
+[nil, "101000101001011110110000011000010000110010011110"]
+</code></pre>
+
+<p>Reste à savoir <em>quand</em> muter ? On considère généralement que le bon taux
+de mutation se trouve entre 1/1000 et 1/100000. Ce qui nous donne la
+méthode suivante:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">mutation</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">individual</span><span class="o">|</span>
+</span><span class='line'>    <span class="k">if</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class='line'>      <span class="n">mutate</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="n">individual</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Un individu sur 1000 va recevoir une mutation, ce qui va permettre d&#8217;apporter
+du nouveau matériel génétique et, en théorie, d&#8217;éviter de tomber dans un
+extremum local. Pour voir ce que ça donne, il faut modifier le code du
+dernier article pour appliquer la mutation:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="mi">10000</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">generation</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">score_population</span>
+</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">sort</span>
+</span><span class='line'>  <span class="n">best</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Generation: </span><span class="si">#{</span><span class="n">generation</span><span class="si">}</span><span class="s2"> Best: </span><span class="si">#{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">best</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">genes</span> <span class="o">=</span> <span class="n">chromosome_to_gene</span><span class="p">(</span><span class="vi">@population</span><span class="o">.</span><span class="n">first</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Formula: </span><span class="si">#{</span><span class="n">genes_to_formula</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="nb">exit</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">next_generation</span>
+</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="n">mutation</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Vous noterez au passage que je suis passé de 50 générations à 10000. Les
+algorithmes génétiques n&#8217;ont vraiment de sens que sur un grand nombre de
+générations. Voyons le résultat:</p>
+
+<pre><code>[~/genetic]⇒ ruby test.rb 
+Generation: 0 Best: 39
+Generation: 1 Best: 100
+Generation: 2 Best: 34
+Generation: 3 Best: 88
+Generation: 4 Best: 44
+Generation: 5 Best: 19
+Generation: 6 Best: 105
+Generation: 7 Best: 47
+Generation: 8 Best: 13
+Generation: 9 Best: 13
+Generation: 10 Best: 13
+Generation: 11 Best: 2
+Generation: 12 Best: 1
+Generation: 13 Best: 3
+Generation: 14 Best: 33
+Generation: 15 Best: 19
+Generation: 16 Best: 7
+Generation: 17 Best: 9
+Generation: 18 Best: 1
+...
+Generation: 465 Best: 1
+Generation: 466 Best: 0
+Formula: 88-1%3+900
+</code></pre>
+
+<p>Ça fonctionne ! Sauf que parfois…</p>
+
+<p>Parfois on atteint la 10.000ème génération sans avoir la solution. Je l&#8217;ai
+déjà dit et je le répète : un algorithme génétique ne peut pas garantir
+que l&#8217;on trouvera la meilleure solution. Le problème avec notre algorithme
+(dont je donne le code complet à la fin de l&#8217;article) tient sûrement dans
+sa méthode de sélection ainsi que dans la manière dont on produit une
+nouvelle génération. Il serait intéressant de voir ce qu&#8217;il se passe
+en introduisant du sang frais, c&#8217;est à dire quelques individus produits
+au hasard. Peut-être le sujet d&#8217;un prochain article ?</p>
+
+<h2>Le code source entier</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">make_chromosome</span>
+</span><span class='line'>  <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'>  <span class="mi">48</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">value</span> <span class="o">+=</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_s</span> <span class="p">}</span>
+</span><span class='line'>  <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">make_population</span>
+</span><span class='line'>  <span class="n">population</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="mi">100</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">population</span> <span class="o">&lt;&lt;</span> <span class="n">make_chromosome</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">population</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">chromosome_to_gene</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">chromosome</span><span class="o">.</span><span class="n">last</span><span class="o">.</span><span class="n">scan</span> <span class="sr">/.{4}/</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">gene_to_operand</span><span class="p">(</span><span class="n">gene</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">case</span> <span class="n">gene</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0000&quot;</span> <span class="k">then</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0001&quot;</span> <span class="k">then</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0010&quot;</span> <span class="k">then</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0011&quot;</span> <span class="k">then</span> <span class="mi">3</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0100&quot;</span> <span class="k">then</span> <span class="mi">4</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0101&quot;</span> <span class="k">then</span> <span class="mi">5</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0110&quot;</span> <span class="k">then</span> <span class="mi">6</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;0111&quot;</span> <span class="k">then</span> <span class="mi">7</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1000&quot;</span> <span class="k">then</span> <span class="mi">8</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1001&quot;</span> <span class="k">then</span> <span class="mi">9</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1010&quot;</span> <span class="k">then</span> <span class="s2">&quot;+&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1011&quot;</span> <span class="k">then</span> <span class="s2">&quot;-&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1100&quot;</span> <span class="k">then</span> <span class="s2">&quot;/&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;1101&quot;</span> <span class="k">then</span> <span class="s2">&quot;%&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">selection</span>
+</span><span class='line'>  <span class="vi">@selected</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="mi">50</span><span class="o">].</span><span class="n">shuffle</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">genes_to_formula</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">formula</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="n">genes</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">gene</span><span class="o">|</span> <span class="n">formula</span> <span class="o">&lt;&lt;</span> <span class="n">gene_to_operand</span><span class="p">(</span><span class="n">gene</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">formula</span><span class="o">.</span><span class="n">join</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">evaluation</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">formula</span> <span class="o">=</span> <span class="n">genes_to_formula</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">begin</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="vi">@search_value</span> <span class="o">-</span> <span class="nb">eval</span><span class="p">(</span><span class="n">formula</span><span class="p">))</span><span class="o">.</span><span class="n">abs</span>
+</span><span class='line'>  <span class="k">rescue</span> <span class="no">Exception</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">=</span> <span class="mi">999_999_999_999</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">result</span> <span class="o">=</span> <span class="mi">999_999_999_999</span> <span class="k">unless</span> <span class="n">result</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="nb">Integer</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">result</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">score_population</span>
+</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">individual</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">genes</span> <span class="o">=</span> <span class="n">chromosome_to_gene</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">individual</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">=</span> <span class="n">evaluation</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">individual</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">point</span> <span class="o">=</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">47</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">child1</span> <span class="o">=</span> <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">parent1</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">point</span><span class="o">]</span> <span class="o">+</span> <span class="n">parent2</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="n">point</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'>  <span class="n">child2</span> <span class="o">=</span> <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">parent2</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="n">point</span><span class="o">]</span> <span class="o">+</span> <span class="n">parent1</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="n">point</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'>  <span class="o">[</span><span class="n">child1</span><span class="p">,</span> <span class="n">child2</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">next_generation</span>
+</span><span class='line'>  <span class="vi">@selection</span> <span class="o">=</span> <span class="n">selection</span>
+</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="mi">25</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span> <span class="o">=</span> <span class="vi">@selection</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">child1</span><span class="p">,</span> <span class="n">child2</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">child3</span><span class="p">,</span> <span class="n">child4</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@population</span> <span class="o">+=</span> <span class="o">[</span><span class="n">child1</span><span class="p">,</span> <span class="n">child2</span><span class="p">,</span> <span class="n">child3</span><span class="p">,</span> <span class="n">child4</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">mutation</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">individual</span><span class="o">|</span>
+</span><span class='line'>    <span class="k">if</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class='line'>      <span class="n">mutate</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="n">individual</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">bit</span> <span class="o">=</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">48</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">value</span> <span class="o">=</span> <span class="n">chromosome</span><span class="o">.</span><span class="n">last</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">value</span><span class="o">[</span><span class="n">bit</span><span class="o">]</span> <span class="o">==</span> <span class="s2">&quot;0&quot;</span>
+</span><span class='line'>    <span class="n">value</span><span class="o">[</span><span class="n">bit</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;1&quot;</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">value</span><span class="o">[</span><span class="n">bit</span><span class="o">]</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="vi">@search_value</span> <span class="o">=</span> <span class="mi">987</span>
+</span><span class='line'><span class="vi">@population</span> <span class="o">=</span> <span class="n">make_population</span>
+</span><span class='line'>
+</span><span class='line'><span class="mi">10000</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">generation</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">score_population</span>
+</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">sort</span>
+</span><span class='line'>  <span class="n">best</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Generation: </span><span class="si">#{</span><span class="n">generation</span><span class="si">}</span><span class="s2"> Best: </span><span class="si">#{</span><span class="n">best</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">best</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">genes</span> <span class="o">=</span> <span class="n">chromosome_to_gene</span><span class="p">(</span><span class="vi">@population</span><span class="o">.</span><span class="n">first</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Formula: </span><span class="si">#{</span><span class="n">genes_to_formula</span><span class="p">(</span><span class="n">genes</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="nb">exit</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">next_generation</span>
+</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="n">mutation</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Générer un fichier Changelog avec Git]]></title>
@@ -472,7 +890,7 @@ C&#8217;est le sujet du prochain article.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -568,7 +986,7 @@ génétique à l&#8217;oeuvre.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1056,7 +1474,7 @@ très bien écrit.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/'>Les algorithmes génétiques démystifiés 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1288,7 +1706,7 @@ expression régulière. Voilà pour aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1356,7 +1774,7 @@ algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/'>Les algorithmes génétiques démystifiés 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2175,7 +2593,7 @@ bien trop d&#8217;abréviations dans mon code. À partir d&#8217;aujourd&#8217;h
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2919,258 +3337,6 @@ vérification de la syntaxe.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/'>Parrot 6: Écrire le tokenizer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/11/parrot-5-un-plan-pour-ecrire-un-compilateur/'>Parrot 5: un plan pour écrire un compilateur</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Une définition de la programmation fonctionnelle avec Elixir]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir/"/>
-    <updated>2013-08-16T09:17:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/16/une-definition-de-la-programmation-fonctionnelle-avec-elixir</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<h2>Ou ma tentative désespérée de comprendre la non mutabilité</h2>
-
-<p>Cet article est un article égoiste ! Depuis que je joue un peu avec Elixir, je
-m&#8217;aperçois que j&#8217;ai des soucis à comprendre <em>vraiment</em> la programmation
-fonctionnelle.
-J&#8217;ai entre autres, des difficultés à me faire au coté immuable, non-mutable,
-de la chose (<em>immutable</em> en anglais). Je tente donc aujourd&#8217;hui de
-mettre au clair mes idées sur la question. Ce qui suit peut ressembler
-à un dialogue de fou, vous êtes prévenus.</p>
-
-<!-- more -->
-
-
-<p>Revoici le module Somme, que j&#8217;ai utilisé dans un <a href="http://lkdjiin.github.io/blog/2013/07/24/elixir-calculer-la-somme-des-n-premiers-entiers-suite-et-fin/">précédent article</a>.</p>
-
-<figure class='code'><figcaption><span>somme.exs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
-</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">acc</span>
-</span><span class='line'>  <span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Somme</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je vais l&#8217;écrire dans un bon vieux langage procédural, et analyser ce qu&#8217;il
-s&#8217;y passe.</p>
-
-<figure class='code'><figcaption><span>somme.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include&lt;stdio.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">somme</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%i</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">somme</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On compile et on lance:</p>
-
-<pre><code>$ gcc somme.c -std=c99
-$ ./a.out 
-15
-</code></pre>
-
-<p>Ici pas de récursivité mais une simple itération. Une boucle qui change la
-variable <code>somme</code> à chaque passage. Je crois qu&#8217;on devrait d&#8217;abord définir
-ce qu&#8217;est une variable. Une variable, c&#8217;est un concept. Une variable définit
-à la fois un contenant, un contenu et un type, tout cela accessible par un
-nom. Notre variable a ici pour nom <code>somme</code>. Son type est <code>int</code>. Son contenu,
-ou encore sa valeur est initialement 0 et change à chaque itération. Son
-contenant est un emplacement en mémoire, qui lui ne change pas. «<em>Et tu sais ça
-comment que ça change pas ?</em>» Bon, puisque j&#8217;ai besoin d&#8217;une preuve,
-j&#8217;ajoute un traceur qui affiche l&#8217;emplacement mémoire de <code>somme</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include&lt;stdio.h&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">somme</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">somme</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">somme</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%i</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">somme</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>$ gcc somme.c -std=c99
-$ ./a.out 
--1081032008
--1081032008
--1081032008
--1081032008
--1081032008
--1081032008
-15
-</code></pre>
-
-<p>Voilà, on le sait maintenant: la <em>valeur</em> de <code>somme</code> change, mais son
-<em>emplacement</em> (son contenant) reste identique.</p>
-
-<p>Si je tente maintenant de mimer ce comportement avec Elixir, je serais tenté
-d&#8217;écrire:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">0</span>
-</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
-</span><span class='line'>  <span class="n">somme</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>$ elixir somme.exs 
-/home/xavier/somme.exs:3: variable somme is unused
-0
-</code></pre>
-
-<p>Comme Elixir est sympa, il tente de me prévenir que quelque chose ne
-tourne pas rond. On peut penser à un problème de <em>scope</em>, se dire que le
-<code>somme</code> à l&#8217;intérieur de la fonction anonyme n&#8217;est pas le même que le
-<code>somme</code> à l&#8217;extérieur de cette fonction. Mais c&#8217;est pas ça. Ou
-plus exactement ce n&#8217;est pas <em>seulement</em> ça:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">100</span>
-</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
-</span><span class='line'>  <span class="n">somme</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
-</span><span class='line'>  <span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>$ elixir somme.exs 
-105
-104
-103
-102
-101
-100
-</code></pre>
-
-<p>La valeur du <code>somme</code> de l&#8217;intérieur est initialisée à chaque
-itération par la valeur du <code>somme</code> de l&#8217;extérieur.
-Donc le <code>somme</code> extérieur est connu dans la fonction anonyme.
-Ce comportement me
-fais m&#8217;arracher les cheveux, je sens que je passe complètement à coté
-d&#8217;un truc essentiel. Je sais qu&#8217;on n&#8217;écrirait pas cette fonction de
-cette manière, mais je veux comprendre <em>pourquoi</em> ce comportement
-quand je fais ça. En fait donner le même nom à ces deux variables est
-une illusion.
-Pour Elixir le contenu de <code>somme</code> est immuable, il ne peut pas changer.
-Il serait donc plus juste d&#8217;écrire ça:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="n">somme</span> <span class="o">=</span> <span class="m">0</span>
-</span><span class='line'><span class="no">Enum</span><span class="o">.</span><span class="n">each</span> <span class="m">5</span><span class="o">..</span><span class="m">1</span><span class="p">,</span> <span class="k">fn</span> <span class="n">n</span> <span class="o">-&gt;</span>
-</span><span class='line'>  <span class="n">temp</span> <span class="o">=</span> <span class="n">somme</span> <span class="o">+</span> <span class="n">n</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="n">somme</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ce qui, évidemment, ne mène à rien. Je commence peut-être à comprendre.
-Si je reprend le programme du départ:</p>
-
-<figure class='code'><figcaption><span>somme.exs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">defmodule</span> <span class="no">Somme</span> <span class="k">do</span>
-</span><span class='line'><span class="k">  def</span> <span class="n">run</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">acc</span>
-</span><span class='line'>  <span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="no">IO</span><span class="o">.</span><span class="n">puts</span> <span class="no">Somme</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On voit bien que les variables ne changent (ne mutent) jamais. Ce sont à
-chaque fois de <em>nouvelle création</em> qui sont passées dans les paramètres.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='elixir'><span class='line'><span class="k">def</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="k">do</span><span class="p">:</span> <span class="n">run</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="m">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">+</span> <span class="n">acc</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Lors d&#8217;un passage précis dans cette fonction, on se fiche royalement de savoir
-quel était l&#8217;état de <code>n</code> et de <code>acc</code> lors des passages précédents. Ce qui
-n&#8217;est pas le cas dans l&#8217;exemple en C:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">5</span> <span class="p">;</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">;</span> <span class="n">n</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="n">somme</span> <span class="o">+=</span> <span class="n">n</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>À chaque passage dans la boucle, il faut connaître l&#8217;état de <code>somme</code> dans
-l&#8217;itération précédente.</p>
-
-<p>On m&#8217;avait pourtant bien dit que la programmation fonctionnelle s&#8217;occupait
-des <em>transformations</em> et pas des <em>états</em>. Mais je ne voyais pas du tout
-ce que ça pouvait bien signifier. C&#8217;est maintenant un peu plus clair,
-même s&#8217;il me reste encore du chemin à parcourir pour bien saisir tout
-ce qu&#8217;implique la programmation fonctionnelle…</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/25/le-probleme-des-100-portes-en-elixir/'>Le problème des 100 portes en Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
 ]]></content>
   </entry>
   
