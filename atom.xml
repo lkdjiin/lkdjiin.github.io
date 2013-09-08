@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-07T10:09:52+02:00</updated>
+  <updated>2013-09-08T10:20:24+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,139 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 8 - Le paradoxe du singe savant]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/"/>
+    <updated>2013-09-08T09:40:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Dans son livre <a href="http://natureofcode.com/">The nature of code</a>,
+Daniel Shiffman consacre un chapitre aux algorithmes génétiques. Je lui
+pique l&#8217;idée du prochain algorithme que je vais développer sur ce blog.</p>
+
+<p>Cette fois j&#8217;aimerais vous montrer un algorithme génétique plus traditionnel,
+dans l&#8217;esprit de la <em>méthode</em> développée par
+<a href="http://en.wikipedia.org/wiki/John_Henry_Holland">John Holland</a>, qu&#8217;on peut
+considerer comme le pionnier en la matière.</p>
+
+<!-- more -->
+
+
+<h2>Objectif</h2>
+
+<p>Le but du jeu est d&#8217;obtenir la phrase suivante : «Mon royaume pour un
+cheval». C&#8217;est une variante du
+<a href="http://fr.wikipedia.org/wiki/Paradoxe_du_singe_savant">paradoxe du singe savant</a>.
+Contrairement à <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l&#8217;algorithme précédent</a>, les chromosomes vont
+être représentés par une simple phrase, et non par une chaîne de bits.
+Cela va me permettre de me concentrer plus sur l&#8217;explication de la
+méthode de sélection. Le programme sera encore écrit en Ruby, dans un
+style procédural, pour permettre au plus grand nombre de le comprendre
+facilement. La seule différence avec le style de code de
+<a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l&#8217;algorithme précédent</a> est que je vais éviter les <em>nombres magiques</em>
+pour pouvoir plus simplement personnalisé l&#8217;algorithme.</p>
+
+<p>L&#8217;intérêt d&#8217;un problème aussi simple, et dont on connait déjà la solution,
+est d&#8217;apprendre à avoir confiance dans les algorithmes génétiques.
+Lorsqu&#8217;on passera plus tard à la résolution d&#8217;un problème inconnu, on n&#8217;aura
+pas à se demander «est-ce-que ça fonctionne vraiment ?».</p>
+
+<h2>Créer la population</h2>
+
+<p>Voici le code qui va permettre de créer la population de solutions
+potentielles:</p>
+
+<figure class='code'><figcaption><span>monkey.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">make_chromosome</span>
+</span><span class='line'>  <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'>  <span class="n">length</span> <span class="o">=</span> <span class="vi">@search_value</span><span class="o">.</span><span class="n">size</span>
+</span><span class='line'>  <span class="n">length</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">value</span> <span class="o">+=</span> <span class="n">random_gene</span> <span class="p">}</span>
+</span><span class='line'>  <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">random_gene</span>
+</span><span class='line'>  <span class="vi">@genes</span><span class="o">[</span><span class="nb">rand</span><span class="p">(</span><span class="vi">@genes</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">make_population</span>
+</span><span class='line'>  <span class="n">population</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="vi">@population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">population</span> <span class="o">&lt;&lt;</span> <span class="n">make_chromosome</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">population</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="vi">@search_value</span> <span class="o">=</span> <span class="s2">&quot;Mon royaume pour un cheval&quot;</span>
+</span><span class='line'><span class="vi">@genes</span> <span class="o">=</span> <span class="s2">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &quot;</span>
+</span><span class='line'><span class="vi">@population_size</span> <span class="o">=</span> <span class="mi">100</span>
+</span><span class='line'><span class="vi">@population</span> <span class="o">=</span> <span class="n">make_population</span>
+</span><span class='line'><span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="nb">puts</span> <span class="n">i</span><span class="o">.</span><span class="n">inspect</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La fonction <code>make_chromosome</code> crée une phrase de la même taille que celle qu&#8217;on
+recherche. Elle se sert de la fonction <code>random_gene</code> pour obtenir les gènes
+au hasard. Un gène, ici, est une lettre minuscule ou majuscule, ou un espace.
+<code>make_chromosome</code> renvoie une liste avec la phrase et une valeur nulle placée
+au début. Cette valeur nulle sera remplacée plus tard par l&#8217;évaluation
+de la phrase.</p>
+
+<p>Voilà ce que donne le programme pour l&#8217;instant:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+[nil, "OdjBvCjnhCGRukFKwbpnUbSGzR"]
+[nil, "uVqkznTRQwbUkrxUklkWgIVfyv"]
+[nil, "LIRrECVrjFZPqaoySxosMs hdX"]
+[nil, "XghuLIEopQNUjECpnnhtISelLs"]
+[nil, "ovkilBZhnFTMEweTDOjsDbcqXX"]
+[nil, "tGkEbfscRscqqRfoCxtwPuRqVx"]
+[nil, "FHnwlsnoHtHbXTzsJohbyaxjIb"]
+[nil, "xNbSYbkULcgfootEBJwfYiZqrC"]
+[nil, "RcQfonEVMQnbdZX k glNDphbB"]
+.
+.
+.
+[nil, "OZVyLLOkKbzZnYTTLNxGty NWh"]
+[nil, "rPyGwpTjvUmblwXCqlYBUBtPmZ"]
+[nil, "FSQPGCFqYMWhaEurBOnefJceoZ"]
+[nil, "bsMFghPtlFfkYLpKWRohhSAHjY"]
+[nil, "FFATOumGCSfviwnzobeZOaIOJx"]
+[nil, "svVsIjmbuOBTxhfNCUgBrtoI j"]
+[nil, "ZyIqsyTefpdTmqxLzSDDPrMxQf"]
+[nil, "nbpmNBYOYcmEGI jbs RxocKzv"]
+[nil, "FlsryVrgyaGiciJBUzOfJameCh"]
+</code></pre>
+
+<p>Dans le prochain article, on s&#8217;occupera d&#8217;évaluer cette population de
+phrase.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le système de fenêtrage de Vim]]></title>
@@ -280,7 +413,7 @@ les individus ne seraient pas codés sous forme de bits. Je vais chercher ça.</
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -698,7 +831,7 @@ au hasard. Peut-être le sujet d&#8217;un prochain article ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1161,7 +1294,7 @@ C&#8217;est le sujet du prochain article.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/'>Les algorithmes génétiques démystifiés 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1257,7 +1390,7 @@ génétique à l&#8217;oeuvre.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1745,7 +1878,7 @@ très bien écrit.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1977,7 +2110,7 @@ expression régulière. Voilà pour aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2045,7 +2178,7 @@ algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/'>Les algorithmes génétiques démystifiés 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2864,7 +2997,7 @@ bien trop d&#8217;abréviations dans mon code. À partir d&#8217;aujourd&#8217;h
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3276,36 +3409,6 @@ parlerais donc de l&#8217;AST.</p>
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/18/implementer-un-langage-sur-parrot-partie-9-la-syntaxe/'>Implémenter un langage sur Parrot &ndash; partie 9: la syntaxe</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vos captures d'écrans dans un environnement réaliste]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/19/vos-captures-decrans-dans-un-environnement-realiste/"/>
-    <updated>2013-08-19T14:16:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/19/vos-captures-decrans-dans-un-environnement-realiste</id>
-    <content type="html"><![CDATA[<p>Comme moi vous n&#8217;avez pas l&#8217;âme d&#8217;un graphiste, mais vous avez parfois
-besoin de présenter un site ou une application de manière élégante ?
-Je suis tombé hier sur un site qui fait ça en 30 secondes:</p>
-
-<p><img src="http://lkdjiin.github.io/images/breezi.png"></p>
-
-<!-- more -->
-
-
-<p>Le site s&#8217;appelle <em>PlaceIt by Breezi</em> et se trouve à l&#8217;adresse suivante:
-<a href="http://placeit.breezi.com/">http://placeit.breezi.com/</a>. Le principe est
-ultra simple: Vous choisissez un appareil (téléphone, tablette, portable,
-écran) et vous y glissez/déposez votre capture d&#8217;écran. Quelques secondes
-plus tard vous pouvez télécharger l&#8217;image. Les différents appareils sont
-disponibles dans plusieurs environnements: bureau, extérieur, neutre, etc.</p>
-
-<p>Je sens que cette application va me servir régulièrement et j&#8217;avais envie
-de la partager avec vous. Si vous en connaissez d&#8217;autres dans le même genre,
-je suis preneur.</p>
-
-<p>À demain.
-<section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/25/mon-generateur-dombres-css/'>Mon générateur d&#8217;ombres CSS</a></li></ul></section></p>
 ]]></content>
   </entry>
   

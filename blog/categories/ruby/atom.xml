@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-07T10:09:52+02:00</updated>
+  <updated>2013-09-08T10:20:24+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,116 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 8 - Le paradoxe du singe savant]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/"/>
+    <updated>2013-09-08T09:40:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans son livre <a href="http://natureofcode.com/">The nature of code</a>,
+Daniel Shiffman consacre un chapitre aux algorithmes génétiques. Je lui
+pique l'idée du prochain algorithme que je vais développer sur ce blog.</p>
+
+<p>Cette fois j'aimerais vous montrer un algorithme génétique plus traditionnel,
+dans l'esprit de la <em>méthode</em> développée par
+<a href="http://en.wikipedia.org/wiki/John_Henry_Holland">John Holland</a>, qu'on peut
+considerer comme le pionnier en la matière.</p>
+
+<!-- more -->
+
+
+<h2>Objectif</h2>
+
+<p>Le but du jeu est d'obtenir la phrase suivante : «Mon royaume pour un
+cheval». C'est une variante du
+<a href="http://fr.wikipedia.org/wiki/Paradoxe_du_singe_savant">paradoxe du singe savant</a>.
+Contrairement à <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a>, les chromosomes vont
+être représentés par une simple phrase, et non par une chaîne de bits.
+Cela va me permettre de me concentrer plus sur l'explication de la
+méthode de sélection. Le programme sera encore écrit en Ruby, dans un
+style procédural, pour permettre au plus grand nombre de le comprendre
+facilement. La seule différence avec le style de code de
+<a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a> est que je vais éviter les <em>nombres magiques</em>
+pour pouvoir plus simplement personnalisé l'algorithme.</p>
+
+<p>L'intérêt d'un problème aussi simple, et dont on connait déjà la solution,
+est d'apprendre à avoir confiance dans les algorithmes génétiques.
+Lorsqu'on passera plus tard à la résolution d'un problème inconnu, on n'aura
+pas à se demander «est-ce-que ça fonctionne vraiment ?».</p>
+
+<h2>Créer la population</h2>
+
+<p>Voici le code qui va permettre de créer la population de solutions
+potentielles:</p>
+
+<p>``` ruby monkey.rb
+def make_chromosome
+  value = &ldquo;&rdquo;
+  length = @search_value.size
+  length.times { value += random_gene }
+  [nil, value]
+end</p>
+
+<p>def random_gene
+  @genes[rand(@genes.size)]
+end</p>
+
+<p>def make_population
+  population = []
+  @population_size.times { population &lt;&lt; make_chromosome }
+  population
+end</p>
+
+<p>@search_value = &ldquo;Mon royaume pour un cheval&rdquo;
+@genes = &ldquo;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &rdquo;
+@population_size = 100
+@population = make_population
+@population.each {|i| puts i.inspect }
+```</p>
+
+<p>La fonction <code>make_chromosome</code> crée une phrase de la même taille que celle qu'on
+recherche. Elle se sert de la fonction <code>random_gene</code> pour obtenir les gènes
+au hasard. Un gène, ici, est une lettre minuscule ou majuscule, ou un espace.
+<code>make_chromosome</code> renvoie une liste avec la phrase et une valeur nulle placée
+au début. Cette valeur nulle sera remplacée plus tard par l'évaluation
+de la phrase.</p>
+
+<p>Voilà ce que donne le programme pour l'instant:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+[nil, "OdjBvCjnhCGRukFKwbpnUbSGzR"]
+[nil, "uVqkznTRQwbUkrxUklkWgIVfyv"]
+[nil, "LIRrECVrjFZPqaoySxosMs hdX"]
+[nil, "XghuLIEopQNUjECpnnhtISelLs"]
+[nil, "ovkilBZhnFTMEweTDOjsDbcqXX"]
+[nil, "tGkEbfscRscqqRfoCxtwPuRqVx"]
+[nil, "FHnwlsnoHtHbXTzsJohbyaxjIb"]
+[nil, "xNbSYbkULcgfootEBJwfYiZqrC"]
+[nil, "RcQfonEVMQnbdZX k glNDphbB"]
+.
+.
+.
+[nil, "OZVyLLOkKbzZnYTTLNxGty NWh"]
+[nil, "rPyGwpTjvUmblwXCqlYBUBtPmZ"]
+[nil, "FSQPGCFqYMWhaEurBOnefJceoZ"]
+[nil, "bsMFghPtlFfkYLpKWRohhSAHjY"]
+[nil, "FFATOumGCSfviwnzobeZOaIOJx"]
+[nil, "svVsIjmbuOBTxhfNCUgBrtoI j"]
+[nil, "ZyIqsyTefpdTmqxLzSDDPrMxQf"]
+[nil, "nbpmNBYOYcmEGI jbs RxocKzv"]
+[nil, "FlsryVrgyaGiciJBUzOfJameCh"]
+</code></pre>
+
+<p>Dans le prochain article, on s'occupera d'évaluer cette population de
+phrase.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 7]]></title>
@@ -751,88 +861,6 @@ idée dans un futur article. En attendant, comment on règle ça ?
 En s'inspirant encore une fois de phénomènes naturels : la mutation
 et/ou la diversité génétique.
 C'est le sujet du prochain article.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 4]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4/"/>
-    <updated>2013-09-02T08:26:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/02/les-algorithmes-genetiques-demystifies-4</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après en avoir terminer avec la création de la population et la sélection,
-on passe à la reproduction.</p>
-
-<!-- more -->
-
-
-<p>Pour imiter ce qu'il se passe dans la nature, de manière fort simple,
-on va définir une fonction <code>crossover</code> (croisé, croisement) qui prend
-en entrée deux chromosomes, les parents, et qui produit en sortie une liste
-de deux autres chromosomes, les enfants. Le principe est de couper chaque
-chromosomes parents en deux parties A et B, puis d'assembler la partie A
-du parent 1 avec la partie B du parent 2 et vice-versa. Voici une illustration
-du processus avec des chromosomes de 8 bits (symbolisés par des lettres):</p>
-
-<pre><code>parent1  aaabbbbb
-parent2  xxxyyyyy
-
-enfant1  aaayyyyy
-enfant2  xxxbbbbb
-</code></pre>
-
-<p>Voici donc la fonction:</p>
-
-<p><code>ruby
-def crossover(parent1, parent2)
-  point = rand(1..47)
-  child1 = [nil, parent1.last[0...point] + parent2.last[point..-1]]
-  child2 = [nil, parent2.last[0...point] + parent1.last[point..-1]]
-  [child1, child2]
-end
-</code></p>
-
-<p>Tout d'abord on défini le point de croisement avec <code>point = rand(1..47)</code>.
-Puis on assemble les deux chromosomes enfants et on les renvoient sous
-la forme d'une liste. Ce mode de reproduction est le plus simple, mais
-pas forcement le plus efficace (on en reparle un autre jour).</p>
-
-<p>On a maintenant tout ce qu'il faut pour produire la génération suivante:</p>
-
-<p>``` ruby
-def next_generation
-  @selection = selection
-  @population = []
-  25.times do</p>
-
-<pre><code>parent1, parent2 = @selection.slice!(0, 2)
-child1, child2 = crossover(parent1, parent2)
-child3, child4 = crossover(parent1, parent2)
-@population += [child1, child2, child3, child4]
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Après avoir sélectionné les 50 meilleures solutions (voir
-<a href="http://lkdjiin.github.io/blog/2013/08/30/les-algorithmes-genetiques-demystifies-3/">article précédent</a>) je crée une nouvelle population : Avec 50
-individus on forme 25 couples qui vont chacun produire 4 enfants et
-on retrouve une population de 100 solutions, sensée être globalement
-meilleure que la génération précédente.</p>
-
-<p>Même si c'est peu représentatif des phénomènes naturels, dans un algorithme
-génétique les générations successives restent généralement stable en taille.
-Ça évite aussi bien la croissance infinie (mémoire des ordinateurs limitée)
-que le dépérissement de la population.</p>
-
-<p>La prochaine fois on assemblera le tout pour voir notre algorithme
-génétique à l'oeuvre.</p>
 
 <p>À demain.</p>
 

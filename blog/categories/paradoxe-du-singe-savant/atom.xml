@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : paradoxe du singe savant | lkdjiin's blog]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/paradoxe-du-singe-savant/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2013-09-08T10:20:24+02:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 8 - Le paradoxe du singe savant]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/"/>
+    <updated>2013-09-08T09:40:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans son livre <a href="http://natureofcode.com/">The nature of code</a>,
+Daniel Shiffman consacre un chapitre aux algorithmes génétiques. Je lui
+pique l'idée du prochain algorithme que je vais développer sur ce blog.</p>
+
+<p>Cette fois j'aimerais vous montrer un algorithme génétique plus traditionnel,
+dans l'esprit de la <em>méthode</em> développée par
+<a href="http://en.wikipedia.org/wiki/John_Henry_Holland">John Holland</a>, qu'on peut
+considerer comme le pionnier en la matière.</p>
+
+<!-- more -->
+
+
+<h2>Objectif</h2>
+
+<p>Le but du jeu est d'obtenir la phrase suivante : «Mon royaume pour un
+cheval». C'est une variante du
+<a href="http://fr.wikipedia.org/wiki/Paradoxe_du_singe_savant">paradoxe du singe savant</a>.
+Contrairement à <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a>, les chromosomes vont
+être représentés par une simple phrase, et non par une chaîne de bits.
+Cela va me permettre de me concentrer plus sur l'explication de la
+méthode de sélection. Le programme sera encore écrit en Ruby, dans un
+style procédural, pour permettre au plus grand nombre de le comprendre
+facilement. La seule différence avec le style de code de
+<a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a> est que je vais éviter les <em>nombres magiques</em>
+pour pouvoir plus simplement personnalisé l'algorithme.</p>
+
+<p>L'intérêt d'un problème aussi simple, et dont on connait déjà la solution,
+est d'apprendre à avoir confiance dans les algorithmes génétiques.
+Lorsqu'on passera plus tard à la résolution d'un problème inconnu, on n'aura
+pas à se demander «est-ce-que ça fonctionne vraiment ?».</p>
+
+<h2>Créer la population</h2>
+
+<p>Voici le code qui va permettre de créer la population de solutions
+potentielles:</p>
+
+<p>``` ruby monkey.rb
+def make_chromosome
+  value = &ldquo;&rdquo;
+  length = @search_value.size
+  length.times { value += random_gene }
+  [nil, value]
+end</p>
+
+<p>def random_gene
+  @genes[rand(@genes.size)]
+end</p>
+
+<p>def make_population
+  population = []
+  @population_size.times { population &lt;&lt; make_chromosome }
+  population
+end</p>
+
+<p>@search_value = &ldquo;Mon royaume pour un cheval&rdquo;
+@genes = &ldquo;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &rdquo;
+@population_size = 100
+@population = make_population
+@population.each {|i| puts i.inspect }
+```</p>
+
+<p>La fonction <code>make_chromosome</code> crée une phrase de la même taille que celle qu'on
+recherche. Elle se sert de la fonction <code>random_gene</code> pour obtenir les gènes
+au hasard. Un gène, ici, est une lettre minuscule ou majuscule, ou un espace.
+<code>make_chromosome</code> renvoie une liste avec la phrase et une valeur nulle placée
+au début. Cette valeur nulle sera remplacée plus tard par l'évaluation
+de la phrase.</p>
+
+<p>Voilà ce que donne le programme pour l'instant:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+[nil, "OdjBvCjnhCGRukFKwbpnUbSGzR"]
+[nil, "uVqkznTRQwbUkrxUklkWgIVfyv"]
+[nil, "LIRrECVrjFZPqaoySxosMs hdX"]
+[nil, "XghuLIEopQNUjECpnnhtISelLs"]
+[nil, "ovkilBZhnFTMEweTDOjsDbcqXX"]
+[nil, "tGkEbfscRscqqRfoCxtwPuRqVx"]
+[nil, "FHnwlsnoHtHbXTzsJohbyaxjIb"]
+[nil, "xNbSYbkULcgfootEBJwfYiZqrC"]
+[nil, "RcQfonEVMQnbdZX k glNDphbB"]
+.
+.
+.
+[nil, "OZVyLLOkKbzZnYTTLNxGty NWh"]
+[nil, "rPyGwpTjvUmblwXCqlYBUBtPmZ"]
+[nil, "FSQPGCFqYMWhaEurBOnefJceoZ"]
+[nil, "bsMFghPtlFfkYLpKWRohhSAHjY"]
+[nil, "FFATOumGCSfviwnzobeZOaIOJx"]
+[nil, "svVsIjmbuOBTxhfNCUgBrtoI j"]
+[nil, "ZyIqsyTefpdTmqxLzSDDPrMxQf"]
+[nil, "nbpmNBYOYcmEGI jbs RxocKzv"]
+[nil, "FlsryVrgyaGiciJBUzOfJameCh"]
+</code></pre>
+
+<p>Dans le prochain article, on s'occupera d'évaluer cette population de
+phrase.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>

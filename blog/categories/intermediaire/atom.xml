@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-07T10:09:52+02:00</updated>
+  <updated>2013-09-08T10:20:24+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,116 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 8 - Le paradoxe du singe savant]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/"/>
+    <updated>2013-09-08T09:40:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans son livre <a href="http://natureofcode.com/">The nature of code</a>,
+Daniel Shiffman consacre un chapitre aux algorithmes génétiques. Je lui
+pique l'idée du prochain algorithme que je vais développer sur ce blog.</p>
+
+<p>Cette fois j'aimerais vous montrer un algorithme génétique plus traditionnel,
+dans l'esprit de la <em>méthode</em> développée par
+<a href="http://en.wikipedia.org/wiki/John_Henry_Holland">John Holland</a>, qu'on peut
+considerer comme le pionnier en la matière.</p>
+
+<!-- more -->
+
+
+<h2>Objectif</h2>
+
+<p>Le but du jeu est d'obtenir la phrase suivante : «Mon royaume pour un
+cheval». C'est une variante du
+<a href="http://fr.wikipedia.org/wiki/Paradoxe_du_singe_savant">paradoxe du singe savant</a>.
+Contrairement à <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a>, les chromosomes vont
+être représentés par une simple phrase, et non par une chaîne de bits.
+Cela va me permettre de me concentrer plus sur l'explication de la
+méthode de sélection. Le programme sera encore écrit en Ruby, dans un
+style procédural, pour permettre au plus grand nombre de le comprendre
+facilement. La seule différence avec le style de code de
+<a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a> est que je vais éviter les <em>nombres magiques</em>
+pour pouvoir plus simplement personnalisé l'algorithme.</p>
+
+<p>L'intérêt d'un problème aussi simple, et dont on connait déjà la solution,
+est d'apprendre à avoir confiance dans les algorithmes génétiques.
+Lorsqu'on passera plus tard à la résolution d'un problème inconnu, on n'aura
+pas à se demander «est-ce-que ça fonctionne vraiment ?».</p>
+
+<h2>Créer la population</h2>
+
+<p>Voici le code qui va permettre de créer la population de solutions
+potentielles:</p>
+
+<p>``` ruby monkey.rb
+def make_chromosome
+  value = &ldquo;&rdquo;
+  length = @search_value.size
+  length.times { value += random_gene }
+  [nil, value]
+end</p>
+
+<p>def random_gene
+  @genes[rand(@genes.size)]
+end</p>
+
+<p>def make_population
+  population = []
+  @population_size.times { population &lt;&lt; make_chromosome }
+  population
+end</p>
+
+<p>@search_value = &ldquo;Mon royaume pour un cheval&rdquo;
+@genes = &ldquo;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &rdquo;
+@population_size = 100
+@population = make_population
+@population.each {|i| puts i.inspect }
+```</p>
+
+<p>La fonction <code>make_chromosome</code> crée une phrase de la même taille que celle qu'on
+recherche. Elle se sert de la fonction <code>random_gene</code> pour obtenir les gènes
+au hasard. Un gène, ici, est une lettre minuscule ou majuscule, ou un espace.
+<code>make_chromosome</code> renvoie une liste avec la phrase et une valeur nulle placée
+au début. Cette valeur nulle sera remplacée plus tard par l'évaluation
+de la phrase.</p>
+
+<p>Voilà ce que donne le programme pour l'instant:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+[nil, "OdjBvCjnhCGRukFKwbpnUbSGzR"]
+[nil, "uVqkznTRQwbUkrxUklkWgIVfyv"]
+[nil, "LIRrECVrjFZPqaoySxosMs hdX"]
+[nil, "XghuLIEopQNUjECpnnhtISelLs"]
+[nil, "ovkilBZhnFTMEweTDOjsDbcqXX"]
+[nil, "tGkEbfscRscqqRfoCxtwPuRqVx"]
+[nil, "FHnwlsnoHtHbXTzsJohbyaxjIb"]
+[nil, "xNbSYbkULcgfootEBJwfYiZqrC"]
+[nil, "RcQfonEVMQnbdZX k glNDphbB"]
+.
+.
+.
+[nil, "OZVyLLOkKbzZnYTTLNxGty NWh"]
+[nil, "rPyGwpTjvUmblwXCqlYBUBtPmZ"]
+[nil, "FSQPGCFqYMWhaEurBOnefJceoZ"]
+[nil, "bsMFghPtlFfkYLpKWRohhSAHjY"]
+[nil, "FFATOumGCSfviwnzobeZOaIOJx"]
+[nil, "svVsIjmbuOBTxhfNCUgBrtoI j"]
+[nil, "ZyIqsyTefpdTmqxLzSDDPrMxQf"]
+[nil, "nbpmNBYOYcmEGI jbs RxocKzv"]
+[nil, "FlsryVrgyaGiciJBUzOfJameCh"]
+</code></pre>
+
+<p>Dans le prochain article, on s'occupera d'évaluer cette population de
+phrase.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 7]]></title>
@@ -706,121 +816,6 @@ que le dépérissement de la population.</p>
 
 <p>La prochaine fois on assemblera le tout pour voir notre algorithme
 génétique à l'oeuvre.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un langage sur Parrot - partie 13]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13/"/>
-    <updated>2013-09-01T21:02:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/01/un-langage-sur-parrot-partie-13</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir utilisé un AST pour représenter le code source de Naam,
-je parcours cet AST pour sortir le code assembleur PIR pour la machine
-virtuelle Parrot.</p>
-
-<!-- more -->
-
-
-<p>Voici la méthode principale (et temporaire):</p>
-
-<p>``` ruby
-def self.run(filename)
-  .
-  .
-  .
-  syntaxer = Syntaxer.new
-  ast = syntaxer.run(units.dup)</p>
-
-<p>  organizer = Organizer.new(ast)
-  ast = organizer.reorganize</p>
-
-<p>  emitter = Emitter.new(ast)
-  pir_code = emitter.pir_code
-  puts pir_code
-end
-```</p>
-
-<p>La classe Syntaxer se charge de transformer la suite d'unités lexicales
-en un arbre syntaxique abstrait (AST). La classe Organizer va en
-quelque sorte réorganiser l'arbre, par exemple en regroupant les instructions
-qui ne sont pas dans une fonction à l'intérieur d'une fonction principale
-PIR.
-Quant à la classe Emitter, elle est chargée de transformer l'AST en code PIR.</p>
-
-<p>Voici un extrait de cette classe Emitter:</p>
-
-<p>``` ruby
-module Naam
-  class Emitter</p>
-
-<pre><code>def initialize(ast)
-  @ast = ast.dup
-  @code = ""
-  @label = "LABEL0000"
-  @labels = []
-end
-
-# Public: Get PIR code.
-#
-# Returns PIR code as a String.
-def pir_code
-  compile(@ast)
-  @code
-end
-
-private
-
-def compile(node)
-  case node
-  when MainAST then compile_main(node)
-  when FunctionHeaderAST then compile_header(node)
-  when IfClauseAST then compile_if_clause(node)
-  when ElseClauseAST then compile_else_clause(node)
-  when FunctionFooterAST then compile_footer(node)
-  end
-  node.children.each {|child| compile(child) }
-end
-
-...
-
-def compile_header(node)
-  name = node.children.first.value
-  arg = node.children.last.value
-  @code += ".sub #{name}\n"
-  @code += "    .param int #{arg}\n"
-  @code += "    .local int result\n"
-end
-
-...
-
-# Get the next label.
-#
-# value - The String value attached to the label.
-#
-# Examples
-#
-#   next_label
-#   # =&gt; {name: "LABEL0001", value: "123"}.
-#
-# Returns a Hash.
-def next_label(value)
-  label = {name: @label.next!.dup, value: value}
-  @labels &lt;&lt; label
-  label
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>La prochaine fois, le compilateur sera fonctionnel.</p>
 
 <p>À demain.</p>
 
