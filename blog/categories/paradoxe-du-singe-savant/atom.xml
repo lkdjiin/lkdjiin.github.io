@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : paradoxe du singe savant | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/paradoxe-du-singe-savant/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-08T10:20:24+02:00</updated>
+  <updated>2013-09-09T12:36:15+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,159 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 9]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/"/>
+    <updated>2013-09-09T12:26:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">l'article précédent</a>
+j'ai donné l'objectif de ce second algorithme, inspiré par le paradoxe du
+singe savant, et on a vu comment construire la population de phrases.
+Aujourd'hui, on se concentre sur la méthode d'évaluation, tout en
+introduisant l'idée de «normaliser un score».</p>
+
+<!-- more -->
+
+
+<p>Une fois la population créée, il faut l'évaluer avant de pouvoir passer à
+l'étape de sélection. Je rappelle que nos chromosomes (que j'appelle aussi
+individus ou encore solutions potentielles) sont mémorisés dans une liste
+contenant un score et une phrase (voir
+<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">Les algorithmes génétiques démystifiés 8</a>).</p>
+
+<p>Voici comment j'évalue la population:</p>
+
+<p>``` ruby
+def evaluate_population
+  @population.map! {|person| [evaluate(person.last), person.last] }
+end</p>
+
+<p>def evaluate(phrase)
+  score = 0
+  phrase.split(&lsquo;&rsquo;).each_with_index do |character, index|</p>
+
+<pre><code>score += 1 if @search_value[index] == character
+</code></pre>
+
+<p>  end
+  score
+end
+```</p>
+
+<p>Je donne 1 point pour chaque lettre bien placée. C'est difficile de
+faire plus simple. Je pense que dans un autre article, on expérimentera
+une autre manière d'évaluer les phrases en attribuant aussi des points pour
+les lettres mal placées.</p>
+
+<p>Contrairement à l'algorithme précédent, je vais aller plus loin en
+transformant ces scores en pourcentages. Utiliser les pourcentages sera
+très utile pour la méthode de sélection que je développerais dans le
+prochain article. Pour transformer les scores en pourcentages, on doit
+d'abord les normaliser. Cela signifie qu'on va transformer chaque score en
+un nombre compris entre 0 et 1. Pour normaliser, on calcule la somme de
+tous les scores de la population et on divise chaque score par ce total.
+Il suffit ensuite de multiplier par 100 pour avoir un pourcentage:</p>
+
+<p><code>ruby
+def normalize_population_score
+  total = @population.inject(0) {|sum, person| sum + person.first }
+  @population.map! {|person| [person.first.to_f / total * 100, person.last] }
+end
+</code></p>
+
+<p>Finalement, on met tout ça ensemble dans une méthode:</p>
+
+<p><code>ruby
+def score_population
+  evaluate_population
+  normalize_population_score
+end
+</code></p>
+
+<p>Voici notre programme <code>monkey.rb</code> pour l'instant:</p>
+
+<p>``` ruby monkey.rb
+def make_chromosome
+  value = &ldquo;&rdquo;
+  length = @search_value.size
+  length.times { value += random_gene }
+  [nil, value]
+end</p>
+
+<p>def random_gene
+  @genes[rand(@genes.size)]
+end</p>
+
+<p>def make_population
+  population = []
+  @population_size.times { population &lt;&lt; make_chromosome }
+  population
+end</p>
+
+<p>def score_population
+  evaluate_population
+  normalize_population_score
+end</p>
+
+<p>def evaluate_population
+  @population.map! {|person| [evaluate(person.last), person.last] }
+end</p>
+
+<p>def evaluate(phrase)
+  score = 0
+  phrase.split(&lsquo;&rsquo;).each_with_index do |character, index|</p>
+
+<pre><code>score += 1 if @search_value[index] == character
+</code></pre>
+
+<p>  end
+  score
+end</p>
+
+<p>def normalize_population_score
+  total = @population.inject(0) {|sum, person| sum + person.first }
+  @population.map! {|person| [person.first.to_f / total * 100, person.last] }
+end</p>
+
+<p>@search_value = &ldquo;Mon royaume pour un cheval&rdquo;
+@genes = &ldquo;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &rdquo;
+@population_size = 100
+@population = make_population
+score_population
+@population.each {|i| puts i.inspect }
+```</p>
+
+<p>Et voici ce que ça donne:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+[2.083333333333333, "GPjvZUOnEHAwBuVPazOXXYhwaG"]
+[0.0, "yQdkKetHFCUpMSMjVFwepXREhT"]
+[4.166666666666666, "Fz pHfkVjyRoIhgGglvfWhXhpl"]
+[0.0, "fwjafrGAalfDRhpnpAtUoNfVNU"]
+[0.0, "zXxPlALVVKxGg sOUdKpSAdKNG"]
+[0.0, "myoLBtIbKhfNQPnHUzqHkw Mjz"]
+[0.0, "HXDVgzNAKoUhjbVPLLNikGdWqX"]
+[0.0, "XQIqLRKNzrxXJUqWRFQpYozNMB"]
+[0.0, "xuIIUHEwaAdFcVedVJXkTJjFEv"]
+.
+.
+.
+[6.25, " oFkamnafTYpazNMRPY KCEVLZ"]
+[2.083333333333333, "JqxvMEowRmEzeRPUwXJdCQQ UB"]
+</code></pre>
+
+<p>La prochaine fois, on parlera de la méthode de sélection dite de
+«la roue de la fortune», secondée par une piscine d'accouplement
+(oui, c'est bien le terme, véridique !).</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 8 - Le paradoxe du singe savant]]></title>
