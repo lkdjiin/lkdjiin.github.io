@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-09T12:36:15+02:00</updated>
+  <updated>2013-09-10T09:32:53+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,186 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 10]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/"/>
+    <updated>2013-09-10T08:44:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/">l'article précédent</a>
+on a appris à évaluer la population en normalisant les scores.
+Aujourd'hui on s'attaque à la méthode de sélection dite de
+«la roue de la fortune».</p>
+
+<!-- more -->
+
+
+<p>Dans l'algorithme génétique <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">précédent</a>
+j'utilisais une méthode de sélection <em>artificielle</em> qu'on appelle
+l'élitisme : je conservais un certain nombre des meilleurs
+individus d'une génération, en éliminant purement et simplement les
+autres. J'ai commencé par présenter cette méthode, l'élitisme, car c'est
+la plus simple. On a ainsi pu se concentrer sur d'autres parties des
+algorithmes génétiques. Seulement voilà, on a vu que cette méthode de
+sélection posait certains problèmes, notamment l'appauvrissement du
+patrimoine génétique. La méthode de la roue de la fortune va donner une
+chance à tout individu porteur d'un bon gène de le transmettre à la
+génération suivante. Mais bien sûr, certains auront plus de chances
+que d'autres…</p>
+
+<h2>La roue de la fortune</h2>
+
+<p>Imaginez une roue de la fortune où chaque case représenterait un individu.
+Imaginez que plus l'individu est adapté, plus sa case sur cette roue est
+large. Autrement dit, un meilleur individu à une case qui occupe un
+pourcentage plus important de la roue qu'un moins bon individu. Tiens !
+Ça tombe bien, la dernière fois on a justement transformé les scores en
+pourcentages.</p>
+
+<p>On va utiliser cette image de la roue de la
+fortune pour sélectionner des individus en vue de la reproduction.
+Je vais prendre un exemple : supposons une population de 5 individus nommés
+A, B, C, D et E. Après évaluation nous pourrions avoir:</p>
+
+<pre><code>A 40%
+B 30%
+C 20%
+D 10%
+E  0%
+</code></pre>
+
+<p>Pour simuler le principe de la roue de la fortune, nous allons créer une
+sélection avec 40 copies de A, 30 copies de B, 20 copies de C et 10 copies
+de D. Quand le moment de la reproduction sera venu, on tirera au sort des
+couples de parents. De cette manière, les plus adaptés auront plus de
+chances de transmettre leurs gènes, mais même les moins adaptés auront aussi
+leur chance. L'endroit où l'on place les individus sélectionnés (suivant le
+langage : une liste, un tableau, etc) est appellé <em>mating pool</em>, qu'on peut
+traduire par piscine d'accouplement. J'aurais préféré un terme qui fasse
+moins laboratoire, comme «club de rencontre»…</p>
+
+<p>Voyons le code pour créer ce fameux <em>mating pool</em>:</p>
+
+<p>``` ruby
+def create_mating_pool
+  mating_pool = []
+  @population.each do |person|</p>
+
+<pre><code>person.first.to_i.times { mating_pool &lt;&lt; person }
+</code></pre>
+
+<p>  end
+  # mating_pool.each {|i| puts i.inspect }
+  mating_pool
+end
+```</p>
+
+<p>La ligne commentée ne sera pas incluse dans le programme final,
+mais elle va servir aujourd'hui pour voir ce qu'il se passe et
+identifier un souci. Voici le code complet du programme, jusqu'à maintenant:</p>
+
+<p>``` ruby monkey.rb
+def make_chromosome
+  value = &ldquo;&rdquo;
+  length = @search_value.size
+  length.times { value += random_gene }
+  [nil, value]
+end</p>
+
+<p>def random_gene
+  @genes[rand(@genes.size)]
+end</p>
+
+<p>def make_population
+  population = []
+  @population_size.times { population &lt;&lt; make_chromosome }
+  population
+end</p>
+
+<p>def score_population
+  evaluate_population
+  normalize_population_score
+end</p>
+
+<p>def evaluate_population
+  @population.map! {|person| [evaluate(person.last), person.last] }
+end</p>
+
+<p>def evaluate(phrase)
+  score = 0
+  phrase.split(&lsquo;&rsquo;).each_with_index do |character, index|</p>
+
+<pre><code>score += 1 if @search_value[index] == character
+</code></pre>
+
+<p>  end
+  score
+end</p>
+
+<p>def normalize_population_score
+  total = @population.inject(0) {|sum, person| sum + person.first }
+  @population.map! {|person| [person.first.to_f / total * 100, person.last] }
+end</p>
+
+<p>def create_mating_pool
+  mating_pool = []
+  @population.each do |person|</p>
+
+<pre><code>person.first.to_i.times { mating_pool &lt;&lt; person }
+</code></pre>
+
+<p>  end
+  mating_pool.each {|i| puts i.inspect }
+  mating_pool
+end</p>
+
+<p>@search_value = &ldquo;Mon royaume pour un cheval&rdquo;
+@genes = &ldquo;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &rdquo;
+@population_size = 100
+@population = make_population
+score_population
+create_mating_pool
+```</p>
+
+<p>Si on lance ce programme, voici une sortie possible:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+[1.9607843137254901, "xuo pqnnoRrKbvXoQUXbvNVHxA"]
+[1.9607843137254901, "Yri QsIVwvnPsNouYLugGlZPEg"]
+[1.9607843137254901, "MBxSiHlhlnlgeMwtiVIXNa eiC"]
+[1.9607843137254901, "JggyWIGUdXwfpcpeRVVUGPzeFx"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+...
+</code></pre>
+
+<p>On voit que les individus ayant un pourcentage de 1 virgule quelque chose
+ont une seule copie d'eux-mêmes, alors qu'un individu avec un pourcentage
+de 5 virgule quelque chose a bien placé cinq copies de lui-même.
+Comme il n'est pas possible de mettre 1.96 (ou 5.88) copie(s) j'ai utilisé
+seulement la partie entière. C'est un vrai problème. Un pourcentage de 1.0
+place une copie et un pourcentage de 1.99 place aussi une copie alors que
+1.99 est en gros 2 fois meilleur que 1.0 ! Pire, un pourcentage de
+0.99 est éliminé, et on a vu avec l'algorithme <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">précédent</a>
+que ça n'était pas une bonne chose. Encore pire, l'oubli de ces chiffres
+après la virgule peut faire crasher notre programme ! Comment ? Si on
+augmente la taille de la population, il devient plus que probable que
+chaque individus totalise un pourcentage inférieur à 1%. Autrement dit,
+le <em>mating pool</em> risque de rester vide… Tant qu'on gardera une population
+de 100 individus ça devrait passer, mais il faudra bien résoudre ce
+problème un jour. La prochaine fois on terminera notre algorithme
+avec la reproduction.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 9]]></title>
@@ -670,223 +850,6 @@ exit
   @population = mutation
 end
 ```</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 5]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5/"/>
-    <updated>2013-09-03T08:43:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/03/les-algorithmes-genetiques-demystifies-5</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Maintenant qu'on sait créer une population de solutions, l'évaluer,
-opérer une sélection des meilleures solutions et obtenir une nouvelle
-génération par la reproduction, il reste à assembler toutes ces parties
-et voir ce qu'il se passe…</p>
-
-<!-- more -->
-
-
-<p>Voici le code complet de notre algorithme:</p>
-
-<p>``` ruby
-def make_chromosome
-  value = &ldquo;&rdquo;
-  48.times { value += rand(0..1).to_s }
-  [nil, value]
-end</p>
-
-<p>def make_population
-  population = []
-  100.times { population &lt;&lt; make_chromosome }
-  population
-end</p>
-
-<p>def chromosome_to_gene(chromosome)
-  chromosome.last.scan /.{4}/
-end</p>
-
-<p>def gene_to_operand(gene)
-  case gene
-  when &ldquo;0000&rdquo; then 0
-  when &ldquo;0001&rdquo; then 1
-  when &ldquo;0010&rdquo; then 2
-  when &ldquo;0011&rdquo; then 3
-  when &ldquo;0100&rdquo; then 4
-  when &ldquo;0101&rdquo; then 5
-  when &ldquo;0110&rdquo; then 6
-  when &ldquo;0111&rdquo; then 7
-  when &ldquo;1000&rdquo; then 8
-  when &ldquo;1001&rdquo; then 9
-  when &ldquo;1010&rdquo; then &ldquo;+&rdquo;
-  when &ldquo;1011&rdquo; then &ldquo;&ndash;&rdquo;
-  when &ldquo;1100&rdquo; then &ldquo;/&rdquo;
-  when &ldquo;1101&rdquo; then &ldquo;%&rdquo;
-  end
-end</p>
-
-<p>def selection
-  @selected = @population[0&hellip;50].shuffle
-end</p>
-
-<p>def genes_to_formula(genes)
-  formula = []
-  genes.each {|gene| formula &lt;&lt; gene_to_operand(gene) }
-  formula.join
-end</p>
-
-<p>def evaluation(genes)
-  formula = genes_to_formula(genes)
-  begin</p>
-
-<pre><code>result = (@search_value - eval(formula)).abs
-</code></pre>
-
-<p>  rescue Exception</p>
-
-<pre><code>result = 999_999_999_999
-</code></pre>
-
-<p>  end
-  result = 999_999_999_999 unless result.is_a?(Integer)
-  result
-end</p>
-
-<p>def score_population
-  @population = @population.map do |individual|</p>
-
-<pre><code>genes = chromosome_to_gene(individual)
-individual[0] = evaluation(genes)
-individual
-</code></pre>
-
-<p>  end
-end</p>
-
-<p>def crossover(parent1, parent2)
-  point = rand(1..47)
-  child1 = [nil, parent1.last[0&hellip;point] + parent2.last[point..-1]]
-  child2 = [nil, parent2.last[0&hellip;point] + parent1.last[point..-1]]
-  [child1, child2]
-end</p>
-
-<p>def next_generation
-  @selection = selection
-  @population = []
-  25.times do</p>
-
-<pre><code>parent1, parent2 = @selection.slice!(0, 2)
-child1, child2 = crossover(parent1, parent2)
-child3, child4 = crossover(parent1, parent2)
-@population += [child1, child2, child3, child4]
-</code></pre>
-
-<p>  end
-end</p>
-
-<h1>Ce qui suit est nouveau:</h1>
-
-<p>@search_value = 987
-@population = make_population</p>
-
-<p>50.times do |generation|
-  score_population
-  @population = @population.sort
-  best = @population.first.first
-  puts &ldquo;Generation: #{generation} Best: #{best}&rdquo;
-  exit if best == 0
-  next_generation
-end
-```</p>
-
-<p>Seules les dernières lignes de code sont nouvelles. Elles sont assez
-simple à comprendre je pense, même si vous ne connaissez pas le
-langage Ruby. On commence par définir le nombre qu'on recherche puis
-on crée la population d'origine au hasard avec <code>@population = make_population</code>.
-Ensuite on itère sur 50 générations avec <code>50.times do |generation|</code>. C'est
-notre première condition de sortie : quoiqu'il se passe, on arrête le
-traitement au bout à la 50ème génération. Dans cette boucle on évalue
-la génération en cours avec <code>score_population</code> et on la trie. Pour savoir
-où on en est visuellement on extrait le meilleur score avec
-<code>best = @population.first.first</code> et on affiche cette information à la ligne
-suivante. Vient ensuite notre seconde et dernière condition de sortie avec
-<code>exit if best == 0</code> ; autrement dit on stoppe le traitement à la première
-solution trouvée. Pour finir, on produit la génération suivante avec
-<code>next_generation</code>.</p>
-
-<h2>Et ça donne quoi ?</h2>
-
-<p>La plupart du temps ça donne quelque chose comme ça:</p>
-
-<p><code>console
-[~/genetic]⇒ ruby test.rb
-Generation: 0 Best: 507
-Generation: 1 Best: 138
-Generation: 2 Best: 485
-Generation: 3 Best: 347
-Generation: 4 Best: 65
-Generation: 5 Best: 208
-Generation: 6 Best: 222
-Generation: 7 Best: 15
-Generation: 8 Best: 15
-Generation: 9 Best: 2
-Generation: 10 Best: 0
-</code></p>
-
-<p>Les générations successives convergent lentement vers la solution.
-Si vous voulez voir la solution trouvée (c'est normal d'être curieux)
-vous pouvez remplacez une ligne de code pour afficher la solution:</p>
-
-<p>``` ruby</p>
-
-<h1>exit if best == 0</h1>
-
-<p>if best == 0
-  genes = chromosome_to_gene(@population.first)
-  puts &ldquo;Formula: #{genes_to_formula(genes)}&rdquo;
-  exit
-end
-```</p>
-
-<p>Voici quelques exemples de solutions:</p>
-
-<pre><code>Formula: 912%429+933
-Formula: 670+594-277
-Formula: 893+91%96+3
-Formula: 923--03--61
-</code></pre>
-
-<p>Alors, la plupart du temps, ça se passe bien. Mais parfois un phénomène
-étrange se produit:</p>
-
-<p><code>console
-[~/genetic]⇒ ruby test.rb
-Generation: 0 Best: 597
-Generation: 1 Best: 621
-Generation: 2 Best: 104
-...
-Generation: 25 Best: 1
-...
-Generation: 48 Best: 1
-Generation: 49 Best: 1
-[~/genetic]⇒
-</code></p>
-
-<p>L'algorithme reste <em>bloqué</em> sur une valeur et on atteint la 50ème
-génération sans avoir trouver de solution. What the fuck ? Et bien
-l'algorithme a atteint ce qu'on appelle
-<a href="http://fr.wikipedia.org/wiki/Extremum_local">l'extremum local</a>. Pour faire
-court, ça signifie qu'il ne peut pas faire mieux
-avec les gènes dont il disposait à l'origine. Je developperais cette
-idée dans un futur article. En attendant, comment on règle ça ?
-En s'inspirant encore une fois de phénomènes naturels : la mutation
-et/ou la diversité génétique.
-C'est le sujet du prochain article.</p>
 
 <p>À demain.</p>
 

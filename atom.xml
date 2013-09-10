@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-09T12:36:15+02:00</updated>
+  <updated>2013-09-10T09:32:53+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,240 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 10]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/"/>
+    <updated>2013-09-10T08:44:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/">l&#8217;article précédent</a>
+on a appris à évaluer la population en normalisant les scores.
+Aujourd&#8217;hui on s&#8217;attaque à la méthode de sélection dite de
+«la roue de la fortune».</p>
+
+<!-- more -->
+
+
+<p>Dans l&#8217;algorithme génétique <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">précédent</a>
+j&#8217;utilisais une méthode de sélection <em>artificielle</em> qu&#8217;on appelle
+l&#8217;élitisme : je conservais un certain nombre des meilleurs
+individus d&#8217;une génération, en éliminant purement et simplement les
+autres. J&#8217;ai commencé par présenter cette méthode, l&#8217;élitisme, car c&#8217;est
+la plus simple. On a ainsi pu se concentrer sur d&#8217;autres parties des
+algorithmes génétiques. Seulement voilà, on a vu que cette méthode de
+sélection posait certains problèmes, notamment l&#8217;appauvrissement du
+patrimoine génétique. La méthode de la roue de la fortune va donner une
+chance à tout individu porteur d&#8217;un bon gène de le transmettre à la
+génération suivante. Mais bien sûr, certains auront plus de chances
+que d&#8217;autres…</p>
+
+<h2>La roue de la fortune</h2>
+
+<p>Imaginez une roue de la fortune où chaque case représenterait un individu.
+Imaginez que plus l&#8217;individu est adapté, plus sa case sur cette roue est
+large. Autrement dit, un meilleur individu à une case qui occupe un
+pourcentage plus important de la roue qu&#8217;un moins bon individu. Tiens !
+Ça tombe bien, la dernière fois on a justement transformé les scores en
+pourcentages.</p>
+
+<p>On va utiliser cette image de la roue de la
+fortune pour sélectionner des individus en vue de la reproduction.
+Je vais prendre un exemple : supposons une population de 5 individus nommés
+A, B, C, D et E. Après évaluation nous pourrions avoir:</p>
+
+<pre><code>A 40%
+B 30%
+C 20%
+D 10%
+E  0%
+</code></pre>
+
+<p>Pour simuler le principe de la roue de la fortune, nous allons créer une
+sélection avec 40 copies de A, 30 copies de B, 20 copies de C et 10 copies
+de D. Quand le moment de la reproduction sera venu, on tirera au sort des
+couples de parents. De cette manière, les plus adaptés auront plus de
+chances de transmettre leurs gènes, mais même les moins adaptés auront aussi
+leur chance. L&#8217;endroit où l&#8217;on place les individus sélectionnés (suivant le
+langage : une liste, un tableau, etc) est appellé <em>mating pool</em>, qu&#8217;on peut
+traduire par piscine d&#8217;accouplement. J&#8217;aurais préféré un terme qui fasse
+moins laboratoire, comme «club de rencontre»…</p>
+
+<p>Voyons le code pour créer ce fameux <em>mating pool</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_mating_pool</span>
+</span><span class='line'>  <span class="n">mating_pool</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">person</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">person</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">to_i</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">mating_pool</span> <span class="o">&lt;&lt;</span> <span class="n">person</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="c1"># mating_pool.each {|i| puts i.inspect }</span>
+</span><span class='line'>  <span class="n">mating_pool</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La ligne commentée ne sera pas incluse dans le programme final,
+mais elle va servir aujourd&#8217;hui pour voir ce qu&#8217;il se passe et
+identifier un souci. Voici le code complet du programme, jusqu&#8217;à maintenant:</p>
+
+<figure class='code'><figcaption><span>monkey.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">make_chromosome</span>
+</span><span class='line'>  <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'>  <span class="n">length</span> <span class="o">=</span> <span class="vi">@search_value</span><span class="o">.</span><span class="n">size</span>
+</span><span class='line'>  <span class="n">length</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">value</span> <span class="o">+=</span> <span class="n">random_gene</span> <span class="p">}</span>
+</span><span class='line'>  <span class="o">[</span><span class="kp">nil</span><span class="p">,</span> <span class="n">value</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">random_gene</span>
+</span><span class='line'>  <span class="vi">@genes</span><span class="o">[</span><span class="nb">rand</span><span class="p">(</span><span class="vi">@genes</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">make_population</span>
+</span><span class='line'>  <span class="n">population</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="vi">@population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">population</span> <span class="o">&lt;&lt;</span> <span class="n">make_chromosome</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">population</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">score_population</span>
+</span><span class='line'>  <span class="n">evaluate_population</span>
+</span><span class='line'>  <span class="n">normalize_population_score</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">evaluate_population</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">map!</span> <span class="p">{</span><span class="o">|</span><span class="n">person</span><span class="o">|</span> <span class="o">[</span><span class="n">evaluate</span><span class="p">(</span><span class="n">person</span><span class="o">.</span><span class="n">last</span><span class="p">),</span> <span class="n">person</span><span class="o">.</span><span class="n">last</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="n">phrase</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">character</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="vi">@search_value</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">==</span> <span class="n">character</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">score</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">normalize_population_score</span>
+</span><span class='line'>  <span class="n">total</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">sum</span><span class="p">,</span> <span class="n">person</span><span class="o">|</span> <span class="n">sum</span> <span class="o">+</span> <span class="n">person</span><span class="o">.</span><span class="n">first</span> <span class="p">}</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">map!</span> <span class="p">{</span><span class="o">|</span><span class="n">person</span><span class="o">|</span> <span class="o">[</span><span class="n">person</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">to_f</span> <span class="o">/</span> <span class="n">total</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">person</span><span class="o">.</span><span class="n">last</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">create_mating_pool</span>
+</span><span class='line'>  <span class="n">mating_pool</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">person</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">person</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">to_i</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">mating_pool</span> <span class="o">&lt;&lt;</span> <span class="n">person</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">mating_pool</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="nb">puts</span> <span class="n">i</span><span class="o">.</span><span class="n">inspect</span> <span class="p">}</span>
+</span><span class='line'>  <span class="n">mating_pool</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="vi">@search_value</span> <span class="o">=</span> <span class="s2">&quot;Mon royaume pour un cheval&quot;</span>
+</span><span class='line'><span class="vi">@genes</span> <span class="o">=</span> <span class="s2">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &quot;</span>
+</span><span class='line'><span class="vi">@population_size</span> <span class="o">=</span> <span class="mi">100</span>
+</span><span class='line'><span class="vi">@population</span> <span class="o">=</span> <span class="n">make_population</span>
+</span><span class='line'><span class="n">score_population</span>
+</span><span class='line'><span class="n">create_mating_pool</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Si on lance ce programme, voici une sortie possible:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+[1.9607843137254901, "xuo pqnnoRrKbvXoQUXbvNVHxA"]
+[1.9607843137254901, "Yri QsIVwvnPsNouYLugGlZPEg"]
+[1.9607843137254901, "MBxSiHlhlnlgeMwtiVIXNa eiC"]
+[1.9607843137254901, "JggyWIGUdXwfpcpeRVVUGPzeFx"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+[5.88235294117647, "HPIJqwyYbgZEboKAkVEsFVeNTa"]
+...
+</code></pre>
+
+<p>On voit que les individus ayant un pourcentage de 1 virgule quelque chose
+ont une seule copie d&#8217;eux-mêmes, alors qu&#8217;un individu avec un pourcentage
+de 5 virgule quelque chose a bien placé cinq copies de lui-même.
+Comme il n&#8217;est pas possible de mettre 1.96 (ou 5.88) copie(s) j&#8217;ai utilisé
+seulement la partie entière. C&#8217;est un vrai problème. Un pourcentage de 1.0
+place une copie et un pourcentage de 1.99 place aussi une copie alors que
+1.99 est en gros 2 fois meilleur que 1.0 ! Pire, un pourcentage de
+0.99 est éliminé, et on a vu avec l&#8217;algorithme <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">précédent</a>
+que ça n&#8217;était pas une bonne chose. Encore pire, l&#8217;oubli de ces chiffres
+après la virgule peut faire crasher notre programme ! Comment ? Si on
+augmente la taille de la population, il devient plus que probable que
+chaque individus totalise un pourcentage inférieur à 1%. Autrement dit,
+le <em>mating pool</em> risque de rester vide… Tant qu&#8217;on gardera une population
+de 100 individus ça devrait passer, mais il faudra bien résoudre ce
+problème un jour. La prochaine fois on terminera notre algorithme
+avec la reproduction.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 9]]></title>
@@ -221,7 +455,7 @@ Il suffit ensuite de multiplier par 100 pour avoir un pourcentage:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -354,7 +588,7 @@ phrase.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -625,7 +859,7 @@ les individus ne seraient pas codés sous forme de bits. Je vais chercher ça.</
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/'>Les algorithmes génétiques démystifiés 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1043,7 +1277,7 @@ au hasard. Peut-être le sujet d&#8217;un prochain article ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1506,7 +1740,7 @@ C&#8217;est le sujet du prochain article.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1602,7 +1836,7 @@ génétique à l&#8217;oeuvre.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2090,7 +2324,7 @@ très bien écrit.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2322,7 +2556,7 @@ expression régulière. Voilà pour aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2390,7 +2624,7 @@ algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3098,118 +3332,6 @@ catégories communes. C&#8217;est ce poid qui sert de référence pour le tri.</
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/07/30/comment-ecrire-un-plugin-octopress-partie-2/'>Comment écrire un plugin Octopress &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/27/comment-ecrire-un-plugin-octopress/'>Comment écrire un plugin Octopress</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Code propre: Non aux abréviations]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/21/code-propre-non-aux-abreviations/"/>
-    <updated>2013-08-21T14:46:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/21/code-propre-non-aux-abreviations</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Pour l&#8217;écriture du
-<a href="http://lkdjiin.github.io/blog/2013/08/01/implementer-un-langage-sur-la-machine-virtuelle-parrot-partie-1/">langage Naam</a>,
-je cherchais une implémentation toute
-prête de l&#8217;algorithme
-<a href="http://en.wikipedia.org/wiki/Shunting_yard_algorithm">Shunting Yard</a>
-en Ruby. Je suis tombé sur
-<a href="http://www.hokstad.com/operator-precedence-parser">cet article</a>
-qui a retenu mon attention car l&#8217;auteur propose en plus
-la sortie dans un arbre syntaxique. Ce qui est exactement ce que je voulais.
-Par contre le code est une horreur à lire. Ça m&#8217;a donné l&#8217;idée d&#8217;une série
-d&#8217;articles sur le refactoring (et ce que je pense être un code propre),
-à partir d&#8217;exemples réels.</p>
-
-<!-- more -->
-
-
-<h2>Une abréviation ne veut pas forcement dire ce que vous pensez</h2>
-
-<p>Du moins 99 fois sur 100 une abréviation est ambigue. Voyez le code suivant:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Oper</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:pri</span><span class="p">,</span><span class="ss">:sym</span><span class="p">,</span><span class="ss">:type</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Une seule ligne de code et trois abréviations (même quatre en comptant le
-<code>Struct</code>, mais là dessus je n&#8217;ai pas la main). Que peut bien vouloir dire
-<code>Oper</code> ? Operator, Operand, Operation ? Et que veut dire <code>pri</code> ? Primary,
-priority, private ? Et pour <code>sym</code>, est-ce symbol ou symlink ou autre chose ?</p>
-
-<p>Comparez avec la version suivante:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Operator</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:priority</span><span class="p">,</span> <span class="ss">:symbol</span><span class="p">,</span> <span class="ss">:type</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Laquelle vous semble la plus lisible ?  De prime abord on peut penser qu&#8217;il est
-simple de déduire la signification d&#8217;un nom grâce au contexte. Mais je suis
-persuadé du contraire.</p>
-
-<p>D&#8217;abord, penser au contexte demande au lecteur de fournir un effort
-intellectuel. Et cette énergie serait mieux utilisée à résoudre un
-problème, à étendre le code, plutôt qu&#8217;à le décrypter.
-Un code est souvent assez complexe par lui-même, pourquoi
-demander un effort supplémentaire inutile au lecteur ?</p>
-
-<p>Ensuite ça n&#8217;est pas seulement une question de contexte, mais aussi
-de personne. Pour untel, oper est clairement l&#8217;abréviation d&#8217;operand, alors
-que pour tel autre c&#8217;est clairement l&#8217;abréviation d&#8217;operator. Tout dépend
-du vécu de la personne en question. Pourquoi mettre de l&#8217;ambiguité dans
-nos codes ?</p>
-
-<p>Voici un autre exemple:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">o</span> <span class="o">=</span> <span class="vi">@ostack</span><span class="o">.</span><span class="n">pop</span>
-</span><span class='line'><span class="k">if</span> <span class="n">o</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="ss">:lp</span>
-</span><span class='line'>  <span class="vi">@ostack</span> <span class="o">&lt;&lt;</span> <span class="n">o</span> <span class="k">if</span> <span class="n">pri</span> <span class="o">&gt;</span> <span class="mi">0</span>
-</span><span class='line'>  <span class="k">return</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="vi">@out</span><span class="o">.</span><span class="n">oper</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Qu&#8217;est-ce que <code>o</code>, <code>lp</code>, <code>ostack</code> ? Imaginez le temps que prendra
-la compréhension d&#8217;une trentaine de lignes comme celles-ci. Et maintenant
-comparez avec ce qui suit:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">operator</span> <span class="o">=</span> <span class="vi">@operators</span><span class="o">.</span><span class="n">pop</span>
-</span><span class='line'><span class="k">if</span> <span class="n">operator</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="ss">:left_parenthesis</span>
-</span><span class='line'>  <span class="vi">@operators</span> <span class="o">&lt;&lt;</span> <span class="n">operator</span> <span class="k">if</span> <span class="n">priority</span> <span class="o">&gt;</span> <span class="mi">0</span>
-</span><span class='line'>  <span class="k">return</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'><span class="vi">@output</span><span class="o">.</span><span class="n">operator</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>C&#8217;est plus verbeux, mais même si vous ne connaissez pas Ruby, une simple
-lecture suffit pour comprendre ce que fait le code. Remarquez que j&#8217;ai
-seulement supprimé les abréviations, il y aurait d&#8217;autres choses à dire
-sur le refactoring de ce code mais ce sera pour un autre article.</p>
-
-<p>J&#8217;espère avoir convaincu les sceptiques.
-Pour finir je dois faire mon meaculpa: je me rends compte que j&#8217;utilise
-bien trop d&#8217;abréviations dans mon code. À partir d&#8217;aujourd&#8217;hui, j&#8217;arrête ;)</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/'>Les algorithmes génétiques démystifiés 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
