@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-10T09:32:53+02:00</updated>
+  <updated>2013-09-11T09:13:20+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,223 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 11]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/"/>
+    <updated>2013-09-11T09:04:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>La <a href="http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/">dernière fois</a>
+on a assuré la sélection à l'aide d'une piscine
+d'accouplement (je ne me lasse pas de ce terme…). Aujourd'hui, on peut
+aller au bout de l'algorithme en ajoutant la reproduction.</p>
+
+<!-- more -->
+
+
+<h2>La reproduction des phrases</h2>
+
+<p>Il n'y a rien de nouveau par rapport à <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a>,
+c'est peut-être même plus simple. Voici la méthode <code>crossover</code>, qui
+permet d'obtenir un enfant:</p>
+
+<p><code>ruby
+def crossover(parent1, parent2)
+  point = rand(1..(@search_value.size - 1))
+  child = parent1.last[0...point] + parent2.last[point..-1]
+  [nil, mutate(child)]
+end
+</code></p>
+
+<p><code>crossover</code> prends deux chromosomes en entrée (les parents). On définit
+un point de croisement au hasard. On utilise ce point de croisement pour
+<em>couper</em> les parents en deux parties. Un enfant est produit en concaténant
+la première partie du premier parent avec la seconde partie du second
+parent. Enfin on renvoie un chromosome, après avoir passer l'enfant/phrase
+à la mutation. Voici justement la méthode chargée de la mutation:</p>
+
+<p>``` ruby
+def mutate(phrase)
+  @search_value.size.times do |index|</p>
+
+<pre><code>phrase[index] = random_gene if rand &lt; @mutation_rate
+</code></pre>
+
+<p>  end
+  phrase
+end
+```</p>
+
+<p>La différence avec <a href="http://lkdjiin.github.io/blog/2013/08/29/les-algorithmes-genetiques-demystifies-2/">l'algorithme précédent</a> est que cette fois chaque gène
+peut muter. Avantage: on est plus proche du phénomène naturel et on pourrait
+se retrouver avec un chromosome dont 2 ou 3 gènes sont mutants, ça semble
+bon pour la diversité génétique. Inconvénient: Générer un nombre aléatoire
+pour chaque gène peut faire tomber les performances si on a un millier de
+gènes (ou plus) par chromosome et/ou une population importante. Comme
+je dis d'habitude: «Si c'est de l'informatique, c'est une histoire de
+compromis».</p>
+
+<p>On peut maintenant créer une méthode <code>next_generation</code> qui englobe la
+sélection et la reproduction:</p>
+
+<p>``` ruby
+def next_generation
+  mating_pool = create_mating_pool
+  pool_size = mating_pool.size
+  @population = []
+  @population_size.times do</p>
+
+<pre><code>parent1 = mating_pool[rand(pool_size)]
+parent2 = mating_pool[rand(pool_size)]
+@population &lt;&lt; crossover(parent1, parent2)
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Je ne vais pas vous faire l'affront d'expliquer cette méthode, vous avez
+toutes les cartes en main pour la comprendre. Sinon, c'est que j'ai mal
+fait mon boulot…</p>
+
+<p>Il reste à mettre tout ça ensemble, voici le code complet du programme:</p>
+
+<p>``` ruby monkey.rb
+def make_chromosome
+  value = &ldquo;&rdquo;
+  length = @search_value.size
+  length.times { value += random_gene }
+  [nil, value]
+end</p>
+
+<p>def random_gene
+  @genes[rand(@genes.size)]
+end</p>
+
+<p>def make_population
+  population = []
+  @population_size.times { population &lt;&lt; make_chromosome }
+  population
+end</p>
+
+<p>def score_population
+  evaluate_population
+  normalize_population_score
+end</p>
+
+<p>def evaluate_population
+  @population.map! {|person| [evaluate(person.last), person.last] }
+end</p>
+
+<p>def evaluate(phrase)
+  score = 0
+  phrase.split(&lsquo;&rsquo;).each_with_index do |character, index|</p>
+
+<pre><code>score += 1 if @search_value[index] == character
+</code></pre>
+
+<p>  end
+  score
+end</p>
+
+<p>def normalize_population_score
+  total = @population.inject(0) {|sum, person| sum + person.first }
+  @population.map! {|person| [person.first.to_f / total * 100, person.last] }
+end</p>
+
+<p>def next_generation
+  mating_pool = create_mating_pool
+  pool_size = mating_pool.size
+  @population = []
+  @population_size.times do</p>
+
+<pre><code>parent1 = mating_pool[rand(pool_size)]
+parent2 = mating_pool[rand(pool_size)]
+@population &lt;&lt; crossover(parent1, parent2)
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>def create_mating_pool
+  mating_pool = []
+  @population.each do |person|</p>
+
+<pre><code>person.first.to_i.times { mating_pool &lt;&lt; person }
+</code></pre>
+
+<p>  end
+  mating_pool
+end</p>
+
+<p>def crossover(parent1, parent2)
+  point = rand(1..(@search_value.size &ndash; 1))
+  child = parent1.last[0&hellip;point] + parent2.last[point..-1]
+  [nil, mutate(child)]
+end</p>
+
+<p>def mutate(phrase)
+  @search_value.size.times do |index|</p>
+
+<pre><code>phrase[index] = random_gene if rand &lt; @mutation_rate
+</code></pre>
+
+<p>  end
+  phrase
+end</p>
+
+<p>def solution_found
+  found = false
+  @population.each do |person|</p>
+
+<pre><code>found = true if person.last == @search_value
+</code></pre>
+
+<p>  end
+  found
+end</p>
+
+<p>@search_value = &ldquo;Mon royaume pour un cheval&rdquo;
+@genes = &ldquo;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &rdquo;
+@population_size = 100
+@mutation_rate = 0.01
+@population = make_population</p>
+
+<p>1000.times do |generation|
+  score_population
+  puts &ldquo;Generation: #{generation}&rdquo;
+  @population.each {|i| puts i.inspect }
+  exit if solution_found
+  next_generation
+end
+```</p>
+
+<p>Et voilà le résultat:</p>
+
+<pre><code>[~/genetic]⇒ ruby monkey.rb 
+...
+Generation: 869
+[1.0092854259184496, "Mon royaume pour un chevaB"]
+[1.0092854259184496, "Mon royaume pour un chevan"]
+[1.0092854259184496, "Mon royaume pour un chevaB"]
+...
+[1.0496568429551878, "Mon royaume pour un cheval"]
+...
+[1.0092854259184496, "Mon royaume pour un chevan"]
+[1.0092854259184496, "Mon royaume pour un chevaB"]
+[0.9689140088817118, "Mon royaume pour un chNvaB"]
+</code></pre>
+
+<p>La prochaine fois on va améliorer notre méthode de sélection pour
+tenir compte des chiffres après la virgule.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 10]]></title>
@@ -552,304 +769,6 @@ la taille de la population initiale, etc.</p>
 
 <p>La prochaine fois, j'aimerais trouver un problème (toujours très simple) où
 les individus ne seraient pas codés sous forme de bits. Je vais chercher ça.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 6]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/"/>
-    <updated>2013-09-05T13:01:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>La dernière fois on était resté sur un algorithme parfois <em>bloqué</em> par
-l'extremum local. Aujourd'hui on arrange cela grâce à la mutation génétique.</p>
-
-<!-- more -->
-
-
-<p>Tout d'abord un petit mot sur la mutation génétique. Vous voyez peut-être
-cela comme de sombres expériences de laboratoire, ou bien vous pensez à
-Peter Parker mordu par une araignée radioactive et devenant Spiderman…
-En fait, la mutation génétique est un phénomène tout à fait naturel, et
-à l'origine de l'évolution des espèces. Pour ce qui nous intéresse ici, on
-imaginera que, de temps en temps, un gène est <em>mal recopié</em>, ce qui va se
-traduire par une inversion d'un bit dans un chromosome.</p>
-
-<p>Voici la méthode qui est chargée de muter un chromosome:</p>
-
-<p>``` ruby
-def mutate(chromosome)
-  bit = rand(48)
-  value = chromosome.last
-  if value[bit] == &ldquo;0&rdquo;</p>
-
-<pre><code>value[bit] = "1"
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>value[bit] = "0"
-</code></pre>
-
-<p>  end
-  [nil, value]
-end
-```</p>
-
-<p>On sélectionne au hasard un bit parmi les 48 que comporte le chromosome,
-puis on l'inverse. Enfin on retourne le nouveau chromosome. Pour voir ce
-code à l'oeuvre, on peut écrire ceci:</p>
-
-<p><code>ruby
-c = make_chromosome
-puts c.inspect
-c = mutate(c)
-puts c.inspect
-</code></p>
-
-<p>On peut voir qu'un bit a été inversé:</p>
-
-<pre><code>[~/genetic]⇒ ruby test.rb 
-[nil, "101000101001011110110000011000010000110011011110"]
-[nil, "101000101001011110110000011000010000110010011110"]
-</code></pre>
-
-<p>Reste à savoir <em>quand</em> muter ? On considère généralement que le bon taux
-de mutation se trouve entre 1/1000 et 1/100000. Ce qui nous donne la
-méthode suivante:</p>
-
-<p>``` ruby
-def mutation
-  @population.map do |individual|</p>
-
-<pre><code>if rand(1000) == 0
-  mutate(individual)
-else
-  individual
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Un individu sur 1000 va recevoir une mutation, ce qui va permettre d'apporter
-du nouveau matériel génétique et, en théorie, d'éviter de tomber dans un
-extremum local. Pour voir ce que ça donne, il faut modifier le code du
-dernier article pour appliquer la mutation:</p>
-
-<p>``` ruby
-10000.times do |generation|
-  score_population
-  @population = @population.sort
-  best = @population.first.first
-  puts &ldquo;Generation: #{generation} Best: #{best}&rdquo;
-  if best == 0</p>
-
-<pre><code>genes = chromosome_to_gene(@population.first)
-puts "Formula: #{genes_to_formula(genes)}"
-exit
-</code></pre>
-
-<p>  end
-  next_generation
-  @population = mutation
-end
-```</p>
-
-<p>Vous noterez au passage que je suis passé de 50 générations à 10000. Les
-algorithmes génétiques n'ont vraiment de sens que sur un grand nombre de
-générations. Voyons le résultat:</p>
-
-<pre><code>[~/genetic]⇒ ruby test.rb 
-Generation: 0 Best: 39
-Generation: 1 Best: 100
-Generation: 2 Best: 34
-Generation: 3 Best: 88
-Generation: 4 Best: 44
-Generation: 5 Best: 19
-Generation: 6 Best: 105
-Generation: 7 Best: 47
-Generation: 8 Best: 13
-Generation: 9 Best: 13
-Generation: 10 Best: 13
-Generation: 11 Best: 2
-Generation: 12 Best: 1
-Generation: 13 Best: 3
-Generation: 14 Best: 33
-Generation: 15 Best: 19
-Generation: 16 Best: 7
-Generation: 17 Best: 9
-Generation: 18 Best: 1
-...
-Generation: 465 Best: 1
-Generation: 466 Best: 0
-Formula: 88-1%3+900
-</code></pre>
-
-<p>Ça fonctionne ! Sauf que parfois…</p>
-
-<p>Parfois on atteint la 10.000ème génération sans avoir la solution. Je l'ai
-déjà dit et je le répète : un algorithme génétique ne peut pas garantir
-que l'on trouvera la meilleure solution. Le problème avec notre algorithme
-(dont je donne le code complet à la fin de l'article) tient sûrement dans
-sa méthode de sélection ainsi que dans la manière dont on produit une
-nouvelle génération. Il serait intéressant de voir ce qu'il se passe
-en introduisant du sang frais, c'est à dire quelques individus produits
-au hasard. Peut-être le sujet d'un prochain article ?</p>
-
-<h2>Le code source entier</h2>
-
-<p>``` ruby
-def make_chromosome
-  value = &ldquo;&rdquo;
-  48.times { value += rand(0..1).to_s }
-  [nil, value]
-end</p>
-
-<p>def make_population
-  population = []
-  100.times { population &lt;&lt; make_chromosome }
-  population
-end</p>
-
-<p>def chromosome_to_gene(chromosome)
-  chromosome.last.scan /.{4}/
-end</p>
-
-<p>def gene_to_operand(gene)
-  case gene
-  when &ldquo;0000&rdquo; then 0
-  when &ldquo;0001&rdquo; then 1
-  when &ldquo;0010&rdquo; then 2
-  when &ldquo;0011&rdquo; then 3
-  when &ldquo;0100&rdquo; then 4
-  when &ldquo;0101&rdquo; then 5
-  when &ldquo;0110&rdquo; then 6
-  when &ldquo;0111&rdquo; then 7
-  when &ldquo;1000&rdquo; then 8
-  when &ldquo;1001&rdquo; then 9
-  when &ldquo;1010&rdquo; then &ldquo;+&rdquo;
-  when &ldquo;1011&rdquo; then &ldquo;&ndash;&rdquo;
-  when &ldquo;1100&rdquo; then &ldquo;/&rdquo;
-  when &ldquo;1101&rdquo; then &ldquo;%&rdquo;
-  end
-end</p>
-
-<p>def selection
-  @selected = @population[0&hellip;50].shuffle
-end</p>
-
-<p>def genes_to_formula(genes)
-  formula = []
-  genes.each {|gene| formula &lt;&lt; gene_to_operand(gene) }
-  formula.join
-end</p>
-
-<p>def evaluation(genes)
-  formula = genes_to_formula(genes)
-  begin</p>
-
-<pre><code>result = (@search_value - eval(formula)).abs
-</code></pre>
-
-<p>  rescue Exception</p>
-
-<pre><code>result = 999_999_999_999
-</code></pre>
-
-<p>  end
-  result = 999_999_999_999 unless result.is_a?(Integer)
-  result
-end</p>
-
-<p>def score_population
-  @population = @population.map do |individual|</p>
-
-<pre><code>genes = chromosome_to_gene(individual)
-individual[0] = evaluation(genes)
-individual
-</code></pre>
-
-<p>  end
-end</p>
-
-<p>def crossover(parent1, parent2)
-  point = rand(1..47)
-  child1 = [nil, parent1.last[0&hellip;point] + parent2.last[point..-1]]
-  child2 = [nil, parent2.last[0&hellip;point] + parent1.last[point..-1]]
-  [child1, child2]
-end</p>
-
-<p>def next_generation
-  @selection = selection
-  @population = []
-  25.times do</p>
-
-<pre><code>parent1, parent2 = @selection.slice!(0, 2)
-child1, child2 = crossover(parent1, parent2)
-child3, child4 = crossover(parent1, parent2)
-@population += [child1, child2, child3, child4]
-</code></pre>
-
-<p>  end
-end</p>
-
-<p>def mutation
-  @population.map do |individual|</p>
-
-<pre><code>if rand(1000) == 0
-  mutate(individual)
-else
-  individual
-end
-</code></pre>
-
-<p>  end
-end</p>
-
-<p>def mutate(chromosome)
-  bit = rand(48)
-  value = chromosome.last
-  if value[bit] == &ldquo;0&rdquo;</p>
-
-<pre><code>value[bit] = "1"
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>value[bit] = "0"
-</code></pre>
-
-<p>  end
-  [nil, value]
-end</p>
-
-<p>@search_value = 987
-@population = make_population</p>
-
-<p>10000.times do |generation|
-  score_population
-  @population = @population.sort
-  best = @population.first.first
-  puts &ldquo;Generation: #{generation} Best: #{best}&rdquo;
-  if best == 0</p>
-
-<pre><code>genes = chromosome_to_gene(@population.first)
-puts "Formula: #{genes_to_formula(genes)}"
-exit
-</code></pre>
-
-<p>  end
-  next_generation
-  @population = mutation
-end
-```</p>
 
 <p>À demain.</p>
 
