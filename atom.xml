@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-11T09:13:20+02:00</updated>
+  <updated>2013-09-12T09:46:48+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,107 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 12]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/"/>
+    <updated>2013-09-12T08:28:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Pour résoudre le paradoxe du singe savant, on a utilisé la méthode
+de sélection dite de «la roue de la fortune», mais je n&#8217;avais pas
+fournit l&#8217;algorithme complet de cette méthode. On en parle aujourd&#8217;hui.</p>
+
+<!-- more -->
+
+
+<p>Le problème avec la simulation de la roue de la fortune que j&#8217;ai
+utilisé <a href="http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/">précédemment</a>,
+c&#8217;est qu&#8217;elle n&#8217;est pas réaliste. Je n&#8217;utilisai que la partie entière des
+scores d&#8217;évaluation pour placer des copies des individus dans le
+<em>mating pool</em>. Ainsi un score de 0,99 était éliminatoire, et un score de 2,01
+était vu comme deux fois plus adapté qu&#8217;un score de 1,99 !</p>
+
+<h2>Une roue de la fortune réaliste</h2>
+
+<p>L&#8217;idée, qui vient de <a href="http://en.wikipedia.org/wiki/John_Henry_Holland">John Holland</a>, est de donner une chance supplémentaire
+au individus de placer une copie d&#8217;eux-mêmes en fonction de la partie
+fractionnaire de leur score. Par exemple un individu évalué à 1,87 placera
+d&#8217;office une copie dans le <em>mating pool</em> et aura 87 chances sur 100 de placer
+une seconde copie. De même, un individu évalué à 0,49 aura 49 chances sur 100
+de placer une copie. Simple, efficace et réaliste. Voici la méthode
+<code>create_mating_pool</code> révisée:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_mating_pool</span>
+</span><span class='line'>  <span class="n">mating_pool</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">person</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">integer_part</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">to_i</span>
+</span><span class='line'>    <span class="n">fractional_part</span> <span class="o">=</span> <span class="n">person</span><span class="o">.</span><span class="n">first</span> <span class="o">-</span> <span class="n">integer_part</span>
+</span><span class='line'>    <span class="n">integer_part</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">mating_pool</span> <span class="o">&lt;&lt;</span> <span class="n">person</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">mating_pool</span> <span class="o">&lt;&lt;</span> <span class="n">person</span> <span class="k">if</span> <span class="nb">rand</span> <span class="o">&lt;</span> <span class="n">fractional_part</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">mating_pool</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour que ça fonctionne avec n&#8217;importe quelle taille de population, et pas
+seulement 100 individus, il faut aussi réviser la façon dont on
+normalise les scores:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">normalize_population_score</span>
+</span><span class='line'>  <span class="n">total</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">sum</span><span class="p">,</span> <span class="n">person</span><span class="o">|</span> <span class="n">sum</span> <span class="o">+</span> <span class="n">person</span><span class="o">.</span><span class="n">first</span> <span class="p">}</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">map!</span> <span class="k">do</span> <span class="o">|</span><span class="n">person</span><span class="o">|</span>
+</span><span class='line'>    <span class="o">[</span><span class="n">person</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">to_f</span> <span class="o">/</span> <span class="n">total</span> <span class="o">*</span> <span class="vi">@population_size</span><span class="p">,</span> <span class="n">person</span><span class="o">.</span><span class="n">last</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voilà, on peut maintenant jouer avec nos deux variables que sont
+<code>@population_size</code>, la taille de la population, et <code>@mutation_rate</code>, le
+taux de mutation, pour rendre l&#8217;algorithme le plus rapide possible.</p>
+
+<p>Il y a beaucoup de choses à propos des algorithmes génétiques sur
+lesquelles j&#8217;ai encore envie d&#8217;écrire, notamment:</p>
+
+<ul>
+<li>analyse des variables</li>
+<li>autres méthodes de reproduction</li>
+<li>autres méthodes de sélection</li>
+<li>mélange élitisme/roue de la fortune</li>
+<li>code orienté objet (éventuellement création d&#8217;un framework)</li>
+<li>algorithme dégénéré (Hill-climbing)</li>
+<li>extremum local</li>
+</ul>
+
+
+<p>Chaque point de cette liste fera sûrement l&#8217;objet d&#8217;un (ou plusieurs)
+futur article.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 11]]></title>
@@ -319,7 +420,7 @@ tenir compte des chiffres après la virgule.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -553,7 +654,7 @@ avec la reproduction.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -765,7 +866,7 @@ Il suffit ensuite de multiplier par 100 pour avoir un pourcentage:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/'>Les algorithmes génétiques démystifiés 8 &ndash; Le paradoxe du singe savant</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -898,7 +999,7 @@ phrase.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1169,7 +1270,7 @@ les individus ne seraient pas codés sous forme de bits. Je vais chercher ça.</
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1587,7 +1688,7 @@ au hasard. Peut-être le sujet d&#8217;un prochain article ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2050,7 +2151,7 @@ C&#8217;est le sujet du prochain article.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2146,7 +2247,7 @@ génétique à l&#8217;oeuvre.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2634,7 +2735,7 @@ très bien écrit.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2866,7 +2967,7 @@ expression régulière. Voilà pour aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2934,7 +3035,7 @@ algorithmes et je montrerais notamment comment les coder.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/'>Les algorithmes génétiques démystifiés 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/12/les-algorithmes-genetiques-demystifies-12/'>Les algorithmes génétiques démystifiés 12</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/11/les-algorithmes-genetiques-demystifies-11/'>Les algorithmes génétiques démystifiés 11</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/10/les-algorithmes-genetiques-demystifies-10/'>Les algorithmes génétiques démystifiés 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3437,90 +3538,6 @@ garder un oeil…</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/08/07/elixir-et-les-parametres-par-defaut/'>Elixir et les paramètres par défaut</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/06/comment-lire-et-ecrire-un-fichier-texte-avec-elixir/'>Comment lire et écrire un fichier texte avec Elixir</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/28/pattern-matching-avec-elixir-une-premiere-approche/'>Pattern matching avec Elixir: une première approche</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Bash: ajouter une ligne à la fin de plusieurs fichiers]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/08/23/bash-ajouter-une-ligne-a-la-fin-de-plusieurs-fichiers/"/>
-    <updated>2013-08-23T11:26:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/08/23/bash-ajouter-une-ligne-a-la-fin-de-plusieurs-fichiers</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Dans l&#8217;article d&#8217;hier, je décrivais mon deuxième plugin pour Octopress.
-Pour le mettre en place sur ce blog, je vais devoir ajouter une ligne de
-texte à l&#8217;ensemble des articles. Il y en a presque une cinquantaine
-maintenant, il est donc hors de question de le faire à la main.
-Bash va me faire ça en quelques secondes.</p>
-
-<!-- more -->
-
-
-<p>J&#8217;ouvre une console dans le dossier où sont placés mes articles, et j&#8217;entre
-ce qui suit:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='console'><span class='line'><span class="go">[~/.../source/_posts]⇒ for file in *.markdown; do</span>
-</span><span class='line'><span class="gp">&gt;</span> <span class="nb">echo</span> <span class="s1">&#39;ligne à ajouter&#39;</span> &gt;&gt; <span class="s2">&quot;$file&quot;</span>
-</span><span class='line'><span class="gp">&gt;</span> <span class="k">done</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tada ! C&#8217;est fini. Si vous n&#8217;êtes pas familier de Bash, voici une petite
-description de ce qui s&#8217;est passé:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="k">for </span>file in *.markdown; <span class="k">do</span>
-</span><span class='line'><span class="c"># ...</span>
-</span><span class='line'><span class="k">done</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>for - do - done</code> est une structure d&#8217;itération de Bash, en gros l&#8217;équivalent
-d&#8217;une boucle <code>for</code> en C, Java, etc. On l&#8217;utilise généralement pour itérer
-sur les arguments de la ligne de commande, ou bien, comme ici, sur les
-fichiers du répertoire. Elle peut s&#8217;écrire aussi sur 3 lignes:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="k">for </span>x in *
-</span><span class='line'><span class="k">do</span>
-</span><span class='line'>ma_commande
-</span><span class='line'><span class="k">done</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et même sur une seule ligne: <code>for x in *; do ma_commande ; done</code></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">echo</span> <span class="s1">&#39;ligne à ajouter&#39;</span> &gt;&gt; <span class="s2">&quot;$file&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La commande <code>echo</code> affiche normalement une chaîne de caractère sur
-la console. Ici cette chaîne est redirigée avec <code>&gt;&gt;</code> dans le fichier
-représenté par <code>"$file"</code>.</p>
-
-<p><code>&gt;&gt;</code> permet d&#8217;ajouter en fin de fichier. et le <code>$</code> permet d&#8217;extraire le contenu
-d&#8217;une variable.</p>
-
-<h2>Pour conclure</h2>
-
-<p>La syntaxe de Bash m&#8217;a toujours défrisé, mais quand il s&#8217;agit de traiter des
-fichiers texte, c&#8217;est vraiment un outil puissant. Comme je suis curieux,
-j&#8217;aimerais bien savoir ce que <em>toi</em>, lecteur, tu aurais utilisé pour
-cette tâche. Bash, Perl, Sed, Awk, Ruby, autre chose ?</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/18/comment-etendre-git-avec-ses-propres-scripts-la-suite/'>Comment étendre Git avec ses propres scripts: la suite</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/17/comment-etendre-git-avec-ses-propres-scripts/'>Comment étendre Git avec ses propres scripts</a></li></ul></section></p>
 ]]></content>
   </entry>
   
