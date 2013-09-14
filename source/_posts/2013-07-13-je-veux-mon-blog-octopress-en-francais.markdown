@@ -125,7 +125,7 @@ Conclusion
 ----------
 Alors voilà, j'ai bien conscience que certaines modifications risquent ne plus
 fonctionner après une mise à jour d'Octopress… Mais c'est tout ce que j'ai
-trouver pour faire ça dans l'heure.
+trouvé pour faire ça dans l'heure.
 
 À demain.
 

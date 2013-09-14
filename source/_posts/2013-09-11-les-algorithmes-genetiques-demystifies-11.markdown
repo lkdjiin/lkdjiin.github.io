@@ -29,6 +29,9 @@ def crossover(parent1, parent2)
 end
 ```
 
+**Edit du 14 sept 2013** Le code ci-dessus contient une erreur, à la
+seconde ligne il faut lire: `point = rand(1..@search_value.size)`.
+
 `crossover` prends deux chromosomes en entrée (les parents). On définit
 un point de croisement au hasard. On utilise ce point de croisement pour
 *couper* les parents en deux parties. Un enfant est produit en concaténant
@@ -136,7 +139,7 @@ def create_mating_pool
 end
 
 def crossover(parent1, parent2)
-  point = rand(1..(@search_value.size - 1))
+  point = rand(1..@search_value.size)
   child = parent1.last[0...point] + parent2.last[point..-1]
   [nil, mutate(child)]
 end
