@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-14T10:08:33+02:00</updated>
+  <updated>2013-09-15T12:10:59+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,140 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés: le croisement en deux points]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/15/les-algorithmes-genetiques-demystifies-le-croisement-en-deux-points/"/>
+    <updated>2013-09-15T11:40:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/15/les-algorithmes-genetiques-demystifies-le-croisement-en-deux-points</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Aujourd'hui on parle plus en détail de la méthode de reproduction
+utilisé jusqu'ici, à savoir le «croisement» de deux individus, et
+je décris la variante du «croisement en deux points».</p>
+
+<!-- more -->
+
+
+<h2>Croisement en un point (one point crossover)</h2>
+
+<p>Pour l'instant on a utilisé la méthode du croisement en un point
+(<em>one point crossover</em> in english). Pour mémoire, voici son
+implémentation dans le dernier problème, le paradoxe du singe savant:</p>
+
+<p><code>ruby
+def crossover(parent1, parent2)
+  point = rand(1..@search_value.size)
+  child = parent1.last[0...point] + parent2.last[point..-1]
+  [nil, mutate(child)]
+end
+</code></p>
+
+<p>Et en voici une représentation, le caractère <code>:</code> représente le point
+de croisement:</p>
+
+<pre><code>parent A  123:45678
+parent B  abc:defgh
+
+enfant A  123:defgh
+enfant B  abc:45678
+</code></pre>
+
+<p>On remarque que je prends garde d'éviter les valeurs extrèmes pour le
+point de croisement. Si ce point était par exemple zéro,
+il n'y aurait pas croisement mais une simple copie conforme d'un parent.
+Malgré tout, je ne voudrais pas laisser croire que c'est très important,
+et on pourrait très bien écrire:</p>
+
+<pre><code>point = rand(0..@search_value.size+1)
+</code></pre>
+
+<p>Il y aurait copie, et non croisement, dans 2/<em>l</em> cas (où <em>l</em> est la longueur
+du chromosome). Plus les chromosomes sont long et moins c'est un problème.</p>
+
+<p>On peut remarquer aussi que je ne crée qu'un seul enfant sur les deux
+possibles. Un code plus générique devrait créer et renvoyer les deux
+enfants, libre à nous d'en utiliser un seul ou les deux.</p>
+
+<h2>Croisement en deux points (two point crossover)</h2>
+
+<p>Une autre méthode de croisement populaire est le croisement en deux
+points. On intervertit le matériel génétique qui se trouve <em>entre</em> les
+deux points de croisement. Voici une représentation de cette méthode:</p>
+
+<pre><code>parent A  123:456:78
+parent B  abc:def:gh
+
+enfant A  123:def:78
+enfant B  abc:456:gh
+</code></pre>
+
+<p>Et voici une implémentation (toujours avec la création d'un seul
+enfant):</p>
+
+<p>``` ruby
+def two_point_crossover(parent1, parent2)
+  point1 = rand(@search_value.size)
+  point2 = rand(@search_value.size)
+  point1, point2 = point2, point1 if point1 > point2
+  child = parent1.last[0&hellip;point1] + parent2.last[point1..point2] +</p>
+
+<pre><code>      parent1.last[point2+1..-1]
+</code></pre>
+
+<p>  [nil, mutate(child)]
+end
+```</p>
+
+<p>À ce stade, vous vous demandez sûrement quel est l'intérêt de cette
+méthode ? Pour le comprendre, prenons un exemple. Le chromosome qu'on
+recherche est <code>bonjour</code> et dans notre population on a le chromosome
+suivant:</p>
+
+<pre><code>bacdefr
+</code></pre>
+
+<p>Seul ces deux gènes extrèmes sont bons. On peut aussi le noter de cette
+façon:</p>
+
+<pre><code>b*****r
+</code></pre>
+
+<p>Le <code>*</code> indique un emplacement dont la valeur n'est pas significative pour
+la discussion en cours. Si on applique le croisement en un point, les deux
+bons gènes vont être séparés dans presque tout les cas (et même dans tous
+les cas si on ne permet pas que le point de croisement se fasse aux valeurs
+extrèmes). Comparez avec le chromosome suivant:</p>
+
+<pre><code>bo*****
+</code></pre>
+
+<p>Les deux gènes <code>bo</code> seront rarement séparés. La probabilité est de
+1/<em>l</em>-1 si on ne permet pas les valeurs extrèmes (<em>l</em> est la longueur du
+chromosome). Donc avec la méthode du croisement en un point, le premier
+et le dernier gène sont traités différement des autres.
+Reste à savoir quelle incidence cela a sur la performance de l'algorithme.
+Voici les mesures pour l'algorithme précédent (avec taille de population
+et taux de mutation égal):</p>
+
+<pre><code>=================================================
+| méthode de croisement | génération | secondes |
+=================================================
+| un point              |         81 |        5 |
+|-----------------------------------------------|
+| deux points           |         54 |        3 |
+|-----------------------------------------------|
+</code></pre>
+
+<p>L'amélioration se lit clairement. En attendant le prochain article,
+n'hésitez pas à expérimenter ce qui vous passe par la tête (par exemple,
+pourquoi se limiter à 2 parents ?).</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 13]]></title>
@@ -591,159 +725,6 @@ le <em>mating pool</em> risque de rester vide… Tant qu'on gardera une populati
 de 100 individus ça devrait passer, mais il faudra bien résoudre ce
 problème un jour. La prochaine fois on terminera notre algorithme
 avec la reproduction.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 9]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9/"/>
-    <updated>2013-09-09T12:26:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/09/les-algorithmes-genetiques-demystifies-9</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Dans <a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">l'article précédent</a>
-j'ai donné l'objectif de ce second algorithme, inspiré par le paradoxe du
-singe savant, et on a vu comment construire la population de phrases.
-Aujourd'hui, on se concentre sur la méthode d'évaluation, tout en
-introduisant l'idée de «normaliser un score».</p>
-
-<!-- more -->
-
-
-<p>Une fois la population créée, il faut l'évaluer avant de pouvoir passer à
-l'étape de sélection. Je rappelle que nos chromosomes (que j'appelle aussi
-individus ou encore solutions potentielles) sont mémorisés dans une liste
-contenant un score et une phrase (voir
-<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">Les algorithmes génétiques démystifiés 8</a>).</p>
-
-<p>Voici comment j'évalue la population:</p>
-
-<p>``` ruby
-def evaluate_population
-  @population.map! {|person| [evaluate(person.last), person.last] }
-end</p>
-
-<p>def evaluate(phrase)
-  score = 0
-  phrase.split(&lsquo;&rsquo;).each_with_index do |character, index|</p>
-
-<pre><code>score += 1 if @search_value[index] == character
-</code></pre>
-
-<p>  end
-  score
-end
-```</p>
-
-<p>Je donne 1 point pour chaque lettre bien placée. C'est difficile de
-faire plus simple. Je pense que dans un autre article, on expérimentera
-une autre manière d'évaluer les phrases en attribuant aussi des points pour
-les lettres mal placées.</p>
-
-<p>Contrairement à l'algorithme précédent, je vais aller plus loin en
-transformant ces scores en pourcentages. Utiliser les pourcentages sera
-très utile pour la méthode de sélection que je développerais dans le
-prochain article. Pour transformer les scores en pourcentages, on doit
-d'abord les normaliser. Cela signifie qu'on va transformer chaque score en
-un nombre compris entre 0 et 1. Pour normaliser, on calcule la somme de
-tous les scores de la population et on divise chaque score par ce total.
-Il suffit ensuite de multiplier par 100 pour avoir un pourcentage:</p>
-
-<p><code>ruby
-def normalize_population_score
-  total = @population.inject(0) {|sum, person| sum + person.first }
-  @population.map! {|person| [person.first.to_f / total * 100, person.last] }
-end
-</code></p>
-
-<p>Finalement, on met tout ça ensemble dans une méthode:</p>
-
-<p><code>ruby
-def score_population
-  evaluate_population
-  normalize_population_score
-end
-</code></p>
-
-<p>Voici notre programme <code>monkey.rb</code> pour l'instant:</p>
-
-<p>``` ruby monkey.rb
-def make_chromosome
-  value = &ldquo;&rdquo;
-  length = @search_value.size
-  length.times { value += random_gene }
-  [nil, value]
-end</p>
-
-<p>def random_gene
-  @genes[rand(@genes.size)]
-end</p>
-
-<p>def make_population
-  population = []
-  @population_size.times { population &lt;&lt; make_chromosome }
-  population
-end</p>
-
-<p>def score_population
-  evaluate_population
-  normalize_population_score
-end</p>
-
-<p>def evaluate_population
-  @population.map! {|person| [evaluate(person.last), person.last] }
-end</p>
-
-<p>def evaluate(phrase)
-  score = 0
-  phrase.split(&lsquo;&rsquo;).each_with_index do |character, index|</p>
-
-<pre><code>score += 1 if @search_value[index] == character
-</code></pre>
-
-<p>  end
-  score
-end</p>
-
-<p>def normalize_population_score
-  total = @population.inject(0) {|sum, person| sum + person.first }
-  @population.map! {|person| [person.first.to_f / total * 100, person.last] }
-end</p>
-
-<p>@search_value = &ldquo;Mon royaume pour un cheval&rdquo;
-@genes = &ldquo;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ &rdquo;
-@population_size = 100
-@population = make_population
-score_population
-@population.each {|i| puts i.inspect }
-```</p>
-
-<p>Et voici ce que ça donne:</p>
-
-<pre><code>[~/genetic]⇒ ruby monkey.rb 
-[2.083333333333333, "GPjvZUOnEHAwBuVPazOXXYhwaG"]
-[0.0, "yQdkKetHFCUpMSMjVFwepXREhT"]
-[4.166666666666666, "Fz pHfkVjyRoIhgGglvfWhXhpl"]
-[0.0, "fwjafrGAalfDRhpnpAtUoNfVNU"]
-[0.0, "zXxPlALVVKxGg sOUdKpSAdKNG"]
-[0.0, "myoLBtIbKhfNQPnHUzqHkw Mjz"]
-[0.0, "HXDVgzNAKoUhjbVPLLNikGdWqX"]
-[0.0, "XQIqLRKNzrxXJUqWRFQpYozNMB"]
-[0.0, "xuIIUHEwaAdFcVedVJXkTJjFEv"]
-.
-.
-.
-[6.25, " oFkamnafTYpazNMRPY KCEVLZ"]
-[2.083333333333333, "JqxvMEowRmEzeRPUwXJdCQQ UB"]
-</code></pre>
-
-<p>La prochaine fois, on parlera de la méthode de sélection dite de
-«la roue de la fortune», secondée par une piscine d'accouplement
-(oui, c'est bien le terme, véridique !).</p>
 
 <p>À demain.</p>
 
