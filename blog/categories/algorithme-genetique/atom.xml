@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-18T12:13:26+02:00</updated>
+  <updated>2013-09-19T18:17:38+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,135 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 18]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/19/les-algorithmes-genetiques-demystifies-18/"/>
+    <updated>2013-09-19T18:14:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/19/les-algorithmes-genetiques-demystifies-18</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>On continue la transformation en code orienté objet de l'algorithme génétique
+sur le paradoxe du singe savant.</p>
+
+<!-- more -->
+
+
+<p>D'abord la classe <code>Evaluator</code>, dont le rôle est d'évaluer la population:</p>
+
+<p>``` ruby
+class Evaluator
+  def initialize(search_value, population)</p>
+
+<pre><code>@search_value = search_value
+@population = population
+</code></pre>
+
+<p>  end</p>
+
+<p>  def evaluate</p>
+
+<pre><code>@population.each {|individual| score(individual) }
+fitness
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def score(individual)</p>
+
+<pre><code>score = 0
+individual.chromosome.split('').each_with_index do |character, index|
+  score += 1 if @search_value[index] == character
+end
+individual.score = score
+</code></pre>
+
+<p>  end</p>
+
+<p>  def fitness</p>
+
+<pre><code>total = @population.inject(0) {|sum, individual| sum + individual.score }
+size = @population.size
+@population.each do |individual|
+  individual.fitness = individual.score.to_f / total * size
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>On voit le découpage entre <em>score</em> et <em>fitness</em>, dont on a parlé hier.</p>
+
+<p>Ensuite, voici la classe <code>GeneticAlgorithm</code>:</p>
+
+<p>``` ruby
+class GeneticAlgorithm
+  def initialize(generations, population, search_value, mutation_rate)</p>
+
+<pre><code>@generations = generations
+@population = population
+@search_value = search_value
+@mutation_rate = mutation_rate
+@crossover = Crossover.new(search_value.size, mutation_rate)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def run</p>
+
+<pre><code>@generations.times do |generation|
+  Evaluator.new(@search_value, @population).evaluate
+  best = @population.best
+  display(generation, best)
+  exit if best.score == @search_value.size
+  next_generation
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def display(generation, best)</p>
+
+<pre><code>puts "----------------------"
+puts "Gen: #{generation}"
+puts "Best: #{best.chromosome}"
+</code></pre>
+
+<p>  end</p>
+
+<p>  def next_generation</p>
+
+<pre><code>pool = MatingPool.new(@population)
+population_size = @population.size
+@population.clear
+population_size.times do
+  @population &lt;&lt; @crossover.two_point(pool.random, pool.random)
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>La méthode <code>run</code> remplace la fonction principale qu'on avait dans nos
+scripts jusqu'ici. En écrivant l'article, je vois que la méthode <code>display</code>
+me dérange : elle ne repose sur aucun membre, elle serait donc mieux dans
+une classe à part entière.</p>
+
+<p>Voilà, c'est un peu court en explication comme article et je m'en excuse
+mais aujourd'hui je suis très préssé. La prochaine fois on parle des classes
+<code>MatingPool</code>, <code>Crossover</code> et <code>Mutator</code>.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 17: Orienté Objet]]></title>
@@ -448,101 +577,6 @@ et taux de mutation égal):</p>
 <p>L'amélioration se lit clairement. En attendant le prochain article,
 n'hésitez pas à expérimenter ce qui vous passe par la tête (par exemple,
 pourquoi se limiter à 2 parents ?).</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 13]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/13/les-algorithmes-genetiques-demystifies-13/"/>
-    <updated>2013-09-13T07:45:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/13/les-algorithmes-genetiques-demystifies-13</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Aujourd'hui on analyse ce qui arrive lorsqu'on joue avec les deux
-variables dont on dispose pour l'instant : la taille de la population
-et le taux de mutation.</p>
-
-<!-- more -->
-
-
-<h2>Une définition de la performance</h2>
-
-<p>Comment mesurer les performances d'un algorithme génétique ? Le nombre de
-générations nécessaires pour trouver la solution vient tout de suite à
-l'esprit. C'est toujours une mesure intéressante mais la plus importante
-mesure reste évident <strong>le temps</strong> écoulé avant de trouver la solution.</p>
-
-<p>Les mesures que je propose ici n'ont rien de très <em>scientifique</em>. Pour
-chaque mesure j'ai fait tourner l'algorithme génétique développé dans les
-<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">derniers articles</a> (le paradoxe du singe savant) 5 fois de suite.
-C'est malgré tout suffisant pour dégager les tendances.</p>
-
-<h2>Performances suivant la taille de la population</h2>
-
-<p>Tout d'abord voyons ce qu'il se passe quand on augmente la taille de la
-population.</p>
-
-<pre><code>======================================
-| population | génération | secondes |
-======================================
-|        150 |       3277 |       32 |
-|------------------------------------|
-|        500 |        363 |       12 |
-|------------------------------------|
-|      1.000 |         81 |        5 |
-|------------------------------------|
-|     10.000 |         50 |       33 |
-|------------------------------------|
-</code></pre>
-
-<p>Ça ne devrait pas vous surprendre : plus la population augmente plus la
-solution est trouvée en un minimum de générations. C'est presque la même
-chose avec le temps, sauf que passé un certain point, il remonte en flêche.
-C'est essentiellement du aux structures de données utilisées pour
-construire le <em>mating pool</em>, évaluer les individus, etc. Et ça pose la
-question de trouver un langage informatique adapté aux algorithmes
-génétiques, langage qui soit un bon compromis entre facilité
-d'écriture/lecture et performances brutes.</p>
-
-<h2>Performances suivant le taux de mutation</h2>
-
-<p>Voyons maintenant l'influence du taux de mutation.</p>
-
-<pre><code>======================================
-| taux de    | génération | secondes |
-| mutation * |            |          |
-======================================
-|       0.02 |        293 |       20 |
-|------------------------------------|
-|       0.01 |         81 |        5 |
-|------------------------------------|
-|      0.005 |         75 |        5 |
-|------------------------------------|
-|      0.001 |         73 |        5 |
-|------------------------------------|
-|     0.0001 |         65 |        4 |
-|------------------------------------|
-|          0 |         ** |       ** |
-|------------------------------------|
-* Pour une population de 1000 individus.
-** Aux environs de la 60ème génération si on a de la
-   chance, sinon jamais car on atteint un extremum local.
-</code></pre>
-
-<p>Entre 1/100ème et 1/10.000ème la performance évolue, mais peu. À 2/100ème on
-voit que la performance est déjà en train de chuter. En dessous de
-1/10.000ème, le comportement se rapproche fortement d'un taux de zéro pourcent.
-On considère généralement un taux de mutation de 1/<em>n</em> comme un bon
-compromis (où <em>n</em> est la taille de la population).</p>
-
-<p>Voilà, cette petite analyse est terminée.
-Je ne sais pas de quoi je parlerais la prochaine fois, mais le sujet
-est tellement vaste que j'ai l'impression que
-cette série sur les algorithmes génétiques ne s'arretera jamais…</p>
 
 <p>À demain.</p>
 
