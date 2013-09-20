@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : paradoxe du singe savant | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/paradoxe-du-singe-savant/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-19T18:17:38+02:00</updated>
+  <updated>2013-09-20T09:45:26+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,143 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 19]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19/"/>
+    <updated>2013-09-20T09:31:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Suite et fin de la transformation en code orienté objet de l'algorithme
+génétique sur le paradoxe du singe savant.</p>
+
+<!-- more -->
+
+
+<p>Le rôle de la classe <code>MatingPool</code> est de sélectionner les individus pour
+la reproduction, suivant la méthode de la roue de la fortune:</p>
+
+<p>``` ruby
+class MatingPool
+  def initialize(population)</p>
+
+<pre><code>@mating_pool = []
+population.each do |individual|
+  integer_part = individual.fitness.to_i
+  real_part = individual.fitness - integer_part
+  integer_part.times { @mating_pool &lt;&lt; individual.dup }
+  @mating_pool &lt;&lt; individual.dup if rand &lt; real_part
+end
+@size = @mating_pool.size
+</code></pre>
+
+<p>  end</p>
+
+<p>  def random</p>
+
+<pre><code>@mating_pool[rand(@size)]
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Au passage, la méthode <code>random</code> permettra de choisir un parent au hasard.</p>
+
+<p>Les classes <code>Crossover</code> et <code>Mutator</code> s'occupent bien sûr de la partie
+reproduction:</p>
+
+<p>``` ruby
+class Crossover
+  def initialize(chromosome_size, mutation_rate)</p>
+
+<pre><code>@size = chromosome_size
+@rate = mutation_rate
+@mutator = Mutator.new(@size, @rate)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def two_point(parent1, parent2)</p>
+
+<pre><code>child = assemble(parent1, parent2, two_cut_points)
+child = @mutator.mutate(child)
+Individual.from_chromosome(child)
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def two_cut_points</p>
+
+<pre><code>point1 = cut_point
+point2 = cut_point
+point1, point2 = point2, point1 if point1 &gt; point2
+[point1, point2]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def cut_point</p>
+
+<pre><code>rand(@size)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def assemble(parent1, parent2, points)</p>
+
+<pre><code>point1, point2 = points
+parent1.chromosome[0...point1] + parent2.chromosome[point1..point2] +
+  parent1.chromosome[point2+1..-1]
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class Mutator
+  def initialize(chromosome_size, mutation_rate)</p>
+
+<pre><code>@size = chromosome_size
+@rate = mutation_rate
+</code></pre>
+
+<p>  end</p>
+
+<p>  def mutate(chromosome)</p>
+
+<pre><code>@size.times {|index| chromosome[index] = Gene.random if rand &lt; @rate }
+chromosome
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Le code de ces trois classes reprends plus ou moins le code développé en
+style procédural dans les articles précédents et je ne vois pas tellement
+ce que je pourrais en dire de plus. Il reste donc à lancer la machine:</p>
+
+<p><code>ruby
+generations = 500
+search = "Mon royaume pour un cheval"
+population = Population.new(search.size, 1000)
+mutation = 0.001
+GeneticAlgorithm.new(generations, population, search, mutation).run
+</code></p>
+
+<p>Voilà, c'est terminé pour le code objet. Quand j'aurais présenter 2 ou 3
+algorithmes génétiques de plus, on verra quelles classes résistent et peuvent
+être réutilisées et lesquelles doivent être repensées. Ça nous conduira
+éventuellement vers la création d'un framework…</p>
+
+<p>À demain</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 18]]></title>
@@ -443,140 +580,6 @@ le croisement en deux points, c'est parce que celle-ci (croisement uniforme)
 génère un nombre aléatoire pour chaque gènes. Si la méthode d'évaluation
 était plus gourmande en temps de calcul, les quelques générations gagnées
 par le croisement uniforme s'avéreraient payantes.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés: le croisement en deux points]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/15/les-algorithmes-genetiques-demystifies-le-croisement-en-deux-points/"/>
-    <updated>2013-09-15T11:40:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/15/les-algorithmes-genetiques-demystifies-le-croisement-en-deux-points</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Aujourd'hui on parle plus en détail de la méthode de reproduction
-utilisé jusqu'ici, à savoir le «croisement» de deux individus, et
-je décris la variante du «croisement en deux points».</p>
-
-<!-- more -->
-
-
-<h2>Croisement en un point (one point crossover)</h2>
-
-<p>Pour l'instant on a utilisé la méthode du croisement en un point
-(<em>one point crossover</em> in english). Pour mémoire, voici son
-implémentation dans le dernier problème, le paradoxe du singe savant:</p>
-
-<p><code>ruby
-def crossover(parent1, parent2)
-  point = rand(1..@search_value.size)
-  child = parent1.last[0...point] + parent2.last[point..-1]
-  [nil, mutate(child)]
-end
-</code></p>
-
-<p>Et en voici une représentation, le caractère <code>:</code> représente le point
-de croisement:</p>
-
-<pre><code>parent A  123:45678
-parent B  abc:defgh
-
-enfant A  123:defgh
-enfant B  abc:45678
-</code></pre>
-
-<p>On remarque que je prends garde d'éviter les valeurs extrèmes pour le
-point de croisement. Si ce point était par exemple zéro,
-il n'y aurait pas croisement mais une simple copie conforme d'un parent.
-Malgré tout, je ne voudrais pas laisser croire que c'est très important,
-et on pourrait très bien écrire:</p>
-
-<pre><code>point = rand(0..@search_value.size+1)
-</code></pre>
-
-<p>Il y aurait copie, et non croisement, dans 2/<em>l</em> cas (où <em>l</em> est la longueur
-du chromosome). Plus les chromosomes sont long et moins c'est un problème.</p>
-
-<p>On peut remarquer aussi que je ne crée qu'un seul enfant sur les deux
-possibles. Un code plus générique devrait créer et renvoyer les deux
-enfants, libre à nous d'en utiliser un seul ou les deux.</p>
-
-<h2>Croisement en deux points (two point crossover)</h2>
-
-<p>Une autre méthode de croisement populaire est le croisement en deux
-points. On intervertit le matériel génétique qui se trouve <em>entre</em> les
-deux points de croisement. Voici une représentation de cette méthode:</p>
-
-<pre><code>parent A  123:456:78
-parent B  abc:def:gh
-
-enfant A  123:def:78
-enfant B  abc:456:gh
-</code></pre>
-
-<p>Et voici une implémentation (toujours avec la création d'un seul
-enfant):</p>
-
-<p>``` ruby
-def two_point_crossover(parent1, parent2)
-  point1 = rand(@search_value.size)
-  point2 = rand(@search_value.size)
-  point1, point2 = point2, point1 if point1 > point2
-  child = parent1.last[0&hellip;point1] + parent2.last[point1..point2] +</p>
-
-<pre><code>      parent1.last[point2+1..-1]
-</code></pre>
-
-<p>  [nil, mutate(child)]
-end
-```</p>
-
-<p>À ce stade, vous vous demandez sûrement quel est l'intérêt de cette
-méthode ? Pour le comprendre, prenons un exemple. Le chromosome qu'on
-recherche est <code>bonjour</code> et dans notre population on a le chromosome
-suivant:</p>
-
-<pre><code>bacdefr
-</code></pre>
-
-<p>Seul ces deux gènes extrèmes sont bons. On peut aussi le noter de cette
-façon:</p>
-
-<pre><code>b*****r
-</code></pre>
-
-<p>Le <code>*</code> indique un emplacement dont la valeur n'est pas significative pour
-la discussion en cours. Si on applique le croisement en un point, les deux
-bons gènes vont être séparés dans presque tout les cas (et même dans tous
-les cas si on ne permet pas que le point de croisement se fasse aux valeurs
-extrèmes). Comparez avec le chromosome suivant:</p>
-
-<pre><code>bo*****
-</code></pre>
-
-<p>Les deux gènes <code>bo</code> seront rarement séparés. La probabilité est de
-1/<em>l</em>-1 si on ne permet pas les valeurs extrèmes (<em>l</em> est la longueur du
-chromosome). Donc avec la méthode du croisement en un point, le premier
-et le dernier gène sont traités différement des autres.
-Reste à savoir quelle incidence cela a sur la performance de l'algorithme.
-Voici les mesures pour l'algorithme précédent (avec taille de population
-et taux de mutation égal):</p>
-
-<pre><code>=================================================
-| méthode de croisement | génération | secondes |
-=================================================
-| un point              |         81 |        5 |
-|-----------------------------------------------|
-| deux points           |         54 |        3 |
-|-----------------------------------------------|
-</code></pre>
-
-<p>L'amélioration se lit clairement. En attendant le prochain article,
-n'hésitez pas à expérimenter ce qui vous passe par la tête (par exemple,
-pourquoi se limiter à 2 parents ?).</p>
 
 <p>À demain.</p>
 
