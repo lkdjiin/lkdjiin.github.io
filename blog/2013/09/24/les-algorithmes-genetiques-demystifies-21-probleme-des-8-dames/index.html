@@ -1,0 +1,399 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Les algorithmes génétiques démystifiés 21: Problème des 8 dames - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire On va tenter de résoudre le problème des 8 dames à l&#8217;aide d&#8217;un algorithme
+génétique. Le but du problème des huit &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Les algorithmes génétiques démystifiés 21: Problème des 8 dames</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-24T10:04:00+02:00" pubdate data-updated="true">24 septembre 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>On va tenter de résoudre le problème des 8 dames à l&#8217;aide d&#8217;un algorithme
+génétique.</p>
+
+<blockquote><p>Le but du problème des huit dames est de placer huit dames d&#8217;un jeu d&#8217;échecs sur un échiquier de 8 × 8 cases sans que les dames ne puissent se menacer mutuellement, conformément aux règles du jeu d&#8217;échecs (la couleur des pièces étant ignorée). Par conséquent, deux dames ne devraient jamais partager la même rangée, colonne, ou diagonale.</p><footer><strong>Wikipédia</strong> <cite><a href='http://fr.wikipedia.org/wiki/Probl%C3%A8me_des_huit_dames'>fr.wikipedia.org/wiki/&hellip;</a></cite></footer></blockquote>
+
+
+
+
+<!-- more -->
+
+
+<p>Avant toute chose, il faut trouver comment nos chromosomes vont pouvoir
+représenter une solution potentielle. On pourrait coder ça sous forme
+d&#8217;une chaîne de 64 bits, un par case, les 0 étants des cases vides et
+les 1 étants les cases occupées par les dames. On pourrait aussi les coder
+comme un tableau à deux dimensions, soit 8 rangées multipliées par 8 colonnes.
+En y regardant de plus près (ou simplement en relisant la définition du
+problème), on remarque que pour qu&#8217;une solution soit
+viable, il faut une seule dame par rangée, une seule par colonne et une
+seule par diagonale. On peut donc se contenter d&#8217;une liste (un tableau) de
+8 nombres entiers, ces nombres étants le numéro de la colonne. Ainsi, pour
+un échiquier de 4 x 4 cases, la liste <code>[0, 2, 3, 3]</code> équivaut à la position
+suivante:</p>
+
+<pre><code>---------
+|D| | | |
+---------
+| | |D| |
+---------
+| | | |D|
+---------
+| | | |D|
+---------
+</code></pre>
+
+<p>Maintenant on peut s&#8217;occuper de la population. Je vais me servir du code
+objet développé dans les derniers articles, en essayant de le modifier
+le moins possible.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Individual</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">from_chromosome</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:score</span><span class="p">,</span> <span class="ss">:fitness</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:chromosome</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">chromosome</span>
+</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="n">chromosome</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>      <span class="n">chromosome_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="no">Gene</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="nb">private_class_method</span> <span class="ss">:new</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Gene</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">rand</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Population</span> <span class="o">&lt;</span> <span class="nb">Array</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">population_size</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="nb">self</span> <span class="o">&lt;&lt;</span> <span class="no">Individual</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">best</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">sort_by</span><span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="p">}</span><span class="o">.</span><span class="n">last</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;ai été obligé de modifier la méthode <code>initialize</code> de la classe <code>Individual</code>
+ainsi que la classe <code>Gene</code>. Il faudra en tenir compte si on veut qu&#8217;un
+framework sorte de tout ça…</p>
+
+<p>Le prochain article traitera de l&#8217;évaluation du problème des 8 dames.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/'>Les algorithmes génétiques démystifiés 20</a></li><li><a href='/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19/'>Les algorithmes génétiques démystifiés 19</a></li><li><a href='/blog/2013/09/19/les-algorithmes-genetiques-demystifies-18/'>Les algorithmes génétiques démystifiés 18</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-24T10:04:00+02:00" pubdate data-updated="true">24 septembre 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/probleme-des-8-dames/'>problème des 8 dames</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/" title="Previous Post: Les algorithmes génétiques démystifiés 20">&laquo; Les algorithmes génétiques démystifiés 20</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim et Ruby.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/">Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/">Les algorithmes génétiques démystifiés 20</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/22/dans-le-grenier-le-premier-pas-vers-lan-2000/">Dans le grenier: Le premier pas vers l'an 2000</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/21/ruby-les-methodes-du-module-kernel/">Ruby: Les méthodes du module Kernel</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19/">Les algorithmes génétiques démystifiés 19</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/19/les-algorithmes-genetiques-demystifies-18/">Les algorithmes génétiques démystifiés 18</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/18/les-algorithmes-genetiques-demystifies-17-oriente-objet/">Les algorithmes génétiques démystifiés 17: Orienté Objet</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
