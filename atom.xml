@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-09-25T14:28:48+02:00</updated>
+  <updated>2013-09-26T18:24:39+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,112 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 23]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/09/26/les-algorithmes-genetiques-demystifies-23/"/>
+    <updated>2013-09-26T18:19:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/09/26/les-algorithmes-genetiques-demystifies-23</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Pour évaluer une solution potentielle dans le problème des 8 dames, on va
+devoir calculer le nombre de paires de dames qui sont en conflit (en prise,
+pour les joueurs d&#8217;échecs).</p>
+
+<!-- more -->
+
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/">l&#8217;article précédent</a>
+on a mis en place la classe <code>Evaluator</code>, mais il manquait une partie
+déterminante: le calcul du nombre de conflits. Le voici:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">conflicts</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">board</span> <span class="o">=</span> <span class="n">individual</span><span class="o">.</span><span class="n">chromosome</span>
+</span><span class='line'>    <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="vi">@board_size</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">row1</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">gene1</span> <span class="o">=</span> <span class="n">board</span><span class="o">[</span><span class="n">row1</span><span class="o">]</span>
+</span><span class='line'>      <span class="p">(</span><span class="n">row1</span><span class="o">+</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="vi">@board_size</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">row2</span><span class="o">|</span>
+</span><span class='line'>        <span class="n">gene2</span> <span class="o">=</span> <span class="n">board</span><span class="o">[</span><span class="n">row2</span><span class="o">]</span>
+</span><span class='line'>        <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">gene1</span> <span class="o">==</span> <span class="n">gene2</span>
+</span><span class='line'>        <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">row2</span> <span class="o">-</span> <span class="n">row1</span> <span class="o">==</span> <span class="p">(</span><span class="n">gene1</span> <span class="o">-</span> <span class="n">gene2</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">score</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je ne suis pas très satisfait de cette méthode, elle est assez imposante
+(trop longue) et difficile à lire (pas claire). Néanmoins elle fait son
+travail et c&#8217;est ce qui compte pour l&#8217;instant. Je ferais peut-être du
+refactoring plus tard (ou bien c&#8217;est un lecteur charitable qui va nous
+le faire ?). Une explication s&#8217;impose:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="vi">@board_size</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">row1</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">gene1</span> <span class="o">=</span> <span class="n">board</span><span class="o">[</span><span class="n">row1</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On a une première itération sur chaque rangées. Dans chaque boucle, la variable
+<code>gene1</code> reçoit la position de la dame de cette rangée, c&#8217;est à dire
+le numéro de la colonne (base 0). On va ensuite
+comparer cette dame avec les dames des rangées suivantes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="p">(</span><span class="n">row1</span><span class="o">+</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="vi">@board_size</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">row2</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">gene2</span> <span class="o">=</span> <span class="n">board</span><span class="o">[</span><span class="n">row2</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Dans cette seconde itération, <code>gene2</code> reçoit successivement les positions
+de chaque dames restantes. On peut maintenant regarder si deux dames sont
+dans la même colonne:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>    <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">gene1</span> <span class="o">==</span> <span class="n">gene2</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ça se passe de commentaire… Pour savoir si deux dames sont sur une
+même diagonale, c&#8217;est un peu plus tordu:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>    <span class="n">score</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">row2</span> <span class="o">-</span> <span class="n">row1</span> <span class="o">==</span> <span class="p">(</span><span class="n">gene1</span> <span class="o">-</span> <span class="n">gene2</span><span class="p">)</span><span class="o">.</span><span class="n">abs</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je vois un peu ça comme un problème de géométrie. Si deux dames ont le
+même écart en nombre de colonnes et en nombre de rangées, c&#8217;est qu&#8217;elles
+partagent la même diagonale.</p>
+
+<p>Cet article n&#8217;était pas vraiment orienté algorithme génétique mais je pense
+qu&#8217;il était pourtant nécessaire. Si on a pas une bonne fonction d&#8217;évaluation,
+un algorithme génétique n&#8217;est d&#8217;aucune aide. C&#8217;est pour ça que la première
+chose que je fais quand j&#8217;aborde un nouveau problème c&#8217;est de réfléchir au
+combo évaluation/chromosome jusqu&#8217;à en avoir une vision claire.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/'>Les algorithmes génétiques démystifiés 22</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/'>Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/'>Les algorithmes génétiques démystifiés 20</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 22]]></title>
@@ -163,7 +269,7 @@ une petite valeur au nombre de conflits, par exemple:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/'>Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/'>Les algorithmes génétiques démystifiés 20</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19/'>Les algorithmes génétiques démystifiés 19</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/26/les-algorithmes-genetiques-demystifies-23/'>Les algorithmes génétiques démystifiés 23</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/'>Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/'>Les algorithmes génétiques démystifiés 20</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -301,7 +407,7 @@ framework sorte de tout ça…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/'>Les algorithmes génétiques démystifiés 22</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/'>Les algorithmes génétiques démystifiés 20</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19/'>Les algorithmes génétiques démystifiés 19</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/26/les-algorithmes-genetiques-demystifies-23/'>Les algorithmes génétiques démystifiés 23</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/'>Les algorithmes génétiques démystifiés 22</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/'>Les algorithmes génétiques démystifiés 20</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -367,7 +473,7 @@ d&#8217;autres idées/envies pour la suite ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/'>Les algorithmes génétiques démystifiés 22</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/'>Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19/'>Les algorithmes génétiques démystifiés 19</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/26/les-algorithmes-genetiques-demystifies-23/'>Les algorithmes génétiques démystifiés 23</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/'>Les algorithmes génétiques démystifiés 22</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/'>Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2624,130 +2730,6 @@ Ctrl + flèche vers la gauche va diminuer la largeur de la fenêtre active.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/14/vim-la-commande-point-et-le-clavier-azerty/'>Vim: la commande point et le clavier Azerty</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/27/bien-debuter-avec-vim-recherche-de-texte/'>Bien débuter avec Vim: Recherche de texte</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/15/bien-debuter-avec-vim-la-touche-escape/'>Bien débuter avec Vim: la touche Escape</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 7]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7/"/>
-    <updated>2013-09-06T11:59:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/06/les-algorithmes-genetiques-demystifies-7</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p><a href="http://lkdjiin.github.io/blog/2013/09/05/les-algorithmes-genetiques-demystifies-6/">Hier</a>
-on a amélioré l&#8217;algorithme grâce à la mutation. C&#8217;est mieux mais on
-peut encore faire mieux. Aujourd&#8217;hui on parle un peu plus en détail de
-la sélection et de la diversité génétique.</p>
-
-<!-- more -->
-
-
-<h2>La sélection</h2>
-
-<p>Voici la méthode de sélection:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">selection</span>
-</span><span class='line'>  <span class="vi">@selected</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="mi">50</span><span class="o">].</span><span class="n">shuffle</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>C&#8217;est clair et limpide : on conserve la meilleure moitié de la population.
-Mais ça pose des problèmes. Que faire si un gène important pour notre
-solution se trouve dans la moitié supprimée ? On a vu hier qu&#8217;en <em>théorie</em>
-la mutation régle le problème. Mais en <em>pratique</em> on a vu aussi qu&#8217;on pouvait
-atteindre 10.000 générations sans trouver la solution. Autre problème de
-taille : l&#8217;individu classé à la 1ère place va produire quatre enfants,
-tout comme l&#8217;invidu classé à la 50ème place. Pourtant il y a un monde entre
-les deux. De même, il y a peu de différence entre la 50ème place et la
-51ème, et pourtant l&#8217;un se reproduira et pas l&#8217;autre. Tout ceci semble assez
-bancal et arbitraire. Dans un prochain article on explorera une méthode de
-sélection plus <em>naturelle</em>, pour l&#8217;instant on va essayer d&#8217;augmenter le
-nombre d&#8217;individus sélectionnés, juste pour voir:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">selection</span>
-</span><span class='line'>  <span class="vi">@selected</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">.</span><span class="mi">80</span><span class="o">].</span><span class="n">shuffle</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>La diversité génétique</h2>
-
-<p>Voici la méthode utilisée hier pour produire une nouvelle génération:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">next_generation</span>
-</span><span class='line'>  <span class="vi">@selection</span> <span class="o">=</span> <span class="n">selection</span>
-</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class='line'>  <span class="mi">25</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span> <span class="o">=</span> <span class="vi">@selection</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">child1</span><span class="p">,</span> <span class="n">child2</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">child3</span><span class="p">,</span> <span class="n">child4</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@population</span> <span class="o">+=</span> <span class="o">[</span><span class="n">child1</span><span class="p">,</span> <span class="n">child2</span><span class="p">,</span> <span class="n">child3</span><span class="p">,</span> <span class="n">child4</span><span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On va la changer ainsi:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">next_generation</span>
-</span><span class='line'>  <span class="vi">@selection</span> <span class="o">=</span> <span class="n">selection</span>
-</span><span class='line'>  <span class="vi">@population</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class='line'>  <span class="mi">40</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span> <span class="o">=</span> <span class="vi">@selection</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">child1</span><span class="p">,</span> <span class="n">child2</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">parent1</span><span class="p">,</span> <span class="n">parent2</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@population</span> <span class="o">+=</span> <span class="o">[</span><span class="n">child1</span><span class="p">,</span> <span class="n">child2</span><span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="mi">20</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="vi">@population</span> <span class="o">&lt;&lt;</span> <span class="n">make_chromosome</span> <span class="p">}</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Tout d&#8217;abord on tient compte du fait que le nombre d&#8217;individus sélectionnés
-a changé : il est maintenant de 80, on va donc former 40 couples. Ensuite,
-chaque couple ne va produire que 2 enfants. Enfin, on complète notre
-population avec 20 individus créés au hasard. Ce sont eux qui vont apporter
-la diversité génétique qui nous faisait défaut.</p>
-
-<p>J&#8217;ai testé plusieurs dizaines de fois, et la solution a toujours été
-trouvée avant la 1000ème génération (généralement bien avant).
-N&#8217;hésitez pas à faire des tests
-en modifiant le nombre d&#8217;invidus sélectionnés, le taux de mutation,
-la taille de la population initiale, etc.</p>
-
-<p>La prochaine fois, j&#8217;aimerais trouver un problème (toujours très simple) où
-les individus ne seraient pas codés sous forme de bits. Je vais chercher ça.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/'>Les algorithmes génétiques démystifiés 22</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/'>Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/23/les-algorithmes-genetiques-demystifies-20/'>Les algorithmes génétiques démystifiés 20</a></li></ul></section></p>
 ]]></content>
   </entry>
   
