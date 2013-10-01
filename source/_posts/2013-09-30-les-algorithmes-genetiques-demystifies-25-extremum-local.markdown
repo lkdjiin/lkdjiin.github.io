@@ -62,6 +62,9 @@ mecanique des algorithmes génétiques. En ajustant comme il faut la
 *petite valeur* qu'on ajoute aux x successifs, on obtiendra l'extremum en
 un temps raisonnable.
 
+**Edit du 1 oct 2013** Cette petite valeur ajoutée à x peut-être considérée
+comme une mutation.
+
 Alors où est le problème maintenant ? Pour le visualiser il faut changer
 de fonction mathématique:
 
