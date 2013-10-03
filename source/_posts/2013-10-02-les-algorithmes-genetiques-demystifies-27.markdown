@@ -81,6 +81,9 @@ File.open(ARGV.first, "r").each_line {|line| hash[line] += 1 }
 hash.each {|key, value| puts "#{"%3d" % value} => #{key}" }
 ```
 
+**Edit 3 octobre 2013** Si vous ne comprenez pas le script ci-dessus,
+voici [une explication](http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash/).
+
 L'explication de ce script dépasse le cadre de cet article, l'objectif
 étant de savoir combien de chromosomes sont identiques. Pour cela on
 refait tourner notre algorithme génétique en enregistrant le résultat
