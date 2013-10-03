@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-10-02T12:12:58+02:00</updated>
+  <updated>2013-10-03T10:59:31+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,231 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby: un exemple de valeur par défaut pour un Hash]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash/"/>
+    <updated>2013-10-03T10:52:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>J&#8217;oublie régulièrement qu&#8217;un Hash peut renvoyer une valeur par défaut.
+Du coup, je me retrouve souvent avec un code inutilement lourd.
+Aujourd&#8217;hui je montre un exemple d&#8217;initialisation d&#8217;un Hash avec une
+valeur par défaut et pourquoi c&#8217;est intéressant.</p>
+
+<!-- more -->
+
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/10/02/les-algorithmes-genetiques-demystifies-27/">l&#8217;article d&#8217;hier</a>
+(sur les algorithmes génétiques) je donnais un script de trois lignes sans
+fournir d&#8217;explications, les voici.</p>
+
+<h2>L&#8217;objectif</h2>
+
+<p>J&#8217;ai un fichier (&ldquo;mots.txt&rdquo;) contenant un certain nombre de mots pouvant
+apparaitre plusieurs fois:</p>
+
+<pre><code>casserole
+casserole
+assiette
+fourchette
+casserole
+fourchette
+verre
+...
+</code></pre>
+
+<p>Je veux connaitre le nombre d&#8217;occurence de chaque mot et produire une sortie
+de ce genre:</p>
+
+<pre><code>187 =&gt; casserole
+ 13 =&gt; assiette
+  2 =&gt; fourchette
+  1 =&gt; verre
+</code></pre>
+
+<h2>La classe Hash expliquée en 30 secondes</h2>
+
+<p><em>Si vous savez déjà ce qu&#8217;est un hash, passez directement à la section
+suivante.</em></p>
+
+<p>Un <em>hash</em> peut contenir un nombre indeterminé de paires d&#8217;objets ; ces paires
+étants organisées en clé/valeur. Ça marche comme un dictionnaire. Dans
+d&#8217;autres langages, vous les connaissez peut-être sous le nom de dict, map,
+tableau associatif, hashtable, etc. En Ruby, on peut créer un hash vide de
+deux façons:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">hash</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'><span class="n">autre_hash</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut créer et remplir un hash en même temps:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">hash</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;clef1&quot;</span> <span class="o">=&gt;</span> <span class="mi">123</span><span class="p">,</span> <span class="s2">&quot;clef2&quot;</span> <span class="o">=&gt;</span> <span class="mi">456</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour connaitre la valeur associée à la clé &ldquo;clef1&rdquo;:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">hash</span><span class="o">[</span><span class="s2">&quot;clef1&quot;</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour modifier la valeur associée à la clé &ldquo;clef1&rdquo;:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">hash</span><span class="o">[</span><span class="s2">&quot;clef1&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour ajouter une paire clé/valeur:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">hash</span><span class="o">[</span><span class="s2">&quot;nouvelle clef&quot;</span><span class="o">]</span> <span class="o">=</span> <span class="mi">123546789</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notez que les clés et leurs valeurs peuvent être de n&#8217;importe quel type.
+On n&#8217;est pas limité à des chaînes de caractères et des nombres.</p>
+
+<h2>Première version</h2>
+
+<p>Mon premier jet a donné ceci:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Version 1</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">hash</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;mots.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">each_line</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+</span><span class='line'>  <span class="k">if</span> <span class="nb">hash</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">=</span> <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">hash</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">|</span> <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="s2">&quot;%3d&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="si">}</span><span class="s2"> =&gt; </span><span class="si">#{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La première ligne crée un hash vide tandis que la dernière affiche
+le contenu du hash, formaté comme je le veux. Au milieu, on itère sur
+les lignes du fichier texte (les mots) pour remplir le hash,
+c&#8217;est ça qui m&#8217;intéresse:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">if</span> <span class="nb">hash</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">=</span> <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C&#8217;est une construction classique à base de if/else. Si le hash possède
+une clé identique à la ligne en cours (<code>if hash.key?(line)</code>) alors on
+incrémente sa valeur associée. Sinon on crée cette clé, associée à la
+valeur 1 puisque c&#8217;est la première fois qu&#8217;on rencontre ce mot
+(<code>hash[line] = 1</code>).</p>
+
+<h2>Deuxième version</h2>
+
+<p>Ruby possède un opérateur ternaire (<em>ternary operator</em>) qui peut remplacer
+un if/else simple comme le notre:</p>
+
+<pre><code>condition ? oui : non
+</code></pre>
+
+<p>Si <code>condition</code> est vérifiée, on execute <code>oui</code>, sinon on execute <code>non</code>.
+Dans notre cas on peut donc écrire:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;mots.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">each_line</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+</span><span class='line'>  <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">=</span> <span class="nb">hash</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="p">?</span> <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Certains adorent ce genre de construction, d&#8217;autres détestent. <em>À priori</em> je
+n&#8217;ai rien contre, mais il faut avouer que dans ce cas précis c&#8217;est tout
+simplement illisible.</p>
+
+<h2>Troisième version</h2>
+
+<p>Ruby possède un opérateur sympa qu&#8217;on peut parfois utiliser quand on veut
+initialiser une variable si elle n&#8217;existe pas où la modifier si elle
+existe: <code>||=</code>. Il faut savoir qu&#8217;un hash renvoie la valeur <code>nil</code> quand on
+lui fournit une clé inexistante:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;result.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">each_line</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+</span><span class='line'>  <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">||=</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>hash[line] ||= 0</code> va créer la clé et lui donner la valeur 0 si cette clé
+n&#8217;existe pas, sinon la clé se voit affecter sa valeur. Ensuite la valeur de
+la clé est incrémentée avec <code>hash[line] += 1</code>. Je trouve cela plus lisible
+que la version avec l&#8217;opérateur ternaire, mais moins lisible que la version
+avec le if/else, car cela fait appel à un «truc».</p>
+
+<h2>Quatrième et dernière version</h2>
+
+<p>Voici la <em>bonne</em> version (selon moi bien entendu). Il faut modifier
+légerement la création du hash:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">hash</span> <span class="o">=</span> <span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;result.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">each_line</span> <span class="k">do</span> <span class="o">|</span><span class="n">line</span><span class="o">|</span>
+</span><span class='line'>  <span class="nb">hash</span><span class="o">[</span><span class="n">line</span><span class="o">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Quand vous créer un hash, vous pouvez lui dire: «Je veux que tu renvois
+telle valeur quand on te donne une clé inexistante». Dans notre cas, les
+clés inexistantes renverront toujours zéro. Le tour est joué: une simple
+incrémentation suffit maintenant, qu&#8217;une clé existe déjà ou non.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/29/ruby-les-methodes-du-module-kernel-3/'>Ruby: Les méthodes du module Kernel 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/28/ruby-les-methodes-du-module-kernel-2/'>Ruby: Les méthodes du module Kernel 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/21/ruby-les-methodes-du-module-kernel/'>Ruby: Les méthodes du module Kernel</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 27]]></title>
@@ -392,7 +617,7 @@ Using /home/xavier/.rvm/gems/ruby-2.0.0-p247
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/28/ruby-les-methodes-du-module-kernel-2/'>Ruby: Les méthodes du module Kernel 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/21/ruby-les-methodes-du-module-kernel/'>Ruby: Les méthodes du module Kernel</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/28/ruby-les-methodes-du-module-kernel-2/'>Ruby: Les méthodes du module Kernel 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/21/ruby-les-methodes-du-module-kernel/'>Ruby: Les méthodes du module Kernel</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash/'>Ruby: un exemple de valeur par défaut pour un Hash</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -537,7 +762,7 @@ dépassent largement mes compétences en mathématique.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/29/ruby-les-methodes-du-module-kernel-3/'>Ruby: Les méthodes du module Kernel 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/21/ruby-les-methodes-du-module-kernel/'>Ruby: Les méthodes du module Kernel</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/29/ruby-les-methodes-du-module-kernel-3/'>Ruby: Les méthodes du module Kernel 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/21/ruby-les-methodes-du-module-kernel/'>Ruby: Les méthodes du module Kernel</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash/'>Ruby: un exemple de valeur par défaut pour un Hash</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1629,7 +1854,7 @@ ces méthodes… Je veux dire pourquoi utiliser <code>String(arg)</code> plutôt
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/29/ruby-les-methodes-du-module-kernel-3/'>Ruby: Les méthodes du module Kernel 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/28/ruby-les-methodes-du-module-kernel-2/'>Ruby: Les méthodes du module Kernel 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/04/generer-un-fichier-changelog-avec-git/'>Générer un fichier Changelog avec Git</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/29/ruby-les-methodes-du-module-kernel-3/'>Ruby: Les méthodes du module Kernel 3</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/28/ruby-les-methodes-du-module-kernel-2/'>Ruby: Les méthodes du module Kernel 2</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash/'>Ruby: un exemple de valeur par défaut pour un Hash</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2541,102 +2766,6 @@ conseilleriez vous ?</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/07/le-systeme-de-fenetrage-de-vim/'>Le système de fenêtrage de Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/27/bien-debuter-avec-vim-recherche-de-texte/'>Bien débuter avec Vim: Recherche de texte</a></li><li><a href='http://lkdjiin.github.io/blog/2013/08/15/bien-debuter-avec-vim-la-touche-escape/'>Bien débuter avec Vim: la touche Escape</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 13]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/13/les-algorithmes-genetiques-demystifies-13/"/>
-    <updated>2013-09-13T07:45:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/13/les-algorithmes-genetiques-demystifies-13</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Aujourd&#8217;hui on analyse ce qui arrive lorsqu&#8217;on joue avec les deux
-variables dont on dispose pour l&#8217;instant : la taille de la population
-et le taux de mutation.</p>
-
-<!-- more -->
-
-
-<h2>Une définition de la performance</h2>
-
-<p>Comment mesurer les performances d&#8217;un algorithme génétique ? Le nombre de
-générations nécessaires pour trouver la solution vient tout de suite à
-l&#8217;esprit. C&#8217;est toujours une mesure intéressante mais la plus importante
-mesure reste évident <strong>le temps</strong> écoulé avant de trouver la solution.</p>
-
-<p>Les mesures que je propose ici n&#8217;ont rien de très <em>scientifique</em>. Pour
-chaque mesure j&#8217;ai fait tourner l&#8217;algorithme génétique développé dans les
-<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">derniers articles</a> (le paradoxe du singe savant) 5 fois de suite.
-C&#8217;est malgré tout suffisant pour dégager les tendances.</p>
-
-<h2>Performances suivant la taille de la population</h2>
-
-<p>Tout d&#8217;abord voyons ce qu&#8217;il se passe quand on augmente la taille de la
-population.</p>
-
-<pre><code>======================================
-| population | génération | secondes |
-======================================
-|        150 |       3277 |       32 |
-|------------------------------------|
-|        500 |        363 |       12 |
-|------------------------------------|
-|      1.000 |         81 |        5 |
-|------------------------------------|
-|     10.000 |         50 |       33 |
-|------------------------------------|
-</code></pre>
-
-<p>Ça ne devrait pas vous surprendre : plus la population augmente plus la
-solution est trouvée en un minimum de générations. C&#8217;est presque la même
-chose avec le temps, sauf que passé un certain point, il remonte en flêche.
-C&#8217;est essentiellement du aux structures de données utilisées pour
-construire le <em>mating pool</em>, évaluer les individus, etc. Et ça pose la
-question de trouver un langage informatique adapté aux algorithmes
-génétiques, langage qui soit un bon compromis entre facilité
-d&#8217;écriture/lecture et performances brutes.</p>
-
-<h2>Performances suivant le taux de mutation</h2>
-
-<p>Voyons maintenant l&#8217;influence du taux de mutation.</p>
-
-<pre><code>======================================
-| taux de    | génération | secondes |
-| mutation * |            |          |
-======================================
-|       0.02 |        293 |       20 |
-|------------------------------------|
-|       0.01 |         81 |        5 |
-|------------------------------------|
-|      0.005 |         75 |        5 |
-|------------------------------------|
-|      0.001 |         73 |        5 |
-|------------------------------------|
-|     0.0001 |         65 |        4 |
-|------------------------------------|
-|          0 |         ** |       ** |
-|------------------------------------|
-* Pour une population de 1000 individus.
-** Aux environs de la 60ème génération si on a de la
-   chance, sinon jamais car on atteint un extremum local.
-</code></pre>
-
-<p>Entre 1/100ème et 1/10.000ème la performance évolue, mais peu. À 2/100ème on
-voit que la performance est déjà en train de chuter. En dessous de
-1/10.000ème, le comportement se rapproche fortement d&#8217;un taux de zéro pourcent.
-On considère généralement un taux de mutation de 1/<em>n</em> comme un bon
-compromis (où <em>n</em> est la taille de la population).</p>
-
-<p>Voilà, cette petite analyse est terminée.
-Je ne sais pas de quoi je parlerais la prochaine fois, mais le sujet
-est tellement vaste que j&#8217;ai l&#8217;impression que
-cette série sur les algorithmes génétiques ne s&#8217;arretera jamais…</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/09/20/les-algorithmes-genetiques-demystifies-19/'>Les algorithmes génétiques démystifiés 19</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/19/les-algorithmes-genetiques-demystifies-18/'>Les algorithmes génétiques démystifiés 18</a></li><li><a href='http://lkdjiin.github.io/blog/2013/09/18/les-algorithmes-genetiques-demystifies-17-oriente-objet/'>Les algorithmes génétiques démystifiés 17: Orienté Objet</a></li></ul></section></p>
 ]]></content>
   </entry>
   

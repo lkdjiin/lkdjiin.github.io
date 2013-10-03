@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : hash | lkdjiin's blog]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/hash/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2013-10-03T10:59:31+02:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby: un exemple de valeur par défaut pour un Hash]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash/"/>
+    <updated>2013-10-03T10:52:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/10/03/ruby-un-exemple-de-valeur-par-defaut-pour-un-hash</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>J'oublie régulièrement qu'un Hash peut renvoyer une valeur par défaut.
+Du coup, je me retrouve souvent avec un code inutilement lourd.
+Aujourd'hui je montre un exemple d'initialisation d'un Hash avec une
+valeur par défaut et pourquoi c'est intéressant.</p>
+
+<!-- more -->
+
+
+<p>Dans <a href="http://lkdjiin.github.io/blog/2013/10/02/les-algorithmes-genetiques-demystifies-27/">l'article d'hier</a>
+(sur les algorithmes génétiques) je donnais un script de trois lignes sans
+fournir d'explications, les voici.</p>
+
+<h2>L'objectif</h2>
+
+<p>J'ai un fichier (&ldquo;mots.txt&rdquo;) contenant un certain nombre de mots pouvant
+apparaitre plusieurs fois:</p>
+
+<pre><code>casserole
+casserole
+assiette
+fourchette
+casserole
+fourchette
+verre
+...
+</code></pre>
+
+<p>Je veux connaitre le nombre d'occurence de chaque mot et produire une sortie
+de ce genre:</p>
+
+<pre><code>187 =&gt; casserole
+ 13 =&gt; assiette
+  2 =&gt; fourchette
+  1 =&gt; verre
+</code></pre>
+
+<h2>La classe Hash expliquée en 30 secondes</h2>
+
+<p><em>Si vous savez déjà ce qu'est un hash, passez directement à la section
+suivante.</em></p>
+
+<p>Un <em>hash</em> peut contenir un nombre indeterminé de paires d'objets ; ces paires
+étants organisées en clé/valeur. Ça marche comme un dictionnaire. Dans
+d'autres langages, vous les connaissez peut-être sous le nom de dict, map,
+tableau associatif, hashtable, etc. En Ruby, on peut créer un hash vide de
+deux façons:</p>
+
+<p><code>ruby
+hash = {}
+autre_hash = Hash.new
+</code></p>
+
+<p>On peut créer et remplir un hash en même temps:</p>
+
+<p><code>ruby
+hash = { "clef1" =&gt; 123, "clef2" =&gt; 456 }
+</code></p>
+
+<p>Pour connaitre la valeur associée à la clé &ldquo;clef1&rdquo;:</p>
+
+<p><code>ruby
+hash["clef1"]
+</code></p>
+
+<p>Pour modifier la valeur associée à la clé &ldquo;clef1&rdquo;:</p>
+
+<p><code>ruby
+hash["clef1"] = 0
+</code></p>
+
+<p>Pour ajouter une paire clé/valeur:</p>
+
+<p><code>ruby
+hash["nouvelle clef"] = 123546789
+</code></p>
+
+<p>Notez que les clés et leurs valeurs peuvent être de n'importe quel type.
+On n'est pas limité à des chaînes de caractères et des nombres.</p>
+
+<h2>Première version</h2>
+
+<p>Mon premier jet a donné ceci:</p>
+
+<p>``` ruby</p>
+
+<h1>Version 1</h1>
+
+<p>hash = Hash.new</p>
+
+<p>File.open(&ldquo;mots.txt&rdquo;, &ldquo;r&rdquo;).each_line do |line|
+  if hash.key?(line)</p>
+
+<pre><code>hash[line] = hash[line] + 1
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>hash[line] = 1
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>hash.each {|key, value| puts &ldquo;#{&rdquo;%3d" % value} => #{key}&ldquo; }
+```</p>
+
+<p>La première ligne crée un hash vide tandis que la dernière affiche
+le contenu du hash, formaté comme je le veux. Au milieu, on itère sur
+les lignes du fichier texte (les mots) pour remplir le hash,
+c'est ça qui m'intéresse:</p>
+
+<p>``` ruby
+  if hash.key?(line)</p>
+
+<pre><code>hash[line] = hash[line] + 1
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>hash[line] = 1
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>C'est une construction classique à base de if/else. Si le hash possède
+une clé identique à la ligne en cours (<code>if hash.key?(line)</code>) alors on
+incrémente sa valeur associée. Sinon on crée cette clé, associée à la
+valeur 1 puisque c'est la première fois qu'on rencontre ce mot
+(<code>hash[line] = 1</code>).</p>
+
+<h2>Deuxième version</h2>
+
+<p>Ruby possède un opérateur ternaire (<em>ternary operator</em>) qui peut remplacer
+un if/else simple comme le notre:</p>
+
+<pre><code>condition ? oui : non
+</code></pre>
+
+<p>Si <code>condition</code> est vérifiée, on execute <code>oui</code>, sinon on execute <code>non</code>.
+Dans notre cas on peut donc écrire:</p>
+
+<p><code>ruby
+File.open("mots.txt", "r").each_line do |line|
+  hash[line] = hash.key?(line) ? hash[line] + 1 : 1
+end
+</code></p>
+
+<p>Certains adorent ce genre de construction, d'autres détestent. <em>À priori</em> je
+n'ai rien contre, mais il faut avouer que dans ce cas précis c'est tout
+simplement illisible.</p>
+
+<h2>Troisième version</h2>
+
+<p>Ruby possède un opérateur sympa qu'on peut parfois utiliser quand on veut
+initialiser une variable si elle n'existe pas où la modifier si elle
+existe: <code>||=</code>. Il faut savoir qu'un hash renvoie la valeur <code>nil</code> quand on
+lui fournit une clé inexistante:</p>
+
+<p><code>ruby
+File.open("result.txt", "r").each_line do |line|
+  hash[line] ||= 0
+  hash[line] += 1
+end
+</code></p>
+
+<p><code>hash[line] ||= 0</code> va créer la clé et lui donner la valeur 0 si cette clé
+n'existe pas, sinon la clé se voit affecter sa valeur. Ensuite la valeur de
+la clé est incrémentée avec <code>hash[line] += 1</code>. Je trouve cela plus lisible
+que la version avec l'opérateur ternaire, mais moins lisible que la version
+avec le if/else, car cela fait appel à un «truc».</p>
+
+<h2>Quatrième et dernière version</h2>
+
+<p>Voici la <em>bonne</em> version (selon moi bien entendu). Il faut modifier
+légerement la création du hash:</p>
+
+<p><code>ruby
+hash = Hash.new(0)
+File.open("result.txt", "r").each_line do |line|
+  hash[line] += 1
+end
+</code></p>
+
+<p>Quand vous créer un hash, vous pouvez lui dire: «Je veux que tu renvois
+telle valeur quand on te donne une clé inexistante». Dans notre cas, les
+clés inexistantes renverront toujours zéro. Le tour est joué: une simple
+incrémentation suffit maintenant, qu'une clé existe déjà ou non.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>
