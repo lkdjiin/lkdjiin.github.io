@@ -5,12 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Les algorithmes génétiques démystifiés 24 - lkdjiin's blog</title>
+  <title>Les algorithmes génétiques démystifiés 29 - lkdjiin's blog</title>
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : intermédiaire Maintenant vous connaissez bien la procédure : on trouve comment représenter
-les chromosomes, comment les évaluer, puis une &hellip;">
+  <meta name="description" content="Niveau : intermédiaire Aujourd&#8217;hui on voit comment sortir de l&#8217;extremum local qui bloque notre
+algorithme sur le problème des 8 dames. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +19,7 @@ les chromosomes, comment les évaluer, puis une &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/09/27/les-algorithmes-genetiques-demystifies-24">
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
@@ -83,7 +83,7 @@ les chromosomes, comment les évaluer, puis une &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Les algorithmes génétiques démystifiés 24</h1>
+      <h1 class="entry-title">Les algorithmes génétiques démystifiés 29</h1>
     
     
       <p class="meta">
@@ -99,7 +99,7 @@ les chromosomes, comment les évaluer, puis une &hellip;">
   
 
 
-<time datetime="2013-09-27T18:26:00+02:00" pubdate data-updated="true">27 septembre 2013</time>
+<time datetime="2013-10-07T18:48:00+02:00" pubdate data-updated="true">7 octobre 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -111,19 +111,98 @@ les chromosomes, comment les évaluer, puis une &hellip;">
 <div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
 
 
-<p>Maintenant vous connaissez bien la procédure : on trouve comment représenter
-les chromosomes, comment les évaluer, puis une fois la population
-initialisée on sélectionne, on croise, on mute…</p>
+<p>Aujourd&#8217;hui on voit comment sortir de l&#8217;extremum local qui bloque notre
+algorithme sur le problème des 8 dames.</p>
 
 <!-- more -->
 
 
-<p>Dernièrement on s&#8217;est occupé des chromosomes, de l&#8217;évaluation et de la
-population. Reste à sélectionner, croiser, muter.
-Je ne vais pas trop m&#8217;étendre sur le code permettant de faire ceci puisqu&#8217;il
-s&#8217;agit pratiquement d&#8217;un copier/coller des classes développées
-précédement. Voici le code permettant de résoudre le problème des
-8 dames:</p>
+<p>Pour rappel, on essaie de faire fonctionner l&#8217;algorithme sur des échiquiers
+de plus grande taille: 16, 20 ou 30 cases.
+On a vu dernièrement que le faible taux de mutation (1/<em>n</em>, où <em>n</em> est la
+taille de la population) qu&#8217;on emploie à du bon et du mauvais.
+Il est bon puisqu&#8217;en exploitant les chromosomes, il mène assez vite à une
+<em>presque</em> solution. Et il est mauvais puisque arrivé à cette <em>presque</em> solution,
+qui est un extremum local, il ne permet pas l&#8217;exploration d&#8217;autres chromosomes.</p>
+
+<p>À priori, on peut penser qu&#8217;il suffit d&#8217;augmenter le taux de mutation.
+Effectivement, on obtiendra souvent de très bons résultats entre 1 et
+3%. Mais souvent ne veut pas dire toujours et on restera régulièrement
+coincé.</p>
+
+<p>Une solution envisageable est d&#8217;avoir un taux de mutation variable. 1/<em>n</em>
+au début, puis quand on sent arriver l&#8217;extremum local on augmente le taux
+pour permettre à l&#8217;exploration de reprendre. Enfin, quand on pense être
+sorti de l&#8217;extremum local, on repasse au taux original.</p>
+
+<p>Voici la nouvelle classe <code>Mutator</code>, j&#8217;ai mis le code supplémentaire
+entre <code># ---</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Mutator</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@size</span> <span class="o">=</span> <span class="n">chromosome_size</span>
+</span><span class='line'>    <span class="vi">@rate</span> <span class="o">=</span> <span class="n">mutation_rate</span>
+</span><span class='line'>    <span class="c1"># ---</span>
+</span><span class='line'>    <span class="vi">@original</span> <span class="o">=</span> <span class="n">mutation_rate</span>
+</span><span class='line'>    <span class="c1"># ---</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@size</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="nb">rand</span> <span class="o">&lt;</span> <span class="vi">@rate</span>
+</span><span class='line'>        <span class="n">chromosome</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="no">Gene</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="vi">@size</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">chromosome</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># ---</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">increase_mutation_rate</span>
+</span><span class='line'>    <span class="vi">@rate</span> <span class="o">+=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">original_mutation_rate</span>
+</span><span class='line'>    <span class="vi">@rate</span> <span class="o">=</span> <span class="vi">@original</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="c1"># ---</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le nouveau membre <code>@original</code> et les deux nouvelles méthodes permettent
+d&#8217;augmenter le taux de mutation (de 10% carrément) et de le repasser
+à l&#8217;original.</p>
+
+<p>Les autres modifications du code sont en rapport avec ceci. Voici le code
+complet:</p>
 
 <figure class='code'><figcaption><span>8_queens.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -325,6 +404,44 @@ précédement. Voici le code permettant de résoudre le problème des
 <span class='line-number'>198</span>
 <span class='line-number'>199</span>
 <span class='line-number'>200</span>
+<span class='line-number'>201</span>
+<span class='line-number'>202</span>
+<span class='line-number'>203</span>
+<span class='line-number'>204</span>
+<span class='line-number'>205</span>
+<span class='line-number'>206</span>
+<span class='line-number'>207</span>
+<span class='line-number'>208</span>
+<span class='line-number'>209</span>
+<span class='line-number'>210</span>
+<span class='line-number'>211</span>
+<span class='line-number'>212</span>
+<span class='line-number'>213</span>
+<span class='line-number'>214</span>
+<span class='line-number'>215</span>
+<span class='line-number'>216</span>
+<span class='line-number'>217</span>
+<span class='line-number'>218</span>
+<span class='line-number'>219</span>
+<span class='line-number'>220</span>
+<span class='line-number'>221</span>
+<span class='line-number'>222</span>
+<span class='line-number'>223</span>
+<span class='line-number'>224</span>
+<span class='line-number'>225</span>
+<span class='line-number'>226</span>
+<span class='line-number'>227</span>
+<span class='line-number'>228</span>
+<span class='line-number'>229</span>
+<span class='line-number'>230</span>
+<span class='line-number'>231</span>
+<span class='line-number'>232</span>
+<span class='line-number'>233</span>
+<span class='line-number'>234</span>
+<span class='line-number'>235</span>
+<span class='line-number'>236</span>
+<span class='line-number'>237</span>
+<span class='line-number'>238</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Individual</span>
 </span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span>
 </span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
@@ -423,6 +540,10 @@ précédement. Voici le code permettant de résoudre le problème des
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">run</span>
+</span><span class='line'>    <span class="c1"># ---</span>
+</span><span class='line'>    <span class="n">old_best</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">same_best</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="c1"># ---</span>
 </span><span class='line'>    <span class="vi">@generations</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">generation</span><span class="o">|</span>
 </span><span class='line'>      <span class="no">Evaluator</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@board_size</span><span class="p">,</span> <span class="vi">@population</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span>
 </span><span class='line'>      <span class="n">best</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">best</span>
@@ -431,6 +552,19 @@ précédement. Voici le code permettant de résoudre le problème des
 </span><span class='line'>        <span class="n">best</span><span class="o">.</span><span class="n">display</span>
 </span><span class='line'>        <span class="nb">exit</span>
 </span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="c1"># ---</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">best</span><span class="o">.</span><span class="n">score</span> <span class="o">==</span> <span class="n">old_best</span>
+</span><span class='line'>        <span class="n">same_best</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="n">same_best</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>        <span class="vi">@crossover</span><span class="o">.</span><span class="n">original_mutation_rate</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="n">old_best</span> <span class="o">=</span> <span class="n">best</span><span class="o">.</span><span class="n">score</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">same_best</span> <span class="o">==</span> <span class="mi">5</span>
+</span><span class='line'>        <span class="n">same_best</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span class='line'>        <span class="nb">puts</span> <span class="s2">&quot;Increase mutation rate to </span><span class="si">#{</span><span class="vi">@crossover</span><span class="o">.</span><span class="n">increase_mutation_rate</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="c1"># ---</span>
 </span><span class='line'>      <span class="n">next_generation</span>
 </span><span class='line'>    <span class="k">end</span>
 </span><span class='line'>  <span class="k">end</span>
@@ -438,9 +572,7 @@ précédement. Voici le code permettant de résoudre le problème des
 </span><span class='line'>  <span class="kp">private</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">display</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">best</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;----------------------&quot;</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Gen: </span><span class="si">#{</span><span class="n">generation</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Best: </span><span class="si">#{</span><span class="n">best</span><span class="o">.</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">generation</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">best</span><span class="o">.</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">next_generation</span>
@@ -483,6 +615,16 @@ précédement. Voici le code permettant de résoudre le problème des
 </span><span class='line'>    <span class="no">Individual</span><span class="o">.</span><span class="n">from_chromosome</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
+</span><span class='line'>  <span class="c1"># ---</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">increase_mutation_rate</span>
+</span><span class='line'>    <span class="vi">@mutator</span><span class="o">.</span><span class="n">increase_mutation_rate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">original_mutation_rate</span>
+</span><span class='line'>    <span class="vi">@mutator</span><span class="o">.</span><span class="n">original_mutation_rate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="c1"># ---</span>
+</span><span class='line'>
 </span><span class='line'>  <span class="kp">private</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">two_cut_points</span>
@@ -508,6 +650,9 @@ précédement. Voici le code permettant de résoudre le problème des
 </span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">)</span>
 </span><span class='line'>    <span class="vi">@size</span> <span class="o">=</span> <span class="n">chromosome_size</span>
 </span><span class='line'>    <span class="vi">@rate</span> <span class="o">=</span> <span class="n">mutation_rate</span>
+</span><span class='line'>    <span class="c1"># ---</span>
+</span><span class='line'>    <span class="vi">@original</span> <span class="o">=</span> <span class="n">mutation_rate</span>
+</span><span class='line'>    <span class="c1"># ---</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
@@ -518,107 +663,34 @@ précédement. Voici le code permettant de résoudre le problème des
 </span><span class='line'>    <span class="k">end</span>
 </span><span class='line'>    <span class="n">chromosome</span>
 </span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># ---</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">increase_mutation_rate</span>
+</span><span class='line'>    <span class="vi">@rate</span> <span class="o">+=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">1</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">original_mutation_rate</span>
+</span><span class='line'>    <span class="vi">@rate</span> <span class="o">=</span> <span class="vi">@original</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="c1"># ---</span>
 </span><span class='line'><span class="k">end</span>
 </span><span class='line'>
-</span><span class='line'><span class="n">generations</span> <span class="o">=</span> <span class="mi">500</span>
-</span><span class='line'><span class="n">board_size</span> <span class="o">=</span> <span class="mi">8</span>
+</span><span class='line'><span class="n">generations</span> <span class="o">=</span> <span class="mi">1_000</span>
+</span><span class='line'><span class="n">board_size</span> <span class="o">=</span> <span class="mi">16</span>
 </span><span class='line'><span class="n">population</span> <span class="o">=</span> <span class="no">Population</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">board_size</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
 </span><span class='line'><span class="n">mutation</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mo">001</span>
 </span><span class='line'><span class="no">GeneticAlgorithm</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generations</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">board_size</span><span class="p">,</span> <span class="n">mutation</span><span class="p">)</span><span class="o">.</span><span class="n">run</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>J&#8217;ai seulement ajouter une méthode <code>display</code> à la classe <code>Individual</code> pour
-afficher à l&#8217;écran une représentation de la solution. Voilà le programme
-en marche:</p>
-
-<pre><code>[~/genetic]⇒ ruby 8_queens.rb 
-----------------------
-Gen: 0
-Best: 0.5
-----------------------
-Gen: 1
-Best: 0.5
-.
-.
-.
-Gen: 11
-Best: 1.0
-----------------------
-Gen: 12
-Best: Infinity
-.......Q
-.Q......
-...Q....
-Q.......
-......Q.
-....Q...
-..Q.....
-.....Q..
-</code></pre>
-
-<p>Cool ! Une solution en 12 générations. J&#8217;ai écrit récemment que trouver
-une solution pour un échiquier de 8 x 8 cases ne serait pas difficile.
-Et bien voilà, c&#8217;est fait. J&#8217;ai écrit aussi qu&#8217;il serait plus intéressant de
-voir ce qu&#8217;il se passe avec des plateaux plus grands. Si on essaye en
-doublant les dimensions:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">board_size</span> <span class="o">=</span> <span class="mi">16</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On aura de grandes chances de voir ce type de sortie:</p>
-
-<pre><code>[~/genetic]⇒ ruby 8_queens.rb 
-----------------------
-Gen: 0
-Best: 0.125
-----------------------
-Gen: 1
-Best: 0.16666666666666666
-.
-.
-.
-Gen: 70
-Best: 0.5
-----------------------
-Gen: 71
-Best: 1.0
-.
-.
-.
-----------------------
-Gen: 499
-Best: 1.0
-</code></pre>
-
-<p>Plus de 400 générations coincées sur le même résultat. Vous pensiez en
-avoir fini avec les extremums locaux ? Et ben non, ils ne sont jamais
-bien loin. 3 questions:</p>
-
-<ol>
-<li>Comment je sais que l&#8217;algorithme est coinçé dans un extremum local ?</li>
-<li>Pourquoi cet algorithme coinçe alors qu&#8217;il est écrit comme le
-précédent qui lui, ne coinçait pas ?</li>
-<li>Comment on s&#8217;en sort ?</li>
-</ol>
-
-
-<p>Avant de répondre à cela, je pense qu&#8217;il est plus que temps d&#8217;expliquer
-quelques petites choses sur les extremums locaux:</p>
-
-<ol>
-<li>Qu&#8217;est ce que c&#8217;est qu&#8217;un extremum local ?</li>
-<li>Comment un extremum local se manifeste dans les algorithmes génétiques ?</li>
-</ol>
-
-
-<p>J&#8217;ai mon sujet pour le prochain article…</p>
+<p>On peut voir dans la méthode <code>run</code> que l&#8217;augmentation du taux de mutation
+se fait lorsque 5 générations successives on le même meilleur score.
+Avec cette méthode, je génère une solution pour un échiquier de 16x16 cases
+avec une moyenne de 311 générations.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/'>Les algorithmes génétiques démystifiés 29</a></li><li><a href='/blog/2013/10/04/les-algorithmes-genetiques-demystifies-28/'>Les algorithmes génétiques démystifiés 28</a></li><li><a href='/blog/2013/10/02/les-algorithmes-genetiques-demystifies-27/'>Les algorithmes génétiques démystifiés 27</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/10/04/les-algorithmes-genetiques-demystifies-28/'>Les algorithmes génétiques démystifiés 28</a></li><li><a href='/blog/2013/10/02/les-algorithmes-genetiques-demystifies-27/'>Les algorithmes génétiques démystifiés 27</a></li><li><a href='/blog/2013/09/27/les-algorithmes-genetiques-demystifies-24/'>Les algorithmes génétiques démystifiés 24</a></li></ul></section></p>
 </div>
 
 
@@ -641,12 +713,12 @@ quelques petites choses sur les extremums locaux:</p>
   
 
 
-<time datetime="2013-09-27T18:26:00+02:00" pubdate data-updated="true">27 septembre 2013</time>
+<time datetime="2013-10-07T18:48:00+02:00" pubdate data-updated="true">7 octobre 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/probleme-des-8-dames/'>problème des 8 dames</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/extremum-local/'>extremum local</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/probleme-des-8-dames/'>problème des 8 dames</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
   
 </span>
 
@@ -655,7 +727,7 @@ quelques petites choses sur les extremums locaux:</p>
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/09/27/les-algorithmes-genetiques-demystifies-24/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/09/27/les-algorithmes-genetiques-demystifies-24/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/" >Tweet</a>
   
   
   
@@ -664,10 +736,8 @@ quelques petites choses sur les extremums locaux:</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/09/26/les-algorithmes-genetiques-demystifies-23/" title="Previous Post: Les algorithmes génétiques démystifiés 23">&laquo; Les algorithmes génétiques démystifiés 23</a>
+        <a class="basic-alignment left" href="/blog/2013/10/06/le-metier-de-copiste-musical/" title="Previous Post: Le métier de copiste musical">&laquo; Le métier de copiste musical</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/09/28/ruby-les-methodes-du-module-kernel-2/" title="Next Post: Ruby: Les méthodes du module Kernel 2">Ruby: Les méthodes du module Kernel 2 &raquo;</a>
       
     </p>
   </footer>
@@ -747,8 +817,8 @@ quelques petites choses sur les extremums locaux:</p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/09/27/les-algorithmes-genetiques-demystifies-24/';
-        var disqus_url = 'http://lkdjiin.github.io/blog/2013/09/27/les-algorithmes-genetiques-demystifies-24/';
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/';
         var disqus_script = 'embed.js';
       
     (function () {
