@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ruby | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ruby/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-10-09T12:00:47+02:00</updated>
+  <updated>2013-10-10T18:23:13+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,114 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby 2.0: Raffinement de méthode]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/10/10/ruby-2-dot-0-raffinement-de-methode/"/>
+    <updated>2013-10-10T18:18:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/10/10/ruby-2-dot-0-raffinement-de-methode</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Ruby possède un truc cool : les classes ouvertes. Lorsque j'écris :</p>
+
+<p>``` ruby
+class String
+  def foo</p>
+
+<pre><code>"foo"
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Je ne suis pas en train de <em>définir</em> une nouvelle classe <code>String</code>, je suis
+simplement en train <em>d'ouvrir</em> la classe <code>String</code> existante pour lui ajouter
+une nouvelle méthode.</p>
+
+<!-- more -->
+
+
+<p>C'est très utile et très cohérent avec l'esprit orienté objet de Ruby.
+Mettons que j'ai besoin de cacher les voyelles d'une phrase pour un
+hypothétique jeu de lettre, je peux écrire un module avec une collection
+de méthodes utilitaires, par exemple:</p>
+
+<p>``` ruby
+module Util
+  def self.hide_vowels(string)</p>
+
+<pre><code>string.tr('aeiouy', '*')
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>puts Util.hide_vowels(&ldquo;bonjour xavier&rdquo;)
+```</p>
+
+<p>Ce qui donne:</p>
+
+<pre><code>b*nj**r x*v**r
+</code></pre>
+
+<p>Mais on peut aussi tirer parti des classes ouvertes de cette manière:</p>
+
+<p>``` ruby
+class String
+  def hide_vowels</p>
+
+<pre><code>tr('aeiouy', '*')
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>puts &ldquo;bonjour xavier&rdquo;.hide_vowels
+```</p>
+
+<p>C'est plus élégant, à la fois dans la définition et dans l'utilisation.
+Seulement ce genre de code peut poser problème quand il est utilisé dans
+des bibliothèques, puisque une fois chargée, la nouvelle méthode est visible
+dans tout le code client. Parfois c'est ce qu'on veut, parfois ce ne devrait
+être qu'une méthode utilitaire du code tiers.</p>
+
+<p>Ruby 2.0 propose le raffinement de méthode (<em>method refinement</em>) pour
+pallier à ce problème. L'idée est de limiter la portée des méthodes ajoutées
+ou modifiées avec le mécanisme des classes ouvertes. Voici un petit exemple:</p>
+
+<p>```
+module CoolString
+  refine String do</p>
+
+<pre><code>def hide_vowels
+  tr('aeiouy', '*')
+end
+</code></pre>
+
+<p>  end
+end</p>
+
+<h1>puts &ldquo;abc&rdquo;.hide_vowels</h1>
+
+<p>using CoolString
+puts &ldquo;abc&rdquo;.hide_vowels
+```</p>
+
+<p>La ligne en commentaire provoquerait une erreur (NoMethodError). Pour pouvoir
+utiliser la méthode <code>hide_vowels</code> il faut explicitement écrire
+<code>using CoolString</code>. La portée de <code>hide_vowels</code> s'étend du moment où on utilise
+la méthode <code>using</code> jusqu'à la fin du fichier.</p>
+
+<p>Le raffinement de méthode est expérimental dans Ruby 2.0 et devrait être
+définitivement adopté dans Ruby 2.1. Pour aller plus loin, on peut se
+reporter à la <a href="http://www.ruby-doc.org/core-2.0.0/doc/syntax/refinements_rdoc.html">documentation</a>.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés: un point sur les performances]]></title>
@@ -624,96 +732,6 @@ la troisième colonne, dont les données sont élevées à la puissance 2.</p>
 <p>Plein d'autres choses sont possibles, comme produire du format png ou
 svg, spécifier la portée des coordonnées x et y, utiliser le programme
 en ligne de commande, etc.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 28]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/04/les-algorithmes-genetiques-demystifies-28/"/>
-    <updated>2013-10-04T18:43:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/04/les-algorithmes-genetiques-demystifies-28</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Dans le <a href="http://lkdjiin.github.io/blog/2013/10/02/les-algorithmes-genetiques-demystifies-27/">dernier article</a> on a vu quelle forme concrete prenait un extremum
-local dans nos algorithmes génétiques: les chromosomes tendent à devenir
-identiques. On doit maintenant comprendre pourquoi on bloque sur un
-extremum local dans ce problème particulier des 8 dames, alors qu'on avait
-bien supprimé ce souci dans le <a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">paradoxe du singe savant</a>.</p>
-
-<!-- more -->
-
-
-<p>On reprend <a href="http://lkdjiin.github.io/blog/2013/09/18/les-algorithmes-genetiques-demystifies-17-oriente-objet/">le code</a> pour le paradoxe du singe savant et on modifie
-la méthode <code>run</code> de la classe <code>GeneticAlgorithm</code> pour inspecter l'état des
-chromosomes une fois la solution trouvée:</p>
-
-<p>``` ruby
-  def run</p>
-
-<pre><code>@generations.times do |generation|
-  Evaluator.new(@search_value, @population).evaluate
-  best = @population.best
-  # display(generation, best)
-  # exit if best.score == @search_value.size
-  if best.score == @search_value.size
-    @population.each {|i| p i.chromosome}
-    exit
-  end
-  next_generation
-end
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>En se servant du <a href="http://lkdjiin.github.io/blog/2013/10/02/les-algorithmes-genetiques-demystifies-27/">petit script d'analyse</a> du dernier article, vous vous
-apercevrez que pratiquement chaque chromosome est unique. Pourquoi cela
-fonctionne ici et pas là ?</p>
-
-<p>Lorsque, dans le paradoxe du singe savant, on mute une phrase, chaque
-mutation a une chance réelle d'améliorer la phrase. Bien sûr, pour améliorer
-la phrase, il faut que toutes les conditions soit réunies. Il faut
-premièrement, que le gène qui mute soit un «mauvais» gène et deuxièmement,
-que le remplaçant soit un «bon» gène. Par contre, quelque soit le gène
-mutant, les autres gènes n'entrent pas en ligne de compte. Dans la phrase,
-chaque gène est totalement indépendant des autres. Voici un exemple pour
-clarifier mon propos. On cherche la phrase &ldquo;bonjour&rdquo; et on a pour l'instant
-ceci:</p>
-
-<pre><code>xxxxxxx
-</code></pre>
-
-<p>Cette phrase n'a que des mauvais gènes, son score est de zéro. Si on mute
-le premier gène en &ldquo;b&rdquo;:</p>
-
-<pre><code>bxxxxxx
-</code></pre>
-
-<p>La phrase s'est améliorée, son score a augmenté. Vous remarquez que quelque soit
-les autres gènes, bons ou mauvais, le score augmente de toutes manières de 1.
-C'est ce que j'appelle des <em>gènes indépendants</em>.</p>
-
-<p>Dans le problème des 8 dames, c'est très différent. Il me manque malheureusement
-les outils mathématiques et/ou statistiques pour conceptualiser tout ça mais
-je vais néanmoins essayer d'expliquer. Lorsqu'on déplace une dame sur le
-plateau, c'est à dire quand un gène mute, son déplacement à un effet
-potentiel sur les autres dames, elle peut entrer en conflit avec une ou
-plusieurs. Donc dans le problème des 8 dames les gènes sont dépendants les
-uns des autres. On ne peut pas en muter un sans affecter <em>potentiellement</em>
-les autres. Ça signifie qu'il doit y avoir certains chromosomes pour lequels
-la mutation d'un seul gène, quel qu'il soit (ou même de plusieurs en
-augmentant la taille de l'échiquier), ne peut pas améliorer ce chromosome.
-Comme le taux de mutation doit être petit pour permettre
-<a href="http://lkdjiin.github.io/blog/2013/10/01/les-algorithmes-genetiques-demystifies-exploration-vs-exploitation/">l'exploitation</a> des chromosomes, la probabilité qu'un chromosome voit
-suffisament de ses gènes mutés comme il faut est infime, quasi-inexistante.</p>
-
-<p>J'espère avoir été suffisament clair, n'hésitez pas à me demander des précisions
-le cas échéant, je ferais de mon mieux pour y répondre. Je vous proposerais
-une solution dans le prochain article.</p>
 
 <p>À demain.</p>
 
