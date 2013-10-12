@@ -3,7 +3,7 @@ layout: post
 title: "Nouveau défi: un article par jour pendant un an"
 date: 2013-07-08 17:09
 comments: true
-categories: annonce
+categories: [annonce, défi]
 ---
 
 À partir d'aujourd'hui, et ce pendant une année, je vais écrire un article
@@ -43,3 +43,4 @@ Voilà, ça commence aujourd'hui. Je tente le coup.
 
 À demain.
 
+{% connexe %}
