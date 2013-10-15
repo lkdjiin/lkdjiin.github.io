@@ -3,7 +3,7 @@ layout: post
 title: "Un mois d'articles quotidiens: le bilan"
 date: 2013-08-09 09:07
 comments: true
-categories: opinion
+categories: [opinion, défi, bilan]
 ---
 Ça fait déjà un mois que j'écris quotidiennement sur ce blog. L'heure est
 au bilan provisoire.
