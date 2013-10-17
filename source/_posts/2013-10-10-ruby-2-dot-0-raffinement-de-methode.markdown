@@ -3,7 +3,7 @@ layout: post
 title: "Ruby 2.0: Raffinement de méthode"
 date: 2013-10-10 18:18
 comments: true
-categories: [ruby, débutant]
+categories: [ruby, débutant, ruby 2.0]
 ---
 
 {% level 1 %}

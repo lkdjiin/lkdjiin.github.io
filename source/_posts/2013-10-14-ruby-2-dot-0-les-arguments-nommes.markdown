@@ -3,7 +3,7 @@ layout: post
 title: "Ruby 2.0: Les arguments nommés"
 date: 2013-10-14 19:04
 comments: true
-categories: [débutant, ruby]
+categories: [débutant, ruby, ruby 2.0]
 ---
 
 {% level 1 %}
