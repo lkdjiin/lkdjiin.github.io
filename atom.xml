@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-10-19T16:46:43+02:00</updated>
+  <updated>2013-10-20T21:27:46+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,177 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 35]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/10/20/les-algorithmes-genetiques-demystifies-35/"/>
+    <updated>2013-10-20T21:21:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/10/20/les-algorithmes-genetiques-demystifies-35</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>On continue aujourd&#8217;hui avec la mise en place de l&#8217;algorithme de <em>Hill-climbing</em>
+pour s&#8217;assurer que la fonction d&#8217;évaluation de nos images est pertinente.</p>
+
+<!-- more -->
+
+
+<p>J&#8217;ai déjà parlé du <em>Hill-climbing</em> dans
+<a href="http://lkdjiin.github.io/blog/2013/09/17/les-algorithmes-genetiques-demystifies-16-le-hill-climbing/">cet article</a>.
+On peut le considérer comme une version très basique d&#8217;un algorithme
+génétique, sans population et sans reproduction. Utile donc, pour
+tester rapidement et facilement l&#8217;évaluation:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">solution</span> <span class="o">=</span> <span class="nx">makeIndividual</span><span class="p">();</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">generation</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">htmlGeneration</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;generation&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">htmlQuality</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;quality&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">interval</span> <span class="o">=</span> <span class="nx">setInterval</span><span class="p">(</span><span class="nx">hillClimb</span><span class="p">,</span> <span class="mi">150</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">hillClimb</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">opponent</span> <span class="o">=</span> <span class="nx">mutate</span><span class="p">(</span><span class="nx">copy</span><span class="p">(</span><span class="nx">solution</span><span class="p">));</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">score_opponent</span> <span class="o">=</span> <span class="nx">quality</span><span class="p">(</span><span class="nx">opponent</span><span class="p">);</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">score_solution</span> <span class="o">=</span> <span class="nx">quality</span><span class="p">(</span><span class="nx">solution</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">score_opponent</span> <span class="o">&gt;</span> <span class="nx">score_solution</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">solution</span> <span class="o">=</span> <span class="nx">opponent</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="nx">generation</span><span class="o">++</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">generation</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">renderIndividual</span><span class="p">(</span><span class="nx">solution</span><span class="p">,</span> <span class="nx">ctx</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">htmlGeneration</span><span class="p">.</span><span class="nx">innerHTML</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">;</span>
+</span><span class='line'>  <span class="nx">htmlQuality</span><span class="p">.</span><span class="nx">innerHTML</span> <span class="o">=</span> <span class="nx">score_solution</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">generation</span> <span class="o">&gt;=</span> <span class="mi">100000</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">clearInterval</span><span class="p">(</span><span class="nx">interval</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Les explications maintenant. À chaque tour on compare les scores obtenus
+par la solution courante (la meilleure jusqu&#8217;ici) avec une version mutée
+de lui-même (<code>opponent</code>). Si l&#8217;opposant est meilleur, il prend la place
+de la solution:</p>
+
+<pre><code>var opponent = mutate(copy(solution));
+var score_opponent = quality(opponent);
+var score_solution = quality(solution);
+if (score_opponent &gt; score_solution) {
+  solution = opponent;
+}
+</code></pre>
+
+<p>J&#8217;affiche ensuite la solution courante, toutes les 100 générations:</p>
+
+<pre><code>generation++;
+if (generation % 100 == 0) renderIndividual(solution, ctx);
+</code></pre>
+
+<p>À chaque tour, j&#8217;affiche la génération courante et son score:</p>
+
+<pre><code>htmlGeneration.innerHTML = generation;
+htmlQuality.innerHTML = score_solution;
+</code></pre>
+
+<p>Enfin, on stoppe tout au bout de 100.000 essais:</p>
+
+<pre><code>if (generation &gt;= 100000) {
+  clearInterval(interval);
+}
+</code></pre>
+
+<p>La fonction de mutation est longue, mais simple. On sélectionne au hasard
+un carré et une de ses propriétés puis on la modifie:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">mutate</span><span class="p">(</span><span class="nx">individual</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">gene</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">TOTAL_SQUARES</span><span class="p">),</span>
+</span><span class='line'>      <span class="nx">squareProperty</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">7</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">switch</span> <span class="p">(</span><span class="nx">squareProperty</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">0</span><span class="o">:</span>
+</span><span class='line'>      <span class="nx">individual</span><span class="p">[</span><span class="nx">gene</span><span class="p">].</span><span class="nx">x</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">IMAGE_WIDTH</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">1</span><span class="o">:</span>
+</span><span class='line'>      <span class="nx">individual</span><span class="p">[</span><span class="nx">gene</span><span class="p">].</span><span class="nx">y</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">IMAGE_HEIGHT</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">2</span><span class="o">:</span>
+</span><span class='line'>      <span class="nx">individual</span><span class="p">[</span><span class="nx">gene</span><span class="p">].</span><span class="nx">size</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="nx">SQUARE_MAX_SIZE</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">3</span><span class="o">:</span>
+</span><span class='line'>      <span class="nx">individual</span><span class="p">[</span><span class="nx">gene</span><span class="p">].</span><span class="nx">red</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">256</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">4</span><span class="o">:</span>
+</span><span class='line'>      <span class="nx">individual</span><span class="p">[</span><span class="nx">gene</span><span class="p">].</span><span class="nx">green</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">256</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">5</span><span class="o">:</span>
+</span><span class='line'>      <span class="nx">individual</span><span class="p">[</span><span class="nx">gene</span><span class="p">].</span><span class="nx">blue</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">256</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">case</span> <span class="mi">6</span><span class="o">:</span>
+</span><span class='line'>      <span class="nx">individual</span><span class="p">[</span><span class="nx">gene</span><span class="p">].</span><span class="nx">alpha</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">();</span>
+</span><span class='line'>      <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">individual</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La prochaine fois on verra deux dernières fonctions <em>techniques</em>:
+<code>copy</code> et <code>renderIndividual</code> et on sera près à faire tourner
+notre algorithme.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/18/les-algorithmes-genetiques-demystifies-34/'>Les algorithmes génétiques démystifiés 34</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/16/les-algorithmes-genetiques-demystifies-imagerie/'>Les algorithmes génétiques démystifiés: Imagerie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/11/les-algorithmes-genetiques-demystifies-32/'>Les algorithmes génétiques démystifiés 32</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Programmation fonctionnelle pour les développeurs Ruby]]></title>
@@ -143,7 +314,7 @@ différence entre les composantes rouges, vertes et bleues:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/16/les-algorithmes-genetiques-demystifies-imagerie/'>Les algorithmes génétiques démystifiés: Imagerie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/11/les-algorithmes-genetiques-demystifies-32/'>Les algorithmes génétiques démystifiés 32</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/20/les-algorithmes-genetiques-demystifies-35/'>Les algorithmes génétiques démystifiés 35</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/16/les-algorithmes-genetiques-demystifies-imagerie/'>Les algorithmes génétiques démystifiés: Imagerie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/11/les-algorithmes-genetiques-demystifies-32/'>Les algorithmes génétiques démystifiés 32</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -301,7 +472,7 @@ objet avec les propriétés x, y, size, red, green, blue et alpha.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/18/les-algorithmes-genetiques-demystifies-34/'>Les algorithmes génétiques démystifiés 34</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/11/les-algorithmes-genetiques-demystifies-32/'>Les algorithmes génétiques démystifiés 32</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/20/les-algorithmes-genetiques-demystifies-35/'>Les algorithmes génétiques démystifiés 35</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/18/les-algorithmes-genetiques-demystifies-34/'>Les algorithmes génétiques démystifiés 34</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/11/les-algorithmes-genetiques-demystifies-32/'>Les algorithmes génétiques démystifiés 32</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2104,91 +2275,6 @@ problème.</p>
 
 <p>La prochaine fois, fini la théorie, on verra comment un extremum local
 se manifeste en pratique dans l&#8217;algorithme génétique du problème des 8 dames.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/'>Les algorithmes génétiques démystifiés 29</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/04/les-algorithmes-genetiques-demystifies-28/'>Les algorithmes génétiques démystifiés 28</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/02/les-algorithmes-genetiques-demystifies-27/'>Les algorithmes génétiques démystifiés 27</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 25: extremum local]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/09/30/les-algorithmes-genetiques-demystifies-25-extremum-local/"/>
-    <updated>2013-09-30T21:41:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/09/30/les-algorithmes-genetiques-demystifies-25-extremum-local</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Dans cette serie d&#8217;articles sur les algorithmes génétiques, j&#8217;ai
-employé le terme <em>extremum local</em> à plusieurs reprises sans jamais
-vraiment l&#8217;expliquer.</p>
-
-<!-- more -->
-
-
-<p>Pour comprendre ce qu&#8217;est un extremum local, on va se servir d&#8217;une
-fonction mathématique. Rassurez-vous on ne va pas faire de math, je vais
-juste me servir du visuel. Imaginons la fonction <em>f</em>(x) suivante:</p>
-
-<p><img src="http://lkdjiin.github.io/images/algo1.jpg"></p>
-
-<p>Admettons que la fonction <em>f</em> soit notre fonction d&#8217;évaluation. Dans ce
-cas chaque x représente un chromosome parmi tous ceux possibles. Et à chaque
-valeur x correspond une valeur y qui serait notre score.</p>
-
-<p>Nous voulons connaitre la valeur de x qui maximise la fonction, qui donne
-le plus grand y/score possible. Comment faire ? Le plus simple est de
-balayer toutes les valeurs possibles de x, soit calculer <em>f</em>(0), <em>f</em>(1),
-<em>f</em>(2), etc. Une fois tout ça calculé, on sait quel x donne le plus grand y.
-Où est le problème ? Imaginons que x puisse prendre comme valeur les
-nombres entiers de zéro à un milliard, imaginons aussi que la fonction
-d&#8217;évaluation (<em>f</em>) soit un peu longue et prenne 1 seconde de calcul.
-Ça veut dire qu&#8217;il faudra (à la louche) 11820 jours pour balayer
-toutes les valeurs de x. Pas possible, faut trouver autre chose.</p>
-
-<p>Les algorithmes génétiques, et plus largement les algorithmes
-<em>stochastiques</em>, utilisent en partie le hasard pour résoudre ce
-type de problème. La solution la plus simple est d&#8217;évaluer des valeurs
-de x tirées au hasard. Plus on disposera de temps, et plus on s&#8217;approchera
-<em>théoriquement</em> de la valeur maximum (l&#8217;extremum). La figure suivante
-propose cinq valeurs de x au hasard. Un premier hic, c&#8217;est que pour obtenir
-l&#8217;extremum en un temps raisonnable, il faut avoir beaucoup de chance.
-Un second hic, c&#8217;est que pour être <em>sûr</em> d&#8217;obtenir l&#8217;extremum il faut
-toujours balayer toutes les possibilités.</p>
-
-<p><img src="http://lkdjiin.github.io/images/algo2.jpg"></p>
-
-<p>Une solution plus intelligente est de tirer une première valeur de x au
-hasard.
-Puis on ajoute une petite valeur à x, par exemple 1, 5, 10 ou 100 suivant
-l&#8217;étendue des x possibles.
-On a donc x1 = x + 1. Si le nouveau y
-obtenu est plus grand que l&#8217;ancien on est sur la bonne voie, sinon on
-retranche cette petite valeur (x2 = x &ndash; 1). En progressant ainsi par petits
-bonds, on arrivera à l&#8217;extremum.</p>
-
-<p><img src="http://lkdjiin.github.io/images/algo3.jpg"></p>
-
-<p>Cette progression par petits bonds est assez proche, dans l&#8217;idée, de la
-mecanique des algorithmes génétiques. En ajustant comme il faut la
-<em>petite valeur</em> qu&#8217;on ajoute aux x successifs, on obtiendra l&#8217;extremum en
-un temps raisonnable.</p>
-
-<p><strong>Edit du 1 oct 2013</strong> Cette petite valeur ajoutée à x peut-être considérée
-comme une mutation.</p>
-
-<p>Alors où est le problème maintenant ? Pour le visualiser il faut changer
-de fonction mathématique:</p>
-
-<p><img src="http://lkdjiin.github.io/images/algo4.jpg"></p>
-
-<p>Si on n&#8217;a pas de chance, on va tirer au hasard une première valeur de x
-qui nous emmènera immanquablement vers un extremum <em>local</em>, et non
-pas vers l&#8217;extremum <em>global</em> !</p>
-
-<p>Voilà, j&#8217;espère que cette petite démonstration a remplie son office et
-que vous visualisez maintenant clairement cette histoire
-d&#8217;extremum local.</p>
 
 <p>À demain.</p>
 
