@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : javascript | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/javascript/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-10-21T21:15:51+02:00</updated>
+  <updated>2013-10-22T12:06:38+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,305 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 36]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/10/22/les-algorithmes-genetiques-demystifies-36/"/>
+    <updated>2013-10-22T08:25:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/10/22/les-algorithmes-genetiques-demystifies-36</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Il reste à voir deux fonctions <em>techniques</em> pour faire tourner notre
+programme: la copie d'un individu et le rendu d'une image. Je les appelle
+<em>techniques</em> car elles n'ont rien à voir avec l'algorithme lui-même. La
+copie d'un individu est rendue nécessaire par le langage utilisé, Javascript,
+et le rendu d'une image est nécessaire puisqu'on veut …et bien… afficher
+des images, quoi…</p>
+
+<!-- more -->
+
+
+<p>Voyons d'abord la copie d'un individu:</p>
+
+<p>``` javascript
+function copy(individual) {
+  var indiCopy = [];
+  for(var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
+
+<pre><code>var objectCopy = {},
+    prop;
+for(prop in individual[i]) {
+  objectCopy[prop] = individual[i][prop];
+}
+indiCopy.push(objectCopy);
+</code></pre>
+
+<p>  }
+  return indiCopy;
+}
+```</p>
+
+<p>Un individu est un tableau, contenant des objets, chaque objets contenants
+des propriétés… <em>Là, je m'interroge et je demande l'avis de spécialistes:
+est-ce-qu'il ne vaudrait pas mieux utiliser une librairie pour faire ça,
+comme jQuery ou Underscore.js ?</em></p>
+
+<p>Maintenant le rendu d'une image:</p>
+
+<p>``` javascript
+function renderIndividual(individual, ctx) {
+  ctx.fillStyle = &ldquo;white&rdquo;;
+  ctx.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+  for (var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
+
+<pre><code>ctx.globalAlpha = individual[i].alpha;
+ctx.fillStyle = 'rgb(' + individual[i].red + ',' +
+  individual[i].green + ',' + individual[i].blue + ')';
+ctx.fillRect(individual[i].x, individual[i].y,
+  individual[i].size, individual[i].size);
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<p><code>ctx</code> est un contexte de Canvas. Je vois ça tout simplement comme un objet
+dans lequel on peut dessiner. Tout d'abord on <em>efface</em> l'image en la
+remplissant de blanc:</p>
+
+<pre><code>ctx.fillStyle = "white";
+ctx.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+</code></pre>
+
+<p>Puis on dessine chacuns des carrés:</p>
+
+<pre><code>for (var i = 0; i &lt; TOTAL_SQUARES; i++) {
+</code></pre>
+
+<p>Pour chaque carré il faut sélectionner sa transparence:</p>
+
+<pre><code>ctx.globalAlpha = individual[i].alpha;
+</code></pre>
+
+<p>Puis sa couleur:</p>
+
+<pre><code>ctx.fillStyle = 'rgb(' + individual[i].red + ',' +
+  individual[i].green + ',' + individual[i].blue + ')';
+</code></pre>
+
+<p>On peut alors dessiner un carré:</p>
+
+<pre><code>ctx.fillRect(individual[i].x, individual[i].y,
+  individual[i].size, individual[i].size);
+</code></pre>
+
+<p>Voilà. Reste à voir maintenant le programme dans son ensemble. Voici les
+fichiers HTML et CSS:</p>
+
+<p>``` html
+&lt;!DOCTYPE html>
+<html lang="fr">
+  <head></p>
+
+<pre><code>&lt;meta charset="utf-8" /&gt;
+&lt;link rel="stylesheet" type="text/css" href="picture.css" /&gt; 
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;canvas width="400" height="400" id="canvas1"&gt;&lt;/canvas&gt;
+&lt;canvas width="400" height="400" id="canvas2"&gt;&lt;/canvas&gt;
+&lt;p id="generation"&gt;0&lt;/p&gt;
+&lt;p id="quality"&gt;0&lt;/p&gt;
+&lt;script src="picture.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p>``` css
+body {
+  background-color: #222;
+}</p>
+
+<p>p {
+  color: #ccc;
+}
+```</p>
+
+<p>Et voici le programme Javascript complet:</p>
+
+<p>``` javascript
+var canvasImgOrigin = document.getElementById(&lsquo;canvas1&rsquo;);
+var canvasGenetic = document.getElementById(&lsquo;canvas2&rsquo;);
+var ctxOrigin = canvas1.getContext(&lsquo;2d&rsquo;);
+var ctx = canvas2.getContext(&lsquo;2d&rsquo;);
+var TOTAL_SQUARES = 400;
+var IMAGE_WIDTH = 400;
+var IMAGE_HEIGHT = 400;
+var SQUARE_MAX_SIZE = 40;
+var img = new Image();
+var generation = 0;
+var htmlGeneration = document.getElementById(&ldquo;generation&rdquo;);
+var htmlQuality = document.getElementById(&ldquo;quality&rdquo;);
+var solution = [];
+var canvasBuffer = document.createElement(&lsquo;canvas&rsquo;);
+canvasBuffer.width = IMAGE_WIDTH;
+canvasBuffer.height = IMAGE_HEIGHT;
+var ctxBuffer = canvasBuffer.getContext(&lsquo;2d&rsquo;);</p>
+
+<p>img.onload = function() { ctxOrigin.drawImage(img, 0, 0); };
+img.src = &lsquo;photo.jpg&rsquo;;
+solution = makeIndividual();</p>
+
+<p>var interval = setInterval(hillClimb, 150);</p>
+
+<p>function makeIndividual() {
+  var individual = [];
+  for (var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
+
+<pre><code>individual.push({
+  x: Math.floor(Math.random() * IMAGE_WIDTH),
+  y: Math.floor(Math.random() * IMAGE_HEIGHT),
+  size: Math.floor(Math.random() * SQUARE_MAX_SIZE),
+  red: Math.floor(Math.random() * 256),
+  green: Math.floor(Math.random() * 256),
+  blue: Math.floor(Math.random() * 256),
+  alpha: Math.random()
+});
+</code></pre>
+
+<p>  }
+  return individual;
+}</p>
+
+<p>function renderIndividual(individual, ctx) {
+  ctx.fillStyle = &ldquo;white&rdquo;;
+  ctx.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+  for (var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
+
+<pre><code>ctx.globalAlpha = individual[i].alpha;
+ctx.fillStyle = 'rgb(' + individual[i].red + ',' +
+  individual[i].green + ',' + individual[i].blue + ')';
+ctx.fillRect(individual[i].x, individual[i].y,
+  individual[i].size, individual[i].size);
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>function quality(individual) {
+  var imgOrigin = ctxOrigin.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+  var pixelArrayOrigin = imgOrigin.data;
+  var score = 0;
+  renderIndividual(individual, ctxBuffer);
+  var imgBuffer = ctxBuffer.getImageData(0, 0, 400, 400);
+  var pixelArrayCandidate = imgBuffer.data;
+  for (var i = 0, n = pixelArrayOrigin.length; i &lt; n; i += 4) {</p>
+
+<pre><code>score += Math.abs(pixelArrayOrigin[i] - pixelArrayCandidate[i]);
+score += Math.abs(pixelArrayOrigin[i+1] - pixelArrayCandidate[i+1]);
+score += Math.abs(pixelArrayOrigin[i+2] - pixelArrayCandidate[i+2]);
+</code></pre>
+
+<p>  }
+  return 1 / score;
+}</p>
+
+<p>function hillClimb() {
+  var opponent = mutate(copy(solution));
+  var score_opponent = quality(opponent);
+  var score_solution = quality(solution);
+  if (score_opponent > score_solution) {</p>
+
+<pre><code>solution = opponent;
+</code></pre>
+
+<p>  }
+  generation++;
+  if (generation % 100 == 0) renderIndividual(solution, ctx);
+  htmlGeneration.innerHTML = generation;
+  htmlQuality.innerHTML = score_solution;
+  if (generation >= 100000) {</p>
+
+<pre><code>clearInterval(interval);
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>function copy(individual) {
+  var indiCopy = [];
+  for(var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
+
+<pre><code>var objectCopy = {},
+    prop;
+for(prop in individual[i]) {
+  objectCopy[prop] = individual[i][prop];
+}
+indiCopy.push(objectCopy);
+</code></pre>
+
+<p>  }
+  return indiCopy;
+}</p>
+
+<p>function mutate(individual) {
+  var gene = Math.floor(Math.random() * TOTAL_SQUARES),</p>
+
+<pre><code>  squareProperty = Math.floor(Math.random() * 7);
+</code></pre>
+
+<p>  switch (squareProperty) {</p>
+
+<pre><code>case 0:
+  individual[gene].x = Math.floor(Math.random() * IMAGE_WIDTH);
+  break;
+case 1:
+  individual[gene].y = Math.floor(Math.random() * IMAGE_HEIGHT);
+  break;
+case 2:
+  individual[gene].size = Math.floor(Math.random() * SQUARE_MAX_SIZE);
+  break;
+case 3:
+  individual[gene].red = Math.floor(Math.random() * 256);
+  break;
+case 4:
+  individual[gene].green = Math.floor(Math.random() * 256);
+  break;
+case 5:
+  individual[gene].blue = Math.floor(Math.random() * 256);
+  break;
+case 6:
+  individual[gene].alpha = Math.random();
+  break;
+</code></pre>
+
+<p>  }
+  return individual;
+}
+```</p>
+
+<p>Pour le faire tourner vous aurez besoin d'une photo de 400x400 pixels et
+de beaucoup de patience… Avec Firefox, ça marche tout seul mais avec
+Chrome il faudra passer par un serveur Web. Si Ruby est installé sur
+votre machine, vous pouvez démarrer un serveur en entrant ceci dans un
+terminal (même répertoire que votre fichier HTML):</p>
+
+<pre><code>ruby -rwebrick -e'WEBrick::HTTPServer.new(:Port =&gt; 3000, :DocumentRoot =&gt; Dir.pwd).start'
+</code></pre>
+
+<p>Le code se trouve aussi sur Github: <a href="https://github.com/lkdjiin/picture_genetic_algorithm">github.com/lkdjiin/picture_genetic_algorithm</a>.
+Je suis sûr que certains d'entre-vous connaissent Javascript bien mieux que
+moi et peuvent l'améliorer, alors n'hésitez pas.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 35]]></title>
