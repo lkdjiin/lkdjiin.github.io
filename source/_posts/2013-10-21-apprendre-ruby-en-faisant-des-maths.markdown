@@ -12,7 +12,7 @@ J'ai eu récemment à aider quelqu'un en mathématique (niveau 3ème), et ce
 quelqu'un connaissait un peu Ruby. On a joué avec le langage pour faire
 des maths. C'était drôle et intéressant. Ça m'a donné l'idée de
 continuer cette affaire sur mon blog. Cette nouvelle série d'articles
-s'adresse à celles et ceux qui débute Ruby et qui ont un niveau de math de
+s'adresse à celles et ceux qui débutent Ruby et qui ont un niveau de math de
 3ème.
 
 <!-- more -->
