@@ -62,9 +62,16 @@ Premier problème réglé, au suivant.
 
 Utiliser Ruby dans une fonction Vim
 -----------------------------------
-Il faut bien sûr que votre Vim ait été compilé avec le support de Ruby
-(je ne sais plus comment on vérifie cela). Voilà ce que donnerait notre
-fonction:
+Il faut bien sûr que votre Vim ait été compilé avec le support de Ruby.
+Pour le savoir vous pouvez taper la ligne suivante dans votre console,
+si "+ruby" s'affiche, c'est bon:
+
+``` bash
+[~]⇒ vim --version | grep --color -i \+ruby
++printer +profile +python -python3 +quickfix +reltime +rightleft +ruby 
+```
+
+Voilà ce que donnerait notre fonction en utilisant Ruby:
 
 ``` vim
 function RemoveTrailingSpaces()
