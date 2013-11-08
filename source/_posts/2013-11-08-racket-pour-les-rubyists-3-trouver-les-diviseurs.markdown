@@ -3,13 +3,12 @@ layout: post
 title: "Racket pour les Rubyists 3: Trouver les diviseurs"
 date: 2013-11-08 19:17
 comments: true
-categories: 
+categories: [Racket, Ruby, tutoriel, débutant]
 ---
-[Racket, Ruby, tutoriel, débutant]
 
 {% level 1 %}
 
-Précédement, on a vu comment produire une
+Précédemment, on a vu comment produire une
 [liste de nombre](http://lkdjiin.github.io/blog/2013/11/06/racket-pour-les-rubyists-2-produire-une-suite-de-nombre/)
 avec la fonction `range`. Aujourd'hui on va traduire les tests Ruby suivants
 en Racket:
