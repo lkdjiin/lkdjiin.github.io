@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-11T20:46:50+01:00</updated>
+  <updated>2013-11-12T13:04:10+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,225 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 37: Le problème du sac à dos]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/"/>
+    <updated>2013-11-12T13:02:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Pour continuer notre exploration des algorithmes génétiques, on va
+s&#8217;intéresser maintenant au problème du sac à dos:</p>
+
+<blockquote><p>En algorithmique, le problème du sac à dos, noté également KP (en anglais,<br/>Knapsack Problem) est un problème d&#8217;optimisation combinatoire. Il modélise une<br/>situation analogue au remplissage d&#8217;un sac à dos, ne pouvant supporter plus<br/>d&#8217;un certain poids, avec tout ou partie d&#8217;un ensemble donné d&#8217;objets ayant<br/>chacun un poids et une valeur. Les objets mis dans le sac à dos doivent<br/>maximiser la valeur totale, sans dépasser le poids maximum.</p><footer><strong>Wikipédia</strong> <cite><a href='http://fr.wikipedia.org/wiki/Probl%C3%A8me_du_sac_%C3%A0_dos'>fr.wikipedia.org/wiki/&hellip;</a></cite></footer></blockquote>
+
+
+
+
+<!-- more -->
+
+
+<p>Un des intéret de ce problème est que certaines solutions <em>invalides</em> sont
+plus proches de la meilleure solution que nombres de solutions <em>valides</em>.</p>
+
+<p>De même, c&#8217;est un problème <em>théorique</em> qui peut être vu comme une
+simplification de problèmes <em>pratiques</em>. Par exemple: «Mon bateau peut
+transporter 100 containers, pour un poids de X tonnes. Je gagne plus ou
+moins d&#8217;argent selon les containers transportés. Quels containers je dois
+embarquer parmi un choix de 300 containers ?»</p>
+
+<p>La liste des objets que je vais utiliser se trouve sur le
+<a href="http://rosettacode.org/wiki/Knapsack_problem/0-1">projet RosettaCode</a>.</p>
+
+<p>On commence tout de suite avec la création de la population:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">KnapsackItem</span> <span class="o">=</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:name</span><span class="p">,</span> <span class="ss">:weight</span><span class="p">,</span> <span class="ss">:value</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">Knapsack</span>
+</span><span class='line'>  <span class="no">ITEMS</span> <span class="o">=</span> <span class="o">[</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;map&#39;</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">150</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;compass&#39;</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;water&#39;</span><span class="p">,</span> <span class="mi">153</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;sandwich&#39;</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">160</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;glucose&#39;</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;tin&#39;</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="mi">45</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;banana&#39;</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;apple&#39;</span><span class="p">,</span> <span class="mi">39</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;cheese&#39;</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;beer&#39;</span><span class="p">,</span> <span class="mi">52</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;suntan cream&#39;</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">70</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;camera&#39;</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;t-shirt&#39;</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;trousers&#39;</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;umbrella&#39;</span><span class="p">,</span> <span class="mi">73</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;waterproof trousers&#39;</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="mi">70</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;waterproof overclothes&#39;</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="mi">75</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;note-case&#39;</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;sunglasses&#39;</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">20</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;towel&#39;</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">12</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;socks&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
+</span><span class='line'>    <span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;book&#39;</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+</span><span class='line'>  <span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour ceux qui ne connaissent pas Ruby, <code>Struct</code> permet de définir rapidement
+une classe simpliste, une espèce de POxO (Plain Old &ldquo;insérez votre langage&rdquo;
+Object). La classe <code>KnapsackItem</code> aura donc 3 accesseurs: <code>name</code>, <code>weight</code> et
+<code>value</code>. On pourra accéder à la liste des objets avec <code>Knapsack::ITEMS</code>.</p>
+
+<p>Maintenant la classe <code>Individual</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Individual</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">from_chromosome</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:score</span><span class="p">,</span> <span class="ss">:fitness</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:chromosome</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">chromosome</span>
+</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="n">chromosome</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>      <span class="n">chromosome_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="nb">private_class_method</span> <span class="ss">:new</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">chromosome_as_list</span>
+</span><span class='line'>    <span class="n">list</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>    <span class="vi">@chromosome</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">gene</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">list</span> <span class="o">&lt;&lt;</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">name</span> <span class="k">if</span> <span class="n">gene</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">list</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;, &#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">&gt;</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="kp">true</span> <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">nil?</span>
+</span><span class='line'>    <span class="n">score</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">score</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Un chromosome est défini comme un Array de booléens:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">chromosome_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Chaque case de l&#8217;Array nous indique si un objet est sélectionné (true) ou
+non (false).</p>
+
+<p>J&#8217;ai aussi ajouté 2 nouvelles méthodes à cette classe. Tout d&#8217;abord
+<code>chromosome_as_list</code> produit une chaîne de caractères avec la liste
+des objets sélectionné dans le chromosome. Puis la méthode <code>&gt;</code> nous
+sera utile pour comparer deux chromosomes.</p>
+
+<p>Reste la classe <code>Population</code>, qui est identique à ce que nous avons
+déjà écrit avec d&#8217;autres algorithmes génétiques:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Population</span> <span class="o">&lt;</span> <span class="nb">Array</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">population_size</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="nb">self</span> <span class="o">&lt;&lt;</span> <span class="no">Individual</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">best</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">sort_by</span><span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="p">}</span><span class="o">.</span><span class="n">last</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La prochaine fois on verra une première version de la méthode d&#8217;évaluation.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/'>Les algorithmes génétiques démystifiés 29</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Racket pour les rubyists 6: Une première fonction]]></title>
@@ -789,7 +1008,7 @@ fois <code>\1+$</code> correspond aux 6 &ldquo;1&rdquo; restants ! D&#8217;où 9
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -892,7 +1111,7 @@ petites astuces de ce genre à partager ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/05/une-regex-pour-savoir-si-un-nombre-est-premier/'>Une regex pour savoir si un nombre est premier</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/05/une-regex-pour-savoir-si-un-nombre-est-premier/'>Une regex pour savoir si un nombre est premier</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1736,7 +1955,7 @@ présentation rapide de coco, en anglais, il y a le
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/07/prise-en-main-de-la-gem-chunky-png/'>Prise en main de la gem chunky_png</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1869,100 +2088,6 @@ nouveau livre, rectifier un lien, etc.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/09/racket-pour-les-rubyists-4-la-fonction-filter/'>Racket pour les Rubyists 4: La fonction filter</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Apprendre Ruby en faisant des maths 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/23/apprendre-ruby-en-faisant-des-maths-2/"/>
-    <updated>2013-10-23T09:54:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/23/apprendre-ruby-en-faisant-des-maths-2</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>On a vu, <a href="http://lkdjiin.github.io/blog/2013/10/21/apprendre-ruby-en-faisant-des-maths/">précédemment</a>,
-comment savoir si un nombre d est un diviseur de n avec <code>8 % 2</code> et
-comment obtenir une liste de nombre avec <code>1..8</code>. Maintenant on peut
-apprendre à sélectionner les nombres qui nous intéressent dans cette liste.</p>
-
-<!-- more -->
-
-
-<p>Pour cela, nous allons utiliser la méthode <code>select</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">int</span><span class="o">|</span> <span class="mi">8</span> <span class="o">%</span> <span class="n">int</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; [1, 2, 4, 8]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et voilà, nous avons nos diviseurs de 8. La méthode <code>select</code> utilise un
-bloc d&#8217;instructions (ce qui se trouve entre les <code>{}</code>). Cette (ou ces)
-instruction va être exécutée sur chaque éléments de <code>1..8</code>, c&#8217;est à dire
-sur 1, 2, 3, 4, 5 ,6, 7 puis enfin 8. Ici, l&#8217;instruction exécutée sur les
-éléments est <code>8 % int == 0</code>. En clair on teste si le reste de la division
-de 8 par <code>int</code> égal zéro. Qu&#8217;est-ce que c&#8217;est que ce <code>int</code> ? Et bien c&#8217;est
-l&#8217;élément en cours de traitement, c&#8217;est à dire 1, puis 2, et ensuite 3, etc
-jusqu&#8217;à 8. <code>int</code> est simplement un nom qu&#8217;on a donné pour pouvoir se
-référer à l&#8217;élément en cours, ce nom est indiqué entre deux caractères <code>|</code>,
-comme dans <code>|int|</code>. On peut lui donner le nom qu&#8217;on veut, par exemple:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">xavier</span><span class="o">|</span> <span class="mi">8</span> <span class="o">%</span> <span class="n">xavier</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; [1, 2, 4, 8]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Pour information, <em>int</em> est le diminutif de integer, qui signifie
-nombre entier en anglais.</p>
-
-<p>Comment Ruby sait qu&#8217;il doit sélectionner 2 et pas 3 ? Regardons cela de
-plus près:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="mi">8</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span>
-</span><span class='line'><span class="go">=&gt; true</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="mi">8</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span>
-</span><span class='line'><span class="go">=&gt; false</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le résultat d&#8217;un test, ici l&#8217;égalité avec <code>==</code> est soit vrai (true), soit
-faux (false). Lorsque l&#8217;instruction dans le bloc (<code>{}</code>) renvoie true, l&#8217;élément
-est sélectionné, lorsqu&#8217;elle renvoie false, l&#8217;élément est éliminé.</p>
-
-<p>Vous devriez vérifier maintenant que ça fonctionne bien avec n&#8217;importe
-quel nombre entier positif:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">int</span><span class="o">|</span> <span class="mi">1</span> <span class="o">%</span> <span class="n">int</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; [1]</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">41</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">int</span><span class="o">|</span> <span class="mi">41</span> <span class="o">%</span> <span class="n">int</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; [1, 41]</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">417</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">int</span><span class="o">|</span> <span class="mi">417</span> <span class="o">%</span> <span class="n">int</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; [1, 3, 139, 417]</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="mi">4179</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">int</span><span class="o">|</span> <span class="mi">4179</span> <span class="o">%</span> <span class="n">int</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; [1, 3, 7, 21, 199, 597, 1393, 4179]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La prochaine fois, on verra comment créer nos propres méthodes.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/01/apprendre-ruby-en-faisant-des-maths-6-methodes-utilitaires-et-module/'>Apprendre Ruby en faisant des maths 6: méthodes utilitaires et module</a></li></ul></section></p>
 ]]></content>
   </entry>
   

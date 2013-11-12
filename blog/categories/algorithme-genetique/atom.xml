@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-11T20:46:50+01:00</updated>
+  <updated>2013-11-12T13:04:10+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,175 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 37: Le problème du sac à dos]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/"/>
+    <updated>2013-11-12T13:02:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Pour continuer notre exploration des algorithmes génétiques, on va
+s'intéresser maintenant au problème du sac à dos:</p>
+
+<p><blockquote><p>En algorithmique, le problème du sac à dos, noté également KP (en anglais,<br/>Knapsack Problem) est un problème d'optimisation combinatoire. Il modélise une<br/>situation analogue au remplissage d'un sac à dos, ne pouvant supporter plus<br/>d'un certain poids, avec tout ou partie d'un ensemble donné d'objets ayant<br/>chacun un poids et une valeur. Les objets mis dans le sac à dos doivent<br/>maximiser la valeur totale, sans dépasser le poids maximum.</p><footer><strong>Wikipédia <a href="http://fr.wikipedia.org/wiki/Probl%C3%A8me_du_sac_%C3%A0_dos">http://fr.wikipedia.org/wiki/Probl%C3%A8me_du_sac_%C3%A0_dos</a></strong></footer></blockquote></p>
+
+<!-- more -->
+
+
+<p>Un des intéret de ce problème est que certaines solutions <em>invalides</em> sont
+plus proches de la meilleure solution que nombres de solutions <em>valides</em>.</p>
+
+<p>De même, c'est un problème <em>théorique</em> qui peut être vu comme une
+simplification de problèmes <em>pratiques</em>. Par exemple: «Mon bateau peut
+transporter 100 containers, pour un poids de X tonnes. Je gagne plus ou
+moins d'argent selon les containers transportés. Quels containers je dois
+embarquer parmi un choix de 300 containers ?»</p>
+
+<p>La liste des objets que je vais utiliser se trouve sur le
+<a href="http://rosettacode.org/wiki/Knapsack_problem/0-1">projet RosettaCode</a>.</p>
+
+<p>On commence tout de suite avec la création de la population:</p>
+
+<p>``` ruby
+KnapsackItem = Struct.new(:name, :weight, :value)</p>
+
+<p>module Knapsack
+  ITEMS = [</p>
+
+<pre><code>KnapsackItem.new('map', 9, 150),
+KnapsackItem.new('compass', 13, 35),
+KnapsackItem.new('water', 153, 200),
+KnapsackItem.new('sandwich', 50, 160),
+KnapsackItem.new('glucose', 15, 60),
+KnapsackItem.new('tin', 68, 45),
+KnapsackItem.new('banana', 27, 60),
+KnapsackItem.new('apple', 39, 40),
+KnapsackItem.new('cheese', 23, 30),
+KnapsackItem.new('beer', 52, 10),
+KnapsackItem.new('suntan cream', 11, 70),
+KnapsackItem.new('camera', 32, 30),
+KnapsackItem.new('t-shirt', 24, 15),
+KnapsackItem.new('trousers', 48, 10),
+KnapsackItem.new('umbrella', 73, 40),
+KnapsackItem.new('waterproof trousers', 42, 70),
+KnapsackItem.new('waterproof overclothes', 43, 75),
+KnapsackItem.new('note-case', 22, 80),
+KnapsackItem.new('sunglasses', 7, 20),
+KnapsackItem.new('towel', 18, 12),
+KnapsackItem.new('socks', 4, 50),
+KnapsackItem.new('book', 30, 10),
+</code></pre>
+
+<p>  ]
+end
+```</p>
+
+<p>Pour ceux qui ne connaissent pas Ruby, <code>Struct</code> permet de définir rapidement
+une classe simpliste, une espèce de POxO (Plain Old &ldquo;insérez votre langage&rdquo;
+Object). La classe <code>KnapsackItem</code> aura donc 3 accesseurs: <code>name</code>, <code>weight</code> et
+<code>value</code>. On pourra accéder à la liste des objets avec <code>Knapsack::ITEMS</code>.</p>
+
+<p>Maintenant la classe <code>Individual</code>:</p>
+
+<p>``` ruby
+class Individual
+  def self.random(chromosome_size)</p>
+
+<pre><code>new(nil, chromosome_size)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def self.from_chromosome(chromosome)</p>
+
+<pre><code>new(chromosome)
+</code></pre>
+
+<p>  end</p>
+
+<p>  attr_accessor :score, :fitness
+  attr_reader :chromosome</p>
+
+<p>  def initialize(chromosome = nil, chromosome_size = nil)</p>
+
+<pre><code>if chromosome
+  @chromosome = chromosome
+else
+  @chromosome = []
+  chromosome_size.times { @chromosome &lt;&lt; (rand(0..1) == 1) }
+end
+</code></pre>
+
+<p>  end
+  private_class_method :new</p>
+
+<p>  def chromosome_as_list</p>
+
+<pre><code>list = []
+@chromosome.each_with_index do |gene, index|
+  list &lt;&lt; Knapsack::ITEMS[index].name if gene
+end
+list.join(', ')
+</code></pre>
+
+<p>  end</p>
+
+<p>  def >(other)</p>
+
+<pre><code>return true if other.nil?
+score &gt; other.score
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Un chromosome est défini comme un Array de booléens:</p>
+
+<p>``` ruby</p>
+
+<pre><code>  chromosome_size.times { @chromosome &lt;&lt; (rand(0..1) == 1) }
+</code></pre>
+
+<p>```</p>
+
+<p>Chaque case de l'Array nous indique si un objet est sélectionné (true) ou
+non (false).</p>
+
+<p>J'ai aussi ajouté 2 nouvelles méthodes à cette classe. Tout d'abord
+<code>chromosome_as_list</code> produit une chaîne de caractères avec la liste
+des objets sélectionné dans le chromosome. Puis la méthode <code>&gt;</code> nous
+sera utile pour comparer deux chromosomes.</p>
+
+<p>Reste la classe <code>Population</code>, qui est identique à ce que nous avons
+déjà écrit avec d'autres algorithmes génétiques:</p>
+
+<p>``` ruby
+class Population &lt; Array
+  def initialize(chromosome_size, population_size)</p>
+
+<pre><code>population_size.times { self &lt;&lt; Individual.random(chromosome_size) }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def best</p>
+
+<pre><code>self.sort_by{|individual| individual.score}.last
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>La prochaine fois on verra une première version de la méthode d'évaluation.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 36]]></title>
@@ -599,47 +768,6 @@ function makeIndividual() {
 objet avec les propriétés x, y, size, red, green, blue et alpha.</p>
 
 <p>La prochaine fois on verra comment on peut évaluer nos images.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 32]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/11/les-algorithmes-genetiques-demystifies-32/"/>
-    <updated>2013-10-11T20:48:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/11/les-algorithmes-genetiques-demystifies-32</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Je vais arrêter d'écrire sur le problème des 8 dames, temporairement. On a
-réussi à développer un programme qui permet de trouver des solutions pour
-un échiquier de 50 x 50 cases en un temps acceptable. Voici un joli
-graphique avec en x, la taille d'un coté de l'échiquier et en y, le nombre
-de secondes requis pour obtenir une solution:</p>
-
-<p><img src="/images/secondes-pour-tailles.png"></p>
-
-<!-- more -->
-
-
-<p>26 minutes pour un échiquier de 50 x 50 cases, je trouve que ça n'est pas
-si mal. Par contre on voit bien comme le temps augmente de manière
-exponentielle ! J'aimerais parvenir à trouver des solutions pour un
-échiquier de 100 x 100 cases (voir même 1000 x 1000) en un temps raisonable,
-disons quelques heures. Pour ça, il faudra améliorer le programme. Peut-être
-explorer d'autres méthodes de sélection et/ou croisement ; utiliser les
-multiples coeurs de nos machines ; peut-être changer de langage (je pense
-en ce moment à Elixir ou Scala, mais je suis ouvert aux suggestions).
-Enfin, tout ça sera pour plus tard.</p>
-
-<p>En attendant, je voudrais aborder un problème d'imagerie: un algorithme
-génétique qui copierait au mieux une photo à partir de petits carrés de
-couleurs et de tailles quelconques. Je compte le faire en Javascript
-mais je dois vous prévenir que Javascript et moi, ça fait deux.
-Je vais commencer à regarder ça ce week-end, et je compte sur vous pour
-pointer les erreurs et les maladresses de mon futur code…</p>
 
 <p>À demain.</p>
 
