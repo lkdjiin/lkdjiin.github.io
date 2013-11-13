@@ -3,8 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 37: Le problème du sac à dos"
 date: 2013-11-12 13:02
 comments: true
-categories: 
-[algorithme génétique, intermédiaire, ruby, problème du sac à dos]
+categories: [algorithme génétique, intermédiaire, ruby, problème du sac à dos]
 ---
 
 {% level 2 %}
