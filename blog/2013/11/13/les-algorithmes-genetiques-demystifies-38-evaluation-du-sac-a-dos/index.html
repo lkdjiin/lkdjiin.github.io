@@ -5,13 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Les algorithmes génétiques démystifiés 22 - lkdjiin's blog</title>
+  <title>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos - lkdjiin's blog</title>
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : intermédiaire Après avoir trouver comment représenter un chromosome pour le
-problème des 8 dames (article précédent),
-on regarde aujourd&# &hellip;">
+  <meta name="description" content="Niveau : intermédiaire Comment évaluer le contenu du sac à dos ? C&#8217;est à cette question qu&#8217;on
+répond aujourd&#8217;hui, après avoir vu &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +19,7 @@ on regarde aujourd&# &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22">
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
@@ -84,7 +83,7 @@ on regarde aujourd&# &hellip;">
   
   <header>
     
-      <h1 class="entry-title">Les algorithmes génétiques démystifiés 22</h1>
+      <h1 class="entry-title">Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</h1>
     
     
       <p class="meta">
@@ -100,7 +99,7 @@ on regarde aujourd&# &hellip;">
   
 
 
-<time datetime="2013-09-25T14:22:00+02:00" pubdate data-updated="true">25 septembre 2013</time>
+<time datetime="2013-11-13T09:32:00+01:00" pubdate data-updated="true">13 novembre 2013</time>
         
          | <a href="#disqus_thread">Comments</a>
         
@@ -112,15 +111,26 @@ on regarde aujourd&# &hellip;">
 <div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
 
 
-<p>Après avoir trouver comment représenter un chromosome pour le
-problème des 8 dames (<a href="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/">article précédent</a>),
-on regarde aujourd&#8217;hui comment réaliser l&#8217;évaluation de la population.</p>
+<p>Comment évaluer le contenu du sac à dos ? C&#8217;est à cette question qu&#8217;on
+répond aujourd&#8217;hui, après avoir vu hier la
+<a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">création de la population</a>.</p>
 
 <!-- more -->
 
 
-<p>Sans plus attendre, voici la classe <code>Evaluator</code> dans toute sa
-splendeur, on la détaille après:</p>
+<h2>La fonction d&#8217;évaluation</h2>
+
+<p>Évaluer le contenu du sac à dos est trivial, on calcule sa valeur en
+ajoutant la valeur de tout les objets, et on calcule son poids en ajoutant
+le poids de tout les objets. Si le poids total dépasse la capacité du
+sac à dos, on va considèrer <em>pour l&#8217;instant</em> que la solution est invalide, et
+on ne lui permettra pas de se reproduire. Autrement dit, plus la valeur est
+importante sans que le poids ne dépasse la capacité, meilleure est
+l&#8217;individu.</p>
+
+<h2>La classe Evaluator</h2>
+
+<p>Voici le code complet de la classe <code>Evaluator</code>:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -150,9 +160,18 @@ splendeur, on la détaille après:</p>
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
 <span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Evaluator</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">board_size</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@board_size</span> <span class="o">=</span> <span class="n">board_size</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">capacity</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@capacity</span> <span class="o">=</span> <span class="n">capacity</span>
 </span><span class='line'>    <span class="vi">@population</span> <span class="o">=</span> <span class="n">population</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
@@ -164,97 +183,80 @@ splendeur, on la détaille après:</p>
 </span><span class='line'>  <span class="kp">private</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span> <span class="o">/</span> <span class="n">conflicts</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">conflicts</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
-</span><span class='line'>    <span class="c1"># Calcule et renvoie le nombre de paires de dames en conflits.</span>
+</span><span class='line'>    <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">weight</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">individual</span><span class="o">.</span><span class="n">chromosome</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">item</span>
+</span><span class='line'>        <span class="n">value</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">value</span>
+</span><span class='line'>        <span class="n">weight</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">weight</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="vi">@capacity</span>
+</span><span class='line'>      <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>    <span class="k">end</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="k">def</span> <span class="nf">fitness</span>
 </span><span class='line'>    <span class="n">total</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">sum</span><span class="p">,</span> <span class="n">individual</span><span class="o">|</span> <span class="n">sum</span> <span class="o">+</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">size</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">size</span>
 </span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">individual</span><span class="o">|</span>
-</span><span class='line'>      <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">to_f</span> <span class="o">/</span> <span class="n">total</span> <span class="o">*</span> <span class="vi">@population</span><span class="o">.</span><span class="n">size</span>
+</span><span class='line'>      <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">to_f</span> <span class="o">/</span> <span class="n">total</span> <span class="o">*</span> <span class="n">size</span>
 </span><span class='line'>    <span class="k">end</span>
 </span><span class='line'>  <span class="k">end</span>
 </span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Tout d&#8217;abord le constucteur:</p>
+<h2>Explication du code</h2>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">board_size</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Il prends comme paramêtre la taille de l&#8217;échiquier et la population à
-évaluer. Trouver une solution pour un échiquier de 8 x 8 cases ne
-devrait pas être trop difficile et il sera plus intéressant de voir
-comment l&#8217;algorithme se débrouille avec des échiquiers de plus grande
-taille.</p>
-
-<p>La méthode <code>evalute</code> est identique à celle de la
-<a href="http://lkdjiin.github.io/blog/2013/09/19/les-algorithmes-genetiques-demystifies-18/">dernière fois</a>:
-elle calcule le <em>score</em> puis le <em>fitness</em> de chaque individu.</p>
-
-<p>Passons à la méthode <code>conflicts</code>, qui n&#8217;est pas encore implémentée:</p>
+<p>Ce qui nous intéresse se passe dans la méthode <code>score</code>. Tout d&#8217;abord on
+calcule la valeur totale et le poids total du sac à dos:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">conflicts</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
-</span><span class='line'>    <span class="c1"># Calcule et renvoie le nombre de paires de dames en conflits.</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">individual</span><span class="o">.</span><span class="n">chromosome</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">item</span>
+</span><span class='line'>    <span class="n">value</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">value</span>
+</span><span class='line'>    <span class="n">weight</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">weight</span>
 </span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>C&#8217;est en calculant le nombre de paires de dames en conflits qu&#8217;on pourra
-évaluer les différentes positions. Plus il y a de conflits, plus on est
-loin d&#8217;une solution. À l&#8217;inverse, une solution possède zéro conflits.
-L&#8217;implémentation sera pour la prochaine fois.</p>
+<p>Je rappelle qu&#8217;un chromosome est ici un Array de booléens, d&#8217;où la ligne
+<code>if item</code> pour savoir si l&#8217;objet est présent ou non.</p>
 
-<p>Voyons maintenant la méthode <code>score</code>:</p>
+<p>Une fois valeur et poids calculés, on peut donner un score:</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span> <span class="o">/</span> <span class="n">conflicts</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">if</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="vi">@capacity</span>
+</span><span class='line'>  <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'>  <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Pourquoi diviser 1 par le nombre de conflits ? Pourquoi ne pas avoir écrit
-simplement <code>individual.score = conflicts(individual)</code> ?
-Parce que je ne trouve pas naturel qu&#8217;un score de zéro soit meilleur qu&#8217;un
-score de 5, 10, 20, etc. Je préfère donc calculer l&#8217;inverse du nombre de
-conflits. De cette manière si il y a 10 conflits, le score sera 0,1 et si il
-y a 2 conflits le score sera 0,5. Et si il y a zéro conflits ? Ruby ne pose
-pas de problème avec les nombres réèls:</p>
+<p>Si le poids du sac à dos dépasse sa capacité, on invalide l&#8217;individu en
+mettant son score à zéro, ce qui lui interdira par la suite de se reproduire.
+Sinon, le score est simplement la valeur totale du sac à dos.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="go">[~]⇒ irb</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span> <span class="o">/</span> <span class="mi">0</span>
-</span><span class='line'><span class="go">Infinity</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je saurais donc que j&#8217;ai trouvé une solution quand un score sera supérieur
-à 1. Avec d&#8217;autres langages on peut gérer ça avec des exceptions, des erreurs,
-détecter la division par zéro avant de la faire, etc. Ou encore ajouter
-une petite valeur au nombre de conflits, par exemple:</p>
-
-<pre><code>score = 1.0 / (nombre_de_conflits + 0.1)
-</code></pre>
-
-<p>La prochaine fois on verra comment calculer le nombre de conflits.</p>
+<p>La prochaine fois on mettra en place la sélection, le croisement, la mutation,
+etc…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li><li><a href='/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/'>Les algorithmes génétiques démystifiés 29</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li></ul></section></p>
 </div>
 
 
@@ -277,12 +279,12 @@ une petite valeur au nombre de conflits, par exemple:</p>
   
 
 
-<time datetime="2013-09-25T14:22:00+02:00" pubdate data-updated="true">25 septembre 2013</time>
+<time datetime="2013-11-13T09:32:00+01:00" pubdate data-updated="true">13 novembre 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/probleme-des-8-dames/'>problème des 8 dames</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/probleme-du-sac-a-dos/'>problème du sac à dos</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
   
 </span>
 
@@ -291,7 +293,7 @@ une petite valeur au nombre de conflits, par exemple:</p>
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/" >Tweet</a>
   
   
   
@@ -300,10 +302,8 @@ une petite valeur au nombre de conflits, par exemple:</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/" title="Previous Post: Les algorithmes génétiques démystifiés 21: Problème des 8 dames">&laquo; Les algorithmes génétiques démystifiés 21: Problème des 8 dames</a>
+        <a class="basic-alignment left" href="/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/" title="Previous Post: Les algorithmes génétiques démystifiés 37: Le problème du sac à dos">&laquo; Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/09/26/les-algorithmes-genetiques-demystifies-23/" title="Next Post: Les algorithmes génétiques démystifiés 23">Les algorithmes génétiques démystifiés 23 &raquo;</a>
       
     </p>
   </footer>
@@ -383,8 +383,8 @@ une petite valeur au nombre de conflits, par exemple:</p>
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/';
-        var disqus_url = 'http://lkdjiin.github.io/blog/2013/09/25/les-algorithmes-genetiques-demystifies-22/';
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/';
         var disqus_script = 'embed.js';
       
     (function () {

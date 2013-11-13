@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-12T13:04:10+01:00</updated>
+  <updated>2013-11-13T09:45:22+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,163 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/"/>
+    <updated>2013-11-13T09:32:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Comment évaluer le contenu du sac à dos ? C&#8217;est à cette question qu&#8217;on
+répond aujourd&#8217;hui, après avoir vu hier la
+<a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">création de la population</a>.</p>
+
+<!-- more -->
+
+
+<h2>La fonction d&#8217;évaluation</h2>
+
+<p>Évaluer le contenu du sac à dos est trivial, on calcule sa valeur en
+ajoutant la valeur de tout les objets, et on calcule son poids en ajoutant
+le poids de tout les objets. Si le poids total dépasse la capacité du
+sac à dos, on va considèrer <em>pour l&#8217;instant</em> que la solution est invalide, et
+on ne lui permettra pas de se reproduire. Autrement dit, plus la valeur est
+importante sans que le poids ne dépasse la capacité, meilleure est
+l&#8217;individu.</p>
+
+<h2>La classe Evaluator</h2>
+
+<p>Voici le code complet de la classe <code>Evaluator</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Evaluator</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">capacity</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@capacity</span> <span class="o">=</span> <span class="n">capacity</span>
+</span><span class='line'>    <span class="vi">@population</span> <span class="o">=</span> <span class="n">population</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">evaluate</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">fitness</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">weight</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">individual</span><span class="o">.</span><span class="n">chromosome</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">item</span>
+</span><span class='line'>        <span class="n">value</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">value</span>
+</span><span class='line'>        <span class="n">weight</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">weight</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="vi">@capacity</span>
+</span><span class='line'>      <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">fitness</span>
+</span><span class='line'>    <span class="n">total</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">inject</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="p">{</span><span class="o">|</span><span class="n">sum</span><span class="p">,</span> <span class="n">individual</span><span class="o">|</span> <span class="n">sum</span> <span class="o">+</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">size</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">size</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">individual</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">individual</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="o">.</span><span class="n">to_f</span> <span class="o">/</span> <span class="n">total</span> <span class="o">*</span> <span class="n">size</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Explication du code</h2>
+
+<p>Ce qui nous intéresse se passe dans la méthode <code>score</code>. Tout d&#8217;abord on
+calcule la valeur totale et le poids total du sac à dos:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">individual</span><span class="o">.</span><span class="n">chromosome</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">item</span>
+</span><span class='line'>    <span class="n">value</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">value</span>
+</span><span class='line'>    <span class="n">weight</span> <span class="o">+=</span> <span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">weight</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je rappelle qu&#8217;un chromosome est ici un Array de booléens, d&#8217;où la ligne
+<code>if item</code> pour savoir si l&#8217;objet est présent ou non.</p>
+
+<p>Une fois valeur et poids calculés, on peut donner un score:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">if</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="vi">@capacity</span>
+</span><span class='line'>  <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'>  <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Si le poids du sac à dos dépasse sa capacité, on invalide l&#8217;individu en
+mettant son score à zéro, ce qui lui interdira par la suite de se reproduire.
+Sinon, le score est simplement la valeur totale du sac à dos.</p>
+
+<p>La prochaine fois on mettra en place la sélection, le croisement, la mutation,
+etc…</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 37: Le problème du sac à dos]]></title>
@@ -197,7 +354,7 @@ non (false).</p>
 
 <p>J&#8217;ai aussi ajouté 2 nouvelles méthodes à cette classe. Tout d&#8217;abord
 <code>chromosome_as_list</code> produit une chaîne de caractères avec la liste
-des objets sélectionné dans le chromosome. Puis la méthode <code>&gt;</code> nous
+des objets sélectionnés dans le chromosome. Puis la méthode <code>&gt;</code> nous
 sera utile pour comparer deux chromosomes.</p>
 
 <p>Reste la classe <code>Population</code>, qui est identique à ce que nous avons
@@ -228,7 +385,7 @@ déjà écrit avec d&#8217;autres algorithmes génétiques:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/'>Les algorithmes génétiques démystifiés 29</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1008,7 +1165,7 @@ fois <code>\1+$</code> correspond aux 6 &ldquo;1&rdquo; restants ! D&#8217;où 9
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1111,7 +1268,7 @@ petites astuces de ce genre à partager ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/05/une-regex-pour-savoir-si-un-nombre-est-premier/'>Une regex pour savoir si un nombre est premier</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/05/une-regex-pour-savoir-si-un-nombre-est-premier/'>Une regex pour savoir si un nombre est premier</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1955,7 +2112,7 @@ présentation rapide de coco, en anglais, il y a le
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2063,31 +2220,6 @@ comme d&#8217;une base pour construire une autre méthode.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/01/apprendre-ruby-en-faisant-des-maths-6-methodes-utilitaires-et-module/'>Apprendre Ruby en faisant des maths 6: méthodes utilitaires et module</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Une tonne de livres sur la programmation]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/24/une-tonne-de-livres-sur-la-programmation/"/>
-    <updated>2013-10-24T10:22:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/24/une-tonne-de-livres-sur-la-programmation</id>
-    <content type="html"><![CDATA[<p>Une super initiative de <a href="https://github.com/vhf">vhf</a> sur Github: une
-longue, longue, très longue liste de livres sur le développement,
-certains libres, tous gratuits.</p>
-
-<!-- more -->
-
-
-<p>Ils y a plusieurs listes de livres, selon les langues.
-Vous trouverez la liste en anglais ici: <a href="https://github.com/vhf/free-programming-books/blob/master/free-programming-books.md">free-programming-books</a>.
-Et la liste en français ici: <a href="https://github.com/vhf/free-programming-books/blob/master/free-programming-books-fr.md">free-programming-books-fr</a>.</p>
-
-<p>Comme les listes sont sur Github, vous pouvez très facilement ajouter un
-nouveau livre, rectifier un lien, etc.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/09/racket-pour-les-rubyists-4-la-fonction-filter/'>Racket pour les Rubyists 4: La fonction filter</a></li></ul></section></p>
 ]]></content>
   </entry>
   

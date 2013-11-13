@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-12T13:04:10+01:00</updated>
+  <updated>2013-11-13T09:45:22+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,132 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/"/>
+    <updated>2013-11-13T09:32:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Comment évaluer le contenu du sac à dos ? C'est à cette question qu'on
+répond aujourd'hui, après avoir vu hier la
+<a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">création de la population</a>.</p>
+
+<!-- more -->
+
+
+<h2>La fonction d'évaluation</h2>
+
+<p>Évaluer le contenu du sac à dos est trivial, on calcule sa valeur en
+ajoutant la valeur de tout les objets, et on calcule son poids en ajoutant
+le poids de tout les objets. Si le poids total dépasse la capacité du
+sac à dos, on va considèrer <em>pour l'instant</em> que la solution est invalide, et
+on ne lui permettra pas de se reproduire. Autrement dit, plus la valeur est
+importante sans que le poids ne dépasse la capacité, meilleure est
+l'individu.</p>
+
+<h2>La classe Evaluator</h2>
+
+<p>Voici le code complet de la classe <code>Evaluator</code>:</p>
+
+<p>``` ruby
+class Evaluator
+  def initialize(capacity, population)</p>
+
+<pre><code>@capacity = capacity
+@population = population
+</code></pre>
+
+<p>  end</p>
+
+<p>  def evaluate</p>
+
+<pre><code>@population.each {|individual| score(individual) }
+fitness
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def score(individual)</p>
+
+<pre><code>value = 0
+weight = 0
+individual.chromosome.each_with_index do |item, index|
+  if item
+    value += Knapsack::ITEMS[index].value
+    weight += Knapsack::ITEMS[index].weight
+  end
+end
+if weight &gt; @capacity
+  individual.score = 0
+else
+  individual.score = value
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def fitness</p>
+
+<pre><code>total = @population.inject(0) {|sum, individual| sum + individual.score }
+size = @population.size
+@population.each do |individual|
+  individual.fitness = individual.score.to_f / total * size
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<h2>Explication du code</h2>
+
+<p>Ce qui nous intéresse se passe dans la méthode <code>score</code>. Tout d'abord on
+calcule la valeur totale et le poids total du sac à dos:</p>
+
+<p>``` ruby</p>
+
+<pre><code>individual.chromosome.each_with_index do |item, index|
+  if item
+    value += Knapsack::ITEMS[index].value
+    weight += Knapsack::ITEMS[index].weight
+  end
+end
+</code></pre>
+
+<p>```</p>
+
+<p>Je rappelle qu'un chromosome est ici un Array de booléens, d'où la ligne
+<code>if item</code> pour savoir si l'objet est présent ou non.</p>
+
+<p>Une fois valeur et poids calculés, on peut donner un score:</p>
+
+<p>``` ruby</p>
+
+<pre><code>if weight &gt; @capacity
+  individual.score = 0
+else
+  individual.score = value
+end
+</code></pre>
+
+<p>```</p>
+
+<p>Si le poids du sac à dos dépasse sa capacité, on invalide l'individu en
+mettant son score à zéro, ce qui lui interdira par la suite de se reproduire.
+Sinon, le score est simplement la valeur totale du sac à dos.</p>
+
+<p>La prochaine fois on mettra en place la sélection, le croisement, la mutation,
+etc…</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 37: Le problème du sac à dos]]></title>
@@ -150,7 +276,7 @@ non (false).</p>
 
 <p>J'ai aussi ajouté 2 nouvelles méthodes à cette classe. Tout d'abord
 <code>chromosome_as_list</code> produit une chaîne de caractères avec la liste
-des objets sélectionné dans le chromosome. Puis la méthode <code>&gt;</code> nous
+des objets sélectionnés dans le chromosome. Puis la méthode <code>&gt;</code> nous
 sera utile pour comparer deux chromosomes.</p>
 
 <p>Reste la classe <code>Population</code>, qui est identique à ce que nous avons
@@ -682,137 +808,6 @@ terminal (même répertoire que votre fichier HTML):</p>
 <p>Le code se trouve aussi sur Github: <a href="https://github.com/lkdjiin/picture_genetic_algorithm">github.com/lkdjiin/picture_genetic_algorithm</a>.
 Je suis sûr que certains d'entre-vous connaissent Javascript bien mieux que
 moi et peuvent l'améliorer, alors n'hésitez pas.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 35]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/20/les-algorithmes-genetiques-demystifies-35/"/>
-    <updated>2013-10-20T21:21:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/20/les-algorithmes-genetiques-demystifies-35</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>On continue aujourd'hui avec la mise en place de l'algorithme de <em>Hill-climbing</em>
-pour s'assurer que la fonction d'évaluation de nos images est pertinente.</p>
-
-<!-- more -->
-
-
-<p>J'ai déjà parlé du <em>Hill-climbing</em> dans
-<a href="http://lkdjiin.github.io/blog/2013/09/17/les-algorithmes-genetiques-demystifies-16-le-hill-climbing/">cet article</a>.
-On peut le considérer comme une version très basique d'un algorithme
-génétique, sans population et sans reproduction. Utile donc, pour
-tester rapidement et facilement l'évaluation:</p>
-
-<p>``` javascript
-var solution = makeIndividual();
-var generation = 0;
-var htmlGeneration = document.getElementById(&ldquo;generation&rdquo;);
-var htmlQuality = document.getElementById(&ldquo;quality&rdquo;);
-var interval = setInterval(hillClimb, 150);</p>
-
-<p>function hillClimb() {
-  var opponent = mutate(copy(solution));
-  var score_opponent = quality(opponent);
-  var score_solution = quality(solution);
-  if (score_opponent > score_solution) {</p>
-
-<pre><code>solution = opponent;
-</code></pre>
-
-<p>  }
-  generation++;
-  if (generation % 100 == 0) renderIndividual(solution, ctx);
-  htmlGeneration.innerHTML = generation;
-  htmlQuality.innerHTML = score_solution;
-  if (generation >= 100000) {</p>
-
-<pre><code>clearInterval(interval);
-</code></pre>
-
-<p>  }
-}
-```</p>
-
-<p>Les explications maintenant. À chaque tour on compare les scores obtenus
-par la solution courante (la meilleure jusqu'ici) avec une version mutée
-de lui-même (<code>opponent</code>). Si l'opposant est meilleur, il prend la place
-de la solution:</p>
-
-<pre><code>var opponent = mutate(copy(solution));
-var score_opponent = quality(opponent);
-var score_solution = quality(solution);
-if (score_opponent &gt; score_solution) {
-  solution = opponent;
-}
-</code></pre>
-
-<p>J'affiche ensuite la solution courante, toutes les 100 générations:</p>
-
-<pre><code>generation++;
-if (generation % 100 == 0) renderIndividual(solution, ctx);
-</code></pre>
-
-<p>À chaque tour, j'affiche la génération courante et son score:</p>
-
-<pre><code>htmlGeneration.innerHTML = generation;
-htmlQuality.innerHTML = score_solution;
-</code></pre>
-
-<p>Enfin, on stoppe tout au bout de 100.000 essais:</p>
-
-<pre><code>if (generation &gt;= 100000) {
-  clearInterval(interval);
-}
-</code></pre>
-
-<p>La fonction de mutation est longue, mais simple. On sélectionne au hasard
-un carré et une de ses propriétés puis on la modifie:</p>
-
-<p>``` javascript
-function mutate(individual) {
-  var gene = Math.floor(Math.random() * TOTAL_SQUARES),</p>
-
-<pre><code>  squareProperty = Math.floor(Math.random() * 7);
-</code></pre>
-
-<p>  switch (squareProperty) {</p>
-
-<pre><code>case 0:
-  individual[gene].x = Math.floor(Math.random() * IMAGE_WIDTH);
-  break;
-case 1:
-  individual[gene].y = Math.floor(Math.random() * IMAGE_HEIGHT);
-  break;
-case 2:
-  individual[gene].size = Math.floor(Math.random() * SQUARE_MAX_SIZE);
-  break;
-case 3:
-  individual[gene].red = Math.floor(Math.random() * 256);
-  break;
-case 4:
-  individual[gene].green = Math.floor(Math.random() * 256);
-  break;
-case 5:
-  individual[gene].blue = Math.floor(Math.random() * 256);
-  break;
-case 6:
-  individual[gene].alpha = Math.random();
-  break;
-</code></pre>
-
-<p>  }
-  return individual;
-}
-```</p>
-
-<p>La prochaine fois on verra deux dernières fonctions <em>techniques</em>:
-<code>copy</code> et <code>renderIndividual</code> et on sera près à faire tourner
-notre algorithme.</p>
 
 <p>À demain.</p>
 

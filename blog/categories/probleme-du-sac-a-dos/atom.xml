@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : problème du sac à dos | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/probleme-du-sac-a-dos/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-12T13:04:10+01:00</updated>
+  <updated>2013-11-13T09:45:22+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,132 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/"/>
+    <updated>2013-11-13T09:32:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Comment évaluer le contenu du sac à dos ? C'est à cette question qu'on
+répond aujourd'hui, après avoir vu hier la
+<a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">création de la population</a>.</p>
+
+<!-- more -->
+
+
+<h2>La fonction d'évaluation</h2>
+
+<p>Évaluer le contenu du sac à dos est trivial, on calcule sa valeur en
+ajoutant la valeur de tout les objets, et on calcule son poids en ajoutant
+le poids de tout les objets. Si le poids total dépasse la capacité du
+sac à dos, on va considèrer <em>pour l'instant</em> que la solution est invalide, et
+on ne lui permettra pas de se reproduire. Autrement dit, plus la valeur est
+importante sans que le poids ne dépasse la capacité, meilleure est
+l'individu.</p>
+
+<h2>La classe Evaluator</h2>
+
+<p>Voici le code complet de la classe <code>Evaluator</code>:</p>
+
+<p>``` ruby
+class Evaluator
+  def initialize(capacity, population)</p>
+
+<pre><code>@capacity = capacity
+@population = population
+</code></pre>
+
+<p>  end</p>
+
+<p>  def evaluate</p>
+
+<pre><code>@population.each {|individual| score(individual) }
+fitness
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def score(individual)</p>
+
+<pre><code>value = 0
+weight = 0
+individual.chromosome.each_with_index do |item, index|
+  if item
+    value += Knapsack::ITEMS[index].value
+    weight += Knapsack::ITEMS[index].weight
+  end
+end
+if weight &gt; @capacity
+  individual.score = 0
+else
+  individual.score = value
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def fitness</p>
+
+<pre><code>total = @population.inject(0) {|sum, individual| sum + individual.score }
+size = @population.size
+@population.each do |individual|
+  individual.fitness = individual.score.to_f / total * size
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<h2>Explication du code</h2>
+
+<p>Ce qui nous intéresse se passe dans la méthode <code>score</code>. Tout d'abord on
+calcule la valeur totale et le poids total du sac à dos:</p>
+
+<p>``` ruby</p>
+
+<pre><code>individual.chromosome.each_with_index do |item, index|
+  if item
+    value += Knapsack::ITEMS[index].value
+    weight += Knapsack::ITEMS[index].weight
+  end
+end
+</code></pre>
+
+<p>```</p>
+
+<p>Je rappelle qu'un chromosome est ici un Array de booléens, d'où la ligne
+<code>if item</code> pour savoir si l'objet est présent ou non.</p>
+
+<p>Une fois valeur et poids calculés, on peut donner un score:</p>
+
+<p>``` ruby</p>
+
+<pre><code>if weight &gt; @capacity
+  individual.score = 0
+else
+  individual.score = value
+end
+</code></pre>
+
+<p>```</p>
+
+<p>Si le poids du sac à dos dépasse sa capacité, on invalide l'individu en
+mettant son score à zéro, ce qui lui interdira par la suite de se reproduire.
+Sinon, le score est simplement la valeur totale du sac à dos.</p>
+
+<p>La prochaine fois on mettra en place la sélection, le croisement, la mutation,
+etc…</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 37: Le problème du sac à dos]]></title>
@@ -150,7 +276,7 @@ non (false).</p>
 
 <p>J'ai aussi ajouté 2 nouvelles méthodes à cette classe. Tout d'abord
 <code>chromosome_as_list</code> produit une chaîne de caractères avec la liste
-des objets sélectionné dans le chromosome. Puis la méthode <code>&gt;</code> nous
+des objets sélectionnés dans le chromosome. Puis la méthode <code>&gt;</code> nous
 sera utile pour comparer deux chromosomes.</p>
 
 <p>Reste la classe <code>Population</code>, qui est identique à ce que nous avons
