@@ -1,0 +1,486 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Apprendre Ruby en faisant des maths 7: Tests unitaires simples - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile Si vous voulez vraiment apprendre Ruby, vous devriez aussi apprendre
+à faire des tests automatisés: c&#8217;est le meilleur moyen d&# &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Apprendre Ruby en faisant des maths 7: Tests unitaires simples</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-14T13:22:00+01:00" pubdate data-updated="true">14 novembre 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Si vous voulez vraiment apprendre Ruby, vous <em>devriez</em> aussi apprendre
+à faire des tests automatisés: c&#8217;est le meilleur moyen d&#8217;avoir confiance
+en son code. Et la question se pose de savoir quel framework utiliser ?
+Il en existe plusieurs: unit/test, minitest, RSpec, Shoulda, Cucumber et
+j&#8217;en oublie… Chaque développeur a ses préférences, et c&#8217;est bien normal.</p>
+
+<p><code>&lt;opinion&gt;</code></p>
+
+<p>Mais souvent les développeurs ont aussi des convictions, ce qui est parfois
+problématique. Un framework de test est un outil, comme tant d&#8217;autres.
+Un outil X peut être parfait pour telle application et bien moins bon pour
+telle autre application. Autrement dit, <strong>LE</strong> framework de test n&#8217;existe
+pas. Quand vous en aurez testé quelques uns, vous aurez une préférence,
+d&#8217;accord, pas de soucis. Mais s&#8217;il vous plait, avant d&#8217;avoir une conviction,
+attendez d&#8217;en avoir <em>utilisé</em> 3 ou 4, et chacun dans différents types de
+projet.</p>
+
+<p><code>&lt;/opinion&gt;</code></p>
+
+<!-- more -->
+
+
+<p>Aujourd&#8217;hui on va apprendre à tester le module créé <a href="http://lkdjiin.github.io/blog/2013/11/01/apprendre-ruby-en-faisant-des-maths-6-methodes-utilitaires-et-module/">la dernière fois</a>
+à l&#8217;aide du framework test/unit. Pas parce que ce framework est le
+meilleur, pas parce que j&#8217;ai une préférence pour ce framework mais parce qu&#8217;il
+est livré avec Ruby et qu&#8217;il ne necessite donc pas d&#8217;installation.</p>
+
+<h2>Le fichier de test</h2>
+
+<p>Voici le code à mettre dans un fichier nommé <code>tc_number.rb</code>:</p>
+
+<figure class='code'><figcaption><span>tc_number.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">require_relative</span> <span class="s2">&quot;number&quot;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s2">&quot;test/unit&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestNumber</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le fichier <code>tc_number.rb</code> contient le code pour tester notre module <code>Number</code>,
+qui est dans le fichier <code>number.rb</code>. Veillez à garder les deux fichiers dans
+le même dossier.</p>
+
+<h2>Explications</h2>
+
+<p>Voici les explications, ligne par ligne:</p>
+
+<pre><code>require_relative "number"
+</code></pre>
+
+<p>On charge notre module <code>Number</code>.</p>
+
+<pre><code>require "test/unit"
+</code></pre>
+
+<p>On charge la bibliothèque <code>test/unit</code>, qui contient plusieurs classes/modules
+et méthodes qui vont nous permettre d&#8217;écrire nos tests.</p>
+
+<pre><code>class TestNumber &lt; Test::Unit::TestCase
+</code></pre>
+
+<p>On crée une classe <code>TestNumber</code>. Vous remarquez que c&#8217;est le nom de notre
+module à tester, préfixé par Test. Cette classe hérite de
+<code>Test::Unit::TestCase</code>. Si vous ne savez pas encore ce qu&#8217;est une classe,
+dites vous que c&#8217;est un module un peu spécial. Si vous ne savez pas
+encore ce qu&#8217;est l&#8217;héritage, ce n&#8217;est pas grave.</p>
+
+<pre><code>def test_divisors
+</code></pre>
+
+<p>On définit un test de la méthode <code>divisors</code>, à travers la méthodes
+<code>test_divisors</code>. Vous remarquez que c&#8217;est le nom de notre méthode à tester,
+préfixé par <code>test_</code>.</p>
+
+<pre><code>assert_equal [1, 2, 4, 8], Number.divisors(4)
+</code></pre>
+
+<p>Voici enfin le test proprement dit. La méthode <code>assert_equal</code> s&#8217;assure
+que ses deux arguments sont égaux. On veut savoir si <code>Number.divisors(4)</code>
+est bien égal à l&#8217;Array (la liste) <code>[1, 2, 3, 4]</code>, <em>ce qui est faux</em>.</p>
+
+<h2>Utilisation</h2>
+
+<p>Voici la sortie:</p>
+
+<pre><code>[~]⇒ ruby tc_number.rb 
+Run options: 
+
+# Running tests:
+
+F
+
+Finished tests in 0.002405s, 415.8087 tests/s, 415.8087 assertions/s.
+
+  1) Failure:
+test_divisors(TestNumber) [tc_number.rb:6]:
+&lt;[1, 2, 4, 8]&gt; expected but was
+&lt;[1, 2, 4]&gt;.
+
+1 tests, 1 assertions, 1 failures, 0 errors, 0 skips
+</code></pre>
+
+<p>La section <code>1) Failure:</code> est particulièrement intéressante et nous indique
+que la liste <code>[1, 2, 3, 4]</code> était attendue, mais que c&#8217;est la liste
+<code>[1, 2, 4]</code> qui a été reçue.</p>
+
+<p>Si on corrige notre test:</p>
+
+<figure class='code'><figcaption><span>tc_number.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">require_relative</span> <span class="s2">&quot;number&quot;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s2">&quot;test/unit&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestNumber</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cette fois-ci la sortie nous indique que tout va bien:</p>
+
+<pre><code>[~]⇒ ruby tc_number.rb 
+Run options: 
+
+# Running tests:
+
+.
+
+Finished tests in 0.000644s, 1553.5887 tests/s, 1553.5887 assertions/s.
+
+1 tests, 1 assertions, 0 failures, 0 errors, 0 skips
+</code></pre>
+
+<h2>Plus de tests</h2>
+
+<p>Nous pouvons ajouter un autre test pour la méthode <code>divisors</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">17</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Mais aussi tester les autres méthodes de notre module, selon le même
+modèle:</p>
+
+<figure class='code'><figcaption><span>tc_number.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">require_relative</span> <span class="s2">&quot;number&quot;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s2">&quot;test/unit&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestNumber</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">17</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_proper_divisors</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">proper_divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">proper_divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_sum_of_proper_divisors</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="mi">3</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">sum_of_proper_divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">assert_equal</span> <span class="mi">1</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">sum_of_proper_divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li><li><a href='/blog/2013/11/01/apprendre-ruby-en-faisant-des-maths-6-methodes-utilitaires-et-module/'>Apprendre Ruby en faisant des maths 6: méthodes utilitaires et module</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-14T13:22:00+01:00" pubdate data-updated="true">14 novembre 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>, <a class='category' href='/blog/categories/test/'>test</a>, <a class='category' href='/blog/categories/tutoriel/'>tutoriel</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/" title="Previous Post: Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos">&laquo; Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/">Apprendre Ruby en faisant des maths 7: Tests unitaires simples</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/">Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/">Racket pour les rubyists 6: Une première fonction</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/">Racket pour les rubyists 5: Définitions imbriquées</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/09/racket-pour-les-rubyists-4-la-fonction-filter/">Racket pour les Rubyists 4: La fonction filter</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/08/racket-pour-les-rubyists-3-trouver-les-diviseurs/">Racket pour les Rubyists 3: Trouver les diviseurs</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
