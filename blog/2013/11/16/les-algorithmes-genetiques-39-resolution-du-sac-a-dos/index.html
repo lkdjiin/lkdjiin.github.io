@@ -1,0 +1,473 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Les algorithmes génétiques 39: Resolution du sac à dos - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire La dernière fois on a vu une façon simplement
+d&#8217;évaluer le contenu
+du sac à dos.
+Aujourd&#8217;hui on met en place l&# &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Les algorithmes génétiques 39: Resolution du sac à dos</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-16T10:06:00+01:00" pubdate data-updated="true">16 novembre 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>La dernière fois on a vu une façon simplement
+<a href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/">d&#8217;évaluer le contenu</a>
+du sac à dos.
+Aujourd&#8217;hui on met en place l&#8217;algorithme génétique proprement dit:
+sélection, croisement, mutation, etc.</p>
+
+<!-- more -->
+
+
+<p>J&#8217;ai mis le <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">code complet de l&#8217;algorithme sur Github</a>.
+Celui-ci est basé sur ce qu&#8217;on a fait jusqu&#8217;ici pour
+<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">le paradoxe du singe savant</a>
+et pour <a href="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/">le problème des 8 dames</a>.
+Je vais donc commenter les parties qui changent.</p>
+
+<h2>La classe GeneticAlgorithm</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">GeneticAlgorithm</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">run</span>
+</span><span class='line'>    <span class="n">best_ever</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>    <span class="vi">@generations</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">generation</span><span class="o">|</span>
+</span><span class='line'>      <span class="no">Evaluator</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@capacity</span><span class="p">,</span> <span class="vi">@population</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span>
+</span><span class='line'>      <span class="n">best</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">best</span>
+</span><span class='line'>      <span class="n">best_ever</span> <span class="o">=</span> <span class="n">best</span> <span class="k">if</span> <span class="n">best</span> <span class="o">&gt;</span> <span class="n">best_ever</span>
+</span><span class='line'>      <span class="nb">display</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">best</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">next_generation</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">display_best_ever</span><span class="p">(</span><span class="n">best_ever</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display_best_ever</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;----------------------&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Best ever&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;----------------------&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;score:      </span><span class="si">#{</span><span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;chromosome: </span><span class="si">#{</span><span class="n">individual</span><span class="o">.</span><span class="n">chromosome_as_list</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voyons la méthode <code>run</code>. La variable <code>best_ever</code> va contenir le meilleur
+individu, toutes générations confondues. À chaque itération, on compare
+ce «meilleur de tout les temps» avec le meilleur individu de la génération:</p>
+
+<pre><code>best_ever = best if best &gt; best_ever
+</code></pre>
+
+<p>C&#8217;est pour ça qu&#8217;on avait besoin d&#8217;une méthode <code>&gt;</code> dans la classe <code>Individual</code>
+(voir <a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">cet article</a>).</p>
+
+<p>À la fin de la méthode <code>run</code> on utilise la nouvelle méthode <code>display_best_ever</code>
+pour afficher notre meilleure solution.</p>
+
+<h2>La classe Mutator</h2>
+
+<p>La seconde classe qui change un peu est la classe <code>Mutator</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Mutator</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@size</span> <span class="o">=</span> <span class="n">chromosome_size</span>
+</span><span class='line'>    <span class="vi">@rate</span> <span class="o">=</span> <span class="n">mutation_rate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@size</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">chromosome</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="o">!</span> <span class="n">chromosome</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="k">if</span> <span class="nb">rand</span> <span class="o">&lt;</span> <span class="vi">@rate</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">chromosome</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Un chromosome étant une liste (un Array) de booléens, la mutation consiste
+à <em>inverser</em> un élément, true devient false et inversement:</p>
+
+<pre><code>chromosome[index] = ! chromosome[index] if rand &lt; @rate
+</code></pre>
+
+<h2>Le lancement du programme</h2>
+
+<p>Le problème n&#8217;a pas l&#8217;air trop complexe, je me dis donc que 100 générations
+devraient suffire. La population compte 1 000 individus, ce qui est
+classique et le taux de mutation est assez élevé (1%):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">knapsack_capacity</span> <span class="o">=</span> <span class="mi">400</span>
+</span><span class='line'><span class="n">generations</span> <span class="o">=</span> <span class="mi">100</span>
+</span><span class='line'><span class="n">population</span> <span class="o">=</span> <span class="no">Population</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'><span class="n">mutation</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mo">01</span>
+</span><span class='line'><span class="no">GeneticAlgorithm</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generations</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">knapsack_capacity</span><span class="p">,</span> <span class="n">mutation</span><span class="p">)</span><span class="o">.</span><span class="n">run</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici le moment de vérité:</p>
+
+<pre><code>[~]⇒ ruby knapsack.rb 
+Gen: 0 Best score: 922
+Gen: 1 Best score: 950
+.
+.
+.
+Gen: 57 Best score: 1010
+Gen: 58 Best score: 957
+Gen: 59 Best score: 1030
+.
+.
+.
+Gen: 99 Best score: 957
+----------------------
+Best ever
+----------------------
+score:      1030
+chromosome: map, compass, water, sandwich, glucose, banana, suntan cream,
+waterproof trousers, waterproof overclothes, note-case, sunglasses, socks
+</code></pre>
+
+<p>La prochaine fois on va analyser ce résultat et faire en sorte de
+l&#8217;améliorer.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-16T10:06:00+01:00" pubdate data-updated="true">16 novembre 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/probleme-du-sac-a-dos/'>problème du sac à dos</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/" title="Previous Post: Racket pour les Rubyists 7: Module basique">&laquo; Racket pour les Rubyists 7: Module basique</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/">Les algorithmes génétiques 39: Resolution du sac à dos</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/">Racket pour les Rubyists 7: Module basique</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/">Apprendre Ruby en faisant des maths 7: Tests unitaires simples</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/">Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/">Racket pour les rubyists 6: Une première fonction</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/">Racket pour les rubyists 5: Définitions imbriquées</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

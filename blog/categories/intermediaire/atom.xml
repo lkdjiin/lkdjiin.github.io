@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-15T18:54:35+01:00</updated>
+  <updated>2013-11-16T10:15:06+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,159 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques 39: Resolution du sac à dos]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/"/>
+    <updated>2013-11-16T10:06:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>La dernière fois on a vu une façon simplement
+<a href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/">d'évaluer le contenu</a>
+du sac à dos.
+Aujourd'hui on met en place l'algorithme génétique proprement dit:
+sélection, croisement, mutation, etc.</p>
+
+<!-- more -->
+
+
+<p>J'ai mis le <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">code complet de l'algorithme sur Github</a>.
+Celui-ci est basé sur ce qu'on a fait jusqu'ici pour
+<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">le paradoxe du singe savant</a>
+et pour <a href="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/">le problème des 8 dames</a>.
+Je vais donc commenter les parties qui changent.</p>
+
+<h2>La classe GeneticAlgorithm</h2>
+
+<p>``` ruby
+class GeneticAlgorithm
+  # &hellip;</p>
+
+<p>  def run</p>
+
+<pre><code>best_ever = nil
+@generations.times do |generation|
+  Evaluator.new(@capacity, @population).evaluate
+  best = @population.best
+  best_ever = best if best &gt; best_ever
+  display(generation, best)
+  next_generation
+end
+display_best_ever(best_ever)
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  # &hellip;</p>
+
+<p>  def display_best_ever(individual)</p>
+
+<pre><code>puts "----------------------"
+puts "Best ever"
+puts "----------------------"
+puts "score:      #{individual.score}"
+puts "chromosome: #{individual.chromosome_as_list}"
+</code></pre>
+
+<p>  end</p>
+
+<p>  # &hellip;
+end
+```</p>
+
+<p>Voyons la méthode <code>run</code>. La variable <code>best_ever</code> va contenir le meilleur
+individu, toutes générations confondues. À chaque itération, on compare
+ce «meilleur de tout les temps» avec le meilleur individu de la génération:</p>
+
+<pre><code>best_ever = best if best &gt; best_ever
+</code></pre>
+
+<p>C'est pour ça qu'on avait besoin d'une méthode <code>&gt;</code> dans la classe <code>Individual</code>
+(voir <a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">cet article</a>).</p>
+
+<p>À la fin de la méthode <code>run</code> on utilise la nouvelle méthode <code>display_best_ever</code>
+pour afficher notre meilleure solution.</p>
+
+<h2>La classe Mutator</h2>
+
+<p>La seconde classe qui change un peu est la classe <code>Mutator</code>:</p>
+
+<p>``` ruby
+class Mutator
+  def initialize(chromosome_size, mutation_rate)</p>
+
+<pre><code>@size = chromosome_size
+@rate = mutation_rate
+</code></pre>
+
+<p>  end</p>
+
+<p>  def mutate(chromosome)</p>
+
+<pre><code>@size.times do |index|
+  chromosome[index] = ! chromosome[index] if rand &lt; @rate
+end
+chromosome
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Un chromosome étant une liste (un Array) de booléens, la mutation consiste
+à <em>inverser</em> un élément, true devient false et inversement:</p>
+
+<pre><code>chromosome[index] = ! chromosome[index] if rand &lt; @rate
+</code></pre>
+
+<h2>Le lancement du programme</h2>
+
+<p>Le problème n'a pas l'air trop complexe, je me dis donc que 100 générations
+devraient suffire. La population compte 1 000 individus, ce qui est
+classique et le taux de mutation est assez élevé (1%):</p>
+
+<p><code>ruby
+knapsack_capacity = 400
+generations = 100
+population = Population.new(Knapsack::ITEMS.size, 1000)
+mutation = 0.01
+GeneticAlgorithm.new(generations, population, knapsack_capacity, mutation).run
+</code></p>
+
+<p>Et voici le moment de vérité:</p>
+
+<pre><code>[~]⇒ ruby knapsack.rb 
+Gen: 0 Best score: 922
+Gen: 1 Best score: 950
+.
+.
+.
+Gen: 57 Best score: 1010
+Gen: 58 Best score: 957
+Gen: 59 Best score: 1030
+.
+.
+.
+Gen: 99 Best score: 957
+----------------------
+Best ever
+----------------------
+score:      1030
+chromosome: map, compass, water, sandwich, glucose, banana, suntan cream,
+waterproof trousers, waterproof overclothes, note-case, sunglasses, socks
+</code></pre>
+
+<p>La prochaine fois on va analyser ce résultat et faire en sorte de
+l'améliorer.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos]]></title>
@@ -509,305 +662,6 @@ endfunction
 
 <p>C'est tout, <code>rubydo</code> suivi de l'instruction en Ruby !  Et vous, vous auriez des
 petites astuces de ce genre à partager ?</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 36]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/22/les-algorithmes-genetiques-demystifies-36/"/>
-    <updated>2013-10-22T08:25:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/22/les-algorithmes-genetiques-demystifies-36</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Il reste à voir deux fonctions <em>techniques</em> pour faire tourner notre
-programme: la copie d'un individu et le rendu d'une image. Je les appelle
-<em>techniques</em> car elles n'ont rien à voir avec l'algorithme lui-même. La
-copie d'un individu est rendue nécessaire par le langage utilisé, Javascript,
-et le rendu d'une image est nécessaire puisqu'on veut …et bien… afficher
-des images, quoi…</p>
-
-<!-- more -->
-
-
-<p>Voyons d'abord la copie d'un individu:</p>
-
-<p>``` javascript
-function copy(individual) {
-  var indiCopy = [];
-  for(var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
-
-<pre><code>var objectCopy = {},
-    prop;
-for(prop in individual[i]) {
-  objectCopy[prop] = individual[i][prop];
-}
-indiCopy.push(objectCopy);
-</code></pre>
-
-<p>  }
-  return indiCopy;
-}
-```</p>
-
-<p>Un individu est un tableau, contenant des objets, chaque objets contenants
-des propriétés… <em>Là, je m'interroge et je demande l'avis de spécialistes:
-est-ce-qu'il ne vaudrait pas mieux utiliser une librairie pour faire ça,
-comme jQuery ou Underscore.js ?</em></p>
-
-<p>Maintenant le rendu d'une image:</p>
-
-<p>``` javascript
-function renderIndividual(individual, ctx) {
-  ctx.fillStyle = &ldquo;white&rdquo;;
-  ctx.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-  for (var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
-
-<pre><code>ctx.globalAlpha = individual[i].alpha;
-ctx.fillStyle = 'rgb(' + individual[i].red + ',' +
-  individual[i].green + ',' + individual[i].blue + ')';
-ctx.fillRect(individual[i].x, individual[i].y,
-  individual[i].size, individual[i].size);
-</code></pre>
-
-<p>  }
-}
-```</p>
-
-<p><code>ctx</code> est un contexte de Canvas. Je vois ça tout simplement comme un objet
-dans lequel on peut dessiner. Tout d'abord on <em>efface</em> l'image en la
-remplissant de blanc:</p>
-
-<pre><code>ctx.fillStyle = "white";
-ctx.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-</code></pre>
-
-<p>Puis on dessine chacuns des carrés:</p>
-
-<pre><code>for (var i = 0; i &lt; TOTAL_SQUARES; i++) {
-</code></pre>
-
-<p>Pour chaque carré il faut sélectionner sa transparence:</p>
-
-<pre><code>ctx.globalAlpha = individual[i].alpha;
-</code></pre>
-
-<p>Puis sa couleur:</p>
-
-<pre><code>ctx.fillStyle = 'rgb(' + individual[i].red + ',' +
-  individual[i].green + ',' + individual[i].blue + ')';
-</code></pre>
-
-<p>On peut alors dessiner un carré:</p>
-
-<pre><code>ctx.fillRect(individual[i].x, individual[i].y,
-  individual[i].size, individual[i].size);
-</code></pre>
-
-<p>Voilà. Reste à voir maintenant le programme dans son ensemble. Voici les
-fichiers HTML et CSS:</p>
-
-<p>``` html
-&lt;!DOCTYPE html>
-<html lang="fr">
-  <head></p>
-
-<pre><code>&lt;meta charset="utf-8" /&gt;
-&lt;link rel="stylesheet" type="text/css" href="picture.css" /&gt; 
-</code></pre>
-
-<p>  </head>
-  <body></p>
-
-<pre><code>&lt;canvas width="400" height="400" id="canvas1"&gt;&lt;/canvas&gt;
-&lt;canvas width="400" height="400" id="canvas2"&gt;&lt;/canvas&gt;
-&lt;p id="generation"&gt;0&lt;/p&gt;
-&lt;p id="quality"&gt;0&lt;/p&gt;
-&lt;script src="picture.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </body>
-</html>
-```</p>
-
-<p>``` css
-body {
-  background-color: #222;
-}</p>
-
-<p>p {
-  color: #ccc;
-}
-```</p>
-
-<p>Et voici le programme Javascript complet:</p>
-
-<p>``` javascript
-var canvasImgOrigin = document.getElementById(&lsquo;canvas1&rsquo;);
-var canvasGenetic = document.getElementById(&lsquo;canvas2&rsquo;);
-var ctxOrigin = canvas1.getContext(&lsquo;2d&rsquo;);
-var ctx = canvas2.getContext(&lsquo;2d&rsquo;);
-var TOTAL_SQUARES = 400;
-var IMAGE_WIDTH = 400;
-var IMAGE_HEIGHT = 400;
-var SQUARE_MAX_SIZE = 40;
-var img = new Image();
-var generation = 0;
-var htmlGeneration = document.getElementById(&ldquo;generation&rdquo;);
-var htmlQuality = document.getElementById(&ldquo;quality&rdquo;);
-var solution = [];
-var canvasBuffer = document.createElement(&lsquo;canvas&rsquo;);
-canvasBuffer.width = IMAGE_WIDTH;
-canvasBuffer.height = IMAGE_HEIGHT;
-var ctxBuffer = canvasBuffer.getContext(&lsquo;2d&rsquo;);</p>
-
-<p>img.onload = function() { ctxOrigin.drawImage(img, 0, 0); };
-img.src = &lsquo;photo.jpg&rsquo;;
-solution = makeIndividual();</p>
-
-<p>var interval = setInterval(hillClimb, 150);</p>
-
-<p>function makeIndividual() {
-  var individual = [];
-  for (var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
-
-<pre><code>individual.push({
-  x: Math.floor(Math.random() * IMAGE_WIDTH),
-  y: Math.floor(Math.random() * IMAGE_HEIGHT),
-  size: Math.floor(Math.random() * SQUARE_MAX_SIZE),
-  red: Math.floor(Math.random() * 256),
-  green: Math.floor(Math.random() * 256),
-  blue: Math.floor(Math.random() * 256),
-  alpha: Math.random()
-});
-</code></pre>
-
-<p>  }
-  return individual;
-}</p>
-
-<p>function renderIndividual(individual, ctx) {
-  ctx.fillStyle = &ldquo;white&rdquo;;
-  ctx.fillRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-  for (var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
-
-<pre><code>ctx.globalAlpha = individual[i].alpha;
-ctx.fillStyle = 'rgb(' + individual[i].red + ',' +
-  individual[i].green + ',' + individual[i].blue + ')';
-ctx.fillRect(individual[i].x, individual[i].y,
-  individual[i].size, individual[i].size);
-</code></pre>
-
-<p>  }
-}</p>
-
-<p>function quality(individual) {
-  var imgOrigin = ctxOrigin.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-  var pixelArrayOrigin = imgOrigin.data;
-  var score = 0;
-  renderIndividual(individual, ctxBuffer);
-  var imgBuffer = ctxBuffer.getImageData(0, 0, 400, 400);
-  var pixelArrayCandidate = imgBuffer.data;
-  for (var i = 0, n = pixelArrayOrigin.length; i &lt; n; i += 4) {</p>
-
-<pre><code>score += Math.abs(pixelArrayOrigin[i] - pixelArrayCandidate[i]);
-score += Math.abs(pixelArrayOrigin[i+1] - pixelArrayCandidate[i+1]);
-score += Math.abs(pixelArrayOrigin[i+2] - pixelArrayCandidate[i+2]);
-</code></pre>
-
-<p>  }
-  return 1 / score;
-}</p>
-
-<p>function hillClimb() {
-  var opponent = mutate(copy(solution));
-  var score_opponent = quality(opponent);
-  var score_solution = quality(solution);
-  if (score_opponent > score_solution) {</p>
-
-<pre><code>solution = opponent;
-</code></pre>
-
-<p>  }
-  generation++;
-  if (generation % 100 == 0) renderIndividual(solution, ctx);
-  htmlGeneration.innerHTML = generation;
-  htmlQuality.innerHTML = score_solution;
-  if (generation >= 100000) {</p>
-
-<pre><code>clearInterval(interval);
-</code></pre>
-
-<p>  }
-}</p>
-
-<p>function copy(individual) {
-  var indiCopy = [];
-  for(var i = 0; i &lt; TOTAL_SQUARES; i++) {</p>
-
-<pre><code>var objectCopy = {},
-    prop;
-for(prop in individual[i]) {
-  objectCopy[prop] = individual[i][prop];
-}
-indiCopy.push(objectCopy);
-</code></pre>
-
-<p>  }
-  return indiCopy;
-}</p>
-
-<p>function mutate(individual) {
-  var gene = Math.floor(Math.random() * TOTAL_SQUARES),</p>
-
-<pre><code>  squareProperty = Math.floor(Math.random() * 7);
-</code></pre>
-
-<p>  switch (squareProperty) {</p>
-
-<pre><code>case 0:
-  individual[gene].x = Math.floor(Math.random() * IMAGE_WIDTH);
-  break;
-case 1:
-  individual[gene].y = Math.floor(Math.random() * IMAGE_HEIGHT);
-  break;
-case 2:
-  individual[gene].size = Math.floor(Math.random() * SQUARE_MAX_SIZE);
-  break;
-case 3:
-  individual[gene].red = Math.floor(Math.random() * 256);
-  break;
-case 4:
-  individual[gene].green = Math.floor(Math.random() * 256);
-  break;
-case 5:
-  individual[gene].blue = Math.floor(Math.random() * 256);
-  break;
-case 6:
-  individual[gene].alpha = Math.random();
-  break;
-</code></pre>
-
-<p>  }
-  return individual;
-}
-```</p>
-
-<p>Pour le faire tourner vous aurez besoin d'une photo de 400x400 pixels et
-de beaucoup de patience… Avec Firefox, ça marche tout seul mais avec
-Chrome il faudra passer par un serveur Web. Si Ruby est installé sur
-votre machine, vous pouvez démarrer un serveur en entrant ceci dans un
-terminal (même répertoire que votre fichier HTML):</p>
-
-<pre><code>ruby -rwebrick -e'WEBrick::HTTPServer.new(:Port =&gt; 3000, :DocumentRoot =&gt; Dir.pwd).start'
-</code></pre>
-
-<p>Le code se trouve aussi sur Github: <a href="https://github.com/lkdjiin/picture_genetic_algorithm">github.com/lkdjiin/picture_genetic_algorithm</a>.
-Je suis sûr que certains d'entre-vous connaissent Javascript bien mieux que
-moi et peuvent l'améliorer, alors n'hésitez pas.</p>
 
 <p>À demain.</p>
 

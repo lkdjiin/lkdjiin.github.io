@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-15T18:54:35+01:00</updated>
+  <updated>2013-11-16T10:15:06+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,195 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques 39: Resolution du sac à dos]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/"/>
+    <updated>2013-11-16T10:06:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>La dernière fois on a vu une façon simplement
+<a href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/">d&#8217;évaluer le contenu</a>
+du sac à dos.
+Aujourd&#8217;hui on met en place l&#8217;algorithme génétique proprement dit:
+sélection, croisement, mutation, etc.</p>
+
+<!-- more -->
+
+
+<p>J&#8217;ai mis le <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">code complet de l&#8217;algorithme sur Github</a>.
+Celui-ci est basé sur ce qu&#8217;on a fait jusqu&#8217;ici pour
+<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">le paradoxe du singe savant</a>
+et pour <a href="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/">le problème des 8 dames</a>.
+Je vais donc commenter les parties qui changent.</p>
+
+<h2>La classe GeneticAlgorithm</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">GeneticAlgorithm</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">run</span>
+</span><span class='line'>    <span class="n">best_ever</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>    <span class="vi">@generations</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">generation</span><span class="o">|</span>
+</span><span class='line'>      <span class="no">Evaluator</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@capacity</span><span class="p">,</span> <span class="vi">@population</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span>
+</span><span class='line'>      <span class="n">best</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">best</span>
+</span><span class='line'>      <span class="n">best_ever</span> <span class="o">=</span> <span class="n">best</span> <span class="k">if</span> <span class="n">best</span> <span class="o">&gt;</span> <span class="n">best_ever</span>
+</span><span class='line'>      <span class="nb">display</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">best</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">next_generation</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">display_best_ever</span><span class="p">(</span><span class="n">best_ever</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display_best_ever</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;----------------------&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Best ever&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;----------------------&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;score:      </span><span class="si">#{</span><span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;chromosome: </span><span class="si">#{</span><span class="n">individual</span><span class="o">.</span><span class="n">chromosome_as_list</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voyons la méthode <code>run</code>. La variable <code>best_ever</code> va contenir le meilleur
+individu, toutes générations confondues. À chaque itération, on compare
+ce «meilleur de tout les temps» avec le meilleur individu de la génération:</p>
+
+<pre><code>best_ever = best if best &gt; best_ever
+</code></pre>
+
+<p>C&#8217;est pour ça qu&#8217;on avait besoin d&#8217;une méthode <code>&gt;</code> dans la classe <code>Individual</code>
+(voir <a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">cet article</a>).</p>
+
+<p>À la fin de la méthode <code>run</code> on utilise la nouvelle méthode <code>display_best_ever</code>
+pour afficher notre meilleure solution.</p>
+
+<h2>La classe Mutator</h2>
+
+<p>La seconde classe qui change un peu est la classe <code>Mutator</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Mutator</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">mutation_rate</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@size</span> <span class="o">=</span> <span class="n">chromosome_size</span>
+</span><span class='line'>    <span class="vi">@rate</span> <span class="o">=</span> <span class="n">mutation_rate</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">mutate</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@size</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">chromosome</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="o">=</span> <span class="o">!</span> <span class="n">chromosome</span><span class="o">[</span><span class="n">index</span><span class="o">]</span> <span class="k">if</span> <span class="nb">rand</span> <span class="o">&lt;</span> <span class="vi">@rate</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">chromosome</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Un chromosome étant une liste (un Array) de booléens, la mutation consiste
+à <em>inverser</em> un élément, true devient false et inversement:</p>
+
+<pre><code>chromosome[index] = ! chromosome[index] if rand &lt; @rate
+</code></pre>
+
+<h2>Le lancement du programme</h2>
+
+<p>Le problème n&#8217;a pas l&#8217;air trop complexe, je me dis donc que 100 générations
+devraient suffire. La population compte 1 000 individus, ce qui est
+classique et le taux de mutation est assez élevé (1%):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">knapsack_capacity</span> <span class="o">=</span> <span class="mi">400</span>
+</span><span class='line'><span class="n">generations</span> <span class="o">=</span> <span class="mi">100</span>
+</span><span class='line'><span class="n">population</span> <span class="o">=</span> <span class="no">Population</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">Knapsack</span><span class="p">:</span><span class="ss">:ITEMS</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</span><span class='line'><span class="n">mutation</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mo">01</span>
+</span><span class='line'><span class="no">GeneticAlgorithm</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generations</span><span class="p">,</span> <span class="n">population</span><span class="p">,</span> <span class="n">knapsack_capacity</span><span class="p">,</span> <span class="n">mutation</span><span class="p">)</span><span class="o">.</span><span class="n">run</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici le moment de vérité:</p>
+
+<pre><code>[~]⇒ ruby knapsack.rb 
+Gen: 0 Best score: 922
+Gen: 1 Best score: 950
+.
+.
+.
+Gen: 57 Best score: 1010
+Gen: 58 Best score: 957
+Gen: 59 Best score: 1030
+.
+.
+.
+Gen: 99 Best score: 957
+----------------------
+Best ever
+----------------------
+score:      1030
+chromosome: map, compass, water, sandwich, glucose, banana, suntan cream,
+waterproof trousers, waterproof overclothes, note-case, sunglasses, socks
+</code></pre>
+
+<p>La prochaine fois on va analyser ce résultat et faire en sorte de
+l&#8217;améliorer.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Racket pour les Rubyists 7: Module basique]]></title>
@@ -555,7 +744,7 @@ etc…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -774,7 +963,7 @@ déjà écrit avec d&#8217;autres algorithmes génétiques:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1554,7 +1743,7 @@ fois <code>\1+$</code> correspond aux 6 &ldquo;1&rdquo; restants ! D&#8217;où 9
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1657,7 +1846,7 @@ petites astuces de ce genre à partager ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/05/une-regex-pour-savoir-si-un-nombre-est-premier/'>Une regex pour savoir si un nombre est premier</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2411,38 +2600,6 @@ d&#8217;une base pour construire une nouvelle méthode. Celle-ci va s&#8217;appe
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/'>Apprendre Ruby en faisant des maths 7: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vim pour écrire un livre ?]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/27/vim-pour-ecrire-un-livre/"/>
-    <updated>2013-10-27T21:34:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/27/vim-pour-ecrire-un-livre</id>
-    <content type="html"><![CDATA[<p>Il y a une <a href="http://www.reddit.com/r/vim/comments/142zn7/are_you_interested_in_a_vim_for_writers_book/">discusion intéressante</a>
-sur reddit, initié par quelqu&#8217;un qui souhaite écrire un petit livre sur
-«Vim pour les écrivains». <em>Writer</em> en anglais, soit écrivain, rédacteur,
-auteur, etc.</p>
-
-<!-- more -->
-
-
-<p>Le sujet me semble intéressant. En effet, si Vim est surtout utilisé par
-des développeurs, il n&#8217;a pas été créé spécifiquement pour cela. À la base,
-c&#8217;est juste un éditeur et il est légitime de vouloir l&#8217;utiliser pour écrire
-un livre, une thèse, un devoir scolaire, de la documentation, etc.</p>
-
-<p>Seulement ce genre de document est bien différent d&#8217;un code informatique.
-Je pense par exemple aux notes de bas de pages, aux images, aux formules
-mathématiques…</p>
-
-<p>Je suis curieux, avez-vous déjà utilisé Vim pour écrire un livre ?
-Connaissez-vous quelqu&#8217;un qui l&#8217;a fait ? Avez-vous des trucs, des astuces,
-des plugins spécifiques à partager ?</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/02/vim-coloration-syntaxique-des-parentheses/'>Vim: Coloration syntaxique des parenthèses</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li></ul></section></p>
 ]]></content>
   </entry>
   
