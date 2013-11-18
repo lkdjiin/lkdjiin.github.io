@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-17T19:12:44+01:00</updated>
+  <updated>2013-11-18T18:00:52+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,127 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 40: Ajout d'élitisme]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/"/>
+    <updated>2013-11-18T17:39:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Dans la plupart des ouvrages, thèses ou mémoires consacrés aux algorithmes
+génétiques il est dit:</p>
+
+<blockquote><p>Un peu d&#8217;élitisme améliore les performances des algorithmes génétiques.</p></blockquote>
+
+
+<p>Voyons voir si c&#8217;est vrai.</p>
+
+<!-- more -->
+
+
+<h2>Une petite analyse</h2>
+
+<p>En lançant la première version du programme
+(<a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">voir le code</a> et/ou
+<a href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/">voir l&#8217;article</a>)
+on s&#8217;aperçoit qu&#8217;une génération <em>n</em>+1 n&#8217;améliore pas forcement le score du
+meilleur individu:</p>
+
+<pre><code>[~]⇒ ruby knapsack.rb 
+Gen: 0 Best score: 867
+Gen: 1 Best score: 895
+Gen: 2 Best score: 920
+Gen: 3 Best score: 877
+Gen: 4 Best score: 887
+Gen: 5 Best score: 925
+Gen: 6 Best score: 927
+Gen: 7 Best score: 960
+Gen: 8 Best score: 960
+Gen: 9 Best score: 915
+Gen: 10 Best score: 950
+Gen: 11 Best score: 925
+</code></pre>
+
+<p>Dans l&#8217;extrait ci-dessus, le meilleur individu de la génération n° 8
+possède un score de 960, alors qu&#8217;à la génération suivante, le meilleur
+individu retombe à un score de 915.</p>
+
+<h2>Mise en place de l&#8217;élite</h2>
+
+<p>Je vais donc mettre en place une seconde version de ce programme où je
+vais conserver les quatre meilleurs individus de chaque génération pour la
+génération suivante. Le code complet de cette seconde version se trouve
+sur Github: <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack2.rb">knapsack2.rb</a>.
+Seule la méthode <code>next_generation</code>, de la classe <code>GeneticAlgorithm</code>, change:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">next_generation</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">sort_by!</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">i</span><span class="o">.</span><span class="n">score</span><span class="p">}</span>
+</span><span class='line'>  <span class="n">elite</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">pool</span> <span class="o">=</span> <span class="no">MatingPool</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@population</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">population_size</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">size</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">clear</span>
+</span><span class='line'>  <span class="n">population_size</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span>
+</span><span class='line'>    <span class="vi">@population</span> <span class="o">&lt;&lt;</span> <span class="vi">@crossover</span><span class="o">.</span><span class="n">two_point</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">random</span><span class="p">,</span> <span class="n">pool</span><span class="o">.</span><span class="n">random</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="vi">@population</span><span class="o">.</span><span class="n">concat</span> <span class="n">elite</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voici quelques explications. Tout d&#8217;abord la population est triée sur le
+score, du plus faible au plus important:</p>
+
+<pre><code>@population.sort_by! {|i| i.score}
+</code></pre>
+
+<p>Puis on retire les quatre meilleurs individus de la population et on les
+conserve dans <code>elite</code>:</p>
+
+<pre><code>elite = @population.pop(4)
+</code></pre>
+
+<p>À la fin de la sélection/croisement/mutation, on réintroduit l&#8217;élite dans
+la nouvelle population:</p>
+
+<pre><code>@population.concat elite
+</code></pre>
+
+<h2>Les performances</h2>
+
+<p>J&#8217;ai fait tourner chaque programme 200 fois et fait la moyenne de la
+génération où la meilleure solution (score de 1030) est trouvée:</p>
+
+<pre><code>Programme    | Génération moyenne
+=================================
+knapsack.rb  |              72.06
+---------------------------------
+knapsack2.rb |              67.61
+</code></pre>
+
+<p>Les performances sont bien améliorées. Pas d&#8217;une manière spectaculaire, mais
+c&#8217;est toujours bon à prendre.</p>
+
+<p>La prochaine fois on verra si on peut encore améliorer les performances en
+tenant compte des solutions invalides.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Racket pour les Rubyists 8: Tests unitaires simples]]></title>
@@ -361,7 +482,7 @@ l&#8217;améliorer.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -907,7 +1028,7 @@ etc…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1126,7 +1247,7 @@ déjà écrit avec d&#8217;autres algorithmes génétiques:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1906,7 +2027,7 @@ fois <code>\1+$</code> correspond aux 6 &ldquo;1&rdquo; restants ! D&#8217;où 9
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2009,7 +2130,7 @@ petites astuces de ce genre à partager ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2578,46 +2699,6 @@ qui signifie en français «somme des diviseurs stricts»:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/'>Apprendre Ruby en faisant des maths 7: Tests unitaires simples</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Je vais apprendre Scheme]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/29/je-vais-apprendre-scheme/"/>
-    <updated>2013-10-29T22:04:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/29/je-vais-apprendre-scheme</id>
-    <content type="html"><![CDATA[<p>C&#8217;est décidé, je me mets à <a href="http://en.wikipedia.org/wiki/Scheme_%28programming_language%29">Scheme</a>.
-En voici les raisons principales:</p>
-
-<ul>
-<li>Je veux apprendre <a href="http://racket-lang.org/">Racket</a>, qui est me semble-t-il un surensemble de Scheme.</li>
-<li>J&#8217;ai essayé Emacs Lisp il y a longtemps (au siècle dernier !),
-j&#8217;avais trouvé ça intéressant.</li>
-<li>J&#8217;ai fait du Logo il y a encore plus longtemps et j&#8217;en garde un très
-bon souvenir.</li>
-<li>Je cherche un langage qui ne soit pas orienté objet pour écrire des
-algorithmes génétiques, parce que je ne suis pas persuadé que ce soit
-le meilleur paradigme pour ce type de programmes.</li>
-<li>Je cherche un langage qui ait un coté fonctionnel mais je ne suis pas
-encore prêt à abandonner le confort des variables mutables.</li>
-</ul>
-
-
-<!-- more -->
-
-
-<p>Bref, je crois que Scheme (Racket en fait) est le langage que je cherche.
-Vous pouvez donc vous attendre à quelques articles sur le sujet dans les
-semaines qui viennent ;) Et pour commencer je parlerais un peu de la
-<strong>véritable jungle</strong> des interpreteurs/compilateurs pour Scheme.
-J&#8217;en ai sélectionné deux pour l&#8217;instant: Guile et Racket.</p>
-
-<p>Est-ce-que certains d&#8217;entre vous ont de l&#8217;expérience avec Scheme et/ou
-Racket ? Des conseils à me donner ?</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/10/31/installer-scheme/'>Installer Scheme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li></ul></section></p>
 ]]></content>
   </entry>
   

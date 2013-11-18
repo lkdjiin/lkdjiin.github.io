@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : élitisme | lkdjiin's blog]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/elitisme/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2013-11-18T18:00:52+01:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 40: Ajout d'élitisme]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/"/>
+    <updated>2013-11-18T17:39:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans la plupart des ouvrages, thèses ou mémoires consacrés aux algorithmes
+génétiques il est dit:</p>
+
+<p><blockquote><p>Un peu d'élitisme améliore les performances des algorithmes génétiques.</p></blockquote></p>
+
+<p>Voyons voir si c'est vrai.</p>
+
+<!-- more -->
+
+
+<h2>Une petite analyse</h2>
+
+<p>En lançant la première version du programme
+(<a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">voir le code</a> et/ou
+<a href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/">voir l'article</a>)
+on s'aperçoit qu'une génération <em>n</em>+1 n'améliore pas forcement le score du
+meilleur individu:</p>
+
+<pre><code>[~]⇒ ruby knapsack.rb 
+Gen: 0 Best score: 867
+Gen: 1 Best score: 895
+Gen: 2 Best score: 920
+Gen: 3 Best score: 877
+Gen: 4 Best score: 887
+Gen: 5 Best score: 925
+Gen: 6 Best score: 927
+Gen: 7 Best score: 960
+Gen: 8 Best score: 960
+Gen: 9 Best score: 915
+Gen: 10 Best score: 950
+Gen: 11 Best score: 925
+</code></pre>
+
+<p>Dans l'extrait ci-dessus, le meilleur individu de la génération n° 8
+possède un score de 960, alors qu'à la génération suivante, le meilleur
+individu retombe à un score de 915.</p>
+
+<h2>Mise en place de l'élite</h2>
+
+<p>Je vais donc mettre en place une seconde version de ce programme où je
+vais conserver les quatre meilleurs individus de chaque génération pour la
+génération suivante. Le code complet de cette seconde version se trouve
+sur Github: <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack2.rb">knapsack2.rb</a>.
+Seule la méthode <code>next_generation</code>, de la classe <code>GeneticAlgorithm</code>, change:</p>
+
+<p>``` ruby
+def next_generation
+  @population.sort_by! {|i| i.score}
+  elite = @population.pop(4)
+  pool = MatingPool.new(@population)
+  population_size = @population.size
+  @population.clear
+  population_size.times do</p>
+
+<pre><code>@population &lt;&lt; @crossover.two_point(pool.random, pool.random)
+</code></pre>
+
+<p>  end
+  @population.concat elite
+end
+```</p>
+
+<p>Voici quelques explications. Tout d'abord la population est triée sur le
+score, du plus faible au plus important:</p>
+
+<pre><code>@population.sort_by! {|i| i.score}
+</code></pre>
+
+<p>Puis on retire les quatre meilleurs individus de la population et on les
+conserve dans <code>elite</code>:</p>
+
+<pre><code>elite = @population.pop(4)
+</code></pre>
+
+<p>À la fin de la sélection/croisement/mutation, on réintroduit l'élite dans
+la nouvelle population:</p>
+
+<pre><code>@population.concat elite
+</code></pre>
+
+<h2>Les performances</h2>
+
+<p>J'ai fait tourner chaque programme 200 fois et fait la moyenne de la
+génération où la meilleure solution (score de 1030) est trouvée:</p>
+
+<pre><code>Programme    | Génération moyenne
+=================================
+knapsack.rb  |              72.06
+---------------------------------
+knapsack2.rb |              67.61
+</code></pre>
+
+<p>Les performances sont bien améliorées. Pas d'une manière spectaculaire, mais
+c'est toujours bon à prendre.</p>
+
+<p>La prochaine fois on verra si on peut encore améliorer les performances en
+tenant compte des solutions invalides.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>
