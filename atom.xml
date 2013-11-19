@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-18T18:00:52+01:00</updated>
+  <updated>2013-11-19T21:03:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,97 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 41: Les individus invalides]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/"/>
+    <updated>2013-11-19T20:56:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>La dernière fois on a vu comment l&#8217;introduction d&#8217;une petite dose
+d&#8217;élitisme augmentait légèrement les performances d&#8217;un algorithme
+génétique (<a href="http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/">lire l&#8217;article</a>).
+Aujourd&#8217;hui on va <em>véritablement booster</em> ces performances
+dans le cadre du problème du sac à dos, en tenant compte des individus
+invalides.</p>
+
+<!-- more -->
+
+
+<h2>Bref rappel du problème</h2>
+
+<p>La capacité du sac à dos est de 400 (grammes, kilos, unités, etc…) et on ne
+doit pas la dépasser. Autrement dit, un couple {<em>poids</em>, <em>valeur</em>} de
+{401, 1000} est bien plus proche de la solution idéale que le couple
+{399, 500}. Pourtant, d&#8217;après les règles qu&#8217;on a utilisées jusqu&#8217;ici, la
+solution {401, 1000} est purement et simplement éliminée puisque jugée
+invalide.</p>
+
+<p>Il est légitime de se demander ici si on ne perd pas des gènes précieux en
+éliminant de telles solutions ?</p>
+
+<h2>Prise en compte des solutions invalides</h2>
+
+<p>L&#8217;idée est donc de permettre aux solutions qui dépassent un peu le poids
+d&#8217;être prise en considération, sans pour autant mettre les solutions
+invalides à égalité avec les solutions valides.</p>
+
+<p>Pour cela, on va appliquer une pénalité, une sanction, aux solutions
+invalides. Tout se passe dans la méthode <code>score</code> de la classe
+<code>Evaluator</code>. Vous pouvez trouver le code complet de cette troisième
+version du programme sur Github: <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack3.rb">knapsack3.rb</a>.
+Voici ce qui change:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="c1"># [...]</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">weight</span> <span class="o">&gt;</span> <span class="vi">@capacity</span>
+</span><span class='line'>      <span class="n">value</span> <span class="o">-=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">weight</span> <span class="o">-</span> <span class="vi">@capacity</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">value</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La pénalité appliquée à une sanction invalide est ici: 2 fois la différence
+entre le poids du sac et sa capacité. C&#8217;est une valeur obtenue par
+tatonnement, il n&#8217;y a rien de magique et vous devriez faire d&#8217;autres
+essais… Je m&#8217;assure ensuite que la valeur n&#8217;est pas négative puisque la
+méthode <code>fitness</code> attend une valeur positive.</p>
+
+<h2>Les performances</h2>
+
+<p>J&#8217;ai fait tourner chaque programme 200 fois et fait la moyenne de la
+génération où la meilleure solution (score de 1030) est trouvée:</p>
+
+<pre><code>Programme    | Génération moyenne | Remarques
+=========================================================
+knapsack.rb  |              72.06 | algo original
+---------------------------------------------------------
+knapsack2.rb |              67.61 | + élite
+---------------------------------------------------------
+knapsack3.rb |              22.55 | + élite + invalides
+</code></pre>
+
+<p>Le gain de performance est remarquable ! Moralité de cette affaire:
+Pensez y à deux fois avant de jeter un chromosome invalide à la poubelle,
+il contient peut-être des gènes importants.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 40: Ajout d'élitisme]]></title>
@@ -130,7 +221,7 @@ tenant compte des solutions invalides.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -482,7 +573,7 @@ l&#8217;améliorer.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1028,7 +1119,7 @@ etc…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 37: Le problème du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1247,7 +1338,7 @@ déjà écrit avec d&#8217;autres algorithmes génétiques:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2027,7 +2118,7 @@ fois <code>\1+$</code> correspond aux 6 &ldquo;1&rdquo; restants ! D&#8217;où 9
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2130,7 +2221,7 @@ petites astuces de ce genre à partager ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/'>Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2550,155 +2641,6 @@ cette fois créé un fichier <code>~/.racketrc</code> avec le texte suivant:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Apprendre Ruby en faisant des maths 5]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/30/apprendre-ruby-en-faisant-des-maths-5/"/>
-    <updated>2013-10-30T19:15:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/30/apprendre-ruby-en-faisant-des-maths-5</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Jusqu&#8217;ici on a écrit une méthode qui calcule les diviseurs d&#8217;un nombre et
-une seconde méthode qui calcule les diviseurs stricts.
-Notre objectif étant de lister les nombres amiables jusqu&#8217;à 10 000, il nous
-faut maintenant obtenir la <em>somme</em> des diviseurs stricts d&#8217;un nombre.</p>
-
-<!-- more -->
-
-
-<p>Il nous faut donc calculer la somme des nombres qui composent une liste.
-Allons y, prenons une liste et plaçons la dans une variable nommée <code>x</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="o">]</span>
-</span><span class='line'><span class="go">=&gt; [1, 2, 4]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Nous avons déjà vu la méthode <code>select</code>, qui sélectionne certains éléments
-d&#8217;une liste ; nous allons voir maintenant la méthode <code>reduce</code>, qui va <em>réduire</em>
-les éléments d&#8217;une liste à <em>un seul</em> élément:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">reduce</span> <span class="p">{</span><span class="o">|</span><span class="n">sum</span><span class="p">,</span> <span class="n">int</span><span class="o">|</span> <span class="n">sum</span> <span class="o">+</span> <span class="n">int</span><span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; 7</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Contrairement à la méthode <code>select</code> qui ne prenait qu&#8217;une seule variable
-dans le bloc d&#8217;instruction, la méthode <code>reduce</code> en prends ici deux:
-<code>sum</code> et <code>int</code>. <code>sum</code> joue le rôle d&#8217;un accumulateur et contient le résultat
-qui sera retourné par la méthode. <code>int</code> fait référence à l&#8217;élément de la
-liste en cours de traitement, exactement comme avec <code>select</code>. Pour chaque
-élément de la liste <code>x</code>, l&#8217;instruction <code>sum + int</code> est exécutée.</p>
-
-<p>On peut se demander quelle est la valeur initiale de <code>sum</code> ? Tout simplement
-le premier élément de la liste. Et nous ne sommes pas limité aux nombres,
-<code>reduce</code> fonctionnera avec ce qu&#8217;on veut, par exemple des chaînes de
-caractères:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="o">[</span><span class="s2">&quot;f&quot;</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="o">].</span><span class="n">reduce</span> <span class="p">{</span><span class="o">|</span><span class="n">string</span><span class="p">,</span> <span class="n">letter</span><span class="o">|</span> <span class="n">string</span> <span class="o">+</span> <span class="n">letter</span><span class="p">}</span>
-</span><span class='line'><span class="go">=&gt; &quot;foo&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ruby permet aussi de simplifier l&#8217;écriture dans un cas trivial comme le
-notre:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="n">x</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
-</span><span class='line'><span class="go">=&gt; 7</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>En fait, <code>reduce</code> ne prend pas obligatoirement un bloc. Ci-dessus,
-<code>reduce</code> prend
-en argument un symbole: <code>:+</code>. <code>+</code> est le nom d&#8217;une méthode. Oui, <code>+</code> est
-bien une méthode:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="mi">1</span><span class="o">.</span><span class="n">+</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span><span class='line'><span class="go">=&gt; 3</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je ne vais pas parler plus des symboles aujourd&#8217;hui, sachez seulement
-que les deux écritures suivantes font la même chose mais que la seconde
-est plus dans l&#8217;esprit de Ruby:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">x</span><span class="o">.</span><span class="n">reduce</span> <span class="p">{</span><span class="o">|</span><span class="n">sum</span><span class="p">,</span> <span class="n">int</span><span class="o">|</span> <span class="n">sum</span> <span class="o">+</span> <span class="n">int</span><span class="p">}</span>
-</span><span class='line'><span class="n">x</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voilà, on est prêt à implémenter la méthode <code>sum_of_proper_divisors</code>, ce
-qui signifie en français «somme des diviseurs stricts»:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">sum_of_proper_divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">proper_divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Comme la dernière fois, on se sert d&#8217;une méthode plus générale
-(<code>proper_divisors</code>) pour écrire une méthode plus spécifique.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="k">def</span> <span class="nf">divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.n</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">n</span> <span class="o">%</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">end</span>
-</span><span class='line'><span class="go">&gt;&gt;</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">def</span> <span class="nf">proper_divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">2</span><span class="o">]</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">end</span>
-</span><span class='line'><span class="go">&gt;&gt;</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">def</span> <span class="nf">sum_of_proper_divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">proper_divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">end</span>
-</span><span class='line'><span class="go">&gt;&gt;</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">divisors</span> <span class="mi">8</span>
-</span><span class='line'><span class="go">=&gt; [1, 2, 4, 8]</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">proper_divisors</span> <span class="mi">8</span>
-</span><span class='line'><span class="go">=&gt; [1, 2, 4]</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">sum_of_proper_divisors</span> <span class="mi">8</span>
-</span><span class='line'><span class="go">=&gt; 7</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/'>Apprendre Ruby en faisant des maths 7: Tests unitaires simples</a></li></ul></section></p>
 ]]></content>
   </entry>
   
