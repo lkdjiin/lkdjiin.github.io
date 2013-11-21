@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : tutoriel | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/tutoriel/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-20T21:20:37+01:00</updated>
+  <updated>2013-11-21T20:00:11+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,151 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Racket: première approche de lambda]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/21/racket-premiere-approche-de-lambda/"/>
+    <updated>2013-11-21T19:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/21/racket-premiere-approche-de-lambda</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Dans un <a href="http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/">article précédent</a>, j'ai écrit une fonction Racket pour calculer
+les diviseurs d'un nombre n:</p>
+
+<p>``` racket</p>
+
+<h1>lang racket</h1>
+
+<p>(define (divisors n)
+  ; Is i a divisor of n?
+  (define (divisor? i)</p>
+
+<pre><code>(= 0 (remainder n i)))
+</code></pre>
+
+<p>  (filter divisor? (range 1 (+ n 1))))</p>
+
+<p>(provide divisors)
+```</p>
+
+<p>Puis on a vu comment <a href="http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/">faire des tests unitaires</a>.
+Il est temps maintenant de faire un peu de refactoring.</p>
+
+<!-- more -->
+
+
+<p>Tout d'abord, le plus simple, on va extraire une fonction qui calcule
+un <em>range</em> de 1 à n inclus:</p>
+
+<p>``` racket number.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>; divisors : integer &ndash;> list of integers
+; Get divisors of a number n.
+(define (divisors n)
+  ; Is i a divisor of n?
+  (define (divisor? i)</p>
+
+<pre><code>(= 0 (remainder n i)))
+</code></pre>
+
+<p>  (filter divisor? (range-inclusive n)))</p>
+
+<p>; range-inclusive : integer &ndash;> list of integers
+; Build a list from 1 to n inclusive.
+(define (range-inclusive n)
+  (range 1 (+ n 1)))</p>
+
+<p>(provide divisors)
+```</p>
+
+<p>Vous noterez au passage que j'ai commencé à documenter mes fonctions en
+spécifiant les types de données en entrée et en sortie. Vous remarquez aussi
+que <code>range-inclusive</code> ne fait pas partie de l'API du module:
+<code>(provide divisors)</code>.</p>
+
+<p>Maintenant il nous faut extraire la fonction qui regarde si un nombre <em>i</em> est
+un diviseur de <em>n</em>:</p>
+
+<p><code>racket
+; divisor-of? : integer integer -&gt; boolean
+; Tells if i is a divisor of n.
+(define (divisor-of? n i)
+  (= 0 (remainder n i)))
+</code></p>
+
+<p>Le nom de la fonction a changé au passage pour <code>divisor-of?</code>. Mais surtout
+nous avons du inclure <em>n</em> dans les arguments de la fonction.</p>
+
+<p>On doit maintenant <em>insérer</em> cette fonction dans le code de la fonction
+principale <code>divisors</code>. Voici une première tentative un peu naive:</p>
+
+<p><code>racket
+; Attention, ce code ne fonctionne pas.
+(define (divisors n)
+  (filter (divisor-of? n i) (range-inclusive n)))
+</code></p>
+
+<p>Évidemment ça ne marche pas, puisque Racket ne connait pas <em>i</em>, mais
+ça nous donne une orientation. Pour que Racket sache ce que nous voulons
+placer dans <em>i</em>, à savoir l'élément en cours de traitement par la fonction
+<code>filter</code>, on va passer par une fonction anonyme:</p>
+
+<p><code>racket
+(define (divisors n)
+  (filter (lambda (i) (divisor-of? n i)) (range-inclusive n)))
+</code></p>
+
+<p>Une fonction anonyme (lambda) prend un argument (ou plusieurs) et une
+expression. À chaque itération, <code>filter</code> passe un élément tiré de
+<code>(range-inclusive n)</code> à la fonction anonyme <code>(lambda (i) (divisors-of? n i))</code>.</p>
+
+<p>Voilà donc notre module, après refactoring:</p>
+
+<p>``` racket number.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>; divisors : integer &ndash;> list of integers
+; Get divisors of a number n.
+(define (divisors n)
+  (filter (lambda (i) (divisor-of? n i)) (range-inclusive n)))</p>
+
+<p>; divisor-of? : integer integer &ndash;> boolean
+; Tells if i is a divisor of n.
+(define (divisor-of? n i)
+  (= 0 (remainder n i)))</p>
+
+<p>; range-inclusive : integer &ndash;> list of integers
+; Build a list from 1 to n inclusive.
+(define (range-inclusive n)
+  (range 1 (+ n 1)))</p>
+
+<p>(provide divisors)
+```</p>
+
+<p>On aurait aussi pu écrire ce qui suit, à la place des trois fonctions ci-dessus:</p>
+
+<p><code>racket
+; divisors : integer -&gt; list of integers
+; Get divisors of a number n.
+(define (divisors n)
+  (filter (lambda (i) (= 0 (remainder n i))) (range 1 (+ n 1))))
+</code></p>
+
+<p>Ça fait bien sûr beaucoup moins de code… Peut-être est-ce parceque je ne suis
+pas encore habitué à Racket, mais je trouve aussi cela bien moins lisible.
+Si on doit réutiliser les fonctions <code>divisor-of?</code> et <code>range-inclusive</code>, il
+n'y a pas de question à se poser. Sinon…? Si vous connaissez bien
+Racket/Scheme/Lisp laissez donc un commentaire pour me dire quelle version
+est la plus idiomatique de ce type de langages.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Racket pour les Rubyists 8: Tests unitaires simples]]></title>
@@ -573,137 +718,6 @@ falloir parler des tests unitaires avec Racket. Et avant de parler des
 tests unitaires, il va falloir aborder la notion de module Racket. Si
 ces sujets vous intéressent, restez à l'écoute de ce blog, c'est pour
 bientôt.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Racket pour les rubyists 5: Définitions imbriquées]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/"/>
-    <updated>2013-11-10T21:17:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Après avoir vu l'utilisation de la fonction <code>filter</code>, on passe aux
-définitions de fonctions imbriquées en Racket, ce qui nous permet de
-survoler la portée des variables.</p>
-
-<!-- more -->
-
-
-<h2>Fonctions Racket imbriquées</h2>
-
-<p>Avec Racket les définitions de fonction peuvent s'imbriquer les unes dans les
-autres.  Autrement dit, on peut définir une fonction B à l'intérieur d'une
-fonction A. Dans l'exemple suivant, la fonction <code>bar</code> est définie à
-l'intérieur de la fonction <code>foo</code>:</p>
-
-<p>``` racket
-(define (foo x)
-  (define (bar y)</p>
-
-<pre><code>(+ y 2))
-</code></pre>
-
-<p>  (bar x))
-```</p>
-
-<p>Dans le code ci-dessus, <code>bar</code> est une fonction qui ajoute 2 à son argument.
-La fonction englobante <code>foo</code> appelle <code>bar</code> et donc son rôle est aussi d'ajouter
-2 à son argument, comme on peut le voir dans la session racket suivante:</p>
-
-<pre><code>-&gt; (foo 10)
-12
-</code></pre>
-
-<p>Il est important de comprendre que <code>bar</code> est définie à l'intérieur de <code>foo</code>,
-et donc <code>bar</code> est <em>indéfinie</em> à l'extérieur de <code>foo</code>:</p>
-
-<pre><code>-&gt; (bar 10)
-; bar: undefined;
-;  cannot reference undefined identifier
-</code></pre>
-
-<h2>Méthodes Ruby imbriquées</h2>
-
-<p>Ruby se comporte différement. Il permet bien de définir une méthode à
-l'intérieur d'une autre:</p>
-
-<p>``` irb</p>
-
-<blockquote><blockquote><p>def foo(x)
-  def bar(y)</p>
-
-<pre><code>y + 2
-</code></pre>
-
-<p>  end
-  bar x
-end
-nil
-foo 10
-12
-```</p></blockquote></blockquote>
-
-<p>Mais à la différence du comportement de Racket, la méthode Ruby <code>bar</code> est
-<em>visible</em> à l'extérieur de <code>foo</code>:</p>
-
-<p>``` irb</p>
-
-<blockquote><blockquote><p>bar 10
-12
-```</p></blockquote></blockquote>
-
-<p>Et c'est tout à fait normal. Il s'agit là d'une différence entre fonction
-et méthode: une méthode est attachée à un objet.</p>
-
-<h2>Retour à Racket</h2>
-
-<p>La méthode <code>foo</code> peut être simplifiée. La revoici:</p>
-
-<p>``` racket
-(define (foo x)
-  (define (bar y)</p>
-
-<pre><code>(+ y 2))
-</code></pre>
-
-<p>  (bar x))
-```</p>
-
-<p>Pour la simplifier, il suffit de comprendre que l'argument <code>x</code> est <em>visible</em>
-dans la fonction <code>bar</code>:</p>
-
-<p>``` racket
-(define (foo x)
-  (define (bar)</p>
-
-<pre><code>(+ x 2))
-</code></pre>
-
-<p>  (bar))
-```</p>
-
-<p>Évidemment, la vraie simplification serait celle-ci:</p>
-
-<p><code>racket
-(define (foo x)
-  (+ x 2))
-</code></p>
-
-<p>Mais cet article parle de fonctions imbriquées…</p>
-
-<p>La prochaine fois on réunira tout ce qu'on a appris jusqu'ici pour enfin
-traduire en Racket la méthode Ruby suivante:</p>
-
-<p><code>ruby
-def divisors(n)
-  (1..n).select {|i| n % i == 0}
-end
-</code></p>
 
 <p>À demain.</p>
 

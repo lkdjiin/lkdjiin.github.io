@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : racket | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/racket/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-20T21:20:37+01:00</updated>
+  <updated>2013-11-21T20:00:11+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,151 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Racket: première approche de lambda]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/21/racket-premiere-approche-de-lambda/"/>
+    <updated>2013-11-21T19:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/21/racket-premiere-approche-de-lambda</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Dans un <a href="http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/">article précédent</a>, j'ai écrit une fonction Racket pour calculer
+les diviseurs d'un nombre n:</p>
+
+<p>``` racket</p>
+
+<h1>lang racket</h1>
+
+<p>(define (divisors n)
+  ; Is i a divisor of n?
+  (define (divisor? i)</p>
+
+<pre><code>(= 0 (remainder n i)))
+</code></pre>
+
+<p>  (filter divisor? (range 1 (+ n 1))))</p>
+
+<p>(provide divisors)
+```</p>
+
+<p>Puis on a vu comment <a href="http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/">faire des tests unitaires</a>.
+Il est temps maintenant de faire un peu de refactoring.</p>
+
+<!-- more -->
+
+
+<p>Tout d'abord, le plus simple, on va extraire une fonction qui calcule
+un <em>range</em> de 1 à n inclus:</p>
+
+<p>``` racket number.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>; divisors : integer &ndash;> list of integers
+; Get divisors of a number n.
+(define (divisors n)
+  ; Is i a divisor of n?
+  (define (divisor? i)</p>
+
+<pre><code>(= 0 (remainder n i)))
+</code></pre>
+
+<p>  (filter divisor? (range-inclusive n)))</p>
+
+<p>; range-inclusive : integer &ndash;> list of integers
+; Build a list from 1 to n inclusive.
+(define (range-inclusive n)
+  (range 1 (+ n 1)))</p>
+
+<p>(provide divisors)
+```</p>
+
+<p>Vous noterez au passage que j'ai commencé à documenter mes fonctions en
+spécifiant les types de données en entrée et en sortie. Vous remarquez aussi
+que <code>range-inclusive</code> ne fait pas partie de l'API du module:
+<code>(provide divisors)</code>.</p>
+
+<p>Maintenant il nous faut extraire la fonction qui regarde si un nombre <em>i</em> est
+un diviseur de <em>n</em>:</p>
+
+<p><code>racket
+; divisor-of? : integer integer -&gt; boolean
+; Tells if i is a divisor of n.
+(define (divisor-of? n i)
+  (= 0 (remainder n i)))
+</code></p>
+
+<p>Le nom de la fonction a changé au passage pour <code>divisor-of?</code>. Mais surtout
+nous avons du inclure <em>n</em> dans les arguments de la fonction.</p>
+
+<p>On doit maintenant <em>insérer</em> cette fonction dans le code de la fonction
+principale <code>divisors</code>. Voici une première tentative un peu naive:</p>
+
+<p><code>racket
+; Attention, ce code ne fonctionne pas.
+(define (divisors n)
+  (filter (divisor-of? n i) (range-inclusive n)))
+</code></p>
+
+<p>Évidemment ça ne marche pas, puisque Racket ne connait pas <em>i</em>, mais
+ça nous donne une orientation. Pour que Racket sache ce que nous voulons
+placer dans <em>i</em>, à savoir l'élément en cours de traitement par la fonction
+<code>filter</code>, on va passer par une fonction anonyme:</p>
+
+<p><code>racket
+(define (divisors n)
+  (filter (lambda (i) (divisor-of? n i)) (range-inclusive n)))
+</code></p>
+
+<p>Une fonction anonyme (lambda) prend un argument (ou plusieurs) et une
+expression. À chaque itération, <code>filter</code> passe un élément tiré de
+<code>(range-inclusive n)</code> à la fonction anonyme <code>(lambda (i) (divisors-of? n i))</code>.</p>
+
+<p>Voilà donc notre module, après refactoring:</p>
+
+<p>``` racket number.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>; divisors : integer &ndash;> list of integers
+; Get divisors of a number n.
+(define (divisors n)
+  (filter (lambda (i) (divisor-of? n i)) (range-inclusive n)))</p>
+
+<p>; divisor-of? : integer integer &ndash;> boolean
+; Tells if i is a divisor of n.
+(define (divisor-of? n i)
+  (= 0 (remainder n i)))</p>
+
+<p>; range-inclusive : integer &ndash;> list of integers
+; Build a list from 1 to n inclusive.
+(define (range-inclusive n)
+  (range 1 (+ n 1)))</p>
+
+<p>(provide divisors)
+```</p>
+
+<p>On aurait aussi pu écrire ce qui suit, à la place des trois fonctions ci-dessus:</p>
+
+<p><code>racket
+; divisors : integer -&gt; list of integers
+; Get divisors of a number n.
+(define (divisors n)
+  (filter (lambda (i) (= 0 (remainder n i))) (range 1 (+ n 1))))
+</code></p>
+
+<p>Ça fait bien sûr beaucoup moins de code… Peut-être est-ce parceque je ne suis
+pas encore habitué à Racket, mais je trouve aussi cela bien moins lisible.
+Si on doit réutiliser les fonctions <code>divisor-of?</code> et <code>range-inclusive</code>, il
+n'y a pas de question à se poser. Sinon…? Si vous connaissez bien
+Racket/Scheme/Lisp laissez donc un commentaire pour me dire quelle version
+est la plus idiomatique de ce type de langages.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Racket pour les Rubyists 8: Tests unitaires simples]]></title>
@@ -500,83 +645,6 @@ traduire en Racket la méthode Ruby suivante:</p>
 def divisors(n)
   (1..n).select {|i| n % i == 0}
 end
-</code></p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Installer Scheme]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/10/31/installer-scheme/"/>
-    <updated>2013-10-31T18:50:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/10/31/installer-scheme</id>
-    <content type="html"><![CDATA[<p>Avant d'apprendre Scheme, il faut l'installer. Avant de l'installer, il
-faut choisir une implémentation: interpréteur ou compilateur ? Les deux ?
-Quel OS ? Quel(s) dialecte(s) ? Le site
-<a href="http://community.schemewiki.org/?scheme-faq-standards#implementations">community.schemewiki.org</a>
-recense 75 implémentations ! Oui, j'ai compté.</p>
-
-<!-- more -->
-
-
-<p>Après prises de conseils et réflexion, j'ai décidé d'essayer trois
-implémentations:
-<a href="http://www.gnu.org/software/guile/">Guile</a>,
-<a href="http://www.call-cc.org/">Chicken</a>
-et <a href="http://racket-lang.org/">Racket</a>.
-<strong>Guile</strong> parce qu'il est déjà installé sur ma machine.
-<strong>Chicken</strong> pour son compilateur vers
-le langage C. <strong>Racket</strong> pour ses nombreux DSL, parce qu'il a l'air très cool
-pour créer de nouveaux DSL et parce qu'il semble être le plus utilisé.</p>
-
-<h2>Guile</h2>
-
-<p>Guile semble être déjà installé sur la plupart des Linux. En tout cas, il
-l'était sur ma machine…
-Le REPL n'utilise pas readline par défaut, ce qui est d'ailleurs le cas
-des 3 implementations que j'ai testé.
-Pour activer readline, il faut créer un fichier <code>.guile</code> dans le <code>home</code> et y mettre:</p>
-
-<p><code>scheme .guile
-(use-modules (ice-9 readline))
-(activate-readline)
-</code></p>
-
-<h2>Chicken</h2>
-
-<p>J'ai installé Chicken grâce aux paquets Debian, rien à dire… Pour activer
-readline dans le REPL, il faut d'abord installer une bibliothèque (un <em>egg</em>
-dans le jargon Chicken):</p>
-
-<pre><code>sudo chicken-install readline
-</code></pre>
-
-<p>Ensuite on crée un fichier <code>~/.csirc</code> avec le contenu suivant:</p>
-
-<p><code>scheme .csirc
-(use readline)
-(current-input-port (make-gnu-readline-port))
-(gnu-history-install-file-manager
- (string-append (or (get-environment-variable "HOME") ".") "/.csi.history"))
-</code></p>
-
-<p>Enfin on crée le fichier d'historique:</p>
-
-<pre><code>touch ~/.csi.history
-</code></pre>
-
-<h2>Racket</h2>
-
-<p>Je voulais la toute dernière version, j'ai donc téléchargé les sources et
-lancé une compilation. Tout a très bien fonctionné, le fichier <code>README</code> est
-parfaitement clair. Pour activer readline dans le REPL de Racket, il faut
-cette fois créé un fichier <code>~/.racketrc</code> avec le texte suivant:</p>
-
-<p><code>scheme .racketrc
-(require xrepl)
 </code></p>
 
 <p>À demain.</p>
