@@ -1,0 +1,81 @@
+---
+layout: post
+title: "Pourcentage des issues par langages sur Github"
+date: 2013-11-23 20:44
+comments: true
+categories: [statistique, langage, github]
+---
+
+Sur hubReports, on peut avoir plusieurs statistiques concernants les dépots de
+code et les utilisateurs de GitHub.
+[Cette page](http://hubreports.yougeezer.co.uk/languages) montre par exemple
+le nombre de dépots et d'issues actives par langages.
+
+Voici les 21 premiers langages (ceux qui ont plus de 10 000 dépots),
+triés par nombre de dépots:
+
+<!-- more -->
+
+    Rank  Language      Repos    Issues
+    1     JavaScript    559,445  342,695
+    2     Ruby          465,960  147,376
+    3     Java          387,956  161,071
+    4     Python        281,468  184,744
+    5     PHP           275,014  149,927
+    6     C             147,403  64,353 
+    7     C++           142,090  71,020 
+    8     C#            94,122   42,112 
+    9     Objective-C   89,588   36,593 
+    10    Shell         82,228   21,300 
+    11    Perl          69,301   20,146 
+    12    VimL          40,771   6,281  
+    13    Scala         21,889   11,542 
+    14    CoffeeScript  20,668   13,930 
+    15    Haskell       18,171   7,825  
+    16    Go            17,890   7,378  
+    17    EmacsLisp     15,671   4,553  
+    18    Clojure       14,729   5,933  
+    19    Lua           13,667   5,896  
+    20    ActionScript  12,221   5,533  
+    21    R             10,117   4,504  
+
+En voyant ça, je me suis demandé quel était le pourcentage d'issues par
+rapport au nombre de dépots. Le voici dans la liste qui suit. Cette fois
+la liste est triée sur le dernier champ:
+
+    Rank  Language      Repos    Issues   % Issues/Repos
+    12    VimL          40,771   6,281    15
+    10    Shell         82,228   21,300   25
+    17    EmacsLisp     15,671   4,553    26
+    11    Perl          69,301   20,146   28
+    2     Ruby          465,960  147,376  31
+    18    Clojure       14,729   5,933    35
+    15    Haskell       18,171   7,825    38
+    19    Lua           13,667   5,896    38
+    21    R             10,117   4,504    40
+    9     Objective-C   89,588   36,593   40
+    16    Go            17,890   7,378    41
+    20    ActionScript  12,221   5,533    41
+    3     Java          387,956  161,071  41
+    6     C             147,403  64,353   43
+    8     C#            94,122   42,112   44
+    7     C++           142,090  71,020   50
+    13    Scala         21,889   11,542   52
+    5     PHP           275,014  149,927  54
+    1     JavaScript    559,445  342,695  61
+    14    CoffeeScript  20,668   13,930   65
+    4     Python        281,468  184,744  65
+
+Alors je n'en tire aucunes conclusions puisque ce rapport n'est pas
+très *scientifique*. Mais c'est toutefois marrant de voir VimL et Perl
+parmi les bons élèves (selon ce critère bien sûr) et de voir CoffeeScript
+et Python en queue de peloton (toujours selon ce critère évidement).
+
+Est-ce que ça vous interpèle ?
+
+Demain je montrerais comment je suis passé d'une liste à l'autre à l'aide
+de Vim.
+
+À demain.
+
+{% connexe %}
