@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-23T21:14:32+01:00</updated>
+  <updated>2013-11-24T21:01:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,115 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Utiliser Vim comme un tableur sur Linux (enfin presque)]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/"/>
+    <updated>2013-11-24T20:55:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div>
+
+
+<p><a href="http://lkdjiin.github.io/blog/2013/11/23/pourcentage-des-issues-par-langages-sur-github/">Hier</a> j&#8217;ai donné une liste des rapports issues/nombre de dépots
+par langages sur Github. Aujourd&#8217;hui je montre comment j&#8217;ai utilisé
+Vim (sur linux) pour calculer ce rapport et formater la liste.</p>
+
+<!-- more -->
+
+
+<p>Voici la liste de départ, à récupérer <a href="http://hubreports.yougeezer.co.uk/languages">ici</a>, il s&#8217;agit juste d&#8217;un
+copier/coller de la page web et je n&#8217;ai pris ici que les 5 premiers,
+c&#8217;est suffisant pour la démonstration:</p>
+
+<pre><code>1   JavaScript .js  560,116 891,531 319,537 4,951   1,147   343,483
+2   Ruby .rb    466,411 469,913 175,577 2,726   607 147,339
+3   Java .java  388,610 376,683 231,186 4,185   825 161,136
+4   Python .py  281,835 323,858 130,034 2,538   685 184,908
+5   PHP .php    275,411 289,899 155,941 2,331   454 150,024
+</code></pre>
+
+<p>Alors on n&#8217;y comprend rien puisque les colonnes sont invisibles. On va
+former de belles colonnes à l&#8217;aide de l&#8217;utilitaire unix <strong>column</strong>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span>%<span class="p">!</span> column <span class="p">-</span><span class="k">t</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici le résultat:</p>
+
+<pre><code>1  JavaScript  .js    560,116  891,531  319,537  4,951  1,147  343,483
+2  Ruby        .rb    466,411  469,913  175,577  2,726  607    147,339
+3  Java        .java  388,610  376,683  231,186  4,185  825    161,136
+4  Python      .py    281,835  323,858  130,034  2,538  685    184,908
+5  PHP         .php   275,411  289,899  155,941  2,331  454    150,024
+</code></pre>
+
+<p>Les colonnes qui m&#8217;intéresse sont la 1 (rang), la 2 (langage), la 4
+(nombre de dépots) et la dernière (nombre d&#8217;issues actives).
+Je vais donc sélectionner la 3ème colonne à l&#8217;aide de <code>Ctrl-v</code> et la
+supprimer (avec <code>d</code>). Voici ce que donne la sélection d&#8217;une colonne en
+image si vous n&#8217;êtes pas familier de Vim:</p>
+
+<p><img src="http://lkdjiin.github.io/images/vim-column.png"></p>
+
+<p>Je répète ensuite la sélection/suppression pour les autres colonnes et
+j&#8217;obtiens:</p>
+
+<pre><code>1  JavaScript  560,116  343,483
+2  Ruby        466,411  147,339
+3  Java        388,610  161,136
+4  Python      281,835  184,908
+5  PHP         275,411  150,024
+</code></pre>
+
+<p>Il faut maintenant ajouter une colonne de chiffre qui contiendras le rapport
+d&#8217;issues par dépots en pourcentage. C&#8217;est à dire la 4ème colonne divisée par
+la 3ème colonne, le tout multiplié par 100. C&#8217;est classiquement un boulot
+qu&#8217;on confierai au langage Awk, mais j&#8217;ai décidé il y a quelques temps de
+faire le plus possible de choses avec Ruby, voici donc ce que j&#8217;ai écrit
+dans Vim:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span>%<span class="p">!</span> <span class="k">ruby</span> <span class="p">-</span>aple <span class="s1">&#39;$_ += &quot; \#{(($F[3].to_f/$F[2].to_f)*100).to_i}&quot;&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Un peu cryptique ? Je l&#8217;avoue bien volontiers, mais les one-shots sont
+rarement fait pour (peuvent rarement) être lisible… Je ferais certainement
+un article sur les switchs a, p, l et e de <code>ruby</code>. Quoiqu&#8217;il en soit, voici
+le résultat:</p>
+
+<pre><code>1  JavaScript  560,116  343,483 61
+2  Ruby        466,411  147,339 31
+3  Java        388,610  161,136 41
+4  Python      281,835  184,908 65
+5  PHP         275,411  150,024 54
+</code></pre>
+
+<p>Il reste à trier cette liste sur la 5ème et dernière colonne, un jeu d&#8217;enfant
+avec l&#8217;utilitaire unix <code>sort</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span>%<span class="p">!</span> <span class="k">sort</span> <span class="p">-</span>k5nr
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>4  Python      281,835  184,908 65
+1  JavaScript  560,116  343,483 61
+5  PHP         275,411  150,024 54
+3  Java        388,610  161,136 41
+2  Ruby        466,411  147,339 31
+</code></pre>
+
+<p>Voilà, ça prend un certain temps à décrire mais c&#8217;est rapide à faire quand
+vous avez sous le coude une paire d&#8217;utilitaires qui déchirent !</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/'>Du nouveau dans Ruby 2.1: Définition de méthode</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Pourcentage des issues par langages sur Github]]></title>
@@ -2569,109 +2678,6 @@ regex repart en arrière, <code>(11+?)</code> correspond alors avec &ldquo;111&r
 fois <code>\1+$</code> correspond aux 6 &ldquo;1&rdquo; restants ! D&#8217;où 9 n&#8217;est pas premier.</p>
 
 <p>Simple et beau en même temps.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/'>Du nouveau dans Ruby 2.1: Définition de méthode</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire une fonction Vim avec Ruby]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/"/>
-    <updated>2013-11-04T17:01:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Parfois, pas besoin de faire appel à un plugin, une simple petite fonction
-suffit pour ce qu&#8217;on veut faire. Mais il faut avouer que le Vim Script est
-un langage qui est loin de faire l&#8217;unanimité. Si on pouvait faire appel
-à Ruby (ou Python, etc) pour écrire en partie nos fonctions Vim, ce serait
-cool, non ?</p>
-
-<!-- more -->
-
-
-<h2>Un cas d&#8217;utilisation simple</h2>
-
-<p>Prenons un cas habituel: supprimer les espaces en fin de ligne dans tout un
-fichier. Pour cela il nous suffit d&#8217;écrire directement dans Vim:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span>%<span class="k">s</span><span class="sr">/\s\+$/</span>/
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Mouais… Ça fonctionne, c&#8217;est sûr. Mais j&#8217;ai deux petits problèmes:</p>
-
-<ol>
-<li>Je ne veux pas taper ça à chaque fois, parce qu&#8217;il faut que je me
-concentre un minimum pour bien écrire une regex, même si là y a pas
-de quoi fouetter un chat. En même temps, ça ne vaut pas le coup
-d&#8217;écrire un plugin juste pour ça.</li>
-<li>Y&#8217;a rien à faire, je ne me rappelle jamais comment fonctionnent les
-regex Vim, quels sont les méta-caractères et tout et tout. 9 fois
-sur 10 j&#8217;oublierais par exemple d&#8217;échapper le <code>+</code>.</li>
-</ol>
-
-
-<h2>Une fonction Vim</h2>
-
-<p>Si ça ne vaut pas un plugin, ça vaut bien une petite fonction à mettre,
-par exemple, dans son <code>.vimrc</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span> RemoveTrailingSpaces<span class="p">()</span>
-</span><span class='line'>  %<span class="k">s</span><span class="sr">/\s\+$/</span>/
-</span><span class='line'><span class="k">endfunction</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Maintenant, on peut appeler notre fonction ainsi:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span><span class="k">call</span> RemoveTrailingSpaces<span class="p">()</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ou bien la mapper sur une touche, si on l&#8217;utilise souvent:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>map <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">r</span> :<span class="k">call</span> RemoveTrailingSpaces<span class="p">()&lt;</span>Enter<span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Premier problème réglé, au suivant.</p>
-
-<h2>Utiliser Ruby dans une fonction Vim</h2>
-
-<p>Il faut bien sûr que votre Vim ait été compilé avec le support de Ruby.
-Pour le savoir vous pouvez taper la ligne suivante dans votre console,
-si &ldquo;+ruby&rdquo; s&#8217;affiche, c&#8217;est bon:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>~<span class="o">]</span>⇒ vim --version | grep --color -i <span class="se">\+</span>ruby
-</span><span class='line'>+printer +profile +python -python3 +quickfix +reltime +rightleft +ruby
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voilà ce que donnerait notre fonction en utilisant Ruby:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span> RemoveTrailingSpaces<span class="p">()</span>
-</span><span class='line'>  <span class="k">rubydo</span> gsub <span class="sr">/\s+$/</span><span class="p">,</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>C&#8217;est tout, <code>rubydo</code> suivi de l&#8217;instruction en Ruby !  Et vous, vous auriez des
-petites astuces de ce genre à partager ?</p>
 
 <p>À demain.</p>
 
