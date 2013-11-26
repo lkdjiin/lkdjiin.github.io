@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-26T00:12:14+01:00</updated>
+  <updated>2013-11-26T21:13:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,149 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/"/>
+    <updated>2013-11-26T20:33:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Aujourd&#8217;hui c&#8217;est au tour du nouveau suffixe <code>f</code> (comme frozen) d&#8217;être passé
+en revue.</p>
+
+<!-- more -->
+
+
+<h2>Avant Ruby 2.1</h2>
+
+<p>Les chaînes de caractères en Ruby sont des objets <em>mutables</em>. Ce qui
+signifie qu&#8217;à chaque fois que l&#8217;interpréteur rencontre <code>"foo"</code>, il crée
+un nouvel objet:</p>
+
+<pre><code>[~]⇒ rvm use 2.0.0
+[~]⇒ irb
+&gt;&gt; "foo".object_id
+74667700
+&gt;&gt; "foo".object_id
+74664050
+</code></pre>
+
+<p>Ce qui peut influer sur les performances d&#8217;un programme quand on compare
+beaucoup de chaînes. Voici un exemple trivial:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">foo?</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span>
+</span><span class='line'>  <span class="nb">p</span> <span class="n">foo</span><span class="o">.</span><span class="n">object_id</span>
+</span><span class='line'>  <span class="n">string</span> <span class="o">==</span> <span class="n">foo</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Encore une fois, on peut constater qu&#8217;un nouvel objet est créé à chaque
+appel de la méthode:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bépo&quot;</span>
+</span><span class='line'><span class="go">76675080</span>
+</span><span class='line'><span class="go">false</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bar&quot;</span>
+</span><span class='line'><span class="go">76669680</span>
+</span><span class='line'><span class="go">false</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et géler (<em>freeze</em>) l&#8217;objet n&#8217;empêchera pas sa création à chaque appel:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="k">def</span> <span class="nf">foo</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span><span class="o">.</span><span class="n">freeze</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">foo</span><span class="o">.</span><span class="n">object_id</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">end</span>
+</span><span class='line'><span class="go">nil</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo</span>
+</span><span class='line'><span class="go">82081130</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo</span>
+</span><span class='line'><span class="go">82079520</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Avec Ruby 2.1</h2>
+
+<pre><code>[~]⇒ rvm use 2.1.0-preview1
+[~]⇒ irb
+</code></pre>
+
+<p>Le suffixe <code>f</code> permet de géler (<em>freeze</em>) les chaînes de
+caractères:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span><span class="n">f</span>
+</span><span class='line'><span class="go">=&gt; &quot;foo&quot;</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">reverse!</span>
+</span><span class='line'><span class="go">RuntimeError: can&#39;t modify frozen String</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et surtout, le suffixe <code>f</code> les gèlent une fois pour toutes.
+L&#8217;exemple précédent donne ceci:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="k">def</span> <span class="nf">foo?</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span><span class="n">f</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="nb">p</span> <span class="n">foo</span><span class="o">.</span><span class="n">object_id</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">string</span> <span class="o">==</span> <span class="n">foo</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">end</span>
+</span><span class='line'><span class="go">=&gt; :foo?</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bépo&quot;</span>
+</span><span class='line'><span class="go">79029020</span>
+</span><span class='line'><span class="go">=&gt; false</span>
+</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bar&quot;</span>
+</span><span class='line'><span class="go">79029020</span>
+</span><span class='line'><span class="go">=&gt; false</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Source (pdf)</strong> <a href="http://www.atdot.net/~ko1/activities/toruby05-ko1.pdf">toruby</a></p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/'>Du nouveau dans Ruby 2.1: Définition de méthode</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Du nouveau dans Ruby 2.1: Le suffixe r]]></title>
@@ -56,7 +199,7 @@ Ruby 2.1.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/'>Du nouveau dans Ruby 2.1: Définition de méthode</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/'>Du nouveau dans Ruby 2.1: Définition de méthode</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -165,7 +308,7 @@ vous avez sous le coude une paire d&#8217;utilitaires qui déchirent !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -359,7 +502,7 @@ commentaire.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2506,93 +2649,7 @@ la couleur de fond de l&#8217;image.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Racket pour les rubyists 2: Produire une suite de nombre]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/06/racket-pour-les-rubyists-2-produire-une-suite-de-nombre/"/>
-    <updated>2013-11-06T19:10:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/06/racket-pour-les-rubyists-2-produire-une-suite-de-nombre</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>La <a href="http://lkdjiin.github.io/blog/2013/11/03/racket-pour-les-rubyists-definir-une-fonction/">dernière fois</a>
-on a vu comment définir une fonction en Racket. Aujourd&#8217;hui on va essayer
-de traduire la méthode Ruby suivante:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.n</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">n</span> <span class="o">%</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">}</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<!-- more -->
-
-
-<p>Tout d&#8217;abord, j&#8217;ai envie découper cette méthode en trois parties plus petites:</p>
-
-<ol>
-<li><code>1..n</code>, pour produire une suite de nombre.</li>
-<li><code>select</code>, qui est la méthode utilisée pour conserver/supprimer certains
-éléments.</li>
-<li><code>n % i == 0</code>, qui est un test pour savoir si i est un diviseur de n.</li>
-</ol>
-
-
-<h2>Produire une suite de nombre</h2>
-
-<p>On s&#8217;intéresse d&#8217;abord à la 1ère partie. Racket possède la fonction <code>range</code>,
-qui produit une liste de nombre. En fournissant un seul argument, n, <code>range</code>
-produit une liste de 0 à n <em>non-inclus</em>:</p>
-
-<pre><code>-&gt; (range 4)
-'(0 1 2 3)
-</code></pre>
-
-<p>En fournissant deux arguments, m et n, <code>range</code> produit une liste de m à n
-<em>non-inclus</em>:</p>
-
-<pre><code>-&gt; (range 1 4)
-'(1 2 3)
-</code></pre>
-
-<p>Pour être exhaustif, il existe une dernière possibilité, avec 3 arguments
-m, n et p, pour produire une liste
-de m à n <em>non-inclus</em> par pas de p:</p>
-
-<pre><code>-&gt; (range 10 20 3)
-'(10 13 16 19)
-</code></pre>
-
-<p>Pour produire une liste de m à n <em>inclus</em>, il faut falloir augmenter n de 1:</p>
-
-<pre><code>-&gt; (define n 4)
--&gt; (range 1 (+ n 1))
-'(1 2 3 4)
-</code></pre>
-
-<p>Vous notez au passage la manière de définir une variable, identique à la
-définition d&#8217;une méthode, ainsi que la façon dont Racket écrit une liste:</p>
-
-<ul>
-<li>entre parenthèses</li>
-<li>précédée par un apostrophe</li>
-<li>pas de virgule pour séparer les éléments</li>
-</ul>
-
-
-<p>Le prochain article abordera le test d&#8217;égalité en Racket.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/09/racket-pour-les-rubyists-4-la-fonction-filter/'>Racket pour les Rubyists 4: La fonction filter</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/08/racket-pour-les-rubyists-3-trouver-les-diviseurs/'>Racket pour les Rubyists 3: Trouver les diviseurs</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/03/racket-pour-les-rubyists-definir-une-fonction/'>Racket pour les Rubyists: Définir une fonction</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li></ul></section></p>
 ]]></content>
   </entry>
   
