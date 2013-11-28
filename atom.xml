@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-11-27T19:03:17+01:00</updated>
+  <updated>2013-11-28T16:48:00+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,129 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Vim: Plier (folder) les commentaires de style Unix]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/"/>
+    <updated>2013-11-28T16:39:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Certains fichiers sources contiennent une proportion non négligeable de
+commentaires, ou documentation interne. Par exemple, le fichier
+<a href="https://github.com/ruby/ruby/blob/trunk/lib/csv.rb">ruby/lib/csv.rb</a> de
+Ruby contient à ce jour 46% de lignes qui sont des commentaires. Quand on
+cherche à étudier ces sources  pour la première fois, le nombre
+important de commentaire est un frein pour naviguer ou se repérer dans
+un tel fichier. Aujourd&#8217;hui je montre comment replier facilement les
+ensembles de lignes commençant par <code>#</code>.</p>
+
+<!-- more -->
+
+
+<h2>Présentation</h2>
+
+<p>Les fonctions de Vim qu&#8217;on va utiliser sont les suivantes:</p>
+
+<pre><code>Fonction      Raccourci
+=======================
+foldmethod    fdm
+foldexpr      fde
+</code></pre>
+
+<p>Vim comporte plusieurs méthodes de pliage (<em>folding</em>) de code, qu&#8217;on
+spécifie avec <code>foldmethod</code>. Ici on va utiliser la méthode <code>expr</code>, qui
+permet de faire à peu près tout ce qu&#8217;on veut. L&#8217;expression sera
+spécifiée avec <code>foldexpr</code>.</p>
+
+<h2>Essai en direct</h2>
+
+<p>On va d&#8217;abord voir comment ça marche en entrant les commandes en direct live.
+Ouvrez le fichier
+<a href="https://github.com/ruby/ruby/blob/trunk/lib/csv.rb">ruby/lib/csv.rb</a>
+(ou un autre avec beaucoup de commentaires de style Unix) et entrez ce qui
+suit:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span><span class="k">set</span> <span class="nb">fdm</span><span class="p">=</span>expr
+</span><span class='line'><span class="p">:</span><span class="k">set</span> <span class="nb">fde</span><span class="p">=</span>getline<span class="p">(</span><span class="k">v</span>:lnum<span class="p">)=~</span><span class="s1">&#39;^\\s*#&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Badaboum ! Tout les commentaires sont pliés. Explications:</p>
+
+<pre><code>getline(v:lnum)
+</code></pre>
+
+<p>Cette fonction retrouve une ligne du fichier. <code>v:lnum</code> est une variable
+prédéfinie qui contient le numéro de la ligne courante.</p>
+
+<pre><code>=~
+</code></pre>
+
+<p>Cet opérateur a le même sens qu&#8217;en Ruby, par exemple. Autrement dit,
+est-ce que la chaîne à ma gauche correspond à la regex à ma droite ?</p>
+
+<pre><code>'^\\s*#'
+</code></pre>
+
+<p>C&#8217;est notre regex: début de ligne (<code>^</code>), suivi par un nombre quelconque
+de blancs (<code>\\s*</code>), suivi par le caractère <code>#</code>.</p>
+
+<p>L&#8217;expression spécifiée dans <code>foldexpr</code> (ou comme ici <code>fde</code>) sera appelée
+par Vim sur chaque ligne du fichier.</p>
+
+<h2>Embarqué dans le fichier</h2>
+
+<p>Maintenant qu&#8217;on sait comment ça marche, voyons comment faire pour ne pas
+avoir à taper ces 2 lignes à chaque fois.</p>
+
+<p>Si vous écrivez la ligne suivante dans un fichier, typiquement à la fin, les
+commandes seront executées automatiquement à l&#8217;ouverture du fichier.
+C&#8217;est un truc utile à connaitre.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'># <span class="k">vim</span>:<span class="nb">fdm</span><span class="p">=</span>expr:<span class="nb">fde</span><span class="p">=</span>getline<span class="p">(</span><span class="k">v</span>\:lnum<span class="p">)=~</span><span class="s1">&#39;^\\s*#&#39;</span>:
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notez qu&#8217;il a fallu échapper le <code>:</code> de <code>v:lnum</code> pour que ça fonctionne.</p>
+
+<h2>Une fonction</h2>
+
+<p>Une fonction dans le <code>.vimrc</code> sera plus intéressante:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span> FoldUnixComments<span class="p">()</span>
+</span><span class='line'>  <span class="k">set</span> <span class="nb">foldmethod</span><span class="p">=</span>expr
+</span><span class='line'>  <span class="k">set</span> <span class="nb">foldexpr</span><span class="p">=</span>getline<span class="p">(</span><span class="k">v</span>:lnum<span class="p">)=~</span><span class="s1">&#39;^\\s*#&#39;</span>
+</span><span class='line'><span class="k">endfunction</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour l&#8217;executer:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span><span class="k">call</span> FoldUnixComments<span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Conclusion</h2>
+
+<p>La méthode présentée ici n&#8217;est pas parfaite. En effet <code>foldmethod=expr</code>
+<em>écrase</em> votre ancienne méthode. Néanmoins, elle me semble suffisante
+quand il s&#8217;agit juste d&#8217;étudier un fichier.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/'>Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/'>Du nouveau dans Ruby 2.1: Définition de méthode</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Du nouveau dans Ruby 2.1: Argument nommé et requis]]></title>
@@ -412,7 +535,7 @@ vous avez sous le coude une paire d&#8217;utilitaires qui déchirent !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/'>Vim: Plier (folder) les commentaires de style Unix</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2493,103 +2616,6 @@ et qu&#8217;il faudra expliquer plus en détail.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/08/racket-pour-les-rubyists-3-trouver-les-diviseurs/'>Racket pour les Rubyists 3: Trouver les diviseurs</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/06/racket-pour-les-rubyists-2-produire-une-suite-de-nombre/'>Racket pour les rubyists 2: Produire une suite de nombre</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/03/racket-pour-les-rubyists-definir-une-fonction/'>Racket pour les Rubyists: Définir une fonction</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Racket pour les Rubyists 3: Trouver les diviseurs]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/08/racket-pour-les-rubyists-3-trouver-les-diviseurs/"/>
-    <updated>2013-11-08T19:17:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/08/racket-pour-les-rubyists-3-trouver-les-diviseurs</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Précédemment, on a vu comment produire une
-<a href="http://lkdjiin.github.io/blog/2013/11/06/racket-pour-les-rubyists-2-produire-une-suite-de-nombre/">liste de nombre</a>
-avec la fonction <code>range</code>. Aujourd&#8217;hui on va traduire les tests Ruby suivants
-en Racket:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="mi">8</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1">#=&gt; true</span>
-</span><span class='line'><span class="mi">8</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span> <span class="c1">#=&gt; false</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<!-- more -->
-
-
-<h2>Reste d&#8217;une division</h2>
-
-<p>Pour calculer le reste d&#8217;une division euclidienne, on utilise la fonction
-<code>remainder</code>. Par exemple:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nb">remainder </span><span class="mi">8</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">;=&gt; 0</span>
-</span><span class='line'><span class="p">(</span><span class="nb">remainder </span><span class="mi">8</span> <span class="mi">3</span><span class="p">)</span> <span class="c1">;=&gt; 2</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>D&#8217;une manière plus générale, <code>(remainder a b)</code> calcule le reste de la
-division de <code>a</code> par <code>b</code>. Vous remarquerez encore une fois la notation <em>prefix</em>
-de Racket.</p>
-
-<p>Au passage, vous notez que le signe pour débuter un commentaire est le
-point-virgule (<code>;</code>).</p>
-
-<h2>Les booléens</h2>
-
-<p>En Ruby les deux valeurs booléennes sont <strong>true</strong> et <strong>false</strong>, en Racket
-elles sont notées <strong>#t</strong> et <strong>#f</strong>:</p>
-
-<h2>Tester l&#8217;égalité</h2>
-
-<p>Quand Ruby utilise le signe <code>==</code>, comme beaucoup d&#8217;autres langages, Racket
-utilise un seul signe <code>=</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nb">= </span><span class="mi">1</span> <span class="mi">1</span><span class="p">)</span> <span class="c1">;=&gt; #t</span>
-</span><span class='line'><span class="p">(</span><span class="nb">= </span><span class="mi">1</span> <span class="mi">2</span><span class="p">)</span> <span class="c1">;=&gt; #f</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Attention, <code>=</code> ne fonctionne qu&#8217;avec les nombres comme vous pouvez le
-constater dans la session suivante:</p>
-
-<pre><code>-&gt; (= "xav" "xav")
-; =: contract violation
-;   expected: number?
-;   given: "xav"
-;   argument position: 1st
-</code></pre>
-
-<p>Donc, pour tester si le reste d&#8217;une division euclidienne est égal à zéro,
-on pourra faire comme ça:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nb">= </span><span class="mi">0</span> <span class="p">(</span><span class="nb">remainder </span><span class="mi">8</span> <span class="mi">2</span><span class="p">))</span> <span class="c1">;=&gt; #t</span>
-</span><span class='line'><span class="p">(</span><span class="nb">= </span><span class="mi">0</span> <span class="p">(</span><span class="nb">remainder </span><span class="mi">8</span> <span class="mi">3</span><span class="p">))</span> <span class="c1">;=&gt; #f</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et d&#8217;une manière générale, pour tester si <em>i</em> est un diviseur de <em>n</em>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nb">= </span><span class="mi">0</span> <span class="p">(</span><span class="nb">remainder </span><span class="nv">n</span> <span class="nv">i</span><span class="p">))</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La prochaine fois, on verra la fonction Racket <code>filter</code>, qui est le
-pendant de la méthode <code>select</code> de Ruby.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/09/racket-pour-les-rubyists-4-la-fonction-filter/'>Racket pour les Rubyists 4: La fonction filter</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/06/racket-pour-les-rubyists-2-produire-une-suite-de-nombre/'>Racket pour les rubyists 2: Produire une suite de nombre</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/03/racket-pour-les-rubyists-definir-une-fonction/'>Racket pour les Rubyists: Définir une fonction</a></li></ul></section></p>
 ]]></content>
   </entry>
   

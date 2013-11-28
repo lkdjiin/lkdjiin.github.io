@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Vim: Plier (folder) les commentaires de style Unix - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Certains fichiers sources contiennent une proportion non négligeable de
+commentaires, ou documentation interne. Par exemple, &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Vim: Plier (folder) les commentaires de style Unix</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-28T16:39:00+01:00" pubdate data-updated="true">28 novembre 2013</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Certains fichiers sources contiennent une proportion non négligeable de
+commentaires, ou documentation interne. Par exemple, le fichier
+<a href="https://github.com/ruby/ruby/blob/trunk/lib/csv.rb">ruby/lib/csv.rb</a> de
+Ruby contient à ce jour 46% de lignes qui sont des commentaires. Quand on
+cherche à étudier ces sources  pour la première fois, le nombre
+important de commentaire est un frein pour naviguer ou se repérer dans
+un tel fichier. Aujourd&#8217;hui je montre comment replier facilement les
+ensembles de lignes commençant par <code>#</code>.</p>
+
+<!-- more -->
+
+
+<h2>Présentation</h2>
+
+<p>Les fonctions de Vim qu&#8217;on va utiliser sont les suivantes:</p>
+
+<pre><code>Fonction      Raccourci
+=======================
+foldmethod    fdm
+foldexpr      fde
+</code></pre>
+
+<p>Vim comporte plusieurs méthodes de pliage (<em>folding</em>) de code, qu&#8217;on
+spécifie avec <code>foldmethod</code>. Ici on va utiliser la méthode <code>expr</code>, qui
+permet de faire à peu près tout ce qu&#8217;on veut. L&#8217;expression sera
+spécifiée avec <code>foldexpr</code>.</p>
+
+<h2>Essai en direct</h2>
+
+<p>On va d&#8217;abord voir comment ça marche en entrant les commandes en direct live.
+Ouvrez le fichier
+<a href="https://github.com/ruby/ruby/blob/trunk/lib/csv.rb">ruby/lib/csv.rb</a>
+(ou un autre avec beaucoup de commentaires de style Unix) et entrez ce qui
+suit:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span><span class="k">set</span> <span class="nb">fdm</span><span class="p">=</span>expr
+</span><span class='line'><span class="p">:</span><span class="k">set</span> <span class="nb">fde</span><span class="p">=</span>getline<span class="p">(</span><span class="k">v</span>:lnum<span class="p">)=~</span><span class="s1">&#39;^\\s*#&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Badaboum ! Tout les commentaires sont pliés. Explications:</p>
+
+<pre><code>getline(v:lnum)
+</code></pre>
+
+<p>Cette fonction retrouve une ligne du fichier. <code>v:lnum</code> est une variable
+prédéfinie qui contient le numéro de la ligne courante.</p>
+
+<pre><code>=~
+</code></pre>
+
+<p>Cet opérateur a le même sens qu&#8217;en Ruby, par exemple. Autrement dit,
+est-ce que la chaîne à ma gauche correspond à la regex à ma droite ?</p>
+
+<pre><code>'^\\s*#'
+</code></pre>
+
+<p>C&#8217;est notre regex: début de ligne (<code>^</code>), suivi par un nombre quelconque
+de blancs (<code>\\s*</code>), suivi par le caractère <code>#</code>.</p>
+
+<p>L&#8217;expression spécifiée dans <code>foldexpr</code> (ou comme ici <code>fde</code>) sera appelée
+par Vim sur chaque ligne du fichier.</p>
+
+<h2>Embarqué dans le fichier</h2>
+
+<p>Maintenant qu&#8217;on sait comment ça marche, voyons comment faire pour ne pas
+avoir à taper ces 2 lignes à chaque fois.</p>
+
+<p>Si vous écrivez la ligne suivante dans un fichier, typiquement à la fin, les
+commandes seront executées automatiquement à l&#8217;ouverture du fichier.
+C&#8217;est un truc utile à connaitre.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'># <span class="k">vim</span>:<span class="nb">fdm</span><span class="p">=</span>expr:<span class="nb">fde</span><span class="p">=</span>getline<span class="p">(</span><span class="k">v</span>\:lnum<span class="p">)=~</span><span class="s1">&#39;^\\s*#&#39;</span>:
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notez qu&#8217;il a fallu échapper le <code>:</code> de <code>v:lnum</code> pour que ça fonctionne.</p>
+
+<h2>Une fonction</h2>
+
+<p>Une fonction dans le <code>.vimrc</code> sera plus intéressante:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span> FoldUnixComments<span class="p">()</span>
+</span><span class='line'>  <span class="k">set</span> <span class="nb">foldmethod</span><span class="p">=</span>expr
+</span><span class='line'>  <span class="k">set</span> <span class="nb">foldexpr</span><span class="p">=</span>getline<span class="p">(</span><span class="k">v</span>:lnum<span class="p">)=~</span><span class="s1">&#39;^\\s*#&#39;</span>
+</span><span class='line'><span class="k">endfunction</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour l&#8217;executer:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span><span class="k">call</span> FoldUnixComments<span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Conclusion</h2>
+
+<p>La méthode présentée ici n&#8217;est pas parfaite. En effet <code>foldmethod=expr</code>
+<em>écrase</em> votre ancienne méthode. Néanmoins, elle me semble suffisante
+quand il s&#8217;agit juste d&#8217;étudier un fichier.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/'>Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href='/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/'>Du nouveau dans Ruby 2.1: Définition de méthode</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-11-28T16:39:00+01:00" pubdate data-updated="true">28 novembre 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/commentaires/'>commentaires</a>, <a class='category' href='/blog/categories/fold/'>fold</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/vim/'>vim</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/" title="Previous Post: Du nouveau dans Ruby 2.1: Argument nommé et requis">&laquo; Du nouveau dans Ruby 2.1: Argument nommé et requis</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/">Vim: Plier (folder) les commentaires de style Unix</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/">Du nouveau dans Ruby 2.1: Argument nommé et requis</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/">Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/">Du nouveau dans Ruby 2.1: Le suffixe r</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/23/pourcentage-des-issues-par-langages-sur-github/">Pourcentage des issues par langages sur Github</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/">Du nouveau dans Ruby 2.1: Définition de méthode</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
