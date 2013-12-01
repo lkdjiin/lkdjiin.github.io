@@ -100,6 +100,9 @@ L'exemple précédent donne ceci:
 
 **Source (pdf)** [toruby](http://www.atdot.net/~ko1/activities/toruby05-ko1.pdf)
 
+**Edit du 1er décembre 2013** Cette fonctionnalité a été supprimé dans
+la version [2.1.0-preview2](https://www.ruby-lang.org/en/news/2013/11/22/ruby-2-1-0-preview2-is-released/).
+
 À demain.
 
 {% connexe %}
