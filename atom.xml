@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-01T12:02:17+01:00</updated>
+  <updated>2013-12-01T21:28:30+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,95 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 3: BEGIN et END]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/"/>
+    <updated>2013-12-01T21:23:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Les blocs BEGIN et END du langage Ruby paraissent étranges pour beaucoup
+de personnes. Ils sont inutiles (et certainement néfastes) pour des
+programmes dit <em>classiques</em>. Ils peuvent être utiles pour un script.
+Il sont indispensables pour remplacer Sed et Awk et on va donc les
+regarder plus en détail.</p>
+
+<!-- more -->
+
+
+<p>Un exemple simple vaut mieux qu&#8217;un long discours:</p>
+
+<figure class='code'><figcaption><span>test1.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">BEGIN</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;avant&quot;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">END</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;après&quot;</span> <span class="p">}</span>
+</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;au milieu&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>[~]⇒ ruby test1.rb 
+avant
+au milieu
+après
+</code></pre>
+
+<p><code>BEGIN</code> est donc l&#8217;endroit où on initialisera les variables et <code>END</code>
+permettra de faire les calculs et l&#8217;affichage en fin de traitement.</p>
+
+<p>Il faut savoir qu&#8217;on peut avoir plusieurs blocs
+<code>BEGIN</code> et <code>END</code>. Les blocs <code>BEGIN</code> seront interprétés dans l&#8217;ordre
+d&#8217;apparition, tandis que les blocs <code>END</code> seront interprétés dans l&#8217;ordre
+inverse d&#8217;apparition:</p>
+
+<figure class='code'><figcaption><span>test2.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">END</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;end 1&quot;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">END</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;end 2&quot;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">END</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;end 3&quot;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">BEGIN</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;begin 1&quot;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">BEGIN</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;begin 2&quot;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">BEGIN</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">&quot;begin 3&quot;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>[~]⇒ ruby test2.rb
+begin 1
+begin 2
+begin 3
+end 3
+end 2
+end 1
+</code></pre>
+
+<p>Enfin, pour être exhaustif, on ne peut pas remplacer les <code>{}</code> par <code>do</code>
+et <code>end</code>, comme on pourrait s&#8217;y attendre:</p>
+
+<figure class='code'><figcaption><span>test3.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">BEGIN</span> <span class="k">do</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;avant&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>[~]⇒ ruby test3.rb
+test3.rb:1: syntax error, unexpected keyword_do, expecting '{'
+test3.rb:3: syntax error, unexpected keyword_end, expecting end-of-input
+</code></pre>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 2: Premiers pas]]></title>
@@ -127,7 +216,7 @@ le fichier et à lire chaque ligne.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -203,7 +292,7 @@ quelques articles sur ce sujet.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -430,7 +519,7 @@ donc faire en sorte qu&#8217;il soit requis:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -576,7 +665,7 @@ la version <a href="https://www.ruby-lang.org/en/news/2013/11/22/ruby-2-1-0-prev
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -623,7 +712,7 @@ Ruby 2.1.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -732,7 +821,7 @@ vous avez sous le coude une paire d&#8217;utilitaires qui déchirent !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2516,91 +2605,6 @@ déjà écrit avec d&#8217;autres algorithmes génétiques:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Racket pour les rubyists 6: Une première fonction]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/"/>
-    <updated>2013-11-11T20:41:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Grâce à ce qu&#8217;on a appris depuis <a href="http://lkdjiin.github.io/blog/2013/11/03/racket-pour-les-rubyists-definir-une-fonction/">le début</a> de cette série d&#8217;articles,
-il est enfin temps de traduire la méthode Ruby suivante en Racket:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">divisors</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.n</span><span class="p">)</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="o">|</span> <span class="n">n</span> <span class="o">%</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">}</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<!-- more -->
-
-
-<h2>Une première fonction Racket</h2>
-
-<p>Sans plus attendre, voici une traduction en Racket, qui suit le modèle
-du <a href="http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/">dernier article</a>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">divisors</span> <span class="nv">n</span><span class="p">)</span>
-</span><span class='line'>  <span class="c1">; Is i a divisor of n?</span>
-</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">divisor?</span> <span class="nv">i</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">(</span><span class="nb">= </span><span class="mi">0</span> <span class="p">(</span><span class="nb">remainder </span><span class="nv">n</span> <span class="nv">i</span><span class="p">)))</span>
-</span><span class='line'>  <span class="p">(</span><span class="nf">filter</span> <span class="nv">divisor?</span> <span class="p">(</span><span class="nf">range</span> <span class="mi">1</span> <span class="p">(</span><span class="nb">+ </span><span class="nv">n</span> <span class="mi">1</span><span class="p">))))</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voici la fonction en action:</p>
-
-<pre><code>-&gt; (divisors 1)
-'(1)
--&gt; (divisors 8)
-'(1 2 4 8)
--&gt; (divisors 17)
-'(1 17)
--&gt; (divisors 171)
-'(1 3 9 19 57 171)
-</code></pre>
-
-<p>Alors ça fait pas mal de code Racket comparé au code Ruby, mais attention de ne
-pas juger le langage sur ce seul exemple. D&#8217;abord l&#8217;opérateur <code>..</code> de Ruby et
-ses <em>blocks</em> permettent une syntaxe incroyablement concise, ensuite je
-vous rappelle que <em>j&#8217;apprends</em> Racket, et que donc j&#8217;ai peut-être raté des
-trucs…</p>
-
-<p>Vous remarquez que je me suis senti obligé de commenté la fonction imbriquée
-<code>divisor?</code>, ce qui n&#8217;est pas bon signe. Je suis un adepte du code court,
-sous-entendu: une fonction devrait faire une seule chose. Or il me semble
-qu&#8217;ici la fonction <code>divisors</code> fait trois choses:</p>
-
-<ol>
-<li>Elle regarde si un nombre i est un diviseur de n.</li>
-<li>Elle produit une liste de 1 à n inclus.</li>
-<li>Enfin, elle produit la liste des diviseurs de n.</li>
-</ol>
-
-
-<p>Donc <code>divisors</code> est un bon candidat au refactoring. Mais avant ça il va
-falloir parler des tests unitaires avec Racket. Et avant de parler des
-tests unitaires, il va falloir aborder la notion de module Racket. Si
-ces sujets vous intéressent, restez à l&#8217;écoute de ce blog, c&#8217;est pour
-bientôt.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li></ul></section></p>
 ]]></content>
   </entry>
   
