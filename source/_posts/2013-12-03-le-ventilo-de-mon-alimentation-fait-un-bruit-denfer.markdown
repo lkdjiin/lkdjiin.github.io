@@ -20,4 +20,9 @@ une pastille autocollante. Voilà, j'espère que ça va fonctionner…
 
 À demain ?
 
+**Edit du jour même** *Je ne l'ai jamais trouvé ce foutu palier ! Sous la
+pastille autocollante il y avait… du plastique moulé ! Quoiqu'il en soit,
+il semblerait qu'un bon coup d'aspirateur ai suffit à rendre le sourire
+au ventilo ;) Je touche du bois…*
+
 {% connexe %}
