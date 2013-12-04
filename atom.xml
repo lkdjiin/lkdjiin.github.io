@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-03T21:13:57+01:00</updated>
+  <updated>2013-12-04T21:34:22+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,120 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 4: Les options -p et -l]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/"/>
+    <updated>2013-12-04T21:21:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Les options -p et -l de la ligne de commande de Ruby permettent de se
+rapprocher encore un peu plus du comportement de Sed et Awk.  On reprend notre
+fichier tout simple:</p>
+
+<figure class='code'><figcaption><span>data.txt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">1</span>
+</span><span class='line'><span class="err">2</span>
+</span><span class='line'><span class="err">3</span>
+</span><span class='line'><span class="err">4</span>
+</span><span class='line'><span class="err">5</span>
+</span><span class='line'><span class="err">6</span>
+</span><span class='line'><span class="err">7</span>
+</span><span class='line'><span class="err">8</span>
+</span><span class='line'><span class="err">9</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Aujourd&#8217;hui l&#8217;objectif est d&#8217;ajouter une nouvelle colonne, qui nous dit si
+le nombre est pair (p) ou impair (i). C&#8217;est un exemple trivial, mais
+suffisant pour ce que je veux montrer.</p>
+
+<!-- more -->
+
+
+<h2>Un premier script déjà concis</h2>
+
+<p>Voici un premier code possible, avec ce que nous connaissons déjà, c&#8217;est
+à dire l&#8217;option -n:</p>
+
+<figure class='code'><figcaption><span>test1.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="vg">$_</span> <span class="o">=</span> <span class="vg">$_</span><span class="o">.</span><span class="n">chomp</span> <span class="o">+</span> <span class="p">(</span><span class="vg">$_</span><span class="o">.</span><span class="n">to_i</span><span class="o">.</span><span class="n">even?</span> <span class="p">?</span> <span class="s2">&quot; p&quot;</span> <span class="p">:</span> <span class="s2">&quot; i&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="nb">puts</span> <span class="vg">$_</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>[~]⇒ ruby -n test1.rb &lt; data.txt 
+1 i
+2 p
+3 i
+4 p
+5 i
+6 p
+7 i
+8 p
+9 i
+</code></pre>
+
+<p>On peut noter que:</p>
+
+<ul>
+<li>contrairement à l&#8217;exemple précédent, on n&#8217;utilise pas les blocs BEGIN et
+END (voir <a href="http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/">Premiers pas</a>
+et <a href="http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/">BEGIN et END</a>).</li>
+<li>la variable prédéfinie <code>$_</code> est <strong>accessible en écriture</strong>.</li>
+<li>la variable prédéfinie <code>$_</code> contient le caractère de fin de ligne, il a
+fallu le supprimer avec <code>chomp</code>. C&#8217;est agaçant.</li>
+<li>on écrit chaque nouvelle ligne avec <code>puts</code>. C&#8217;est un pattern classique,
+il doit bien y avoir un truc pour nous éviter cela.</li>
+</ul>
+
+
+<h2>La même chose en plus court</h2>
+
+<p>Voici maintenant une réécriture du script ci-dessus, qui tire parti
+des options -p et -l:</p>
+
+<figure class='code'><figcaption><span>test2.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="vg">$_</span> <span class="o">+=</span> <span class="vg">$_</span><span class="o">.</span><span class="n">to_i</span><span class="o">.</span><span class="n">even?</span> <span class="p">?</span> <span class="s2">&quot; p&quot;</span> <span class="p">:</span> <span class="s2">&quot; i&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>[~]⇒ ruby -pl test2.rb &lt; data.txt 
+1 i
+2 p
+3 i
+4 p
+5 i
+6 p
+7 i
+8 p
+9 i
+</code></pre>
+
+<h2>Les explications de -p et -l</h2>
+
+<p>L&#8217;option -p fonctionne comme l&#8217;option -n, mais en plus, affiche automatiquement
+le contenu de la variable <code>$_</code> à la fin de la boucle de traitement.</p>
+
+<p>L&#8217;option -l, quant à elle, s&#8217;occupe automatiquement du caractère de fin
+de ligne en le supprimant.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le ventilo de mon alimentation fait un bruit d'enfer]]></title>
@@ -174,7 +288,7 @@ test3.rb:3: syntax error, unexpected keyword_end, expecting end-of-input
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/'>Remplacer Sed et Awk par Ruby 4: Les options -p et -l</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -292,7 +406,7 @@ le fichier et à lire chaque ligne.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/'>Remplacer Sed et Awk par Ruby 4: Les options -p et -l</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/'>Remplacer Sed et Awk par Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -368,7 +482,7 @@ quelques articles sur ce sujet.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/'>Remplacer Sed et Awk par Ruby 4: Les options -p et -l</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/'>Remplacer Sed et Awk par Ruby 2: Premiers pas</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -595,7 +709,7 @@ donc faire en sorte qu&#8217;il soit requis:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/'>Remplacer Sed et Awk par Ruby 4: Les options -p et -l</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -741,7 +855,7 @@ la version <a href="https://www.ruby-lang.org/en/news/2013/11/22/ruby-2-1-0-prev
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/'>Remplacer Sed et Awk par Ruby 4: Les options -p et -l</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -788,7 +902,7 @@ Ruby 2.1.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/'>Remplacer Sed et Awk par Ruby 3: BEGIN et END</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/'>Remplacer Sed et Awk par Ruby 4: Les options -p et -l</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -897,7 +1011,7 @@ vous avez sous le coude une paire d&#8217;utilitaires qui déchirent !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/02/un-plugin-vim-pour-replier-slash-folder-les-commentaires/'>Un plugin Vim pour replier/folder les commentaires</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/'>Remplacer Sed et Awk par Ruby 4: Les options -p et -l</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2080,231 +2194,6 @@ Racket.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/10/racket-pour-les-rubyists-5-definitions-imbriquees/'>Racket pour les rubyists 5: Définitions imbriquées</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Apprendre Ruby en faisant des maths 7: Tests unitaires simples]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples/"/>
-    <updated>2013-11-14T13:22:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/14/apprendre-ruby-en-faisant-des-maths-7-tests-unitaires-simples</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Si vous voulez vraiment apprendre Ruby, vous <em>devriez</em> aussi apprendre
-à faire des tests automatisés: c&#8217;est le meilleur moyen d&#8217;avoir confiance
-en son code. Et la question se pose de savoir quel framework utiliser ?
-Il en existe plusieurs: unit/test, minitest, RSpec, Shoulda, Cucumber et
-j&#8217;en oublie… Chaque développeur a ses préférences, et c&#8217;est bien normal.</p>
-
-<p><code>&lt;opinion&gt;</code></p>
-
-<p>Mais souvent les développeurs ont aussi des convictions, ce qui est parfois
-problématique. Un framework de test est un outil, comme tant d&#8217;autres.
-Un outil X peut être parfait pour telle application et bien moins bon pour
-telle autre application. Autrement dit, <strong>LE</strong> framework de test n&#8217;existe
-pas. Quand vous en aurez testé quelques uns, vous aurez une préférence,
-d&#8217;accord, pas de soucis. Mais s&#8217;il vous plait, avant d&#8217;avoir une conviction,
-attendez d&#8217;en avoir <em>utilisé</em> 3 ou 4, et chacun dans différents types de
-projet.</p>
-
-<p><code>&lt;/opinion&gt;</code></p>
-
-<!-- more -->
-
-
-<p>Aujourd&#8217;hui on va apprendre à tester le module créé <a href="http://lkdjiin.github.io/blog/2013/11/01/apprendre-ruby-en-faisant-des-maths-6-methodes-utilitaires-et-module/">la dernière fois</a>
-à l&#8217;aide du framework test/unit. Pas parce que ce framework est le
-meilleur, pas parce que j&#8217;ai une préférence pour ce framework mais parce qu&#8217;il
-est livré avec Ruby et qu&#8217;il ne necessite donc pas d&#8217;installation.</p>
-
-<h2>Le fichier de test</h2>
-
-<p>Voici le code à mettre dans un fichier nommé <code>tc_number.rb</code>:</p>
-
-<figure class='code'><figcaption><span>tc_number.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">require_relative</span> <span class="s2">&quot;number&quot;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s2">&quot;test/unit&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">TestNumber</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le fichier <code>tc_number.rb</code> contient le code pour tester notre module <code>Number</code>,
-qui est dans le fichier <code>number.rb</code>. Veillez à garder les deux fichiers dans
-le même dossier.</p>
-
-<h2>Explications</h2>
-
-<p>Voici les explications, ligne par ligne:</p>
-
-<pre><code>require_relative "number"
-</code></pre>
-
-<p>On charge notre module <code>Number</code>.</p>
-
-<pre><code>require "test/unit"
-</code></pre>
-
-<p>On charge la bibliothèque <code>test/unit</code>, qui contient plusieurs classes/modules
-et méthodes qui vont nous permettre d&#8217;écrire nos tests.</p>
-
-<pre><code>class TestNumber &lt; Test::Unit::TestCase
-</code></pre>
-
-<p>On crée une classe <code>TestNumber</code>. Vous remarquez que c&#8217;est le nom de notre
-module à tester, préfixé par Test. Cette classe hérite de
-<code>Test::Unit::TestCase</code>. Si vous ne savez pas encore ce qu&#8217;est une classe,
-dites vous que c&#8217;est un module un peu spécial. Si vous ne savez pas
-encore ce qu&#8217;est l&#8217;héritage, ce n&#8217;est pas grave.</p>
-
-<pre><code>def test_divisors
-</code></pre>
-
-<p>On définit un test de la méthode <code>divisors</code>, à travers la méthodes
-<code>test_divisors</code>. Vous remarquez que c&#8217;est le nom de notre méthode à tester,
-préfixé par <code>test_</code>.</p>
-
-<pre><code>assert_equal [1, 2, 4, 8], Number.divisors(4)
-</code></pre>
-
-<p>Voici enfin le test proprement dit. La méthode <code>assert_equal</code> s&#8217;assure
-que ses deux arguments sont égaux. On veut savoir si <code>Number.divisors(4)</code>
-est bien égal à l&#8217;Array (la liste) <code>[1, 2, 3, 4]</code>, <em>ce qui est faux</em>.</p>
-
-<h2>Utilisation</h2>
-
-<p>Voici la sortie:</p>
-
-<pre><code>[~]⇒ ruby tc_number.rb 
-Run options: 
-
-# Running tests:
-
-F
-
-Finished tests in 0.002405s, 415.8087 tests/s, 415.8087 assertions/s.
-
-  1) Failure:
-test_divisors(TestNumber) [tc_number.rb:6]:
-&lt;[1, 2, 4, 8]&gt; expected but was
-&lt;[1, 2, 4]&gt;.
-
-1 tests, 1 assertions, 1 failures, 0 errors, 0 skips
-</code></pre>
-
-<p>La section <code>1) Failure:</code> est particulièrement intéressante et nous indique
-que la liste <code>[1, 2, 3, 4]</code> était attendue, mais que c&#8217;est la liste
-<code>[1, 2, 4]</code> qui a été reçue.</p>
-
-<p>Si on corrige notre test:</p>
-
-<figure class='code'><figcaption><span>tc_number.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">require_relative</span> <span class="s2">&quot;number&quot;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s2">&quot;test/unit&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">TestNumber</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cette fois-ci la sortie nous indique que tout va bien:</p>
-
-<pre><code>[~]⇒ ruby tc_number.rb 
-Run options: 
-
-# Running tests:
-
-.
-
-Finished tests in 0.000644s, 1553.5887 tests/s, 1553.5887 assertions/s.
-
-1 tests, 1 assertions, 0 failures, 0 errors, 0 skips
-</code></pre>
-
-<h2>Plus de tests</h2>
-
-<p>Nous pouvons ajouter un autre test pour la méthode <code>divisors</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">17</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Mais aussi tester les autres méthodes de notre module, selon le même
-modèle:</p>
-
-<figure class='code'><figcaption><span>tc_number.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">require_relative</span> <span class="s2">&quot;number&quot;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s2">&quot;test/unit&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">TestNumber</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_divisors</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">17</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_proper_divisors</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">proper_divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="o">[</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">proper_divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_sum_of_proper_divisors</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="mi">3</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">sum_of_proper_divisors</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">assert_equal</span> <span class="mi">1</span><span class="p">,</span> <span class="no">Number</span><span class="o">.</span><span class="n">sum_of_proper_divisors</span><span class="p">(</span><span class="mi">17</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/17/racket-pour-les-rubyists-8-tests-unitaires-simples/'>Racket pour les Rubyists 8: Tests unitaires simples</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/15/racket-pour-les-rubyists-7-module-basique/'>Racket pour les Rubyists 7: Module basique</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/11/racket-pour-les-rubyists-6-une-premiere-fonction/'>Racket pour les rubyists 6: Une première fonction</a></li></ul></section></p>
 ]]></content>
   </entry>
   
