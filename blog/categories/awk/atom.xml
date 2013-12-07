@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : awk | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/awk/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-06T21:30:47+01:00</updated>
+  <updated>2013-12-07T20:59:22+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,66 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 6: Séparateur de champ]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/07/remplacer-sed-et-awk-par-ruby-6-separateur-de-champ/"/>
+    <updated>2013-12-07T20:54:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/07/remplacer-sed-et-awk-par-ruby-6-separateur-de-champ</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Aujourd'hui on voit comment changer le séparateur de champ à l'aide de
+l'option <code>-F</code>.</p>
+
+<!-- more -->
+
+
+<p>Reprenons le fichier de données du <a href="http://lkdjiin.github.io/blog/2013/12/05/remplacer-sed-et-awk-par-ruby-5-acceder-aux-champs-slash-colonnes/">dernier article</a>,
+ajoutons un séparateur de champ, par exemple la virgule (<code>,</code>) et
+<em>salissons-le</em> quelque peu:</p>
+
+<p><code>raw data.txt
+1, a
+2, a
+3, b
+4 , a
+5 ,a
+6 ,b
+7,b
+8,b
+9,b
+</code></p>
+
+<p>Le script du dernier article ne fonctionnera plus, puisque jusqu'ici nous
+supposions que les champs étaient séparés par des espaces, ce qui n'est plus
+le cas.</p>
+
+<p>En admettant que les champs seront séparés par des virgules, il faut effectuer
+un petit changement dans notre script, pour nettoyer le second champ:</p>
+
+<p>``` ruby test.rb
+BEGIN { total = 0 }</p>
+
+<p>total += $F[0].to_i if $F[1].strip == &ldquo;a&rdquo;</p>
+
+<p>END { puts &ldquo;Total: #{total}&rdquo; }
+```</p>
+
+<p>Et pour que Ruby sépare bien les champs en tenant compte des virgules, il faut
+lui passer l'option <code>-F</code>, suivie d'une <em>regex</em> (sans les <code>//</code>) décrivant
+le séparateur:</p>
+
+<pre><code>[~]⇒ ruby -an -F, test.rb &lt; data.txt 
+Total: 12
+</code></pre>
+
+<p>Et voilà.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 5: Accéder aux champs/colonnes]]></title>
@@ -326,80 +386,6 @@ du fichier. Objectif atteint:</p>
 
 <p>Il faut noter qu'on a réussi notre objectif sans avoir explicitement à ouvrir
 le fichier et à lire chaque ligne.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/"/>
-    <updated>2013-11-29T18:31:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Sed et Awk sont deux petits langages spécialisés dans l'édition, le
-traitement, l'analyse, le filtrage, etc, des fichiers texte.
-Ce que peuvent faire ces deux langages, Ruby peut le faire.</p>
-
-<!-- more -->
-
-
-<p>Dans mon <a href="http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/">article précédant</a>
-j'ai écrit:</p>
-
-<p><blockquote><p>le fichier <a href="https://github.com/ruby/ruby/blob/trunk/lib/csv.rb">https://github.com/ruby/ruby/blob/trunk/lib/csv.rb</a> de<br/>Ruby contient à ce jour 46% de lignes qui sont des commentaires.</p></blockquote></p>
-
-<p>Je n'ai bien sûr pas compté chaque commentaire du fichier. J'ai écrit pour
-cela un petit script Ruby.</p>
-
-<p>Un algorithme standard pour ce type de tâche serait:</p>
-
-<pre><code>ouvrir le fichier
-initialiser des variables
-
-pour chaque ligne du fichier
-    mettre à jour des variables
-fin
-
-fermer le fichier
-calculer le résultat
-afficher le résultat
-</code></pre>
-
-<p>En fait, quand on traite/édite/analyse/filtre un fichier texte, un pattern
-basique apparait:</p>
-
-<pre><code>ouvrir le fichier
-pour chaque ligne du fichier
-    # faire un truc
-fin
-fermer le fichier
-</code></pre>
-
-<p>Avec Sed et Awk, l'ouverture du fichier, sa fermeture et la boucle de
-traitement sont <em>implicites</em>. Autrement dit, on n'écrit jamais ce code.
-On écrit seulement le code du traitement.</p>
-
-<p>Ruby peut faire cela.</p>
-
-<p>Une question se pose alors :
-si Sed et Awk sont faits pour ça, pourquoi utiliser Ruby à la place ?
-Il y a plusieurs raisons possibles:</p>
-
-<ul>
-<li>Vous ne connaissez ni Sed, ni Awk mais vous connaissez déjà Ruby,
-même un peu. Pourquoi apprendre un nouveau langage ?</li>
-<li>Vous pratiquez Sed et Awk et vous trouvez la syntaxe … comment dire …
-ésotérique (surtout celle de Sed).</li>
-<li>Utiliser Ruby permet d'avoir accès à toutes ses bibliothèques.</li>
-</ul>
-
-
-<p>Convaincu ? Dans ce cas surveillez ce blog, je vais rapidement écrire
-quelques articles sur ce sujet.</p>
 
 <p>À demain.</p>
 
