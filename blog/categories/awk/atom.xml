@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : awk | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/awk/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-09T21:07:53+01:00</updated>
+  <updated>2013-12-10T18:48:49+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,79 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/"/>
+    <updated>2013-12-10T18:40:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Se servir de Ruby pour remplacer Sed et Awk permet, entre autre, d'avoir accès
+à la bibliothèque standard de Ruby (et même à n'importe quelle gem).  Pour un
+script on peut charger les bibliothèques néccessaires dans un bloc BEGIN (avec
+<code>require</code>), mais pour un <em>one liner</em>, ce serait beaucoup moins drôle. Ruby
+permet de charger une gem sur la ligne de commande avec <code>-r</code>, une syntaxe plus
+courte que <code>require</code>.</p>
+
+<!-- more -->
+
+
+<p>Tout au long de <a href="http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/">cette série</a>, les exemples ont été triviaux et ça sera
+encore le cas aujourd'hui. Prenons le fichier de données suivant:</p>
+
+<p><code>raw data.txt
+1
+2
+3
+2
+3
+4
+</code></p>
+
+<p>L'objectif est d'afficher les différentes valeurs, <strong>sans doublons</strong>.
+Pour le fichier ci-dessus, on veut donc obtenir: 1, 2, 3 et 4. Il y a plusieurs
+solutions pour réaliser ça, l'une d'elles est d'utiliser <a href="http://ruby-doc.org/stdlib-2.0.0/libdoc/set/rdoc/Set.html">les sets</a>
+fournis par la bibliothèque standard de Ruby.</p>
+
+<p>Voici une ligne de commande qui réalise l'objectif:</p>
+
+<p>``` bash
+[~]⇒ ruby -nl -rset -e &lsquo;BEGIN{s=Set.new};s.add($_);END{p s}&rsquo; data.txt</p>
+
+<h1>&lt;Set: {&ldquo;1&rdquo;, &ldquo;2&rdquo;, &ldquo;3&rdquo;, &ldquo;4&rdquo;}></h1>
+
+<p>```</p>
+
+<p>Le switch <code>-n</code> passe Ruby en <em>mode sed/awk</em>. Le switch <code>-l</code> s'occupe des
+caractères de fin de ligne.</p>
+
+<p>Le switch <code>-r</code> va charger la gem passée en argument. Donc <code>-rset</code> va charger
+la gem «set».</p>
+
+<p>Pour ce qui est du script, on commence par initialiser une variable <code>s</code> en
+tant qu'objet Set:</p>
+
+<pre><code>BEGIN { s = Set.new }
+</code></pre>
+
+<p>Puis on ajoute le contenu de chaque ligne dans ce set (comme il s'agit
+justement d'un type Set, les doublons ne seront pas pris en compte):</p>
+
+<pre><code>s.add($_)
+</code></pre>
+
+<p>Enfin, on affiche le résultat, <code>p s</code> étant un raccourci pour
+<code>puts s.inspect</code>. Les raccourcis sont les bienvenus pour les <em>one liners</em>:</p>
+
+<pre><code>END { p s }
+</code></pre>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande]]></title>
@@ -250,107 +323,6 @@ BEGIN { total = 0 }</p>
 <pre><code>[~]⇒ ruby -an test.rb &lt; data.txt 
 Total: 12
 </code></pre>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 4: Les options -p et -l]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l/"/>
-    <updated>2013-12-04T21:21:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/12/04/remplacer-sed-et-awk-par-ruby-4-les-options-p-et-l</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Les options -p et -l de la ligne de commande de Ruby permettent de se
-rapprocher encore un peu plus du comportement de Sed et Awk.  On reprend notre
-fichier tout simple:</p>
-
-<p><code>raw data.txt
-1
-2
-3
-4
-5
-6
-7
-8
-9
-</code></p>
-
-<p>Aujourd'hui l'objectif est d'ajouter une nouvelle colonne, qui nous dit si
-le nombre est pair (p) ou impair (i). C'est un exemple trivial, mais
-suffisant pour ce que je veux montrer.</p>
-
-<!-- more -->
-
-
-<h2>Un premier script déjà concis</h2>
-
-<p>Voici un premier code possible, avec ce que nous connaissons déjà, c'est
-à dire l'option -n:</p>
-
-<p><code>ruby test1.rb
-$_ = $_.chomp + ($_.to_i.even? ? " p" : " i")
-puts $_
-</code></p>
-
-<pre><code>[~]⇒ ruby -n test1.rb &lt; data.txt 
-1 i
-2 p
-3 i
-4 p
-5 i
-6 p
-7 i
-8 p
-9 i
-</code></pre>
-
-<p>On peut noter que:</p>
-
-<ul>
-<li>contrairement à l'exemple précédent, on n'utilise pas les blocs BEGIN et
-END (voir <a href="http://lkdjiin.github.io/blog/2013/11/30/remplacer-sed-et-awk-par-ruby-2-premiers-pas/">Premiers pas</a>
-et <a href="http://lkdjiin.github.io/blog/2013/12/01/remplacer-sed-et-awk-par-ruby-3-begin-et-end/">BEGIN et END</a>).</li>
-<li>la variable prédéfinie <code>$_</code> est <strong>accessible en écriture</strong>.</li>
-<li>la variable prédéfinie <code>$_</code> contient le caractère de fin de ligne, il a
-fallu le supprimer avec <code>chomp</code>. C'est agaçant.</li>
-<li>on écrit chaque nouvelle ligne avec <code>puts</code>. C'est un pattern classique,
-il doit bien y avoir un truc pour nous éviter cela.</li>
-</ul>
-
-
-<h2>La même chose en plus court</h2>
-
-<p>Voici maintenant une réécriture du script ci-dessus, qui tire parti
-des options -p et -l:</p>
-
-<p><code>ruby test2.rb
-$_ += $_.to_i.even? ? " p" : " i"
-</code></p>
-
-<pre><code>[~]⇒ ruby -pl test2.rb &lt; data.txt 
-1 i
-2 p
-3 i
-4 p
-5 i
-6 p
-7 i
-8 p
-9 i
-</code></pre>
-
-<h2>Les explications de -p et -l</h2>
-
-<p>L'option -p fonctionne comme l'option -n, mais en plus, affiche automatiquement
-le contenu de la variable <code>$_</code> à la fin de la boucle de traitement.</p>
-
-<p>L'option -l, quant à elle, s'occupe automatiquement du caractère de fin
-de ligne en le supprimant.</p>
 
 <p>À demain.</p>
 
