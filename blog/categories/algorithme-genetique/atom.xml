@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-10T18:48:49+01:00</updated>
+  <updated>2013-12-11T21:04:20+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,119 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 42: Un problème d'économie]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/"/>
+    <updated>2013-12-11T20:56:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Jusqu'ici les problèmes abordés dans cette série d'articles ont été très
+<em>théoriques</em>.  Le dernier algorithme génétique qu'on a exploré a permis de
+résoudre
+<a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">le problème du sac à dos</a>. Ce problème du sac à dos est une bonne base
+<em>théorique</em> pour aborder certains problèmes plus <em>concrets</em>. On va justement
+se rapprocher un peu du monde réel en tentant de résoudre un problème
+d'économie: optimiser un investissement.</p>
+
+<!-- more -->
+
+
+<p>Voici l'énoncé du problème: Vous êtes un investisseur et vous disposez
+d'une somme de 15 000 € pour acheter des actions du CAC 40.
+Vous connaissez le coût
+d'une action (son prix), vous savez combien elle rapportera dans, disons un
+an, et vous connaissez le nombre d'actions disponibles (combien vous pouvez
+en acheter). L'objectif est de savoir combien d'actions acheter pour chaque
+entreprise du CAC 40, histoire de faire un maximum de profit.</p>
+
+<p>Alors si on se rapproche du monde réel, on est encore dans un monde
+fantastique, puisque pour savoir combien rapportera
+une action, soit vous avez un super-pouvoir, soit vous connaissez un
+ami médium. Quoiqu'il en soit, il me semble que c'est un problème intéressant,
+donc c'est parti.</p>
+
+<p>Ce problème est très proche du problème du sac à dos, je vais donc me baser
+sur le code développé dans les derniers articles, et qui est
+<a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack3.rb">disponible sur Github</a>.</p>
+
+<p>Dans le problème du sac à dos, on devait choisir des objets ; ici les actions
+remplacent les objets. Les objets avaient un poid ; ici les actions ont un
+coût. Les objets avaient une valeur ; ici aussi les actions ont une
+valeur, qu'on nommera «profit». La différence, c'est qu'ici on va pouvoir
+choisir plusieurs actions de même type.</p>
+
+<p>Voici comment on peut représenter une action:</p>
+
+<p><code>ruby
+KnapsackItem = Struct.new(:name, :cost, :profit, :number)
+</code></p>
+
+<p>On a le nom de l'action (<code>name</code>), son coût en euros (<code>cost</code>), le profit
+attendu en euros (<code>profit</code>) et le nombre d'actions disponibles (<code>number</code>).</p>
+
+<p>Pour le stock d'actions dans lequel on va puiser, j'ai été voir le CAC 40,
+j'ai pris la valeur réelle des actions (arrondi à l'entier) et j'ai
+généré aléatoirement les champs profit et number:</p>
+
+<p>``` ruby
+module Knapsack
+  ITEMS = [</p>
+
+<pre><code>KnapsackItem.new('ACCOR', 32, 9, 60),
+KnapsackItem.new('AIR_LIQUIDE', 97, 7, 32),
+KnapsackItem.new('ALSTOM', 25, 5, 6),
+KnapsackItem.new('ARCELORMITTAL_REG', 12, 9, 43),
+KnapsackItem.new('AXA', 18, 2, 65),
+KnapsackItem.new('BNP_PARIBAS', 53, 3, 24),
+KnapsackItem.new('BOUYGUES', 25, 9, 38),
+KnapsackItem.new('CAP_GEMINI', 46, 1, 47),
+KnapsackItem.new('CARREFOUR', 27, 3, 37),
+KnapsackItem.new('CREDIT_AGRICOLE_SA', 8, 4, 99),
+KnapsackItem.new('DANONE', 51, 1, 43),
+KnapsackItem.new('EADS', 49, 6, 63),
+KnapsackItem.new('EDF', 26, 5, 87),
+KnapsackItem.new('ESSILOR_INTERNATIONAL', 73, 6, 49),
+KnapsackItem.new('GDF_SUEZ', 16, 1, 42),
+KnapsackItem.new('GEMALTO', 76, 2, 53),
+KnapsackItem.new('KERING', 150, 5, 97),
+KnapsackItem.new("L'OREAL", 126, 7, 100),
+KnapsackItem.new('LAFARGE', 49, 3, 93),
+KnapsackItem.new('LEGRAND_SA', 39, 2, 49),
+KnapsackItem.new('LVMH_MOET_VUITTON', 129, 9, 8),
+KnapsackItem.new('MICHELIN', 75, 4, 43),
+KnapsackItem.new('ORANGE', 8, 7, 1),
+KnapsackItem.new('PERNOD_RICARD', 80, 4, 53),
+KnapsackItem.new('PUBLICIS_GROUPE', 63, 11, 49),
+KnapsackItem.new('RENAULT', 58, 4, 32),
+KnapsackItem.new('SAFRAN', 47, 2, 61),
+KnapsackItem.new('SAINT_GOBAIN', 36, 7, 33),
+KnapsackItem.new('SANOFI', 73, 9, 70),
+KnapsackItem.new('SCHNEIDER_ELECTRIC', 58, 6, 21),
+KnapsackItem.new('SOCIETE_GENERALE', 40, 3, 93),
+KnapsackItem.new('SOLVAY', 108, 5, 33),
+KnapsackItem.new('STMICROELECTRONICS', 5, 1, 75),
+KnapsackItem.new('TECHNIP', 72, 3, 47),
+KnapsackItem.new('TOTAL', 42, 10, 95),
+KnapsackItem.new('UNIBAIL-RODAMCO', 184, 9, 82),
+KnapsackItem.new('VALLOUREC', 39, 4, 51),
+KnapsackItem.new('VEOLIA_ENVIRONNEMENT', 11, 10, 2),
+KnapsackItem.new('VINCI', 45, 6, 53),
+KnapsackItem.new('VIVENDI', 17, 5, 38)
+</code></pre>
+
+<p>  ]
+end
+```</p>
+
+<p>La prochaine fois on s'occupera de générer la population initiale.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 41: Les individus invalides]]></title>
@@ -481,175 +594,6 @@ Sinon, le score est simplement la valeur totale du sac à dos.</p>
 
 <p>La prochaine fois on mettra en place la sélection, le croisement, la mutation,
 etc…</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 37: Le problème du sac à dos]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/"/>
-    <updated>2013-11-12T13:02:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Pour continuer notre exploration des algorithmes génétiques, on va
-s'intéresser maintenant au problème du sac à dos:</p>
-
-<p><blockquote><p>En algorithmique, le problème du sac à dos, noté également KP (en anglais,<br/>Knapsack Problem) est un problème d'optimisation combinatoire. Il modélise une<br/>situation analogue au remplissage d'un sac à dos, ne pouvant supporter plus<br/>d'un certain poids, avec tout ou partie d'un ensemble donné d'objets ayant<br/>chacun un poids et une valeur. Les objets mis dans le sac à dos doivent<br/>maximiser la valeur totale, sans dépasser le poids maximum.</p><footer><strong>Wikipédia <a href="http://fr.wikipedia.org/wiki/Probl%C3%A8me_du_sac_%C3%A0_dos">http://fr.wikipedia.org/wiki/Probl%C3%A8me_du_sac_%C3%A0_dos</a></strong></footer></blockquote></p>
-
-<!-- more -->
-
-
-<p>Un des intéret de ce problème est que certaines solutions <em>invalides</em> sont
-plus proches de la meilleure solution que nombres de solutions <em>valides</em>.</p>
-
-<p>De même, c'est un problème <em>théorique</em> qui peut être vu comme une
-simplification de problèmes <em>pratiques</em>. Par exemple: «Mon bateau peut
-transporter 100 containers, pour un poids de X tonnes. Je gagne plus ou
-moins d'argent selon les containers transportés. Quels containers je dois
-embarquer parmi un choix de 300 containers ?»</p>
-
-<p>La liste des objets que je vais utiliser se trouve sur le
-<a href="http://rosettacode.org/wiki/Knapsack_problem/0-1">projet RosettaCode</a>.</p>
-
-<p>On commence tout de suite avec la création de la population:</p>
-
-<p>``` ruby
-KnapsackItem = Struct.new(:name, :weight, :value)</p>
-
-<p>module Knapsack
-  ITEMS = [</p>
-
-<pre><code>KnapsackItem.new('map', 9, 150),
-KnapsackItem.new('compass', 13, 35),
-KnapsackItem.new('water', 153, 200),
-KnapsackItem.new('sandwich', 50, 160),
-KnapsackItem.new('glucose', 15, 60),
-KnapsackItem.new('tin', 68, 45),
-KnapsackItem.new('banana', 27, 60),
-KnapsackItem.new('apple', 39, 40),
-KnapsackItem.new('cheese', 23, 30),
-KnapsackItem.new('beer', 52, 10),
-KnapsackItem.new('suntan cream', 11, 70),
-KnapsackItem.new('camera', 32, 30),
-KnapsackItem.new('t-shirt', 24, 15),
-KnapsackItem.new('trousers', 48, 10),
-KnapsackItem.new('umbrella', 73, 40),
-KnapsackItem.new('waterproof trousers', 42, 70),
-KnapsackItem.new('waterproof overclothes', 43, 75),
-KnapsackItem.new('note-case', 22, 80),
-KnapsackItem.new('sunglasses', 7, 20),
-KnapsackItem.new('towel', 18, 12),
-KnapsackItem.new('socks', 4, 50),
-KnapsackItem.new('book', 30, 10),
-</code></pre>
-
-<p>  ]
-end
-```</p>
-
-<p>Pour ceux qui ne connaissent pas Ruby, <code>Struct</code> permet de définir rapidement
-une classe simpliste, une espèce de POxO (Plain Old &ldquo;insérez votre langage&rdquo;
-Object). La classe <code>KnapsackItem</code> aura donc 3 accesseurs: <code>name</code>, <code>weight</code> et
-<code>value</code>. On pourra accéder à la liste des objets avec <code>Knapsack::ITEMS</code>.</p>
-
-<p>Maintenant la classe <code>Individual</code>:</p>
-
-<p>``` ruby
-class Individual
-  def self.random(chromosome_size)</p>
-
-<pre><code>new(nil, chromosome_size)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def self.from_chromosome(chromosome)</p>
-
-<pre><code>new(chromosome)
-</code></pre>
-
-<p>  end</p>
-
-<p>  attr_accessor :score, :fitness
-  attr_reader :chromosome</p>
-
-<p>  def initialize(chromosome = nil, chromosome_size = nil)</p>
-
-<pre><code>if chromosome
-  @chromosome = chromosome
-else
-  @chromosome = []
-  chromosome_size.times { @chromosome &lt;&lt; (rand(0..1) == 1) }
-end
-</code></pre>
-
-<p>  end
-  private_class_method :new</p>
-
-<p>  def chromosome_as_list</p>
-
-<pre><code>list = []
-@chromosome.each_with_index do |gene, index|
-  list &lt;&lt; Knapsack::ITEMS[index].name if gene
-end
-list.join(', ')
-</code></pre>
-
-<p>  end</p>
-
-<p>  def >(other)</p>
-
-<pre><code>return true if other.nil?
-score &gt; other.score
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Un chromosome est défini comme un Array de booléens:</p>
-
-<p>``` ruby</p>
-
-<pre><code>  chromosome_size.times { @chromosome &lt;&lt; (rand(0..1) == 1) }
-</code></pre>
-
-<p>```</p>
-
-<p>Chaque case de l'Array nous indique si un objet est sélectionné (true) ou
-non (false).</p>
-
-<p>J'ai aussi ajouté 2 nouvelles méthodes à cette classe. Tout d'abord
-<code>chromosome_as_list</code> produit une chaîne de caractères avec la liste
-des objets sélectionnés dans le chromosome. Puis la méthode <code>&gt;</code> nous
-sera utile pour comparer deux chromosomes.</p>
-
-<p>Reste la classe <code>Population</code>, qui est identique à ce que nous avons
-déjà écrit avec d'autres algorithmes génétiques:</p>
-
-<p>``` ruby
-class Population &lt; Array
-  def initialize(chromosome_size, population_size)</p>
-
-<pre><code>population_size.times { self &lt;&lt; Individual.random(chromosome_size) }
-</code></pre>
-
-<p>  end</p>
-
-<p>  def best</p>
-
-<pre><code>self.sort_by{|individual| individual.score}.last
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>La prochaine fois on verra une première version de la méthode d'évaluation.</p>
 
 <p>À demain.</p>
 

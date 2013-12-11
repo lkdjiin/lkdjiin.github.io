@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-10T18:48:49+01:00</updated>
+  <updated>2013-12-11T21:04:20+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,119 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 42: Un problème d'économie]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/"/>
+    <updated>2013-12-11T20:56:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Jusqu'ici les problèmes abordés dans cette série d'articles ont été très
+<em>théoriques</em>.  Le dernier algorithme génétique qu'on a exploré a permis de
+résoudre
+<a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">le problème du sac à dos</a>. Ce problème du sac à dos est une bonne base
+<em>théorique</em> pour aborder certains problèmes plus <em>concrets</em>. On va justement
+se rapprocher un peu du monde réel en tentant de résoudre un problème
+d'économie: optimiser un investissement.</p>
+
+<!-- more -->
+
+
+<p>Voici l'énoncé du problème: Vous êtes un investisseur et vous disposez
+d'une somme de 15 000 € pour acheter des actions du CAC 40.
+Vous connaissez le coût
+d'une action (son prix), vous savez combien elle rapportera dans, disons un
+an, et vous connaissez le nombre d'actions disponibles (combien vous pouvez
+en acheter). L'objectif est de savoir combien d'actions acheter pour chaque
+entreprise du CAC 40, histoire de faire un maximum de profit.</p>
+
+<p>Alors si on se rapproche du monde réel, on est encore dans un monde
+fantastique, puisque pour savoir combien rapportera
+une action, soit vous avez un super-pouvoir, soit vous connaissez un
+ami médium. Quoiqu'il en soit, il me semble que c'est un problème intéressant,
+donc c'est parti.</p>
+
+<p>Ce problème est très proche du problème du sac à dos, je vais donc me baser
+sur le code développé dans les derniers articles, et qui est
+<a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack3.rb">disponible sur Github</a>.</p>
+
+<p>Dans le problème du sac à dos, on devait choisir des objets ; ici les actions
+remplacent les objets. Les objets avaient un poid ; ici les actions ont un
+coût. Les objets avaient une valeur ; ici aussi les actions ont une
+valeur, qu'on nommera «profit». La différence, c'est qu'ici on va pouvoir
+choisir plusieurs actions de même type.</p>
+
+<p>Voici comment on peut représenter une action:</p>
+
+<p><code>ruby
+KnapsackItem = Struct.new(:name, :cost, :profit, :number)
+</code></p>
+
+<p>On a le nom de l'action (<code>name</code>), son coût en euros (<code>cost</code>), le profit
+attendu en euros (<code>profit</code>) et le nombre d'actions disponibles (<code>number</code>).</p>
+
+<p>Pour le stock d'actions dans lequel on va puiser, j'ai été voir le CAC 40,
+j'ai pris la valeur réelle des actions (arrondi à l'entier) et j'ai
+généré aléatoirement les champs profit et number:</p>
+
+<p>``` ruby
+module Knapsack
+  ITEMS = [</p>
+
+<pre><code>KnapsackItem.new('ACCOR', 32, 9, 60),
+KnapsackItem.new('AIR_LIQUIDE', 97, 7, 32),
+KnapsackItem.new('ALSTOM', 25, 5, 6),
+KnapsackItem.new('ARCELORMITTAL_REG', 12, 9, 43),
+KnapsackItem.new('AXA', 18, 2, 65),
+KnapsackItem.new('BNP_PARIBAS', 53, 3, 24),
+KnapsackItem.new('BOUYGUES', 25, 9, 38),
+KnapsackItem.new('CAP_GEMINI', 46, 1, 47),
+KnapsackItem.new('CARREFOUR', 27, 3, 37),
+KnapsackItem.new('CREDIT_AGRICOLE_SA', 8, 4, 99),
+KnapsackItem.new('DANONE', 51, 1, 43),
+KnapsackItem.new('EADS', 49, 6, 63),
+KnapsackItem.new('EDF', 26, 5, 87),
+KnapsackItem.new('ESSILOR_INTERNATIONAL', 73, 6, 49),
+KnapsackItem.new('GDF_SUEZ', 16, 1, 42),
+KnapsackItem.new('GEMALTO', 76, 2, 53),
+KnapsackItem.new('KERING', 150, 5, 97),
+KnapsackItem.new("L'OREAL", 126, 7, 100),
+KnapsackItem.new('LAFARGE', 49, 3, 93),
+KnapsackItem.new('LEGRAND_SA', 39, 2, 49),
+KnapsackItem.new('LVMH_MOET_VUITTON', 129, 9, 8),
+KnapsackItem.new('MICHELIN', 75, 4, 43),
+KnapsackItem.new('ORANGE', 8, 7, 1),
+KnapsackItem.new('PERNOD_RICARD', 80, 4, 53),
+KnapsackItem.new('PUBLICIS_GROUPE', 63, 11, 49),
+KnapsackItem.new('RENAULT', 58, 4, 32),
+KnapsackItem.new('SAFRAN', 47, 2, 61),
+KnapsackItem.new('SAINT_GOBAIN', 36, 7, 33),
+KnapsackItem.new('SANOFI', 73, 9, 70),
+KnapsackItem.new('SCHNEIDER_ELECTRIC', 58, 6, 21),
+KnapsackItem.new('SOCIETE_GENERALE', 40, 3, 93),
+KnapsackItem.new('SOLVAY', 108, 5, 33),
+KnapsackItem.new('STMICROELECTRONICS', 5, 1, 75),
+KnapsackItem.new('TECHNIP', 72, 3, 47),
+KnapsackItem.new('TOTAL', 42, 10, 95),
+KnapsackItem.new('UNIBAIL-RODAMCO', 184, 9, 82),
+KnapsackItem.new('VALLOUREC', 39, 4, 51),
+KnapsackItem.new('VEOLIA_ENVIRONNEMENT', 11, 10, 2),
+KnapsackItem.new('VINCI', 45, 6, 53),
+KnapsackItem.new('VIVENDI', 17, 5, 38)
+</code></pre>
+
+<p>  ]
+end
+```</p>
+
+<p>La prochaine fois on s'occupera de générer la population initiale.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Vim: Plier (folder) les commentaires de style Unix]]></title>
@@ -408,159 +521,6 @@ c'est toujours bon à prendre.</p>
 
 <p>La prochaine fois on verra si on peut encore améliorer les performances en
 tenant compte des solutions invalides.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques 39: Resolution du sac à dos]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/"/>
-    <updated>2013-11-16T10:06:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>La dernière fois on a vu une façon simplement
-<a href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/">d'évaluer le contenu</a>
-du sac à dos.
-Aujourd'hui on met en place l'algorithme génétique proprement dit:
-sélection, croisement, mutation, etc.</p>
-
-<!-- more -->
-
-
-<p>J'ai mis le <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">code complet de l'algorithme sur Github</a>.
-Celui-ci est basé sur ce qu'on a fait jusqu'ici pour
-<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">le paradoxe du singe savant</a>
-et pour <a href="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/">le problème des 8 dames</a>.
-Je vais donc commenter les parties qui changent.</p>
-
-<h2>La classe GeneticAlgorithm</h2>
-
-<p>``` ruby
-class GeneticAlgorithm
-  # &hellip;</p>
-
-<p>  def run</p>
-
-<pre><code>best_ever = nil
-@generations.times do |generation|
-  Evaluator.new(@capacity, @population).evaluate
-  best = @population.best
-  best_ever = best if best &gt; best_ever
-  display(generation, best)
-  next_generation
-end
-display_best_ever(best_ever)
-</code></pre>
-
-<p>  end</p>
-
-<p>  private</p>
-
-<p>  # &hellip;</p>
-
-<p>  def display_best_ever(individual)</p>
-
-<pre><code>puts "----------------------"
-puts "Best ever"
-puts "----------------------"
-puts "score:      #{individual.score}"
-puts "chromosome: #{individual.chromosome_as_list}"
-</code></pre>
-
-<p>  end</p>
-
-<p>  # &hellip;
-end
-```</p>
-
-<p>Voyons la méthode <code>run</code>. La variable <code>best_ever</code> va contenir le meilleur
-individu, toutes générations confondues. À chaque itération, on compare
-ce «meilleur de tout les temps» avec le meilleur individu de la génération:</p>
-
-<pre><code>best_ever = best if best &gt; best_ever
-</code></pre>
-
-<p>C'est pour ça qu'on avait besoin d'une méthode <code>&gt;</code> dans la classe <code>Individual</code>
-(voir <a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">cet article</a>).</p>
-
-<p>À la fin de la méthode <code>run</code> on utilise la nouvelle méthode <code>display_best_ever</code>
-pour afficher notre meilleure solution.</p>
-
-<h2>La classe Mutator</h2>
-
-<p>La seconde classe qui change un peu est la classe <code>Mutator</code>:</p>
-
-<p>``` ruby
-class Mutator
-  def initialize(chromosome_size, mutation_rate)</p>
-
-<pre><code>@size = chromosome_size
-@rate = mutation_rate
-</code></pre>
-
-<p>  end</p>
-
-<p>  def mutate(chromosome)</p>
-
-<pre><code>@size.times do |index|
-  chromosome[index] = ! chromosome[index] if rand &lt; @rate
-end
-chromosome
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Un chromosome étant une liste (un Array) de booléens, la mutation consiste
-à <em>inverser</em> un élément, true devient false et inversement:</p>
-
-<pre><code>chromosome[index] = ! chromosome[index] if rand &lt; @rate
-</code></pre>
-
-<h2>Le lancement du programme</h2>
-
-<p>Le problème n'a pas l'air trop complexe, je me dis donc que 100 générations
-devraient suffire. La population compte 1 000 individus, ce qui est
-classique et le taux de mutation est assez élevé (1%):</p>
-
-<p><code>ruby
-knapsack_capacity = 400
-generations = 100
-population = Population.new(Knapsack::ITEMS.size, 1000)
-mutation = 0.01
-GeneticAlgorithm.new(generations, population, knapsack_capacity, mutation).run
-</code></p>
-
-<p>Et voici le moment de vérité:</p>
-
-<pre><code>[~]⇒ ruby knapsack.rb 
-Gen: 0 Best score: 922
-Gen: 1 Best score: 950
-.
-.
-.
-Gen: 57 Best score: 1010
-Gen: 58 Best score: 957
-Gen: 59 Best score: 1030
-.
-.
-.
-Gen: 99 Best score: 957
-----------------------
-Best ever
-----------------------
-score:      1030
-chromosome: map, compass, water, sandwich, glucose, banana, suntan cream,
-waterproof trousers, waterproof overclothes, note-case, sunglasses, socks
-</code></pre>
-
-<p>La prochaine fois on va analyser ce résultat et faire en sorte de
-l'améliorer.</p>
 
 <p>À demain.</p>
 
