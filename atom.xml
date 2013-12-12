@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-11T21:04:20+01:00</updated>
+  <updated>2013-12-12T21:11:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,95 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 10: Un exemple d'utilisation]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/"/>
+    <updated>2013-12-12T21:05:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Dans un <a href="http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/">article précédent</a>
+sur les algorithmes génétiques, je devais générer des valeurs aléatoires
+<em>en dur</em> dans un fichier source Ruby. Le code ressemble à ce qui suit:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;ACCOR&#39;</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">60</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;AIR_LIQUIDE&#39;</span><span class="p">,</span> <span class="mi">97</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;ALSTOM&#39;</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;ARCELORMITTAL_REG&#39;</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">43</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;AXA&#39;</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">65</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;BNP_PARIBAS&#39;</span><span class="p">,</span> <span class="mi">53</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">24</span><span class="p">),</span>
+</span><span class='line'><span class="c1"># ...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le dernier nombre de chaque ligne doit être compris entre 1 et 100.
+Voici comment faire en utilisant ce qu&#8217;on a appris depuis le début
+de cette série <a href="http://lkdjiin.github.io/blog/2013/11/29/remplacer-sed-et-awk-par-ruby/">Remplacer Sed et Awk par Ruby</a>.</p>
+
+<!-- more -->
+
+
+<p>J&#8217;ai tout d&#8217;abord écrit mes lignes en mettant la chaîne <code>ABC</code> là où je voulais
+un nombre aléatoire:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;ACCOR&#39;</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="no">ABC</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;AIR_LIQUIDE&#39;</span><span class="p">,</span> <span class="mi">97</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="no">ABC</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;ALSTOM&#39;</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="no">ABC</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;ARCELORMITTAL_REG&#39;</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="no">ABC</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;AXA&#39;</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="no">ABC</span><span class="p">),</span>
+</span><span class='line'><span class="no">KnapsackItem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;BNP_PARIBAS&#39;</span><span class="p">,</span> <span class="mi">53</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="no">ABC</span><span class="p">),</span>
+</span><span class='line'><span class="c1"># ...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cela va permettre au script de <em>trouver</em> l&#8217;endroit où substituer un nombre.</p>
+
+<p>Puis, on lance le script suivant depuis une console:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>ruby -ple <span class="s1">&#39;r=rand(100)+1;$_.sub!(/ABC/,r.to_s)&#39;</span> fichier_source
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Explications: <code>rand(100)+1</code> génère un nombre aléatoire entre 1 inclus et
+100 inclus. <code>$_.sub!(/ABC/,r.to_s)</code> opère une substitution de la ligne en
+cours de traitement: ABC est remplacé par le contenu de <code>r</code>, soit le nombre
+aléatoire.</p>
+
+<p>En réalité, je n&#8217;ai pas lancé ce script depuis une console, mais directement
+dans Vim:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span>%<span class="p">!</span> <span class="k">ruby</span> <span class="p">-</span>ple <span class="s1">&#39;r=rand(100)+1;$_.sub\!(/ABC/,r.to_s)&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Dans ce cas, il faut faire attention à échapper le <code>!</code>, sans quoi Vim
+n&#8217;aimeras pas…</p>
+
+<p>Voilà un exemple simple d&#8217;utilisation du mode <em>sed/awk</em> de Ruby.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 42: Un problème d'économie]]></title>
@@ -245,7 +334,7 @@ justement d&#8217;un type Set, les doublons ne seront pas pris en compte):</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/07/remplacer-sed-et-awk-par-ruby-6-separateur-de-champ/'>Remplacer Sed et Awk par Ruby 6: Séparateur de champ</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -298,7 +387,7 @@ certains caractères (comme ici le <code>!</code>).</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/07/remplacer-sed-et-awk-par-ruby-6-separateur-de-champ/'>Remplacer Sed et Awk par Ruby 6: Séparateur de champ</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -383,7 +472,7 @@ bob
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/07/remplacer-sed-et-awk-par-ruby-6-separateur-de-champ/'>Remplacer Sed et Awk par Ruby 6: Séparateur de champ</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -458,7 +547,7 @@ Total: 12
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -510,7 +599,7 @@ en retirerez toujours un bénéfice.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -580,7 +669,7 @@ Total: 12
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -694,7 +783,7 @@ de ligne en le supprimant.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -770,7 +859,7 @@ bien sûr participer au code sur Github.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/02/vim-coloration-syntaxique-des-parentheses/'>Vim: Coloration syntaxique des parenthèses</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/03/le-ventilo-de-mon-alimentation-fait-un-bruit-denfer/'>Le ventilo de mon alimentation fait un bruit d&#8217;enfer</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/'>Vim: Plier (folder) les commentaires de style Unix</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/02/vim-coloration-syntaxique-des-parentheses/'>Vim: Coloration syntaxique des parenthèses</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/03/le-ventilo-de-mon-alimentation-fait-un-bruit-denfer/'>Le ventilo de mon alimentation fait un bruit d&#8217;enfer</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -859,7 +948,7 @@ test3.rb:3: syntax error, unexpected keyword_end, expecting end-of-input
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -977,7 +1066,7 @@ le fichier et à lire chaque ligne.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1053,7 +1142,7 @@ quelques articles sur ce sujet.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/08/remplacer-sed-et-awk-par-ruby-7-modifier-slash-sauvegarder-les-donnees/'>Remplacer Sed et Awk par Ruby 7: Modifier/sauvegarder les données</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/'>Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1176,7 +1265,7 @@ quand il s&#8217;agit juste d&#8217;étudier un fichier.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/02/un-plugin-vim-pour-replier-slash-folder-les-commentaires/'>Un plugin Vim pour replier/folder les commentaires</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1280,7 +1369,7 @@ donc faire en sorte qu&#8217;il soit requis:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1426,7 +1515,7 @@ la version <a href="https://www.ruby-lang.org/en/news/2013/11/22/ruby-2-1-0-prev
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1473,7 +1562,7 @@ Ruby 2.1.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/10/remplacer-sed-et-awk-par-ruby-9-utiliser-la-bibliotheque-standard/'>Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1582,7 +1671,7 @@ vous avez sous le coude une paire d&#8217;utilitaires qui déchirent !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1667,116 +1756,6 @@ de Vim.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Du nouveau dans Ruby 2.1: Définition de méthode]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode/"/>
-    <updated>2013-11-22T17:40:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/22/du-nouveau-dans-ruby-2-dot-1-definition-de-methode</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Ruby 2.1 devrait être là dans pas longtemps, il est temps de regarder
-ce que cette nouvelle version nous offre. Aujourd&#8217;hui on va voir un petit
-changement dans la définition des méthodes.</p>
-
-<!-- more -->
-
-
-<h2>Ce qui change avec def</h2>
-
-<p>Jusqu&#8217;ici, <code>def</code> renvoyait <code>nil</code>:</p>
-
-<pre><code>[~]⇒ rvm use 2.0.0
-[~]⇒ irb
-&gt;&gt; def foo;end
-nil
-</code></pre>
-
-<p>Dans Ruby 2.1, <code>def</code> va renvoyer le nom de la méthode (en tant que symbole):</p>
-
-<pre><code>[~]⇒ rvm use 2.1.0-preview1
-[~]⇒ irb
-&gt;&gt; def foo;end
-=&gt; :foo
-</code></pre>
-
-<h2>Un cas d&#8217;utilisation</h2>
-
-<p>Pour l&#8217;instant je ne connais qu&#8217;un seul cas d&#8217;utilisation:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="kp">private</span> <span class="k">def</span> <span class="nf">foo</span> <span class="p">;</span> <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On peut utiliser Ruby pendant très longtemps avant de se rendre compte que
-<code>private</code> est une méthode et non un mot-clé. Avant Ruby 2.1, l&#8217;utilisation
-typique de <code>private</code> est celle-ci:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">foo</span> <span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kp">private</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">bar</span> <span class="p">;</span> <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Autrement dit: les méthodes publiques avant <code>private</code> et les méthodes privées
-après. Une autre possibilité intéressante est la suivante:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">foo</span> <span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">foo_helper</span> <span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>  <span class="kp">private</span> <span class="ss">:bar</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Moins utilisée mais pourtant cool, cette façon de faire permet de garder,
-par exemple, une méthode helper sous la méthode appellante.</p>
-
-<p>Avec Ruby 2.1 nous aurons donc la possibilité d&#8217;écrire ceci:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">foo</span> <span class="p">;</span> <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kp">private</span> <span class="n">foo_helper</span> <span class="p">;</span> <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voilà. Si vous connaissez un autre cas d&#8217;utilisation, laissez donc un
-commentaire.</p>
-
-<p><strong>Source (pdf)</strong> <a href="http://www.atdot.net/~ko1/activities/toruby05-ko1.pdf">toruby</a></p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li></ul></section></p>
 ]]></content>
   </entry>
   
