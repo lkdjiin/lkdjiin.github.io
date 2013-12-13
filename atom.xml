@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-12T21:13:29+01:00</updated>
+  <updated>2013-12-13T22:09:55+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,183 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 43: Économie, la population]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/"/>
+    <updated>2013-12-13T21:36:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Après avoir vu dernièrement l&#8217;énoncé du <a href="http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/">problème d&#8217;investissement</a>
+que je me propose de résoudre à l&#8217;aide d&#8217;un algorithme génétique, on
+peut maintenant créer la population initiale.</p>
+
+<!-- more -->
+
+
+<p>Je me base sur le programme développé pour le problème du sac à dos
+<a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack3.rb">disponible sur Github</a>.
+Par contre, le code nécessite la version 2.1 de Ruby (disponible en
+preview2 à l&#8217;heure où j&#8217;écris ces lignes).</p>
+
+<p>Tout d&#8217;abord la classe <code>Individual</code>, qui recueille toutes les informations
+sur nos individus: chromosome, score et fitness.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Individual</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">random</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class='line'>      <span class="kp">new</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">from_chromosome</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>      <span class="kp">new</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">listing</span><span class="p">(</span><span class="ss">chromosome</span><span class="p">:,</span> <span class="ss">items</span><span class="p">:)</span>
+</span><span class='line'>      <span class="n">chromosome</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">gene</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>        <span class="s2">&quot;</span><span class="si">#{</span><span class="n">gene</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>      <span class="k">end</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:score</span><span class="p">,</span> <span class="ss">:fitness</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:chromosome</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="n">items</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">chromosome</span>
+</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="n">chromosome</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>      <span class="n">items</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>        <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.item</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="nb">private_class_method</span> <span class="ss">:new</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">&gt;</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="kp">true</span> <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">nil?</span>
+</span><span class='line'>    <span class="n">score</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">score</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;ai ajouté une méthode de classe <code>listing</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">listing</span><span class="p">(</span><span class="ss">chromosome</span><span class="p">:,</span> <span class="ss">items</span><span class="p">:)</span>
+</span><span class='line'>  <span class="n">chromosome</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">gene</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>    <span class="s2">&quot;</span><span class="si">#{</span><span class="n">gene</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Elle utilise <a href="http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/">les arguments nommés requis</a> de Ruby 2.1 et prend en
+paramêtre un chromosome et la liste des actions (<code>Knapsack::ITEMS</code>,
+<a href="http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/">voir l&#8217;article précédent</a>). Elle servira à afficher la liste des actions,
+avec le nombre retenu pour chacune d&#8217;entres elles à la fin de l&#8217;algorithme.</p>
+
+<p>Dans la méthode <code>initialize</code>, on peut voir comment je crée les chromosomes
+de la population initiale:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">else</span>
+</span><span class='line'>  <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="n">items</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>    <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.item</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>items</code> se réfère à la liste des actions (<code>Knapsack::ITEMS</code>). Un chromosome est
+une liste de la même taille que <code>items</code>. Chaque gène (ou emplacement dans
+la liste) est un nombre compris entre zéro et le nombre maximum d&#8217;actions
+pour cette action particulière (voir encore une fois <code>Knapsack::ITEMS</code>).</p>
+
+<p>Maintenant, pour la création de la population proprement dite, il n&#8217;y a
+rien de nouveau:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Population</span> <span class="o">&lt;</span> <span class="nb">Array</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">population_size</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="nb">self</span> <span class="o">&lt;&lt;</span> <span class="no">Individual</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">best</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">sort_by</span><span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="p">}</span><span class="o">.</span><span class="n">last</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La prochaine fois on verra l&#8217;évaluation…</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Remplacer Sed et Awk par Ruby 10: Un exemple d'utilisation]]></title>
@@ -254,7 +431,7 @@ généré aléatoirement les champs profit et number:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/'>Les algorithmes génétiques 39: Resolution du sac à dos</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/'>Les algorithmes génétiques démystifiés 40: Ajout d&#8217;élitisme</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1265,7 +1442,7 @@ quand il s&#8217;agit juste d&#8217;étudier un fichier.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1672,90 +1849,6 @@ vous avez sous le coude une paire d&#8217;utilitaires qui déchirent !</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/12/remplacer-sed-et-awk-par-ruby-10-un-exemple-dutilisation/'>Remplacer Sed et Awk par Ruby 10: Un exemple d&#8217;utilisation</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/13/vim-creez-des-presentations-avec-vimdeck/'>Vim: Créez des présentations avec Vimdeck</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Pourcentage des issues par langages sur Github]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/23/pourcentage-des-issues-par-langages-sur-github/"/>
-    <updated>2013-11-23T20:44:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/23/pourcentage-des-issues-par-langages-sur-github</id>
-    <content type="html"><![CDATA[<p>Sur hubReports, on peut avoir plusieurs statistiques concernants les dépots de
-code et les utilisateurs de GitHub.
-<a href="http://hubreports.yougeezer.co.uk/languages">Cette page</a> montre par exemple
-le nombre de dépots et d&#8217;issues actives par langages.</p>
-
-<p>Voici les 21 premiers langages (ceux qui ont plus de 10 000 dépots),
-triés par nombre de dépots:</p>
-
-<!-- more -->
-
-
-<pre><code>Rank  Language      Repos    Issues
-1     JavaScript    559,445  342,695
-2     Ruby          465,960  147,376
-3     Java          387,956  161,071
-4     Python        281,468  184,744
-5     PHP           275,014  149,927
-6     C             147,403  64,353 
-7     C++           142,090  71,020 
-8     C#            94,122   42,112 
-9     Objective-C   89,588   36,593 
-10    Shell         82,228   21,300 
-11    Perl          69,301   20,146 
-12    VimL          40,771   6,281  
-13    Scala         21,889   11,542 
-14    CoffeeScript  20,668   13,930 
-15    Haskell       18,171   7,825  
-16    Go            17,890   7,378  
-17    EmacsLisp     15,671   4,553  
-18    Clojure       14,729   5,933  
-19    Lua           13,667   5,896  
-20    ActionScript  12,221   5,533  
-21    R             10,117   4,504  
-</code></pre>
-
-<p>En voyant ça, je me suis demandé quel était le pourcentage d&#8217;issues par
-rapport au nombre de dépots. Le voici dans la liste qui suit. Cette fois
-la liste est triée sur le dernier champ:</p>
-
-<pre><code>Rank  Language      Repos    Issues   % Issues/Repos
-12    VimL          40,771   6,281    15
-10    Shell         82,228   21,300   25
-17    EmacsLisp     15,671   4,553    26
-11    Perl          69,301   20,146   28
-2     Ruby          465,960  147,376  31
-18    Clojure       14,729   5,933    35
-15    Haskell       18,171   7,825    38
-19    Lua           13,667   5,896    38
-21    R             10,117   4,504    40
-9     Objective-C   89,588   36,593   40
-16    Go            17,890   7,378    41
-20    ActionScript  12,221   5,533    41
-3     Java          387,956  161,071  41
-6     C             147,403  64,353   43
-8     C#            94,122   42,112   44
-7     C++           142,090  71,020   50
-13    Scala         21,889   11,542   52
-5     PHP           275,014  149,927  54
-1     JavaScript    559,445  342,695  61
-14    CoffeeScript  20,668   13,930   65
-4     Python        281,468  184,744  65
-</code></pre>
-
-<p>Alors je n&#8217;en tire aucunes conclusions puisque ce rapport n&#8217;est pas
-très <em>scientifique</em>. Mais c&#8217;est toutefois marrant de voir VimL et Perl
-parmi les bons élèves (selon ce critère bien sûr) et de voir CoffeeScript
-et Python en queue de peloton (toujours selon ce critère évidement).</p>
-
-<p>Est-ce que ça vous interpèle ?</p>
-
-<p>Demain je montrerais comment je suis passé d&#8217;une liste à l&#8217;autre à l&#8217;aide
-de Vim.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul></ul></section></p>
 ]]></content>
   </entry>
   
