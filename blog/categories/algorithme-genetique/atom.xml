@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-14T17:41:27+01:00</updated>
+  <updated>2013-12-15T19:14:40+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,128 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 44: Économie]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/"/>
+    <updated>2013-12-15T18:25:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Maintenant que <a href="">la population initiale est créée</a>,
+voyons comment l'évaluer.</p>
+
+<!-- more -->
+
+
+<p>Voici la classe <code>Evaluator</code>, qui a pris un coup de jeune:</p>
+
+<p>``` ruby
+class Evaluator
+  include Score
+  include Fitness</p>
+
+<p>  def initialize(capacity:, population:, items:)</p>
+
+<pre><code>@capacity = capacity
+@population = population
+@items = items
+</code></pre>
+
+<p>  end</p>
+
+<p>  def evaluate!</p>
+
+<pre><code>compute_score!
+compute_fitness!
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>J'ai transferé les calculs du score et de la <em>fitness</em> dans des modules
+car cette classe <code>Evaluator</code> commence à enfler (et aussi car je teste
+quelques idées en vue d'un futur framework).</p>
+
+<p>Le module <code>Score</code> est bien sûr responsable de l'évaluation d'un
+portefeuille d'actions. Je le présenterais demain, car je n'ai
+malheureusement pas le temps nécessaire aujourd'hui. Je vous donne
+malgré tout le code dès maintenant:</p>
+
+<p>``` ruby
+module Score
+  def self.profit_and_cost(individual, items)</p>
+
+<pre><code>profit = cost = 0
+individual.chromosome.each_with_index do |number, index|
+  profit += items[index].profit * number
+  cost += items[index].cost * number
+end
+[profit, cost]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compute_score!</p>
+
+<pre><code>@population.each {|individual| individual.score = score(individual) }
+shift
+</code></pre>
+
+<p>  end</p>
+
+<p>  def score(individual)</p>
+
+<pre><code>profit, cost = Score.profit_and_cost individual, @items
+malus(profit, cost)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def malus(profit, cost)</p>
+
+<pre><code>profit -= 2 * (cost - @capacity) if cost &gt; @capacity
+profit
+</code></pre>
+
+<p>  end</p>
+
+<p>  def shift</p>
+
+<pre><code>score_min = @population.map(&amp;:score).min.abs
+@population.map {|individual| individual.score += score_min + 1 }
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>En ce qui concerne le module <code>Fitness</code>, le code est le même que
+d'habitude.</p>
+
+<p>``` ruby
+module Fitness
+  def compute_fitness!</p>
+
+<pre><code>total = @population.inject(0) {|sum, individual| sum + individual.score }
+size = @population.size
+@population.each do |individual|
+  individual.fitness = individual.score.to_f / total * size
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voilà, demain on verra en détail le module <code>Score</code>.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 43: Économie, la population]]></title>
@@ -454,159 +576,6 @@ c'est toujours bon à prendre.</p>
 
 <p>La prochaine fois on verra si on peut encore améliorer les performances en
 tenant compte des solutions invalides.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques 39: Resolution du sac à dos]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/"/>
-    <updated>2013-11-16T10:06:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>La dernière fois on a vu une façon simplement
-<a href="http://lkdjiin.github.io/blog/2013/11/13/les-algorithmes-genetiques-demystifies-38-evaluation-du-sac-a-dos/">d'évaluer le contenu</a>
-du sac à dos.
-Aujourd'hui on met en place l'algorithme génétique proprement dit:
-sélection, croisement, mutation, etc.</p>
-
-<!-- more -->
-
-
-<p>J'ai mis le <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">code complet de l'algorithme sur Github</a>.
-Celui-ci est basé sur ce qu'on a fait jusqu'ici pour
-<a href="http://lkdjiin.github.io/blog/2013/09/08/les-algorithmes-genetiques-demystifies-8-le-paradoxe-du-singe-savant/">le paradoxe du singe savant</a>
-et pour <a href="http://lkdjiin.github.io/blog/2013/09/24/les-algorithmes-genetiques-demystifies-21-probleme-des-8-dames/">le problème des 8 dames</a>.
-Je vais donc commenter les parties qui changent.</p>
-
-<h2>La classe GeneticAlgorithm</h2>
-
-<p>``` ruby
-class GeneticAlgorithm
-  # &hellip;</p>
-
-<p>  def run</p>
-
-<pre><code>best_ever = nil
-@generations.times do |generation|
-  Evaluator.new(@capacity, @population).evaluate
-  best = @population.best
-  best_ever = best if best &gt; best_ever
-  display(generation, best)
-  next_generation
-end
-display_best_ever(best_ever)
-</code></pre>
-
-<p>  end</p>
-
-<p>  private</p>
-
-<p>  # &hellip;</p>
-
-<p>  def display_best_ever(individual)</p>
-
-<pre><code>puts "----------------------"
-puts "Best ever"
-puts "----------------------"
-puts "score:      #{individual.score}"
-puts "chromosome: #{individual.chromosome_as_list}"
-</code></pre>
-
-<p>  end</p>
-
-<p>  # &hellip;
-end
-```</p>
-
-<p>Voyons la méthode <code>run</code>. La variable <code>best_ever</code> va contenir le meilleur
-individu, toutes générations confondues. À chaque itération, on compare
-ce «meilleur de tout les temps» avec le meilleur individu de la génération:</p>
-
-<pre><code>best_ever = best if best &gt; best_ever
-</code></pre>
-
-<p>C'est pour ça qu'on avait besoin d'une méthode <code>&gt;</code> dans la classe <code>Individual</code>
-(voir <a href="http://lkdjiin.github.io/blog/2013/11/12/les-algorithmes-genetiques-demystifies-37-le-probleme-du-sac-a-dos/">cet article</a>).</p>
-
-<p>À la fin de la méthode <code>run</code> on utilise la nouvelle méthode <code>display_best_ever</code>
-pour afficher notre meilleure solution.</p>
-
-<h2>La classe Mutator</h2>
-
-<p>La seconde classe qui change un peu est la classe <code>Mutator</code>:</p>
-
-<p>``` ruby
-class Mutator
-  def initialize(chromosome_size, mutation_rate)</p>
-
-<pre><code>@size = chromosome_size
-@rate = mutation_rate
-</code></pre>
-
-<p>  end</p>
-
-<p>  def mutate(chromosome)</p>
-
-<pre><code>@size.times do |index|
-  chromosome[index] = ! chromosome[index] if rand &lt; @rate
-end
-chromosome
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Un chromosome étant une liste (un Array) de booléens, la mutation consiste
-à <em>inverser</em> un élément, true devient false et inversement:</p>
-
-<pre><code>chromosome[index] = ! chromosome[index] if rand &lt; @rate
-</code></pre>
-
-<h2>Le lancement du programme</h2>
-
-<p>Le problème n'a pas l'air trop complexe, je me dis donc que 100 générations
-devraient suffire. La population compte 1 000 individus, ce qui est
-classique et le taux de mutation est assez élevé (1%):</p>
-
-<p><code>ruby
-knapsack_capacity = 400
-generations = 100
-population = Population.new(Knapsack::ITEMS.size, 1000)
-mutation = 0.01
-GeneticAlgorithm.new(generations, population, knapsack_capacity, mutation).run
-</code></p>
-
-<p>Et voici le moment de vérité:</p>
-
-<pre><code>[~]⇒ ruby knapsack.rb 
-Gen: 0 Best score: 922
-Gen: 1 Best score: 950
-.
-.
-.
-Gen: 57 Best score: 1010
-Gen: 58 Best score: 957
-Gen: 59 Best score: 1030
-.
-.
-.
-Gen: 99 Best score: 957
-----------------------
-Best ever
-----------------------
-score:      1030
-chromosome: map, compass, water, sandwich, glucose, banana, suntan cream,
-waterproof trousers, waterproof overclothes, note-case, sunglasses, socks
-</code></pre>
-
-<p>La prochaine fois on va analyser ce résultat et faire en sorte de
-l'améliorer.</p>
 
 <p>À demain.</p>
 

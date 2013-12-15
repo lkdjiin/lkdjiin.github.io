@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-14T17:41:27+01:00</updated>
+  <updated>2013-12-15T19:14:40+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,128 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 44: Économie]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/"/>
+    <updated>2013-12-15T18:25:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Maintenant que <a href="">la population initiale est créée</a>,
+voyons comment l'évaluer.</p>
+
+<!-- more -->
+
+
+<p>Voici la classe <code>Evaluator</code>, qui a pris un coup de jeune:</p>
+
+<p>``` ruby
+class Evaluator
+  include Score
+  include Fitness</p>
+
+<p>  def initialize(capacity:, population:, items:)</p>
+
+<pre><code>@capacity = capacity
+@population = population
+@items = items
+</code></pre>
+
+<p>  end</p>
+
+<p>  def evaluate!</p>
+
+<pre><code>compute_score!
+compute_fitness!
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>J'ai transferé les calculs du score et de la <em>fitness</em> dans des modules
+car cette classe <code>Evaluator</code> commence à enfler (et aussi car je teste
+quelques idées en vue d'un futur framework).</p>
+
+<p>Le module <code>Score</code> est bien sûr responsable de l'évaluation d'un
+portefeuille d'actions. Je le présenterais demain, car je n'ai
+malheureusement pas le temps nécessaire aujourd'hui. Je vous donne
+malgré tout le code dès maintenant:</p>
+
+<p>``` ruby
+module Score
+  def self.profit_and_cost(individual, items)</p>
+
+<pre><code>profit = cost = 0
+individual.chromosome.each_with_index do |number, index|
+  profit += items[index].profit * number
+  cost += items[index].cost * number
+end
+[profit, cost]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compute_score!</p>
+
+<pre><code>@population.each {|individual| individual.score = score(individual) }
+shift
+</code></pre>
+
+<p>  end</p>
+
+<p>  def score(individual)</p>
+
+<pre><code>profit, cost = Score.profit_and_cost individual, @items
+malus(profit, cost)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def malus(profit, cost)</p>
+
+<pre><code>profit -= 2 * (cost - @capacity) if cost &gt; @capacity
+profit
+</code></pre>
+
+<p>  end</p>
+
+<p>  def shift</p>
+
+<pre><code>score_min = @population.map(&amp;:score).min.abs
+@population.map {|individual| individual.score += score_min + 1 }
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>En ce qui concerne le module <code>Fitness</code>, le code est le même que
+d'habitude.</p>
+
+<p>``` ruby
+module Fitness
+  def compute_fitness!</p>
+
+<pre><code>total = @population.inject(0) {|sum, individual| sum + individual.score }
+size = @population.size
+@population.each do |individual|
+  individual.fitness = individual.score.to_f / total * size
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voilà, demain on verra en détail le module <code>Score</code>.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 43: Économie, la population]]></title>
@@ -464,91 +586,6 @@ end
 commentaire.</p>
 
 <p><strong>Source (pdf)</strong> <a href="http://www.atdot.net/~ko1/activities/toruby05-ko1.pdf">toruby</a></p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 41: Les individus invalides]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/"/>
-    <updated>2013-11-19T20:56:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>La dernière fois on a vu comment l'introduction d'une petite dose
-d'élitisme augmentait légèrement les performances d'un algorithme
-génétique (<a href="http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/">lire l'article</a>).
-Aujourd'hui on va <em>véritablement booster</em> ces performances
-dans le cadre du problème du sac à dos, en tenant compte des individus
-invalides.</p>
-
-<!-- more -->
-
-
-<h2>Bref rappel du problème</h2>
-
-<p>La capacité du sac à dos est de 400 (grammes, kilos, unités, etc…) et on ne
-doit pas la dépasser. Autrement dit, un couple {<em>poids</em>, <em>valeur</em>} de
-{401, 1000} est bien plus proche de la solution idéale que le couple
-{399, 500}. Pourtant, d'après les règles qu'on a utilisées jusqu'ici, la
-solution {401, 1000} est purement et simplement éliminée puisque jugée
-invalide.</p>
-
-<p>Il est légitime de se demander ici si on ne perd pas des gènes précieux en
-éliminant de telles solutions ?</p>
-
-<h2>Prise en compte des solutions invalides</h2>
-
-<p>L'idée est donc de permettre aux solutions qui dépassent un peu le poids
-d'être prise en considération, sans pour autant mettre les solutions
-invalides à égalité avec les solutions valides.</p>
-
-<p>Pour cela, on va appliquer une pénalité, une sanction, aux solutions
-invalides. Tout se passe dans la méthode <code>score</code> de la classe
-<code>Evaluator</code>. Vous pouvez trouver le code complet de cette troisième
-version du programme sur Github: <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack3.rb">knapsack3.rb</a>.
-Voici ce qui change:</p>
-
-<p>``` ruby
-  def score(individual)</p>
-
-<pre><code># [...]
-if weight &gt; @capacity
-  value -= 2 * (weight - @capacity)
-  value = 0 if value &lt; 0
-end
-individual.score = value
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>La pénalité appliquée à une sanction invalide est ici: 2 fois la différence
-entre le poids du sac et sa capacité. C'est une valeur obtenue par
-tatonnement, il n'y a rien de magique et vous devriez faire d'autres
-essais… Je m'assure ensuite que la valeur n'est pas négative puisque la
-méthode <code>fitness</code> attend une valeur positive.</p>
-
-<h2>Les performances</h2>
-
-<p>J'ai fait tourner chaque programme 200 fois et fait la moyenne de la
-génération où la meilleure solution (score de 1030) est trouvée:</p>
-
-<pre><code>Programme    | Génération moyenne | Remarques
-=========================================================
-knapsack.rb  |              72.06 | algo original
----------------------------------------------------------
-knapsack2.rb |              67.61 | + élite
----------------------------------------------------------
-knapsack3.rb |              22.55 | + élite + invalides
-</code></pre>
-
-<p>Le gain de performance est remarquable ! Moralité de cette affaire:
-Pensez y à deux fois avant de jeter un chromosome invalide à la poubelle,
-il contient peut-être des gènes importants.</p>
 
 <p>À demain.</p>
 
