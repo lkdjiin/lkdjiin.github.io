@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : investissement | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/investissement/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-15T19:14:40+01:00</updated>
+  <updated>2013-12-16T19:26:03+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,169 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 45: Économie, calcul du score]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/"/>
+    <updated>2013-12-16T18:15:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Hier j'ai <a href="http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/">survolé les trois classes/modules</a> qui s'occupent de l'évaluation,
+<code>Evaluator</code>, <code>Score</code> et <code>Fitness</code>. Aujourd'hui je parle en détail du
+module <code>Score</code>.</p>
+
+<!-- more -->
+
+
+<p>Revoici donc le module <code>Score</code> au complet:</p>
+
+<p>``` ruby
+module Score
+  def self.profit_and_cost(individual, items)</p>
+
+<pre><code>profit = cost = 0
+individual.chromosome.each_with_index do |number, index|
+  profit += items[index].profit * number
+  cost += items[index].cost * number
+end
+[profit, cost]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compute_score!</p>
+
+<pre><code>@population.each {|individual| individual.score = score(individual) }
+shift
+</code></pre>
+
+<p>  end</p>
+
+<p>  def score(individual)</p>
+
+<pre><code>profit, cost = Score.profit_and_cost individual, @items
+malus(profit, cost)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def malus(profit, cost)</p>
+
+<pre><code>profit -= 2 * (cost - @capacity) if cost &gt; @capacity
+profit
+</code></pre>
+
+<p>  end</p>
+
+<p>  def shift</p>
+
+<pre><code>score_min = @population.map(&amp;:score).min.abs
+@population.map {|individual| individual.score += score_min + 1 }
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voyons d'abord rapidement la méthode <code>compute_score!</code>:</p>
+
+<p>``` ruby
+  def compute_score!</p>
+
+<pre><code>@population.each {|individual| individual.score = score(individual) }
+shift
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>On calcule/affecte le score de chaque individu. Puis on appelle une méthode
+<code>shift</code>, dont on verra l'utilité bientôt.</p>
+
+<p>La méthode <code>score</code> maintenant:</p>
+
+<p>``` ruby
+  def score(individual)</p>
+
+<pre><code>profit, cost = Score.profit_and_cost individual, @items
+malus(profit, cost)
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>On calcule le profit et le coût du portefeuille d'actions que représente
+un individu via la méthode de classe <code>Score.profit_and_cost</code>. Puis on envoit
+tout ça dans une méthode <code>malus</code>, qui va gérer les individus invalides.</p>
+
+<p>La méthode <code>Score.profit_and_cost</code> est le <em>coeur</em> du calcul:</p>
+
+<p>``` ruby
+  def self.profit_and_cost(individual, items)</p>
+
+<pre><code>profit = cost = 0
+individual.chromosome.each_with_index do |number, index|
+  profit += items[index].profit * number
+  cost += items[index].cost * number
+end
+[profit, cost]
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Comme je vais m'en servir dans d'autres parties du programme, j'en ai fait
+une méthode de classe. On calcule le profit de l'individu en additionnant
+le profit généré par chacune des actions. <code>items[index].profit</code> se
+réfère à la liste <code>Knapsack::ITEMS</code> et <code>number</code> est un gène de l'individu.
+On procède à l'identique pour le calculer le coût.</p>
+
+<p>On peut passer à la méthode <code>malus</code>:</p>
+
+<p>``` ruby
+  def malus(profit, cost)</p>
+
+<pre><code>profit -= 2 * (cost - @capacity) if cost &gt; @capacity
+profit
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>J'ai utilisé le même principe empirique que dans notre
+<a href="http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/">dernier programme</a>,
+à savoir que si le coût dépasse la capacité d'investissement
+je diminue le profit de deux fois la différence entre coût
+et capacité.</p>
+
+<p>Il reste à parler de la méthode <code>shift</code>:</p>
+
+<p>``` ruby
+  def shift</p>
+
+<pre><code>score_min = @population.map(&amp;:score).min.abs
+@population.map {|individual| individual.score += score_min + 1 }
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>De la façon dont on a calculé le score, celui-ci peut être négatif. Ce
+qui pose un problème avec le calcul de la <em>fitness</em>, qui attend un
+nombre positif. La méthode <code>shift</code> sert à regler ceci.
+Tout d'abord je calcule la valeur absolue du score minimum. Puis j'ajoute
+cette valeur, plus 1, à chacun des scores. Ainsi je suis sûr que le score
+minimal sera 1.</p>
+
+<p>Voilà pour aujourd'hui. Comme d'habitude, c'est l'évaluation qui demande
+le plus de reflexion et d'explications.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 44: Économie]]></title>

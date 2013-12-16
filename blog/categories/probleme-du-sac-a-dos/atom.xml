@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : problème du sac à dos | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/probleme-du-sac-a-dos/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-15T19:14:40+01:00</updated>
+  <updated>2013-12-16T19:26:03+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,169 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 45: Économie, calcul du score]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/"/>
+    <updated>2013-12-16T18:15:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Hier j'ai <a href="http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/">survolé les trois classes/modules</a> qui s'occupent de l'évaluation,
+<code>Evaluator</code>, <code>Score</code> et <code>Fitness</code>. Aujourd'hui je parle en détail du
+module <code>Score</code>.</p>
+
+<!-- more -->
+
+
+<p>Revoici donc le module <code>Score</code> au complet:</p>
+
+<p>``` ruby
+module Score
+  def self.profit_and_cost(individual, items)</p>
+
+<pre><code>profit = cost = 0
+individual.chromosome.each_with_index do |number, index|
+  profit += items[index].profit * number
+  cost += items[index].cost * number
+end
+[profit, cost]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def compute_score!</p>
+
+<pre><code>@population.each {|individual| individual.score = score(individual) }
+shift
+</code></pre>
+
+<p>  end</p>
+
+<p>  def score(individual)</p>
+
+<pre><code>profit, cost = Score.profit_and_cost individual, @items
+malus(profit, cost)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def malus(profit, cost)</p>
+
+<pre><code>profit -= 2 * (cost - @capacity) if cost &gt; @capacity
+profit
+</code></pre>
+
+<p>  end</p>
+
+<p>  def shift</p>
+
+<pre><code>score_min = @population.map(&amp;:score).min.abs
+@population.map {|individual| individual.score += score_min + 1 }
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voyons d'abord rapidement la méthode <code>compute_score!</code>:</p>
+
+<p>``` ruby
+  def compute_score!</p>
+
+<pre><code>@population.each {|individual| individual.score = score(individual) }
+shift
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>On calcule/affecte le score de chaque individu. Puis on appelle une méthode
+<code>shift</code>, dont on verra l'utilité bientôt.</p>
+
+<p>La méthode <code>score</code> maintenant:</p>
+
+<p>``` ruby
+  def score(individual)</p>
+
+<pre><code>profit, cost = Score.profit_and_cost individual, @items
+malus(profit, cost)
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>On calcule le profit et le coût du portefeuille d'actions que représente
+un individu via la méthode de classe <code>Score.profit_and_cost</code>. Puis on envoit
+tout ça dans une méthode <code>malus</code>, qui va gérer les individus invalides.</p>
+
+<p>La méthode <code>Score.profit_and_cost</code> est le <em>coeur</em> du calcul:</p>
+
+<p>``` ruby
+  def self.profit_and_cost(individual, items)</p>
+
+<pre><code>profit = cost = 0
+individual.chromosome.each_with_index do |number, index|
+  profit += items[index].profit * number
+  cost += items[index].cost * number
+end
+[profit, cost]
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Comme je vais m'en servir dans d'autres parties du programme, j'en ai fait
+une méthode de classe. On calcule le profit de l'individu en additionnant
+le profit généré par chacune des actions. <code>items[index].profit</code> se
+réfère à la liste <code>Knapsack::ITEMS</code> et <code>number</code> est un gène de l'individu.
+On procède à l'identique pour le calculer le coût.</p>
+
+<p>On peut passer à la méthode <code>malus</code>:</p>
+
+<p>``` ruby
+  def malus(profit, cost)</p>
+
+<pre><code>profit -= 2 * (cost - @capacity) if cost &gt; @capacity
+profit
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>J'ai utilisé le même principe empirique que dans notre
+<a href="http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/">dernier programme</a>,
+à savoir que si le coût dépasse la capacité d'investissement
+je diminue le profit de deux fois la différence entre coût
+et capacité.</p>
+
+<p>Il reste à parler de la méthode <code>shift</code>:</p>
+
+<p>``` ruby
+  def shift</p>
+
+<pre><code>score_min = @population.map(&amp;:score).min.abs
+@population.map {|individual| individual.score += score_min + 1 }
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>De la façon dont on a calculé le score, celui-ci peut être négatif. Ce
+qui pose un problème avec le calcul de la <em>fitness</em>, qui attend un
+nombre positif. La méthode <code>shift</code> sert à regler ceci.
+Tout d'abord je calcule la valeur absolue du score minimum. Puis j'ajoute
+cette valeur, plus 1, à chacun des scores. Ainsi je suis sûr que le score
+minimal sera 1.</p>
+
+<p>Voilà pour aujourd'hui. Comme d'habitude, c'est l'évaluation qui demande
+le plus de reflexion et d'explications.</p>
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 44: Économie]]></title>
@@ -465,117 +628,6 @@ knapsack3.rb |              22.55 | + élite + invalides
 <p>Le gain de performance est remarquable ! Moralité de cette affaire:
 Pensez y à deux fois avant de jeter un chromosome invalide à la poubelle,
 il contient peut-être des gènes importants.</p>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 40: Ajout d'élitisme]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme/"/>
-    <updated>2013-11-18T17:39:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/18/les-algorithmes-genetiques-demystifies-40-ajout-delitisme</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Dans la plupart des ouvrages, thèses ou mémoires consacrés aux algorithmes
-génétiques il est dit:</p>
-
-<p><blockquote><p>Un peu d'élitisme améliore les performances des algorithmes génétiques.</p></blockquote></p>
-
-<p>Voyons voir si c'est vrai.</p>
-
-<!-- more -->
-
-
-<h2>Une petite analyse</h2>
-
-<p>En lançant la première version du programme
-(<a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack.rb">voir le code</a> et/ou
-<a href="http://lkdjiin.github.io/blog/2013/11/16/les-algorithmes-genetiques-39-resolution-du-sac-a-dos/">voir l'article</a>)
-on s'aperçoit qu'une génération <em>n</em>+1 n'améliore pas forcement le score du
-meilleur individu:</p>
-
-<pre><code>[~]⇒ ruby knapsack.rb 
-Gen: 0 Best score: 867
-Gen: 1 Best score: 895
-Gen: 2 Best score: 920
-Gen: 3 Best score: 877
-Gen: 4 Best score: 887
-Gen: 5 Best score: 925
-Gen: 6 Best score: 927
-Gen: 7 Best score: 960
-Gen: 8 Best score: 960
-Gen: 9 Best score: 915
-Gen: 10 Best score: 950
-Gen: 11 Best score: 925
-</code></pre>
-
-<p>Dans l'extrait ci-dessus, le meilleur individu de la génération n° 8
-possède un score de 960, alors qu'à la génération suivante, le meilleur
-individu retombe à un score de 915.</p>
-
-<h2>Mise en place de l'élite</h2>
-
-<p>Je vais donc mettre en place une seconde version de ce programme où je
-vais conserver les quatre meilleurs individus de chaque génération pour la
-génération suivante. Le code complet de cette seconde version se trouve
-sur Github: <a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack2.rb">knapsack2.rb</a>.
-Seule la méthode <code>next_generation</code>, de la classe <code>GeneticAlgorithm</code>, change:</p>
-
-<p>``` ruby
-def next_generation
-  @population.sort_by! {|i| i.score}
-  elite = @population.pop(4)
-  pool = MatingPool.new(@population)
-  population_size = @population.size
-  @population.clear
-  population_size.times do</p>
-
-<pre><code>@population &lt;&lt; @crossover.two_point(pool.random, pool.random)
-</code></pre>
-
-<p>  end
-  @population.concat elite
-end
-```</p>
-
-<p>Voici quelques explications. Tout d'abord la population est triée sur le
-score, du plus faible au plus important:</p>
-
-<pre><code>@population.sort_by! {|i| i.score}
-</code></pre>
-
-<p>Puis on retire les quatre meilleurs individus de la population et on les
-conserve dans <code>elite</code>:</p>
-
-<pre><code>elite = @population.pop(4)
-</code></pre>
-
-<p>À la fin de la sélection/croisement/mutation, on réintroduit l'élite dans
-la nouvelle population:</p>
-
-<pre><code>@population.concat elite
-</code></pre>
-
-<h2>Les performances</h2>
-
-<p>J'ai fait tourner chaque programme 200 fois et fait la moyenne de la
-génération où la meilleure solution (score de 1030) est trouvée:</p>
-
-<pre><code>Programme    | Génération moyenne
-=================================
-knapsack.rb  |              72.06
----------------------------------
-knapsack2.rb |              67.61
-</code></pre>
-
-<p>Les performances sont bien améliorées. Pas d'une manière spectaculaire, mais
-c'est toujours bon à prendre.</p>
-
-<p>La prochaine fois on verra si on peut encore améliorer les performances en
-tenant compte des solutions invalides.</p>
 
 <p>À demain.</p>
 

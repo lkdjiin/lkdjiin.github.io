@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2013-12-15T19:14:40+01:00</updated>
+  <updated>2013-12-16T19:26:03+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,194 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 45: Économie, calcul du score]]></title>
+    <link href="http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/"/>
+    <updated>2013-12-16T18:15:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Hier j&#8217;ai <a href="http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/">survolé les trois classes/modules</a> qui s&#8217;occupent de l&#8217;évaluation,
+<code>Evaluator</code>, <code>Score</code> et <code>Fitness</code>. Aujourd&#8217;hui je parle en détail du
+module <code>Score</code>.</p>
+
+<!-- more -->
+
+
+<p>Revoici donc le module <code>Score</code> au complet:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Score</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">profit_and_cost</span><span class="p">(</span><span class="n">individual</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">profit</span> <span class="o">=</span> <span class="n">cost</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">individual</span><span class="o">.</span><span class="n">chromosome</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">number</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">profit</span> <span class="o">+=</span> <span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">profit</span> <span class="o">*</span> <span class="n">number</span>
+</span><span class='line'>      <span class="n">cost</span> <span class="o">+=</span> <span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">cost</span> <span class="o">*</span> <span class="n">number</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="o">[</span><span class="n">profit</span><span class="p">,</span> <span class="n">cost</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">compute_score!</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">shift</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">profit</span><span class="p">,</span> <span class="n">cost</span> <span class="o">=</span> <span class="no">Score</span><span class="o">.</span><span class="n">profit_and_cost</span> <span class="n">individual</span><span class="p">,</span> <span class="vi">@items</span>
+</span><span class='line'>    <span class="n">malus</span><span class="p">(</span><span class="n">profit</span><span class="p">,</span> <span class="n">cost</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">malus</span><span class="p">(</span><span class="n">profit</span><span class="p">,</span> <span class="n">cost</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">profit</span> <span class="o">-=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">cost</span> <span class="o">-</span> <span class="vi">@capacity</span><span class="p">)</span> <span class="k">if</span> <span class="n">cost</span> <span class="o">&gt;</span> <span class="vi">@capacity</span>
+</span><span class='line'>    <span class="n">profit</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">shift</span>
+</span><span class='line'>    <span class="n">score_min</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:score</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">abs</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">+=</span> <span class="n">score_min</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voyons d&#8217;abord rapidement la méthode <code>compute_score!</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">compute_score!</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">shift</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On calcule/affecte le score de chaque individu. Puis on appelle une méthode
+<code>shift</code>, dont on verra l&#8217;utilité bientôt.</p>
+
+<p>La méthode <code>score</code> maintenant:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">individual</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">profit</span><span class="p">,</span> <span class="n">cost</span> <span class="o">=</span> <span class="no">Score</span><span class="o">.</span><span class="n">profit_and_cost</span> <span class="n">individual</span><span class="p">,</span> <span class="vi">@items</span>
+</span><span class='line'>    <span class="n">malus</span><span class="p">(</span><span class="n">profit</span><span class="p">,</span> <span class="n">cost</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On calcule le profit et le coût du portefeuille d&#8217;actions que représente
+un individu via la méthode de classe <code>Score.profit_and_cost</code>. Puis on envoit
+tout ça dans une méthode <code>malus</code>, qui va gérer les individus invalides.</p>
+
+<p>La méthode <code>Score.profit_and_cost</code> est le <em>coeur</em> du calcul:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">profit_and_cost</span><span class="p">(</span><span class="n">individual</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">profit</span> <span class="o">=</span> <span class="n">cost</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="n">individual</span><span class="o">.</span><span class="n">chromosome</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">number</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">profit</span> <span class="o">+=</span> <span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">profit</span> <span class="o">*</span> <span class="n">number</span>
+</span><span class='line'>      <span class="n">cost</span> <span class="o">+=</span> <span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">cost</span> <span class="o">*</span> <span class="n">number</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="o">[</span><span class="n">profit</span><span class="p">,</span> <span class="n">cost</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Comme je vais m&#8217;en servir dans d&#8217;autres parties du programme, j&#8217;en ai fait
+une méthode de classe. On calcule le profit de l&#8217;individu en additionnant
+le profit généré par chacune des actions. <code>items[index].profit</code> se
+réfère à la liste <code>Knapsack::ITEMS</code> et <code>number</code> est un gène de l&#8217;individu.
+On procède à l&#8217;identique pour le calculer le coût.</p>
+
+<p>On peut passer à la méthode <code>malus</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">malus</span><span class="p">(</span><span class="n">profit</span><span class="p">,</span> <span class="n">cost</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">profit</span> <span class="o">-=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">cost</span> <span class="o">-</span> <span class="vi">@capacity</span><span class="p">)</span> <span class="k">if</span> <span class="n">cost</span> <span class="o">&gt;</span> <span class="vi">@capacity</span>
+</span><span class='line'>    <span class="n">profit</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;ai utilisé le même principe empirique que dans notre
+<a href="http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/">dernier programme</a>,
+à savoir que si le coût dépasse la capacité d&#8217;investissement
+je diminue le profit de deux fois la différence entre coût
+et capacité.</p>
+
+<p>Il reste à parler de la méthode <code>shift</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">shift</span>
+</span><span class='line'>    <span class="n">score_min</span> <span class="o">=</span> <span class="vi">@population</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:score</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="o">.</span><span class="n">abs</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span> <span class="o">+=</span> <span class="n">score_min</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>De la façon dont on a calculé le score, celui-ci peut être négatif. Ce
+qui pose un problème avec le calcul de la <em>fitness</em>, qui attend un
+nombre positif. La méthode <code>shift</code> sert à regler ceci.
+Tout d&#8217;abord je calcule la valeur absolue du score minimum. Puis j&#8217;ajoute
+cette valeur, plus 1, à chacun des scores. Ainsi je suis sûr que le score
+minimal sera 1.</p>
+
+<p>Voilà pour aujourd&#8217;hui. Comme d&#8217;habitude, c&#8217;est l&#8217;évaluation qui demande
+le plus de reflexion et d&#8217;explications.</p>
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/'>Les algorithmes génétiques démystifiés 44: Économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 44: Économie]]></title>
@@ -162,7 +350,7 @@ d&#8217;habitude.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/'>Les algorithmes génétiques démystifiés 45: Économie, calcul du score</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -399,7 +587,7 @@ rien de nouveau:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/'>Les algorithmes génétiques démystifiés 44: Économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/'>Les algorithmes génétiques démystifiés 45: Économie, calcul du score</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/'>Les algorithmes génétiques démystifiés 44: Économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/'>Les algorithmes génétiques démystifiés 42: Un problème d&#8217;économie</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -644,7 +832,7 @@ généré aléatoirement les champs profit et number:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/'>Les algorithmes génétiques démystifiés 44: Économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/19/les-algorithmes-genetiques-demystifies-41-les-individus-invalides/'>Les algorithmes génétiques démystifiés 41: Les individus invalides</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/'>Les algorithmes génétiques démystifiés 45: Économie, calcul du score</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/'>Les algorithmes génétiques démystifiés 44: Économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1655,7 +1843,7 @@ quand il s&#8217;agit juste d&#8217;étudier un fichier.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/'>Les algorithmes génétiques démystifiés 44: Économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/'>Les algorithmes génétiques démystifiés 43: Économie, la population</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/04/ecrire-une-fonction-vim-avec-ruby/'>Écrire une fonction Vim avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/'>Les algorithmes génétiques démystifiés 45: Économie, calcul du score</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/'>Les algorithmes génétiques démystifiés 44: Économie</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1760,152 +1948,6 @@ donc faire en sorte qu&#8217;il soit requis:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/'>Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/14/remplacer-sed-et-awk-par-ruby-11-la-gem-english/'>Remplacer Sed et Awk par Ruby 11: La gem English</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Du nouveau dans Ruby 2.1: Le suffixe f pour les chaînes de caractères]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres/"/>
-    <updated>2013-11-26T20:33:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/11/26/du-nouveau-dans-ruby-2-dot-1-le-suffixe-f-pour-les-chaines-de-caracteres</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Aujourd&#8217;hui c&#8217;est au tour du nouveau suffixe <code>f</code> (comme frozen) d&#8217;être passé
-en revue.</p>
-
-<!-- more -->
-
-
-<h2>Avant Ruby 2.1</h2>
-
-<p>Les chaînes de caractères en Ruby sont des objets <em>mutables</em>. Ce qui
-signifie qu&#8217;à chaque fois que l&#8217;interpréteur rencontre <code>"foo"</code>, il crée
-un nouvel objet:</p>
-
-<pre><code>[~]⇒ rvm use 2.0.0
-[~]⇒ irb
-&gt;&gt; "foo".object_id
-74667700
-&gt;&gt; "foo".object_id
-74664050
-</code></pre>
-
-<p>Ce qui peut influer sur les performances d&#8217;un programme quand on compare
-beaucoup de chaînes. Voici un exemple trivial:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">foo?</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span>
-</span><span class='line'>  <span class="nb">p</span> <span class="n">foo</span><span class="o">.</span><span class="n">object_id</span>
-</span><span class='line'>  <span class="n">string</span> <span class="o">==</span> <span class="n">foo</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Encore une fois, on peut constater qu&#8217;un nouvel objet est créé à chaque
-appel de la méthode:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bépo&quot;</span>
-</span><span class='line'><span class="go">76675080</span>
-</span><span class='line'><span class="go">false</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bar&quot;</span>
-</span><span class='line'><span class="go">76669680</span>
-</span><span class='line'><span class="go">false</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et géler (<em>freeze</em>) l&#8217;objet n&#8217;empêchera pas sa création à chaque appel:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="k">def</span> <span class="nf">foo</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span><span class="o">.</span><span class="n">freeze</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">foo</span><span class="o">.</span><span class="n">object_id</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">end</span>
-</span><span class='line'><span class="go">nil</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo</span>
-</span><span class='line'><span class="go">82081130</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo</span>
-</span><span class='line'><span class="go">82079520</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Avec Ruby 2.1</h2>
-
-<pre><code>[~]⇒ rvm use 2.1.0-preview1
-[~]⇒ irb
-</code></pre>
-
-<p>Le suffixe <code>f</code> permet de géler (<em>freeze</em>) les chaînes de
-caractères:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span><span class="n">f</span>
-</span><span class='line'><span class="go">=&gt; &quot;foo&quot;</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">reverse!</span>
-</span><span class='line'><span class="go">RuntimeError: can&#39;t modify frozen String</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et surtout, le suffixe <code>f</code> les gèlent une fois pour toutes.
-L&#8217;exemple précédent donne ceci:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="k">def</span> <span class="nf">foo?</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">foo</span> <span class="o">=</span> <span class="s2">&quot;foo&quot;</span><span class="n">f</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="nb">p</span> <span class="n">foo</span><span class="o">.</span><span class="n">object_id</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span>  <span class="n">string</span> <span class="o">==</span> <span class="n">foo</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="k">end</span>
-</span><span class='line'><span class="go">=&gt; :foo?</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bépo&quot;</span>
-</span><span class='line'><span class="go">79029020</span>
-</span><span class='line'><span class="go">=&gt; false</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="n">foo?</span> <span class="s2">&quot;bar&quot;</span>
-</span><span class='line'><span class="go">79029020</span>
-</span><span class='line'><span class="go">=&gt; false</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>Source (pdf)</strong> <a href="http://www.atdot.net/~ko1/activities/toruby05-ko1.pdf">toruby</a></p>
-
-<p><strong>Edit du 1er décembre 2013</strong> Cette fonctionnalité a été supprimé dans
-la version <a href="https://www.ruby-lang.org/en/news/2013/11/22/ruby-2-1-0-preview2-is-released/">2.1.0-preview2</a>.</p>
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/'>Du nouveau dans Ruby 2.1: Argument nommé et requis</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/25/du-nouveau-dans-ruby-2-dot-1-le-suffixe-r/'>Du nouveau dans Ruby 2.1: Le suffixe r</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/14/remplacer-sed-et-awk-par-ruby-11-la-gem-english/'>Remplacer Sed et Awk par Ruby 11: La gem English</a></li></ul></section></p>
 ]]></content>
   </entry>
   
