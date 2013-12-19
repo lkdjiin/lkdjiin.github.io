@@ -101,6 +101,10 @@ que Microsoft s'interessait aux utilisateurs de Linux ?
 Pour ceux et celles qui se demande quelle est la solution, c'est la même que depuis
 des années: [ievms](https://github.com/xdissent/ievms) le script qui fonctionne.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 *P.S. Ça fait des mois que je pense à écrire cet article. Ça fait du bien

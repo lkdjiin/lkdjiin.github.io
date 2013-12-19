@@ -76,6 +76,10 @@ Est-ce que ça vous interpèle ?
 Demain je montrerais comment je suis passé d'une liste à l'autre à l'aide
 de Vim.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

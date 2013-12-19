@@ -41,5 +41,9 @@ qu'il faut pour que j'utilise ces commandes sans y penser.
 Une fois le tutoriel fini, vous possédez les bases de vim … et une montagne
 de notes qui vous seront utiles dans les semaines qui vont suivre.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 {% connexe %}

@@ -129,6 +129,10 @@ semble impuissante à nous aider dans ce problème des 8 dames, alors que
 tout avait bien fonctionné avec le paradoxe du singe savant. On verra
 ça dans le prochain article.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

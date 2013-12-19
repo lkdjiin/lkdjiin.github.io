@@ -123,6 +123,10 @@ Ctrl + flèche vers le bas va diminuer la hauteur de la fenêtre active.
 Ctrl + flèche vers la droite va augmenter la largeur de la fenêtre active.
 Ctrl + flèche vers la gauche va diminuer la largeur de la fenêtre active.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

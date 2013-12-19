@@ -127,6 +127,10 @@ Alors voilà, j'ai bien conscience que certaines modifications risquent ne plus
 fonctionner après une mise à jour d'Octopress… Mais c'est tout ce que j'ai
 trouvé pour faire ça dans l'heure.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

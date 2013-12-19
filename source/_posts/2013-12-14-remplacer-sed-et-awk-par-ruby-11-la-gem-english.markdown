@@ -51,6 +51,10 @@ Si vous (et votre équipe) avez une expérience de Awk, les noms courts peuvent
 Quand aux noms *barbares*, réservez les pour les *one liners*, les scripts
 courts *one shot* et les séances de masochisme.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

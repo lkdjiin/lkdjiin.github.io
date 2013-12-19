@@ -89,6 +89,10 @@ Le raffinement de méthode est expérimental dans Ruby 2.0 et devrait être
 définitivement adopté dans Ruby 2.1. Pour aller plus loin, on peut se
 reporter à la [documentation](http://www.ruby-doc.org/core-2.0.0/doc/syntax/refinements_rdoc.html).
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

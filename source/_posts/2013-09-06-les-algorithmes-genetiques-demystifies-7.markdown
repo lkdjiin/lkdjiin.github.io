@@ -92,6 +92,10 @@ la taille de la population initiale, etc.
 La prochaine fois, j'aimerais trouver un problème (toujours très simple) où
 les individus ne seraient pas codés sous forme de bits. Je vais chercher ça.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

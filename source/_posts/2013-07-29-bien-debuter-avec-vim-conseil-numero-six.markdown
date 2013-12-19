@@ -58,5 +58,9 @@ inoremap <right> <nop>
 N'hésitez pas à consulter l'aide de vim pour bien comprendre ce que font ces
 lignes de code *avant* de les ajouter dans votre `.vimrc` ;)
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 {% connexe %}

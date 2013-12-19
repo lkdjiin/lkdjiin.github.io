@@ -111,6 +111,10 @@ l'habitude ? Peut-être qu'il n'y a aucune réponse ? Je vais donc aller faire u
 tour du coté de la divinité StackOverflow pour tenter d'y voir plus clair. Je
 vous tient au courant dans un futur article si je trouve quelque chose.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

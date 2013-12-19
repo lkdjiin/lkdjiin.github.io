@@ -118,6 +118,10 @@ L'amélioration se lit clairement. En attendant le prochain article,
 n'hésitez pas à expérimenter ce qui vous passe par la tête (par exemple,
 pourquoi se limiter à 2 parents ?).
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

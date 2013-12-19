@@ -77,6 +77,10 @@ courant, il ne reste plus qu'à trier avec la méthode `sort_posts`. Dans cette
 méthode, j'attribue un poid à chaque article en fonction du nombre de
 catégories communes. C'est ce poid qui sert de référence pour le tri.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

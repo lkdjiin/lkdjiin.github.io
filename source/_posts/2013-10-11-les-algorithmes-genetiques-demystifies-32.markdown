@@ -35,6 +35,10 @@ mais je dois vous prévenir que Javascript et moi, ça fait deux.
 Je vais commencer à regarder ça ce week-end, et je compte sur vous pour
 pointer les erreurs et les maladresses de mon futur code…
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}

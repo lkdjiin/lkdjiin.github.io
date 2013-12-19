@@ -27,6 +27,10 @@ Jessica Kerr nous explique que c'est cela la programmation fonctionnelle:
 se contenter de faire seulement ce qu'on a à faire, sans toucher au monde
 extérieur. Et elle nous explique comment le faire en Ruby.
 
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
 À demain.
 
 {% connexe %}
