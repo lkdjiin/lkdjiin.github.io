@@ -84,6 +84,7 @@ Divers
 - [Pourcentage des issues par langage sur Github](http://lkdjiin.github.io/blog/2013/11/23/pourcentage-des-issues-par-langages-sur-github/)
 - [Le ventilo de mon alim fait un bruit d'enfer](http://lkdjiin.github.io/blog/2013/12/03/le-ventilo-de-mon-alimentation-fait-un-bruit-denfer/)
 - [Aidez-vous, traduisez !](http://lkdjiin.github.io/blog/2013/12/06/aidez-vous-traduisez/)
+- [Typematrix 2030 Problème avec le pavé numérique](/blog/2013/12/20/typematrix-2030-probleme-avec-le-pave-numerique/)
 
 Elixir
 ----------------
@@ -193,6 +194,7 @@ Ruby
 - [Remplacer Sed et Awk par Ruby: La gem English](http://lkdjiin.github.io/blog/2013/12/14/remplacer-sed-et-awk-par-ruby-11-la-gem-english/)
 - [Remplacer Sed et Awk par Ruby: Numéro de ligne](http://lkdjiin.github.io/blog/2013/12/17/remplacer-sed-et-awk-par-ruby-12-numero-de-ligne/)
 - [Remplacer Sed et Awk par Ruby: Séparateurs en sortie](http://lkdjiin.github.io/blog/2013/12/18/remplacer-sed-et-awk-par-ruby-13-separateurs-en-sortie/)
+- [Remplacer Sed et Awk par Ruby: Flip flop](/blog/2013/12/21/remplacer-sed-et-awk-par-ruby-flip-flop/)
 
 
 
