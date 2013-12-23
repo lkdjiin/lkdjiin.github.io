@@ -60,6 +60,7 @@ Algorithmes génétiques
 - [Partie 44](http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/)
 - [Économie, calcul du score](http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/)
 - [Économie, la boucle principale](http://lkdjiin.github.io/blog/2013/12/19/les-algorithmes-genetiques-demystifies-46-economie-la-boucle-principale/)
+- [Économie, la classe IndividualFormatter](/blog/2013/12/23/les-algorithmes-genetiques-demystifies-47-economie/)
 
 Bash
 -----------
@@ -195,7 +196,7 @@ Ruby
 - [Remplacer Sed et Awk par Ruby: Numéro de ligne](http://lkdjiin.github.io/blog/2013/12/17/remplacer-sed-et-awk-par-ruby-12-numero-de-ligne/)
 - [Remplacer Sed et Awk par Ruby: Séparateurs en sortie](http://lkdjiin.github.io/blog/2013/12/18/remplacer-sed-et-awk-par-ruby-13-separateurs-en-sortie/)
 - [Remplacer Sed et Awk par Ruby: Flip flop](/blog/2013/12/21/remplacer-sed-et-awk-par-ruby-flip-flop/)
-
+- [Remplacer Sed et Awk par Ruby: Un dernier exemple](/blog/2013/12/22/remplacer-sed-et-awk-par-ruby-un-dernier-exemple/)
 
 
 
