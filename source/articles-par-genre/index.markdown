@@ -61,6 +61,7 @@ Algorithmes génétiques
 - [Économie, calcul du score](http://lkdjiin.github.io/blog/2013/12/16/les-algorithmes-genetiques-demystifies-45-economie-calcul-du-score/)
 - [Économie, la boucle principale](http://lkdjiin.github.io/blog/2013/12/19/les-algorithmes-genetiques-demystifies-46-economie-la-boucle-principale/)
 - [Économie, la classe IndividualFormatter](/blog/2013/12/23/les-algorithmes-genetiques-demystifies-47-economie/)
+- [Économie, résolution du problème](/blog/2013/12/26/les-algorithmes-genetiques-demystifies-48-economie-resolution-du-probleme/)
 
 Bash
 -----------
@@ -197,6 +198,8 @@ Ruby
 - [Remplacer Sed et Awk par Ruby: Séparateurs en sortie](http://lkdjiin.github.io/blog/2013/12/18/remplacer-sed-et-awk-par-ruby-13-separateurs-en-sortie/)
 - [Remplacer Sed et Awk par Ruby: Flip flop](/blog/2013/12/21/remplacer-sed-et-awk-par-ruby-flip-flop/)
 - [Remplacer Sed et Awk par Ruby: Un dernier exemple](/blog/2013/12/22/remplacer-sed-et-awk-par-ruby-un-dernier-exemple/)
+- [Remplacer Sed et Awk par Ruby: Récapitulatif](/blog/2013/12/24/remplacer-sed-et-awk-par-ruby-recapitulatif/)
+- [Sortie de coco 0.8](/blog/2013/12/25/sortie-de-coco-0-dot-8/)
 
 
 
