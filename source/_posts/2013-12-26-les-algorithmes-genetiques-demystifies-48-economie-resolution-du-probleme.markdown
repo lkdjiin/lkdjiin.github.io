@@ -8,7 +8,7 @@ categories: [algorithme génétique, intermédiaire, ruby, problème du sac à d
 
 {% level 2 %}
 
-On termine le problème d'investissement, qui je le rappele est basiquement
+On termine le problème d'investissement, qui je le rappelle est basiquement
 un problème de sac à dos avec des objets multiples.
 
 <!-- more -->
