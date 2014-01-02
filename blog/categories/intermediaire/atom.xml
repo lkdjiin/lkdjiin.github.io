@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-01-01T18:05:26+01:00</updated>
+  <updated>2014-01-02T19:01:37+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,87 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Mon patch pour Ruby a été refusé]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/01/02/mon-patch-pour-ruby-a-ete-refuse/"/>
+    <updated>2014-01-02T18:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/01/02/mon-patch-pour-ruby-a-ete-refuse</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Il y a quelque jours, j'ai présenté les <a href="http://lkdjiin.github.io/blog/2013/12/30/ruby-2-dot-1-les-nouvelles-methodes-de-set/">nouvelles méthodes de la classe
+Set</a>, mise à jour avec la sortie de Ruby 2.1.
+Un commenteur m'a fait remarquer avec raison que le code pourrait être
+bien plus simple. Ni une, ni deux, j'écris un patch, les tests passent,
+j'envoie un pull request. Le patch sera gentillement refusé, et c'est
+bien normal…</p>
+
+<!-- more -->
+
+
+<p>Voici le code des méthodes originales:</p>
+
+<p>``` ruby
+  def intersect?(set)</p>
+
+<pre><code>set.is_a?(Set) or raise ArgumentError, "value must be a set"
+if size &lt; set.size
+  any? { |o| set.include?(o) }
+else
+  set.any? { |o| include?(o) }
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def disjoint?(set)</p>
+
+<pre><code>!intersect?(set)
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Et voici comment je les ai recodées:</p>
+
+<p>``` ruby
+  def intersect?(set)</p>
+
+<pre><code>!disjoint?(self)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def disjoint?(set)</p>
+
+<pre><code>set.is_a?(Set) or raise ArgumentError, "value must be a set"
+(self &amp; set).empty?
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Je trouvais mon nouveau code vraiment très bien foutu: deux fois plus court et
+plus simple à lire. Seulement j'avais oublié deux petites choses qui le rendent
+moins efficace que le code original:</p>
+
+<p>Premièrement, mon code crée un objet intermédiaire
+(avec <code>self &amp; set</code>) qui n'est pas nécessaire.</p>
+
+<p>Deuxièment, le code original s'arrête dès qu'un élément en commun est trouvé,
+alors que le mien remplira un (nouveau) set avec tout les éléments en
+communs. C'est évidemment beaucoup moins efficace, surtout avec de gros sets.</p>
+
+<p>Moralité : un code plus court n'est pas toujours synonyme de plus efficace !</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 48: Économie - Résolution du problème]]></title>
@@ -494,131 +575,6 @@ minimal sera 1.</p>
 
 <p>Voilà pour aujourd'hui. Comme d'habitude, c'est l'évaluation qui demande
 le plus de reflexion et d'explications.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 44: Économie]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie/"/>
-    <updated>2013-12-15T18:25:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/12/15/les-algorithmes-genetiques-demystifies-44-economie</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Maintenant que <a href="">la population initiale est créée</a>,
-voyons comment l'évaluer.</p>
-
-<!-- more -->
-
-
-<p>Voici la classe <code>Evaluator</code>, qui a pris un coup de jeune:</p>
-
-<p>``` ruby
-class Evaluator
-  include Score
-  include Fitness</p>
-
-<p>  def initialize(capacity:, population:, items:)</p>
-
-<pre><code>@capacity = capacity
-@population = population
-@items = items
-</code></pre>
-
-<p>  end</p>
-
-<p>  def evaluate!</p>
-
-<pre><code>compute_score!
-compute_fitness!
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>J'ai transferé les calculs du score et de la <em>fitness</em> dans des modules
-car cette classe <code>Evaluator</code> commence à enfler (et aussi car je teste
-quelques idées en vue d'un futur framework).</p>
-
-<p>Le module <code>Score</code> est bien sûr responsable de l'évaluation d'un
-portefeuille d'actions. Je le présenterais demain, car je n'ai
-malheureusement pas le temps nécessaire aujourd'hui. Je vous donne
-malgré tout le code dès maintenant:</p>
-
-<p>``` ruby
-module Score
-  def self.profit_and_cost(individual, items)</p>
-
-<pre><code>profit = cost = 0
-individual.chromosome.each_with_index do |number, index|
-  profit += items[index].profit * number
-  cost += items[index].cost * number
-end
-[profit, cost]
-</code></pre>
-
-<p>  end</p>
-
-<p>  def compute_score!</p>
-
-<pre><code>@population.each {|individual| individual.score = score(individual) }
-shift
-</code></pre>
-
-<p>  end</p>
-
-<p>  def score(individual)</p>
-
-<pre><code>profit, cost = Score.profit_and_cost individual, @items
-malus(profit, cost)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def malus(profit, cost)</p>
-
-<pre><code>profit -= 2 * (cost - @capacity) if cost &gt; @capacity
-profit
-</code></pre>
-
-<p>  end</p>
-
-<p>  def shift</p>
-
-<pre><code>score_min = @population.map(&amp;:score).min.abs
-@population.map {|individual| individual.score += score_min + 1 }
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>En ce qui concerne le module <code>Fitness</code>, le code est le même que
-d'habitude.</p>
-
-<p>``` ruby
-module Fitness
-  def compute_fitness!</p>
-
-<pre><code>total = @population.inject(0) {|sum, individual| sum + individual.score }
-size = @population.size
-@population.each do |individual|
-  individual.fitness = individual.score.to_f / total * size
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Voilà, demain on verra en détail le module <code>Score</code>.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-01-01T18:05:26+01:00</updated>
+  <updated>2014-01-02T19:01:37+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,96 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Mon patch pour Ruby a été refusé]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/01/02/mon-patch-pour-ruby-a-ete-refuse/"/>
+    <updated>2014-01-02T18:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/01/02/mon-patch-pour-ruby-a-ete-refuse</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Il y a quelque jours, j&#8217;ai présenté les <a href="http://lkdjiin.github.io/blog/2013/12/30/ruby-2-dot-1-les-nouvelles-methodes-de-set/">nouvelles méthodes de la classe
+Set</a>, mise à jour avec la sortie de Ruby 2.1.
+Un commenteur m&#8217;a fait remarquer avec raison que le code pourrait être
+bien plus simple. Ni une, ni deux, j&#8217;écris un patch, les tests passent,
+j&#8217;envoie un pull request. Le patch sera gentillement refusé, et c&#8217;est
+bien normal…</p>
+
+<!-- more -->
+
+
+<p>Voici le code des méthodes originales:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">intersect?</span><span class="p">(</span><span class="n">set</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">set</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Set</span><span class="p">)</span> <span class="ow">or</span> <span class="k">raise</span> <span class="no">ArgumentError</span><span class="p">,</span> <span class="s2">&quot;value must be a set&quot;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">size</span> <span class="o">&lt;</span> <span class="n">set</span><span class="o">.</span><span class="n">size</span>
+</span><span class='line'>      <span class="n">any?</span> <span class="p">{</span> <span class="o">|</span><span class="n">o</span><span class="o">|</span> <span class="n">set</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="n">set</span><span class="o">.</span><span class="n">any?</span> <span class="p">{</span> <span class="o">|</span><span class="n">o</span><span class="o">|</span> <span class="kp">include</span><span class="p">?(</span><span class="n">o</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">disjoint?</span><span class="p">(</span><span class="n">set</span><span class="p">)</span>
+</span><span class='line'>    <span class="o">!</span><span class="n">intersect?</span><span class="p">(</span><span class="n">set</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici comment je les ai recodées:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">intersect?</span><span class="p">(</span><span class="n">set</span><span class="p">)</span>
+</span><span class='line'>    <span class="o">!</span><span class="n">disjoint?</span><span class="p">(</span><span class="nb">self</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">disjoint?</span><span class="p">(</span><span class="n">set</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">set</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Set</span><span class="p">)</span> <span class="ow">or</span> <span class="k">raise</span> <span class="no">ArgumentError</span><span class="p">,</span> <span class="s2">&quot;value must be a set&quot;</span>
+</span><span class='line'>    <span class="p">(</span><span class="nb">self</span> <span class="o">&amp;</span> <span class="n">set</span><span class="p">)</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je trouvais mon nouveau code vraiment très bien foutu: deux fois plus court et
+plus simple à lire. Seulement j&#8217;avais oublié deux petites choses qui le rendent
+moins efficace que le code original:</p>
+
+<p>Premièrement, mon code crée un objet intermédiaire
+(avec <code>self &amp; set</code>) qui n&#8217;est pas nécessaire.</p>
+
+<p>Deuxièment, le code original s&#8217;arrête dès qu&#8217;un élément en commun est trouvé,
+alors que le mien remplira un (nouveau) set avec tout les éléments en
+communs. C&#8217;est évidemment beaucoup moins efficace, surtout avec de gros sets.</p>
+
+<p>Moralité : un code plus court n&#8217;est pas toujours synonyme de plus efficace !</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/30/ruby-2-dot-1-les-nouvelles-methodes-de-set/'>Ruby 2.1: Les nouvelles méthodes de Set</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/26/les-algorithmes-genetiques-demystifies-48-economie-resolution-du-probleme/'>Les algorithmes génétiques démystifiés 48: Économie &ndash; Résolution du problème</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/23/les-algorithmes-genetiques-demystifies-47-economie/'>Les algorithmes génétiques démystifiés 47: Économie</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[La fonction d'auto-application en Lambda Calculus 2ème partie]]></title>
@@ -1833,186 +1923,6 @@ courts <em>one shot</em> et les séances de masochisme.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/24/remplacer-sed-et-awk-par-ruby-recapitulatif/'>Remplacer Sed et Awk par Ruby: Récapitulatif</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/22/remplacer-sed-et-awk-par-ruby-un-dernier-exemple/'>Remplacer Sed et Awk par Ruby: Un dernier exemple</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/21/remplacer-sed-et-awk-par-ruby-flip-flop/'>Remplacer Sed et Awk par Ruby: Flip flop</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les algorithmes génétiques démystifiés 43: Économie, la population]]></title>
-    <link href="http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population/"/>
-    <updated>2013-12-13T21:36:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2013/12/13/les-algorithmes-genetiques-demystifies-43-economie-la-population</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Après avoir vu dernièrement l&#8217;énoncé du <a href="http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/">problème d&#8217;investissement</a>
-que je me propose de résoudre à l&#8217;aide d&#8217;un algorithme génétique, on
-peut maintenant créer la population initiale.</p>
-
-<!-- more -->
-
-
-<p>Je me base sur le programme développé pour le problème du sac à dos
-<a href="https://github.com/lkdjiin/knapsack_genetic_algorithm/blob/master/knapsack3.rb">disponible sur Github</a>.
-Par contre, le code nécessite la version 2.1 de Ruby (disponible en
-preview2 à l&#8217;heure où j&#8217;écris ces lignes).</p>
-
-<p>Tout d&#8217;abord la classe <code>Individual</code>, qui recueille toutes les informations
-sur nos individus: chromosome, score et fitness.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Individual</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">random</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
-</span><span class='line'>      <span class="kp">new</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="n">items</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">from_chromosome</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
-</span><span class='line'>      <span class="kp">new</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nf">listing</span><span class="p">(</span><span class="ss">chromosome</span><span class="p">:,</span> <span class="ss">items</span><span class="p">:)</span>
-</span><span class='line'>      <span class="n">chromosome</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">gene</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
-</span><span class='line'>        <span class="s2">&quot;</span><span class="si">#{</span><span class="n">gene</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>      <span class="k">end</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:score</span><span class="p">,</span> <span class="ss">:fitness</span>
-</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:chromosome</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="n">items</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">chromosome</span>
-</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="n">chromosome</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class='line'>      <span class="n">items</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
-</span><span class='line'>        <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.item</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="nb">private_class_method</span> <span class="ss">:new</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">&gt;</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="kp">true</span> <span class="k">if</span> <span class="n">other</span><span class="o">.</span><span class="n">nil?</span>
-</span><span class='line'>    <span class="n">score</span> <span class="o">&gt;</span> <span class="n">other</span><span class="o">.</span><span class="n">score</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>J&#8217;ai ajouté une méthode de classe <code>listing</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">listing</span><span class="p">(</span><span class="ss">chromosome</span><span class="p">:,</span> <span class="ss">items</span><span class="p">:)</span>
-</span><span class='line'>  <span class="n">chromosome</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">gene</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
-</span><span class='line'>    <span class="s2">&quot;</span><span class="si">#{</span><span class="n">gene</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">items</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="k">end</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Elle utilise <a href="http://lkdjiin.github.io/blog/2013/11/27/du-nouveau-dans-ruby-2-dot-1-argument-nomme-et-requis/">les arguments nommés requis</a> de Ruby 2.1 et prend en
-paramêtre un chromosome et la liste des actions (<code>Knapsack::ITEMS</code>,
-<a href="http://lkdjiin.github.io/blog/2013/12/11/les-algorithmes-genetiques-demystifies-42-un-probleme-deconomie/">voir l&#8217;article précédent</a>). Elle servira à afficher la liste des actions,
-avec le nombre retenu pour chacune d&#8217;entres elles à la fin de l&#8217;algorithme.</p>
-
-<p>Dans la méthode <code>initialize</code>, on peut voir comment je crée les chromosomes
-de la population initiale:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">else</span>
-</span><span class='line'>  <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class='line'>  <span class="n">items</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
-</span><span class='line'>    <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="n">.item</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>items</code> se réfère à la liste des actions (<code>Knapsack::ITEMS</code>). Un chromosome est
-une liste de la même taille que <code>items</code>. Chaque gène (ou emplacement dans
-la liste) est un nombre compris entre zéro et le nombre maximum d&#8217;actions
-pour cette action particulière (voir encore une fois <code>Knapsack::ITEMS</code>).</p>
-
-<p>Maintenant, pour la création de la population proprement dite, il n&#8217;y a
-rien de nouveau:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Population</span> <span class="o">&lt;</span> <span class="nb">Array</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">items</span><span class="p">,</span> <span class="n">population_size</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="nb">self</span> <span class="o">&lt;&lt;</span> <span class="no">Individual</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">best</span>
-</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">sort_by</span><span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="p">}</span><span class="o">.</span><span class="n">last</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La prochaine fois on verra l&#8217;évaluation…</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/26/les-algorithmes-genetiques-demystifies-48-economie-resolution-du-probleme/'>Les algorithmes génétiques démystifiés 48: Économie &ndash; Résolution du problème</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/23/les-algorithmes-genetiques-demystifies-47-economie/'>Les algorithmes génétiques démystifiés 47: Économie</a></li><li><a href='http://lkdjiin.github.io/blog/2013/12/19/les-algorithmes-genetiques-demystifies-46-economie-la-boucle-principale/'>Les algorithmes génétiques démystifiés 46: Économie, la boucle principale</a></li></ul></section></p>
 ]]></content>
   </entry>
   
