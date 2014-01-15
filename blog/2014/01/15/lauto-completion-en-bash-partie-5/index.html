@@ -1,0 +1,366 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>L'auto-complétion en Bash - partie 5 - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Cet article est la suite de:
+L&#8217;auto complétion programmable en bash: partie 4. Les bases de l&#8217;auto complétion &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">L'auto-complétion en Bash - partie 5</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-15T20:44:00+01:00" pubdate data-updated="true">15 janvier 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Cet article est la suite de:
+<a href="http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/">L&#8217;auto complétion programmable en bash: partie 4</a>.</p>
+
+<h2>Les bases de l&#8217;auto complétion programmable</h2>
+
+<p>Une application peut proposer ses services d&#8217;auto complétion en déposant
+un fichier bash dans le dossier <code>/etc/bash_completion.d/</code>.
+On y voit un tas de fichiers, pour des programmes bien connus:</p>
+
+<pre><code>[~]⇒ ls /etc/bash_completion.d/
+abook
+ant
+apache2.2-common
+apache2ctl
+apt
+...
+git
+...
+</code></pre>
+
+<p>Il suffit juste de savoir quoi mettre dedans. Allons-y:</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span>/etc/bash_completion.d/mytool</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">complete</span> -W <span class="s2">&quot;new compile test&quot;</span> mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le fichier sera chargé automatiquement au lancement de bash. Donc pour que
+ça fonctionne maintenant, soit vous le sourcez, soit vous lancez une
+nouvelle console et, &ndash; <em>roulements de tambours</em>&ndash;</p>
+
+<pre><code>[~]⇒ mytool [TAB]
+compile  new      test     
+[~]⇒ mytool 
+</code></pre>
+
+<p>Magique, non ? Il faut noter que l&#8217;auto complétion fonctionnera aussi
+avec des options:</p>
+
+<figure class='code'><figcaption><span>/etc/bash_completion.d/mytool</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">complete</span> -W <span class="s2">&quot;new compile test --verbose&quot;</span> mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>[~]⇒ mytool c[TAB] -[TAB]
+mytool compile --verbose
+</code></pre>
+
+<p>Donc, comment ça marche ? Voici la traduction de l&#8217;aide de <code>complete</code>,
+simplifiée au maximum:</p>
+
+<p><strong>complete</strong> [<em>options</em>] <em>name</em>   <br/>
+Spécifie comment les arguments doivent être complétés, pour chaque <em>name</em>.</p>
+
+<p>L&#8217;option <code>-W</code> permet de lui passer une liste de mots. Finalement c&#8217;était
+facile ? Humm… En fait ce sera rarement aussi simple. Pour continuer notre
+jeu de rôle, disons que l&#8217;option <code>--verbose</code> peut s&#8217;appliquer uniquement
+à l&#8217;argument <code>new</code>, et pas aux deux autres. Du coup, notre commande
+<code>complete</code> ne suffit plus. Il va falloir trouver autre chose et c&#8217;est ce
+qu&#8217;on verra dans un prochain article.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/'>L&#8217;auto-complétion programmable en bash &ndash; partie 4</a></li><li><a href='/blog/2014/01/13/lauto-completion-programmable-en-bash-partie-3/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 3</a></li><li><a href='/blog/2014/01/11/lauto-completion-en-bash-partie-2/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 2</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-15T20:44:00+01:00" pubdate data-updated="true">15 janvier 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/auto-completion/'>auto complétion</a>, <a class='category' href='/blog/categories/bash/'>bash</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/unix/'>unix</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/" title="Previous Post: L'auto-complétion programmable en bash - partie 4">&laquo; L'auto-complétion programmable en bash - partie 4</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/01/15/lauto-completion-en-bash-partie-5/">L'auto-complétion en Bash - partie 5</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/">L'auto-complétion programmable en bash - partie 4</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/13/lauto-completion-programmable-en-bash-partie-3/">L'auto-complétion programmable en Bash - partie 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/12/vim-et-les-digraphes/">Vim et les digraphes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/11/lauto-completion-en-bash-partie-2/">L'auto-complétion programmable en Bash - partie 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/10/lauto-completion-programmable-en-bash-partie-1/">L'auto complétion programmable en bash: partie 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/01/09/trouves-mon-nombre-partie-3/">Trouves mon nombre - partie 3</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
