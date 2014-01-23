@@ -22,6 +22,7 @@ placé dans `~/.bashrc`.
 
 Sous OS X, il faut le mettre dans `~/.bash_profile`.
 
+[Astuce suivante](/blog/2014/01/23/de-linux-debian-vers-os-x-coloriser-la-commande-ls/)
 [Astuce précédente](/blog/2014/01/21/de-linux-debian-a-os-x-renommer-un-fichier-dans-lexplorateur/)
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
