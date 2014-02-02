@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-01T20:36:39+01:00</updated>
+  <updated>2014-02-02T18:40:08+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,132 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/"/>
+    <updated>2014-02-02T18:35:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div>
+
+
+<p>Cet article est la suite de:
+<a href="http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/">L&#8217;auto complétion programmable en bash: partie 6</a>.</p>
+
+<h2>Un motif général et basique, la suite</h2>
+
+<p>Après avoir regardé la variable <code>COMPREPLY</code> dans le dernier article,
+on étudie aujourd&#8217;hui les variables <code>COMP_WORDS</code> et <code>COMP_CWORD</code>.</p>
+
+<!-- more -->
+
+
+<p>On va encore modifier notre script, cette fois pour examiner le
+contenu de la variable <code>COMP_WORDS</code>:</p>
+
+<figure class='code'><figcaption><span>/etc/bash_completion.d/mytool</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>_mytool<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nv">COMPREPLY</span><span class="o">=</span><span class="k">${</span><span class="nv">COMP_WORDS</span><span class="p">[@]</span><span class="k">}</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="nb">complete</span> -F _mytool mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>N&#8217;oubliez pas de sourcer:</p>
+
+<pre><code>$ source /etc/bash_completion.d/mytool
+</code></pre>
+
+<p>Testons:</p>
+
+<pre><code>$ mytool foo bar[TAB]
+</code></pre>
+
+<p>est remplacé par:</p>
+
+<pre><code>$ mytool foo mytool foo bar
+</code></pre>
+
+<p>On voit que <code>COMP_WORDS</code> est un tableau qui contient chaque éléments
+de notre ligne de commande, au moment où celle ci est envoyée à
+l&#8217;auto-complétion.</p>
+
+<p>Voyons maintenant <code>COMP_CWORD</code>:</p>
+
+<figure class='code'><figcaption><span>/etc/bash_completion.d/mytool</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>_mytool<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="nv">$COMP_CWORD</span> <span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="nb">complete</span> -F _mytool mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Si je tapes:</p>
+
+<pre><code>$ mytool foo bar[TAB]
+</code></pre>
+
+<p>Cela va être remplacé par:</p>
+
+<pre><code>$ mytool foo 2
+</code></pre>
+
+<p>Donc, <code>COMP_CWORD</code> contient l&#8217;index de l&#8217;élément de la ligne de
+commande dans lequel se trouve le curseur.</p>
+
+<p>On a maintenant tous les éléments en main pour comprendre le script
+présenté la dernière fois comme le motif de base pour
+l&#8217;auto-complétion:</p>
+
+<figure class='code'><figcaption><span>/etc/bash_completion.d/mytool</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>_mytool<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nb">local </span><span class="nv">current</span><span class="o">=</span><span class="k">${</span><span class="nv">COMP_WORDS</span><span class="p">[COMP_CWORD]</span><span class="k">}</span>
+</span><span class='line'>    <span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span><span class="nb">compgen</span> -W <span class="s2">&quot;new compile test&quot;</span> -- <span class="nv">$current</span><span class="k">)</span> <span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="nb">complete</span> -F _mytool mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Il reste juste à expliquer la dernière ligne:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">complete</span> -F _mytool mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La fonction <code>complete</code>, interne à Bash, s&#8217;occupe bien sûr de l&#8217;auto-complétion
+du programme <code>mytool</code>. Le nombre d&#8217;options possibles est important, vous pouvez
+jeter un oeil au manuel si vous avez le temps. On se contentera ici de l&#8217;option
+<code>-F</code>. Cette option est très intéressante, elle prend en argument le nom d&#8217;une
+fonction (ici <code>_mytool</code>) qui va calculer la complétion. Cette fameuse option
+<code>-F</code> permet aussi à <code>complete</code> de savoir qu&#8217;elle doit chercher des résultats
+dans la variable <code>COMPREPLY</code>. Notez la convention utilisée: la fonction
+<code>_mytool</code> calcule la complétion du programme <code>mytool</code>.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/'>L&#8217;auto-complétion programmable en bash &ndash; partie 4</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Vim - Sauvegarder et quitter les fichiers]]></title>
@@ -325,7 +451,7 @@ et <code>COMP_CWORD</code>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/'>L&#8217;auto-complétion programmable en bash &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/13/lauto-completion-programmable-en-bash-partie-3/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/'>L&#8217;auto-complétion programmable en bash &ndash; partie 4</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1310,66 +1436,6 @@ error
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/13/lauto-completion-programmable-en-bash-partie-3/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/11/lauto-completion-en-bash-partie-2/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 2</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/13/lauto-completion-programmable-en-bash-partie-3/"/>
-    <updated>2014-01-13T20:50:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/13/lauto-completion-programmable-en-bash-partie-3</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Cet article est la suite de:
-<a href="http://lkdjiin.github.io/blog/2014/01/11/lauto-completion-en-bash-partie-2/">L&#8217;auto complétion programmable en bash: partie 2</a>.</p>
-
-<p>Je joue donc quelques minutes avec la commande <code>compgen</code>, juste pour voir
-de quoi il s&#8217;agit. L&#8217;option <code>-W</code> retient particulièrement mon attention.
-On lui passe une liste de mots entre guillemets et ça nous les renvoient:</p>
-
-<pre><code>[~]⇒ compgen -W "foo bar baz"
-foo
-bar
-baz
-</code></pre>
-
-<!-- more -->
-
-
-<p>Ok, on va pas se mentir, vous ne voyez pas tellement l&#8217;intérêt, hein ?
-Et si on passait un second argument à <code>compgen</code>, comme le début d&#8217;un
-mot:</p>
-
-<pre><code>[~]⇒ compgen -W "foo bar baz" f
-foo
-</code></pre>
-
-<p>Ou bien encore:</p>
-
-<pre><code>[~]⇒ compgen -W "foo bar baz" ba
-bar
-baz
-</code></pre>
-
-<p>Voilà qui est intéressant. Et si on lui donne un début de mot inexistant:</p>
-
-<pre><code>[~]⇒ compgen -W "foo bar baz" o
-[~]⇒ 
-</code></pre>
-
-<p>Les sections <strong>complete</strong> et surtout <strong>programmable completion</strong> de la page
-de man sont particulièrement indigestes. Je me doute que je devrais les lire
-si je veux aller plus loin, mais ça attendra encore.
-Donc je google «bash programmable completion» et je trouve ce qu&#8217;il me faut pour
-commencer. La suite la prochaine fois.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/'>L&#8217;auto-complétion programmable en bash &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/11/lauto-completion-en-bash-partie-2/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
