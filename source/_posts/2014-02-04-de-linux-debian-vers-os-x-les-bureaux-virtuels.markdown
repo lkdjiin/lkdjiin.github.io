@@ -28,6 +28,7 @@ Pour l'activer :
 Une fois activé, appuyez sur F9 pour avoir accès à une vue de tous
 vos bureaux, en ajouter, modifier l'ordre, etc.
 
+[Astuce suivante](/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau/)    
 [Astuce précédente](/blog/2014/01/31/de-linux-debian-vers-os-x-naviguer-dans-lexplorateur/)
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
