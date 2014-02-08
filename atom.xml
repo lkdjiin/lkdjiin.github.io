@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-07T20:54:34+01:00</updated>
+  <updated>2014-02-08T14:17:14+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,153 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/"/>
+    <updated>2014-02-08T14:10:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div>
+
+
+<p>Cet article est la suite de:
+<a href="http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/">L&#8217;auto complétion programmable en bash: partie 7</a>.</p>
+
+<h2>Une complétion plus étoffée</h2>
+
+<p>Après avoir étudié les variables <code>COMPREPLY</code>, <code>COMP_WORDS</code>, <code>COMP_CWORD</code>,
+et le motif minimal, voici maintenant un programme plus utile.</p>
+
+<!-- more -->
+
+
+<p>Je veux que <code>mytool new</code> réponde à la seule option <code>--without-test</code>.
+Donc:</p>
+
+<pre><code>$ mytool new -[TAB]
+</code></pre>
+
+<p>doit donner:</p>
+
+<pre><code>$ mytool new --without-test
+</code></pre>
+
+<p>Je veux aussi que <code>mytool commpile</code> réponde seulement à <code>--verbose</code>, donc:</p>
+
+<pre><code>$ mytool compile -[TAB]
+</code></pre>
+
+<p>doit donner:</p>
+
+<pre><code>$ mytool compile --verbose
+</code></pre>
+
+<p>Quant à <code>mytool test</code>, il ne prend aucune option.</p>
+
+<p>Voici sans plus tarder un programme qui fait ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>_mytool<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nb">local </span>cur prev <span class="nb">command </span>options
+</span><span class='line'>    <span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="o">)</span>
+</span><span class='line'>    <span class="nv">cur</span><span class="o">=</span><span class="s2">&quot;${COMP_WORDS[COMP_CWORD]}&quot;</span>
+</span><span class='line'>    <span class="nv">prev</span><span class="o">=</span><span class="s2">&quot;${COMP_WORDS[COMP_CWORD-1]}&quot;</span>
+</span><span class='line'>    <span class="nv">commands</span><span class="o">=</span><span class="s1">&#39;new compile test&#39;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="o">[[</span> <span class="nv">$COMP_CWORD</span> -eq 1 <span class="o">]]</span> ; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$commands&quot;</span> -- <span class="s2">&quot;$cur&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'><span class="k">        </span><span class="nb">command</span><span class="o">=</span><span class="k">${</span><span class="nv">COMP_WORDS</span><span class="p">[1]</span><span class="k">}</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">[[</span> <span class="s2">&quot;$cur&quot;</span> <span class="o">==</span> -* <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">            case</span> <span class="nv">$command</span> in
+</span><span class='line'>                new<span class="o">)</span>
+</span><span class='line'>                    <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--without-test&#39;</span>
+</span><span class='line'>                    ;;
+</span><span class='line'>                compile<span class="o">)</span>
+</span><span class='line'>                    <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--verbose&#39;</span>
+</span><span class='line'>                    ;;
+</span><span class='line'>            <span class="k">esac</span>
+</span><span class='line'><span class="k">            </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$options&quot;</span> -- <span class="s2">&quot;$cur&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'>        <span class="k">fi</span>
+</span><span class='line'><span class="k">    fi</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="nb">complete</span> -F _mytool mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ok, Bash n&#8217;est pas le plus lisible des langages, mais si vous avez suivi
+tous les articles précédent, vous êtes en mesure de suivre la logique
+de ce programme. Voilà ce que donne l&#8217;algorithme:</p>
+
+<pre><code>Si le curseur est en position 1
+  Compléter avec les commandes
+Sinon
+  Trouver la commande courante
+  Si le mot sous le curseur commence par '-'
+    Compléter les options suivant la commande courante
+</code></pre>
+
+<p>Quelques points précis maintenant : on calcule le mot sous le curseur
+dans <code>cur</code> et le mot précédent dans <code>prev</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">cur</span><span class="o">=</span><span class="s2">&quot;${COMP_WORDS[COMP_CWORD]}&quot;</span>
+</span><span class='line'><span class="nv">prev</span><span class="o">=</span><span class="s2">&quot;${COMP_WORDS[COMP_CWORD-1]}&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On place toutes les commandes dans une variable <code>commands</code>,</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">commands</span><span class="o">=</span><span class="s1">&#39;new compile test&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ce qui permet de calculer les complétions possibles de la manière
+suivante (plus lisible et flexible quand on a beaucoup de commandes):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>    <span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$commands&quot;</span> -- <span class="s2">&quot;$cur&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Astuce Ruby - Utiliser les variables d'environnement]]></title>
@@ -389,7 +536,7 @@ dans la variable <code>COMPREPLY</code>. Notez la convention utilisée: la fonct
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/'>L&#8217;auto-complétion programmable en bash &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -706,7 +853,7 @@ et <code>COMP_CWORD</code>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/'>L&#8217;auto-complétion programmable en bash &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1154,124 +1301,6 @@ Meta-q.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/06/de-linux-debian-vers-os-x-dossier-parent-dans-lexplorateur/'>De Linux (Debian) vers OS X &ndash; Dossier parent dans l&#8217;explorateur</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau/'>De Linux (Debian) vers OS X &ndash; Raccourcis clavier pour changer de bureau</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/04/de-linux-debian-vers-os-x-les-bureaux-virtuels/'>De Linux (Debian) vers OS X &ndash; Les bureaux virtuels</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Compiler votre Vim sous Linux]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/19/compiler-votre-vim-sous-linux/"/>
-    <updated>2014-01-19T12:32:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/19/compiler-votre-vim-sous-linux</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Aujourd&#8217;hui on voit comment compiler la dernière version de
-Vim sur Linux (Debian, mais Ubuntu devrait marcher aussi).</p>
-
-<!-- more -->
-
-
-<h2>Pourquoi vouloir faire ça ?</h2>
-
-<p>Tout d&#8217;abord, pourquoi voudrais-t-on compiler Vim alors que Debian nous
-le fournit dans les paquets ? Je vois plusieurs raisons:</p>
-
-<ol>
-<li>Parce qu&#8217;on peut le faire. Mais je sens que cet argument n&#8217;est pas
-fait pour vous convaincre.</li>
-<li>Parce que c&#8217;est fun. Idem, pas convaincant, hein ?</li>
-<li>Parce qu&#8217;on peut vouloir profiter d&#8217;une des dernières fonctionnalités
-ajoutées, ou du dernier bugfix.</li>
-<li>Parce que Debian est parfois à la ramasse lorsqu&#8217;il s&#8217;agit de nous
-fournir des versions suffisament récentes de certains logiciels.
-J&#8217;ai par exemple une machine qui est toujours en Debian 6 et que je
-ne peux pas upgrader, Vim y est <em>coincé</em> en version 7.2.</li>
-</ol>
-
-
-<h2>On y va</h2>
-
-<p>Assurez vous d&#8217;abord d&#8217;avoir toutes les dépendances:</p>
-
-<pre><code>$ sudo apt-get build-dep vim
-</code></pre>
-
-<p>Ensuite, on va télécharger les sources depuis GitHub:</p>
-
-<pre><code>$ git clone https://github.com/b4winckler/vim.git
-</code></pre>
-
-<p>Puis peut-être aller chercher une release particulière:</p>
-
-<pre><code>$ cd vim
-$ git checkout tags/v-7-4-155
-</code></pre>
-
-<p>Ensuite on va dans les sources:</p>
-
-<pre><code>$ cd src
-</code></pre>
-
-<p>On nettoie (ça fait pas de mal):</p>
-
-<pre><code>$ make distclean
-</code></pre>
-
-<p>On configure avec la plupart des features disponibles, notamment une
-interface graphique et le support de perl, python et ruby:</p>
-
-<pre><code>$ ./configure --with-features=huge --enable-gui=gnome2
-  --with-compiledby=lkdjiin --enable-perlinterp  --enable-pythoninterp
-  --enable-rubyinterp
-</code></pre>
-
-<p>Il reste à compiler:</p>
-
-<pre><code>$ make
-</code></pre>
-
-<p>Et enfin à installer notre nouveau Vim:</p>
-
-<pre><code>$ sudo make install
-</code></pre>
-
-<p>Et voilà:</p>
-
-<p><img src="http://lkdjiin.github.io/images/vim-7-4-155.png"></p>
-
-<h2>Désinstaller la version que vous avez compilé</h2>
-
-<p>Si, pour une raison ou une autre, vous vouliez désinstaller
-votre nouveau Vim, il faut d&#8217;abord trouver où il est installé.
-Pour cela, lancez la commande suivante dans Vim:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="p">:</span>echo $VIMRUNTIME
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Dans mon cas, cela donne: <code>/usr/local/share/vim/vim74</code>.</p>
-
-<p>Rendez-vous ensuite dans les sources que vous avez téléchargées,
-par exemple:</p>
-
-<pre><code>$ cd ~/tmp/vim/src
-</code></pre>
-
-<p>Puis:</p>
-
-<pre><code>$ make VIMRUNTIME=/usr/local/share/vim/vim74
-$ sudo make uninstall
-</code></pre>
-
-<p>Et voilà.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/01/vim-sauvegarder-et-quitter-les-fichiers/'>Vim &ndash; Sauvegarder et quitter les fichiers</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/28/installation-du-plugin-airline-pour-vim-partie-4/'>Installation du plugin Airline pour Vim &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/27/installation-du-plugin-airline-pour-vim-partie-3/'>Installation du plugin Airline pour Vim &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : avancé | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/avance/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-07T20:54:34+01:00</updated>
+  <updated>2014-02-08T14:17:14+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,132 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/"/>
+    <updated>2014-02-08T14:10:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
+
+<p>Cet article est la suite de:
+<a href="/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/">L'auto complétion programmable en bash: partie 7</a>.</p>
+
+<h2>Une complétion plus étoffée</h2>
+
+<p>Après avoir étudié les variables <code>COMPREPLY</code>, <code>COMP_WORDS</code>, <code>COMP_CWORD</code>,
+et le motif minimal, voici maintenant un programme plus utile.</p>
+
+<!-- more -->
+
+
+<p>Je veux que <code>mytool new</code> réponde à la seule option <code>--without-test</code>.
+Donc:</p>
+
+<pre><code>$ mytool new -[TAB]
+</code></pre>
+
+<p>doit donner:</p>
+
+<pre><code>$ mytool new --without-test
+</code></pre>
+
+<p>Je veux aussi que <code>mytool commpile</code> réponde seulement à <code>--verbose</code>, donc:</p>
+
+<pre><code>$ mytool compile -[TAB]
+</code></pre>
+
+<p>doit donner:</p>
+
+<pre><code>$ mytool compile --verbose
+</code></pre>
+
+<p>Quant à <code>mytool test</code>, il ne prend aucune option.</p>
+
+<p>Voici sans plus tarder un programme qui fait ça:</p>
+
+<p>``` bash
+_mytool()
+{</p>
+
+<pre><code>local cur prev command options
+COMPREPLY=( )
+cur="${COMP_WORDS[COMP_CWORD]}"
+prev="${COMP_WORDS[COMP_CWORD-1]}"
+commands='new compile test'
+
+if [[ $COMP_CWORD -eq 1 ]] ; then
+    COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+else
+    command=${COMP_WORDS[1]}
+    if [[ "$cur" == -* ]]; then
+        case $command in
+            new)
+                options='--without-test'
+                ;;
+            compile)
+                options='--verbose'
+                ;;
+        esac
+        COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
+    fi
+fi
+</code></pre>
+
+<p>}
+complete -F _mytool mytool
+```</p>
+
+<p>Ok, Bash n'est pas le plus lisible des langages, mais si vous avez suivi
+tous les articles précédent, vous êtes en mesure de suivre la logique
+de ce programme. Voilà ce que donne l'algorithme:</p>
+
+<pre><code>Si le curseur est en position 1
+  Compléter avec les commandes
+Sinon
+  Trouver la commande courante
+  Si le mot sous le curseur commence par '-'
+    Compléter les options suivant la commande courante
+</code></pre>
+
+<p>Quelques points précis maintenant : on calcule le mot sous le curseur
+dans <code>cur</code> et le mot précédent dans <code>prev</code>:</p>
+
+<p>``` bash</p>
+
+<pre><code>cur="${COMP_WORDS[COMP_CWORD]}"
+prev="${COMP_WORDS[COMP_CWORD-1]}"
+</code></pre>
+
+<p>```</p>
+
+<p>On place toutes les commandes dans une variable <code>commands</code>,</p>
+
+<p>``` bash</p>
+
+<pre><code>commands='new compile test'
+</code></pre>
+
+<p>```</p>
+
+<p>ce qui permet de calculer les complétions possibles de la manière
+suivante (plus lisible et flexible quand on a beaucoup de commandes):</p>
+
+<p>``` bash</p>
+
+<pre><code>    COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+</code></pre>
+
+<p>```</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 7]]></title>
