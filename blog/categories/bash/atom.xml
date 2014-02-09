@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : bash | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/bash/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-08T14:17:14+01:00</updated>
+  <updated>2014-02-09T19:03:37+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,131 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 9]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/"/>
+    <updated>2014-02-09T18:55:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
+
+<p>Cet article est la suite de:
+<a href="/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/">L'auto complétion programmable en bash: partie 8</a>.</p>
+
+<h2>Une complétion améliorée</h2>
+
+<p>On voit aujourd'hui deux fonctions bien utiles lors de l'écriture
+de votre script d'auto-complétion: <code>_get_comp_words_by_ref</code> et
+<code>compopt</code>.</p>
+
+<!-- more -->
+
+
+<p>On va ajouter une option <code>--format=</code> à notre commande <code>test</code>. Ce que
+je veux, c'est pouvoir écrire quelque chose comme ça:</p>
+
+<pre><code>$ mytool test --format=documentation
+</code></pre>
+
+<p>Il faut donc que:</p>
+
+<pre><code>$ mytool test -[TAB]
+</code></pre>
+
+<p>nous donne ceci:</p>
+
+<pre><code>$ mytool test --format=
+</code></pre>
+
+<p>Mais contrairement à ce qu'il se passe jusqu'ici, je ne veux pas
+que l'auto-complétion ajoute un espace après <code>--format=</code>.</p>
+
+<p>Voici tout d'abord le script qui fait ça :</p>
+
+<p>``` bash
+_mytool()
+{</p>
+
+<pre><code>local cur prev command options
+COMPREPLY=( )
+_get_comp_words_by_ref cur prev
+commands='new compile test'
+
+if [[ $COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+elif [[ "$cur" == -* ]]; then
+    command=${COMP_WORDS[1]}
+    case $command in
+        new)
+            options='--without-test'
+            ;;
+        compile)
+            options='--verbose'
+            ;;
+        test)
+            options='--format='
+            compopt -o nospace
+            ;;
+    esac
+    COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
+fi
+</code></pre>
+
+<p>}
+complete -F _mytool mytool
+```</p>
+
+<p>Et maintenant, je vais détailler les nouveautés. D'abord, vous avez
+peut-être remarqué que la ligne:</p>
+
+<p>``` bash</p>
+
+<pre><code>_get_comp_words_by_ref cur prev
+</code></pre>
+
+<p>```</p>
+
+<p>a remplacé les deux lignes suivantes
+(<a href="">voir article précédent</a>):</p>
+
+<p>``` bash</p>
+
+<pre><code>cur="${COMP_WORDS[COMP_CWORD]}"
+prev="${COMP_WORDS[COMP_CWORD-1]}"
+</code></pre>
+
+<p>```</p>
+
+<p>C'est plus simple, plus lisible, plus propre. Cette fonction,
+<code>_get_comp_words_by_ref</code>, se trouve dans le script <code>/etc/bash_completion</code>,
+que je vous invite à étudier. Ce fichier défini plusieurs fonctions
+utiles pour la complétion.</p>
+
+<p>Voyons maintenant l'ajout de la nouvelle option:</p>
+
+<p>``` bash</p>
+
+<pre><code>        test)
+            options='--format='
+            compopt -o nospace
+            ;;
+</code></pre>
+
+<p>```</p>
+
+<p>La nouveauté est ici <code>compopt -o nospace</code>. La fonction <code>compopt</code> permet
+d'allumer/éteindre certaines options pour la complétion en cours. Ici on
+demande de ne pas ajouter d'espace à la fin de la chaîne renvoyée par
+la complétion.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 8]]></title>
@@ -445,92 +570,6 @@ jeu de rôle, disons que l'option <code>--verbose</code> peut s'appliquer unique
 à l'argument <code>new</code>, et pas aux deux autres. Du coup, notre commande
 <code>complete</code> ne suffit plus. Il va falloir trouver autre chose et c'est ce
 qu'on verra dans un prochain article.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[L'auto-complétion programmable en bash - partie 4]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/"/>
-    <updated>2014-01-14T20:54:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Cet article est la suite de:
-<a href="http://lkdjiin.github.io/blog/2014/01/13/lauto-completion-programmable-en-bash-partie-3/">L'auto complétion programmable en bash: partie 3</a>.</p>
-
-<h2>Un programme bidon pour tester</h2>
-
-<p>On va faire un petit jeu de rôle : Vous avez écrit un nouveau langage
-informatique revolutionnaire, et maintenant vous voulez lui adjoindre
-un outil pour faciliter la gestion des projets. Ce fameux programme, qui
-va s'appeller «mytool» aura 3 commandes: <code>new</code>, pour créer un projet,
-<code>compile</code>, pour compiler le projet, et <code>test</code>, pour le tester. Et bien sûr,
-vous voulez profiter des joies de l'auto complétion:</p>
-
-<pre><code>mytool c[TAB]
-</code></pre>
-
-<p>devra devenir:</p>
-
-<pre><code>mytool compile
-</code></pre>
-
-<!-- more -->
-
-
-<p>Pour comprendre les prochains articles, on est pas obligé d'avoir un «vrai»
-programme. Mais c'est quand même plus drôle pour faire tout un tas de tests.
-Voici donc le magnifique programme <code>mytool</code>:</p>
-
-<p>``` bash mytool</p>
-
-<h1>!/usr/bin/env bash</h1>
-
-<p>case $1 in
-  new )</p>
-
-<pre><code>echo Project created ;;
-</code></pre>
-
-<p>  test )</p>
-
-<pre><code>echo Project tested ;;
-</code></pre>
-
-<p>  compile )</p>
-
-<pre><code>echo Project compiled ;;
-</code></pre>
-
-<ul>
-<li>)
-echo error ;;
-esac
-```</li>
-</ul>
-
-
-<p>Assurez vous que le programme ait les droits d'exécution (<code>chmod +x</code>)
-et qu'il soit dans votre PATH:</p>
-
-<pre><code>[~]⇒ mytool new
-Project created
-[~]⇒ mytool test
-Project tested
-[~]⇒ mytool compile
-Project compiled
-[~]⇒ mytool
-error
-</code></pre>
-
-<p>La prochaine, promis, on commencera vraiment à faire de l'auto-complétion.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
