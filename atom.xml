@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-09T19:03:37+01:00</updated>
+  <updated>2014-02-10T20:51:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,182 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 10]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/"/>
+    <updated>2014-02-10T20:45:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div>
+
+
+<p>Cet article est la suite de:
+<a href="http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/">L&#8217;auto complétion programmable en bash: partie 9</a>.</p>
+
+<h2>Complétion des options longues</h2>
+
+<p>Aujourd&#8217;hui j&#8217;ai envie de voir comment on pourrait utiliser
+l&#8217;auto-complétion pour les options longues, du genre
+<code>--format=documentation</code>.</p>
+
+<!-- more -->
+
+
+<p>L&#8217;option <code>--format=</code> peut prendre deux valeurs: <code>dot</code> ou <code>documentation</code>.
+Je veux donc obtenir ceci:</p>
+
+<pre><code>$ mytool test -[TAB]
+$ mytool test --format=[TAB]
+documentation  dot            
+$ mytool test --format=do
+
+$ mytool test --format=doc[TAB]
+$ mytool test --format=documentation 
+</code></pre>
+
+<p>Voici une manière d&#8217;obtenir ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>_mytool_long_options<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nv">$1</span> in
+</span><span class='line'>        --format<span class="o">)</span>
+</span><span class='line'>            <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;dot documentation&#39;</span>
+</span><span class='line'>            ;;
+</span><span class='line'>    <span class="k">esac</span>
+</span><span class='line'><span class="k">    </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$options&quot;</span> -- <span class="s2">&quot;$2&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>_mytool<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nb">local </span>cur prev <span class="nb">command </span>options
+</span><span class='line'>    <span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="o">)</span>
+</span><span class='line'>    _get_comp_words_by_ref cur prev
+</span><span class='line'>    <span class="nv">commands</span><span class="o">=</span><span class="s1">&#39;new compile test&#39;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="o">[[</span> <span class="nv">$COMP_CWORD</span> -eq 1 <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$commands&quot;</span> -- <span class="s2">&quot;$cur&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'>    <span class="k">elif</span> <span class="o">[[</span> <span class="s2">&quot;$prev&quot;</span> <span class="o">==</span> <span class="o">=</span> <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span>_mytool_long_options <span class="s2">&quot;${COMP_WORDS[COMP_CWORD-2]}&quot;</span> <span class="s2">&quot;$cur&quot;</span>
+</span><span class='line'>    <span class="k">elif</span> <span class="o">[[</span> <span class="s2">&quot;$cur&quot;</span> <span class="o">==</span> <span class="o">=</span> <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span>_mytool_long_options <span class="s2">&quot;$prev&quot;</span>
+</span><span class='line'>    <span class="k">elif</span> <span class="o">[[</span> <span class="s2">&quot;$cur&quot;</span> <span class="o">==</span> -* <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span><span class="nb">command</span><span class="o">=</span><span class="k">${</span><span class="nv">COMP_WORDS</span><span class="p">[1]</span><span class="k">}</span>
+</span><span class='line'>        <span class="k">case</span> <span class="nv">$command</span> in
+</span><span class='line'>            new<span class="o">)</span>
+</span><span class='line'>                <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--without-test&#39;</span>
+</span><span class='line'>                ;;
+</span><span class='line'>            compile<span class="o">)</span>
+</span><span class='line'>                <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--verbose&#39;</span>
+</span><span class='line'>                ;;
+</span><span class='line'>            <span class="nb">test</span><span class="o">)</span>
+</span><span class='line'>                <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--format=&#39;</span>
+</span><span class='line'>                compopt -o nospace
+</span><span class='line'>                ;;
+</span><span class='line'>        <span class="k">esac</span>
+</span><span class='line'><span class="k">        </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$options&quot;</span> -- <span class="s2">&quot;$cur&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'>    <span class="k">fi</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="nb">complete</span> -F _mytool mytool
+</span><span class='line'>
+</span><span class='line'><span class="c"># vim: ft=sh ts=4 sw=4</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La fonction <code>_mytool_long_options</code> prend un paramètre obligatoire et
+un second optionnel. Le premier est le mot <em>avant</em> le signe <code>=</code> et le
+second est l&#8217;éventuel mot <em>après</em> le signe <code>=</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>_mytool_long_options<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nv">$1</span> in
+</span><span class='line'>        --format<span class="o">)</span>
+</span><span class='line'>            <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;dot documentation&#39;</span>
+</span><span class='line'>            ;;
+</span><span class='line'>    <span class="k">esac</span>
+</span><span class='line'><span class="k">    </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$options&quot;</span> -- <span class="s2">&quot;$2&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;ai ajouté deux <code>elif</code>, qui regarde si le mot sous le curseur (<code>$cur</code>)
+ou le mot précédent (<code>$pre</code>) est le caractère <code>=</code>. Dans ce cas,
+on appelle la fonction <code>_mytool_long_options</code> qui s&#8217;occupe de gérer
+la complétion des options du style <code>--foo=bar</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="k">elif</span> <span class="o">[[</span> <span class="s2">&quot;$prev&quot;</span> <span class="o">==</span> <span class="o">=</span> <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">    </span>_mytool_long_options <span class="s2">&quot;${COMP_WORDS[COMP_CWORD-2]}&quot;</span> <span class="s2">&quot;$cur&quot;</span>
+</span><span class='line'><span class="k">elif</span> <span class="o">[[</span> <span class="s2">&quot;$cur&quot;</span> <span class="o">==</span> <span class="o">=</span> <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">    </span>_mytool_long_options <span class="s2">&quot;$prev&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Même si cela fonctionne, je pense pouvoir trouver plus simple, et c&#8217;est
+ce que j&#8217;espère faire dans un prochain article.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 9]]></title>
@@ -157,7 +333,7 @@ la complétion.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -304,7 +480,7 @@ suivante (plus lisible et flexible quand on a beaucoup de commandes):</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -684,7 +860,7 @@ dans la variable <code>COMPREPLY</code>. Notez la convention utilisée: la fonct
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1001,7 +1177,7 @@ et <code>COMP_CWORD</code>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1355,52 +1531,6 @@ placé dans <code>~/.bashrc</code>.</p>
 
 <p><a href="http://lkdjiin.github.io/blog/2014/01/23/de-linux-debian-vers-os-x-coloriser-la-commande-ls/">Astuce suivante</a>
 <a href="http://lkdjiin.github.io/blog/2014/01/21/de-linux-debian-a-os-x-renommer-un-fichier-dans-lexplorateur/">Astuce précédente</a></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/06/de-linux-debian-vers-os-x-dossier-parent-dans-lexplorateur/'>De Linux (Debian) vers OS X &ndash; Dossier parent dans l&#8217;explorateur</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau/'>De Linux (Debian) vers OS X &ndash; Raccourcis clavier pour changer de bureau</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/04/de-linux-debian-vers-os-x-les-bureaux-virtuels/'>De Linux (Debian) vers OS X &ndash; Les bureaux virtuels</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[De Linux (Debian) à OS X : Renommer un fichier dans l'explorateur]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/21/de-linux-debian-a-os-x-renommer-un-fichier-dans-lexplorateur/"/>
-    <updated>2014-01-21T21:06:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/21/de-linux-debian-a-os-x-renommer-un-fichier-dans-lexplorateur</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Aujourd&#8217;hui : Comment renommer un fichier dans l&#8217;explorateur de fichier.</p>
-
-<!-- more -->
-
-
-<h2>Renommer un fichier dans le navigateur de fichier</h2>
-
-<p>On peut bien sûr renommer un fichier dans un terminal avec:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>mv file newname
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Mais comment faire de même dans l&#8217;explorateur de fichier alors qu&#8217;il
-n&#8217;y a pas de menu contextuel du genre «renommer le fichier» ?
-Il faut, après avoir sélectionné le fichier à l&#8217;aide des touches fléchées ou
-d&#8217;un clic de souris, <strong>appuyer sur la touche Entrée</strong>. C&#8217;est tout.</p>
-
-<p><a href="http://lkdjiin.github.io/blog/2014/01/20/de-linux-debian-a-os-x-quitter-firefox/">Astuce précédente</a>
-<a href="http://lkdjiin.github.io/blog/2014/01/22/de-linux-debian-vers-os-x-le-fichier-de-configuration-de-bash/">Astuce suivante</a></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/06/de-linux-debian-vers-os-x-dossier-parent-dans-lexplorateur/'>De Linux (Debian) vers OS X &ndash; Dossier parent dans l&#8217;explorateur</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau/'>De Linux (Debian) vers OS X &ndash; Raccourcis clavier pour changer de bureau</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/04/de-linux-debian-vers-os-x-les-bureaux-virtuels/'>De Linux (Debian) vers OS X &ndash; Les bureaux virtuels</a></li></ul></section></p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

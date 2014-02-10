@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : unix | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/unix/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-09T19:03:37+01:00</updated>
+  <updated>2014-02-10T20:51:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,138 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 10]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/"/>
+    <updated>2014-02-10T20:45:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
+
+<p>Cet article est la suite de:
+<a href="/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/">L'auto complétion programmable en bash: partie 9</a>.</p>
+
+<h2>Complétion des options longues</h2>
+
+<p>Aujourd'hui j'ai envie de voir comment on pourrait utiliser
+l'auto-complétion pour les options longues, du genre
+<code>--format=documentation</code>.</p>
+
+<!-- more -->
+
+
+<p>L'option <code>--format=</code> peut prendre deux valeurs: <code>dot</code> ou <code>documentation</code>.
+Je veux donc obtenir ceci:</p>
+
+<pre><code>$ mytool test -[TAB]
+$ mytool test --format=[TAB]
+documentation  dot            
+$ mytool test --format=do
+
+$ mytool test --format=doc[TAB]
+$ mytool test --format=documentation 
+</code></pre>
+
+<p>Voici une manière d'obtenir ça:</p>
+
+<p>``` bash
+_mytool_long_options()
+{</p>
+
+<pre><code>case $1 in
+    --format)
+        options='dot documentation'
+        ;;
+esac
+COMPREPLY=( $( compgen -W "$options" -- "$2" ) )
+</code></pre>
+
+<p>}</p>
+
+<p>_mytool()
+{</p>
+
+<pre><code>local cur prev command options
+COMPREPLY=( )
+_get_comp_words_by_ref cur prev
+commands='new compile test'
+
+if [[ $COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+elif [[ "$prev" == = ]]; then
+    _mytool_long_options "${COMP_WORDS[COMP_CWORD-2]}" "$cur"
+elif [[ "$cur" == = ]]; then
+    _mytool_long_options "$prev"
+elif [[ "$cur" == -* ]]; then
+    command=${COMP_WORDS[1]}
+    case $command in
+        new)
+            options='--without-test'
+            ;;
+        compile)
+            options='--verbose'
+            ;;
+        test)
+            options='--format='
+            compopt -o nospace
+            ;;
+    esac
+    COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
+fi
+</code></pre>
+
+<p>}
+complete -F _mytool mytool</p>
+
+<h1>vim: ft=sh ts=4 sw=4</h1>
+
+<p>```</p>
+
+<p>La fonction <code>_mytool_long_options</code> prend un paramètre obligatoire et
+un second optionnel. Le premier est le mot <em>avant</em> le signe <code>=</code> et le
+second est l'éventuel mot <em>après</em> le signe <code>=</code>:</p>
+
+<p>``` bash
+_mytool_long_options()
+{</p>
+
+<pre><code>case $1 in
+    --format)
+        options='dot documentation'
+        ;;
+esac
+COMPREPLY=( $( compgen -W "$options" -- "$2" ) )
+</code></pre>
+
+<p>}
+```</p>
+
+<p>J'ai ajouté deux <code>elif</code>, qui regarde si le mot sous le curseur (<code>$cur</code>)
+ou le mot précédent (<code>$pre</code>) est le caractère <code>=</code>. Dans ce cas,
+on appelle la fonction <code>_mytool_long_options</code> qui s'occupe de gérer
+la complétion des options du style <code>--foo=bar</code>:</p>
+
+<p>``` bash</p>
+
+<pre><code>elif [[ "$prev" == = ]]; then
+    _mytool_long_options "${COMP_WORDS[COMP_CWORD-2]}" "$cur"
+elif [[ "$cur" == = ]]; then
+    _mytool_long_options "$prev"
+</code></pre>
+
+<p>```</p>
+
+<p>Même si cela fonctionne, je pense pouvoir trouver plus simple, et c'est
+ce que j'espère faire dans un prochain article.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 9]]></title>
@@ -492,84 +624,6 @@ N'oubliez pas de sourcer le script avant de le tester:</p>
 
 <p>La prochaine fois, on regardera en détail les variables <code>COMP_WORDS</code>
 et <code>COMP_CWORD</code>.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[L'auto-complétion en Bash - partie 5]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/"/>
-    <updated>2014-01-15T20:44:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Cet article est la suite de:
-<a href="http://lkdjiin.github.io/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/">L'auto complétion programmable en bash: partie 4</a>.</p>
-
-<h2>Les bases de l'auto complétion programmable</h2>
-
-<p>Une application peut proposer ses services d'auto complétion en déposant
-un fichier bash dans le dossier <code>/etc/bash_completion.d/</code>.
-On y voit un tas de fichiers, pour des programmes bien connus:</p>
-
-<pre><code>[~]⇒ ls /etc/bash_completion.d/
-abook
-ant
-apache2.2-common
-apache2ctl
-apt
-...
-git
-...
-</code></pre>
-
-<p>Il suffit juste de savoir quoi mettre dedans. Allons-y:</p>
-
-<!-- more -->
-
-
-<p><code>bash /etc/bash_completion.d/mytool
-complete -W "new compile test" mytool
-</code></p>
-
-<p>Le fichier sera chargé automatiquement au lancement de bash. Donc pour que
-ça fonctionne maintenant, soit vous le sourcez, soit vous lancez une
-nouvelle console et, &ndash; <em>roulements de tambours</em>&ndash;</p>
-
-<pre><code>[~]⇒ mytool [TAB]
-compile  new      test     
-[~]⇒ mytool 
-</code></pre>
-
-<p>Magique, non ? Il faut noter que l'auto complétion fonctionnera aussi
-avec des options:</p>
-
-<p><code>bash /etc/bash_completion.d/mytool
-complete -W "new compile test --verbose" mytool
-</code></p>
-
-<pre><code>[~]⇒ mytool c[TAB] -[TAB]
-mytool compile --verbose
-</code></pre>
-
-<p>Donc, comment ça marche ? Voici la traduction de l'aide de <code>complete</code>,
-simplifiée au maximum:</p>
-
-<p><strong>complete</strong> [<em>options</em>] <em>name</em>   <br/>
-Spécifie comment les arguments doivent être complétés, pour chaque <em>name</em>.</p>
-
-<p>L'option <code>-W</code> permet de lui passer une liste de mots. Finalement c'était
-facile ? Humm… En fait ce sera rarement aussi simple. Pour continuer notre
-jeu de rôle, disons que l'option <code>--verbose</code> peut s'appliquer uniquement
-à l'argument <code>new</code>, et pas aux deux autres. Du coup, notre commande
-<code>complete</code> ne suffit plus. Il va falloir trouver autre chose et c'est ce
-qu'on verra dans un prochain article.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
