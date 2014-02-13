@@ -26,6 +26,7 @@ Sur Linux, on utilise la touche `Backspace`, et parfois
 Sur OS X, on utilisera `Meta flèche haut`, la touche `Backspace` ne
 fonctionnera pas.
 
+[Astuce suivante](/blog/2014/02/13/de-linux-debian-vers-os-x-lauto-completion-dans-irb/)    
 [Astuce précédente](/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau/)
 
 
