@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Curses et ncurses en Ruby - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Tiens, j&#8217;ai envie d&#8217;écrire en Ruby un embryon d&#8217;éditeur pour le terminal, qui
+serait fortement inspiré de &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/02/16/curses-et-ncurses-en-ruby">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Curses et ncurses en Ruby</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-16T14:29:00+01:00" pubdate data-updated="true">16 février 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Tiens, j&#8217;ai envie d&#8217;écrire en Ruby un embryon d&#8217;éditeur pour le terminal, qui
+serait fortement inspiré de Vim. Juste histoire de voir comment ça marche.
+La première étape sera d&#8217;utiliser la bibliothèque curses (ou ncurses) à
+partir de Ruby.</p>
+
+<!-- more -->
+
+
+<h2>Curses</h2>
+
+<p>La bibliothèque <em>curses</em> permet de gérer toutes les interactions
+clavier et souris avec un terminal. Jusqu&#8217;à la version 2.1 de Ruby, elle
+faisait partie de la bibliothèque standard. Donc, si vous utilisez
+Ruby 2.1, n&#8217;oubliez pas de faire:</p>
+
+<pre><code>gem install curses
+</code></pre>
+
+<p>Si vous utilisez Ruby 2.0 où inférieur, vous possédez déjà la bibliothèque
+<em>curses</em>.</p>
+
+<p>Voici donc un <em>hello world</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;curses&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">include</span> <span class="no">Curses</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">begin</span>
+</span><span class='line'>  <span class="n">init_screen</span>
+</span><span class='line'>  <span class="n">setpos</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">addstr</span><span class="p">(</span><span class="s1">&#39;Hello, world!&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">refresh</span>
+</span><span class='line'>  <span class="n">getch</span>
+</span><span class='line'><span class="k">ensure</span>
+</span><span class='line'>  <span class="n">close_screen</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On remarque tout d&#8217;abord la paire:</p>
+
+<pre><code>init_screen
+close_screen
+</code></pre>
+
+<p>Il faut toujours appeler <code>close_screen</code> à la fin de votre programme, pour
+remettre le terminal dans l&#8217;état où il se trouvait avant le lancement de
+votre programme.</p>
+
+<p>Pour positionner le curseur, on utilise:</p>
+
+<pre><code>setpos(0, 0)
+</code></pre>
+
+<p>Attention, le premier nombre est le numéro de la ligne, et le second est le
+numéro de la colonne. Et lignes et colonnes se comptent à partir de 0…</p>
+
+<p>Pour écrire une chaîne de caractère à la position du curseur:</p>
+
+<pre><code>addstr('Hello, world!')
+refresh
+</code></pre>
+
+<p>Curses n&#8217;écrit directement dans le terminal, mais dans un buffer en mémoire,
+c&#8217;est pourquoi il faut appeler <code>refresh</code> pour voir les changements.</p>
+
+<p>Ensuite, on attends l&#8217;appui sur une touche du clavier avec:</p>
+
+<pre><code>getch
+</code></pre>
+
+<h2>Ncurses</h2>
+
+<p>Il existe aussi la bibliothèque <em>ncurses</em>, un peu plus puissante. Il existe
+plusieurs wrappers pour Ruby. J&#8217;utilise personnelement <a href="https://github.com/seanohalpin/ffi-ncurses">ffi-ncurses</a>.</p>
+
+<p>Le même programme que le précédent, mais pour ncurses:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;ffi-ncurses&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">include</span> <span class="ss">FFI</span><span class="p">:</span><span class="ss">:NCurses</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">begin</span>
+</span><span class='line'>  <span class="n">initscr</span>
+</span><span class='line'>  <span class="n">printw</span> <span class="s2">&quot;Hello World !!!&quot;</span>
+</span><span class='line'>  <span class="n">refresh</span>
+</span><span class='line'>  <span class="n">getch</span>
+</span><span class='line'><span class="k">ensure</span>
+</span><span class='line'>  <span class="n">endwin</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Les deux programmes se ressemblent beaucoup. Et pour cause, <em>ncurses</em> fait
+la même chose que <em>curses</em>, avec des extensions en plus.</p>
+
+<h2>Choisir entre curses et ncurses</h2>
+
+<p>L&#8217;une et l&#8217;autre ont leurs avantages et leurs inconvénients. <em>curses</em> à
+l&#8217;avantage d&#8217;avoir été distribuée en standard avec Ruby jusqu&#8217;à la version
+2.0 incluse, et est donc très bien intégrée. Je pense qu&#8217;on doit pouvoir
+l&#8217;utiliser facilement, même sur Windows. <em>ncurses</em> est plus puissante mais
+requiert plus de dépendances, et il n&#8217;est pas toujours évident de trouver
+un wrapper qui fonctionne avec une version récente de Ruby, même sur Linux.</p>
+
+<p>Si je devais écrire un programme grand public, j&#8217;utiliserais <em>curses</em>, mais
+comme il s&#8217;agit juste d&#8217;un programme exemple pour ce blog, je vais me faire
+plaisir et utiliser <em>ncurses</em>…</p>
+
+<p>La prochaine fois on commencera à écrire l&#8217;éditeur.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/02/15/simuler-une-honnete-piece-de-monnaie-a-partir-dune-truquee/'>Simuler une honnête pièce de monnaie à partir d&#8217;une truquée</a></li><li><a href='/blog/2014/02/12/quelques-commandes-git-par-michael-hartl/'>Quelques commandes Git par Michael Hartl</a></li><li><a href='/blog/2014/01/02/mon-patch-pour-ruby-a-ete-refuse/'>Mon patch pour Ruby a été refusé</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-16T14:29:00+01:00" pubdate data-updated="true">16 février 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/curses/'>curses</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/ncurses/'>ncurses</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>, <a class='category' href='/blog/categories/terminal/'>terminal</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/02/16/curses-et-ncurses-en-ruby/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/02/16/curses-et-ncurses-en-ruby/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/02/15/simuler-une-honnete-piece-de-monnaie-a-partir-dune-truquee/" title="Previous Post: Simuler une honnête pièce de monnaie à partir d'une truquée">&laquo; Simuler une honnête pièce de monnaie à partir d'une truquée</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/02/16/curses-et-ncurses-en-ruby/">Curses et ncurses en Ruby</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/15/simuler-une-honnete-piece-de-monnaie-a-partir-dune-truquee/">Simuler une honnête pièce de monnaie à partir d'une truquée</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/14/de-linux-debian-vers-os-x-un-terminal-qui-dechire/">De Linux (Debian) vers OS X - Un terminal qui déchire</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/13/de-linux-debian-vers-os-x-lauto-completion-dans-irb/">De Linux (Debian) vers OS X - L'auto-complétion dans Irb</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/12/quelques-commandes-git-par-michael-hartl/">Quelques commandes Git par Michael Hartl</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/11/sortie-de-coco-0-dot-9/">Sortie de coco 0.9</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">L'auto-complétion programmable en Bash - partie 10</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/02/16/curses-et-ncurses-en-ruby/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/02/16/curses-et-ncurses-en-ruby/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
