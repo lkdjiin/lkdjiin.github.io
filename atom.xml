@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-20T21:09:01+01:00</updated>
+  <updated>2014-02-21T21:00:17+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,132 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 11]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11/"/>
+    <updated>2014-02-21T20:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div>
+
+
+<p>Cet article est la suite de:
+<a href="http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">L&#8217;auto complétion programmable en bash: partie 10</a>.</p>
+
+<h2>Complétion des options longues &ndash; suite</h2>
+
+<p>Aujourd&#8217;hui on voit que <code>_get_comp_words_by_ref</code> peut être appellée
+avec une option bien utile qui modifie <code>COMP_WORDBREAKS</code>.</p>
+
+<!-- more -->
+
+
+<p>La variable <code>COMP_WORDBREAKS</code> contient les caractères qui permettent
+de splitter les mots pour la complétion. Voici son contenu:</p>
+
+<pre><code>$  echo $COMP_WORDBREAKS 
+"'&gt;&lt;=;|&amp;(:
+</code></pre>
+
+<p>On voit que <code>=</code> en fait partie, et c&#8217;est ce qui rendait un peu compliqué
+le <a href="http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">code de la dernière fois</a>.
+Grâce à l&#8217;option <code>-n</code> de la fonction <code>_get_comp_words_by_ref</code>, on va pouvoir
+simplifier ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>_mytool_long_options<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="k">case</span> <span class="nv">$1</span> in
+</span><span class='line'>        --format<span class="o">)</span>
+</span><span class='line'>            <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;dot documentation&#39;</span>
+</span><span class='line'>            ;;
+</span><span class='line'>    <span class="k">esac</span>
+</span><span class='line'><span class="k">    </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$options&quot;</span> -- <span class="s2">&quot;$2&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>_mytool<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>    <span class="nb">local </span>cur prev <span class="nb">command </span>options
+</span><span class='line'>    <span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="o">)</span>
+</span><span class='line'>    _get_comp_words_by_ref -n <span class="o">=</span> cur prev
+</span><span class='line'>    <span class="nv">commands</span><span class="o">=</span><span class="s1">&#39;new compile test&#39;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="o">[[</span> <span class="nv">$COMP_CWORD</span> -eq 1 <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$commands&quot;</span> -- <span class="s2">&quot;$cur&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'>    <span class="k">elif</span> <span class="o">[[</span> <span class="s2">&quot;$cur&quot;</span> <span class="o">==</span> --*<span class="o">=</span>* <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span>_split_longopt
+</span><span class='line'>        _mytool_long_options <span class="s2">&quot;$prev&quot;</span> <span class="s2">&quot;$cur&quot;</span>
+</span><span class='line'>    <span class="k">elif</span> <span class="o">[[</span> <span class="s2">&quot;$cur&quot;</span> <span class="o">==</span> -* <span class="o">]]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span><span class="nb">command</span><span class="o">=</span><span class="k">${</span><span class="nv">COMP_WORDS</span><span class="p">[1]</span><span class="k">}</span>
+</span><span class='line'>        <span class="k">case</span> <span class="nv">$command</span> in
+</span><span class='line'>            new<span class="o">)</span>
+</span><span class='line'>                <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--without-test&#39;</span>
+</span><span class='line'>                ;;
+</span><span class='line'>            compile<span class="o">)</span>
+</span><span class='line'>                <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--verbose&#39;</span>
+</span><span class='line'>                ;;
+</span><span class='line'>            <span class="nb">test</span><span class="o">)</span>
+</span><span class='line'>                <span class="nv">options</span><span class="o">=</span><span class="s1">&#39;--format=&#39;</span>
+</span><span class='line'>                compopt -o nospace
+</span><span class='line'>                ;;
+</span><span class='line'>        <span class="k">esac</span>
+</span><span class='line'><span class="k">        </span><span class="nv">COMPREPLY</span><span class="o">=(</span> <span class="k">$(</span> <span class="nb">compgen</span> -W <span class="s2">&quot;$options&quot;</span> -- <span class="s2">&quot;$cur&quot;</span> <span class="k">)</span> <span class="o">)</span>
+</span><span class='line'>    <span class="k">fi</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="nb">complete</span> -F _mytool mytool
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ce code fait la même chose que celui du <a href="http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">dernier article</a>,
+mais est bien plus simple et lisible.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Astuce Bash - Améliorer l'historique]]></title>
@@ -953,7 +1079,7 @@ ce que j&#8217;espère faire dans un prochain article.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1101,7 +1227,7 @@ la complétion.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1248,7 +1374,7 @@ suivante (plus lisible et flexible quand on a beaucoup de commandes):</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/02/lauto-completion-programmable-en-bash-partie-7/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1629,104 +1755,7 @@ dans la variable <code>COMPREPLY</code>. Notez la convention utilisée: la fonct
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/08/lauto-completion-programmable-en-bash-partie-8/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 8</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vim - Sauvegarder et quitter les fichiers]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/01/vim-sauvegarder-et-quitter-les-fichiers/"/>
-    <updated>2014-02-01T20:12:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/01/vim-sauvegarder-et-quitter-les-fichiers</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Il est temps pour moi de faire un point sur les différentes méthodes
-qu&#8217;offre Vim pour quitter et/ou sauvegarder un fichier.</p>
-
-<!-- more -->
-
-
-<h2>Les basiques</h2>
-
-<p>Voici, selon moi, les commandes à retenir en premier lieu.</p>
-
-<p>Pour sauvegarder un fichier, utilisez la commande <code>write</code>, ou
-plutôt son raccourci <code>w</code>:</p>
-
-<pre><code>:w
-:write
-</code></pre>
-
-<p>Je rappelle qu&#8217;on peut facilement obtenir une aide exhaustive sur une
-commande quelconque:</p>
-
-<pre><code>:h :write
-</code></pre>
-
-<p>Et je conseille de lire systématiquement l&#8217;aide de Vim sur les
-commandes dont je vais vous parler. Vous découvrirez ainsi des tas
-de variantes qui pourrait vous être utile.</p>
-
-<p>Pour sauvegarder tous les fichiers en une seule fois:</p>
-
-<pre><code>:wall
-</code></pre>
-
-<p>Pour quitter un fichier, on utilise <code>quit</code>, ou son raccourci <code>q</code>:</p>
-
-<pre><code>:q
-:quit
-</code></pre>
-
-<p>De même, pour quitter tous les fichiers (et fermer Vim):</p>
-
-<pre><code>:qa
-:qall
-</code></pre>
-
-<p>Si vous voulez fermer un fichier modifié <em>sans</em> enregistrer les
-modifications, la commande suivante est indispensable:</p>
-
-<pre><code>:q!
-</code></pre>
-
-<p>Voilà pour les basiques. Ces commandes sont simples à mémoriser.</p>
-
-<h2>Les combinaisons</h2>
-
-<p>Il arrive souvent qu&#8217;on veuille sauvegarder un fichier, <em>et en même
-temps</em> le fermer. Je recommenderais aux débutants d&#8217;utiliser la
-commande suivante:</p>
-
-<pre><code>:wq
-</code></pre>
-
-<p>Elle est très facile à mémoriser, étant la combinaison de <code>write</code> et
-de <code>quit</code>.</p>
-
-<p>Quand du temps aura passé et que vous serez prêt à en apprendre
-d&#8217;autres, essayez donc les deux qui suivent:</p>
-
-<p>Un simple <code>:x</code> permet de sauver/quitter le fichier, vous gagnez une
-touche par rapport à <code>:wq</code>:</p>
-
-<pre><code>:x
-</code></pre>
-
-<p>Suivant le layout de votre clavier, la suivante peut vous convenir plus ou
-moins. C&#8217;est la seule qui soit en mode normal et non pas en mode commande,
-rapide comme l&#8217;éclair, je l&#8217;adore:</p>
-
-<pre><code>ZZ
-</code></pre>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/01/28/installation-du-plugin-airline-pour-vim-partie-4/'>Installation du plugin Airline pour Vim &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/27/installation-du-plugin-airline-pour-vim-partie-3/'>Installation du plugin Airline pour Vim &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/26/installation-du-plugin-airline-pour-vim-partie-2/'>Installation du plugin Airline pour Vim &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/'>L&#8217;auto-complétion programmable en Bash &ndash; partie 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : bash | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/bash/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-20T21:09:01+01:00</updated>
+  <updated>2014-02-21T21:00:17+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,97 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 11]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11/"/>
+    <updated>2014-02-21T20:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
+
+<p>Cet article est la suite de:
+<a href="/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">L'auto complétion programmable en bash: partie 10</a>.</p>
+
+<h2>Complétion des options longues &ndash; suite</h2>
+
+<p>Aujourd'hui on voit que <code>_get_comp_words_by_ref</code> peut être appellée
+avec une option bien utile qui modifie <code>COMP_WORDBREAKS</code>.</p>
+
+<!-- more -->
+
+
+<p>La variable <code>COMP_WORDBREAKS</code> contient les caractères qui permettent
+de splitter les mots pour la complétion. Voici son contenu:</p>
+
+<pre><code>$  echo $COMP_WORDBREAKS 
+"'&gt;&lt;=;|&amp;(:
+</code></pre>
+
+<p>On voit que <code>=</code> en fait partie, et c'est ce qui rendait un peu compliqué
+le <a href="/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">code de la dernière fois</a>.
+Grâce à l'option <code>-n</code> de la fonction <code>_get_comp_words_by_ref</code>, on va pouvoir
+simplifier ça:</p>
+
+<p>``` bash
+_mytool_long_options()
+{</p>
+
+<pre><code>case $1 in
+    --format)
+        options='dot documentation'
+        ;;
+esac
+COMPREPLY=( $( compgen -W "$options" -- "$2" ) )
+</code></pre>
+
+<p>}</p>
+
+<p>_mytool()
+{</p>
+
+<pre><code>local cur prev command options
+COMPREPLY=( )
+_get_comp_words_by_ref -n = cur prev
+commands='new compile test'
+
+if [[ $COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+elif [[ "$cur" == --*=* ]]; then
+    _split_longopt
+    _mytool_long_options "$prev" "$cur" 
+elif [[ "$cur" == -* ]]; then
+    command=${COMP_WORDS[1]}
+    case $command in
+        new)
+            options='--without-test'
+            ;;
+        compile)
+            options='--verbose'
+            ;;
+        test)
+            options='--format='
+            compopt -o nospace
+            ;;
+    esac
+    COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
+fi
+</code></pre>
+
+<p>}
+complete -F _mytool mytool
+```</p>
+
+<p>Ce code fait la même chose que celui du <a href="/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">dernier article</a>,
+mais est bien plus simple et lisible.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Astuce Bash - Améliorer l'historique]]></title>
@@ -242,138 +333,6 @@ git merge &mdash;no-ff &mdash;log $CURRENT_BRANCH
 ```</p>
 
 <p>Essayez les, certaines pourraient bien vous changer la vie.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 10]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/"/>
-    <updated>2014-02-10T20:45:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
-
-<p>Cet article est la suite de:
-<a href="/blog/2014/02/09/lauto-completion-programmable-en-bash-partie-9/">L'auto complétion programmable en bash: partie 9</a>.</p>
-
-<h2>Complétion des options longues</h2>
-
-<p>Aujourd'hui j'ai envie de voir comment on pourrait utiliser
-l'auto-complétion pour les options longues, du genre
-<code>--format=documentation</code>.</p>
-
-<!-- more -->
-
-
-<p>L'option <code>--format=</code> peut prendre deux valeurs: <code>dot</code> ou <code>documentation</code>.
-Je veux donc obtenir ceci:</p>
-
-<pre><code>$ mytool test -[TAB]
-$ mytool test --format=[TAB]
-documentation  dot            
-$ mytool test --format=do
-
-$ mytool test --format=doc[TAB]
-$ mytool test --format=documentation 
-</code></pre>
-
-<p>Voici une manière d'obtenir ça:</p>
-
-<p>``` bash
-_mytool_long_options()
-{</p>
-
-<pre><code>case $1 in
-    --format)
-        options='dot documentation'
-        ;;
-esac
-COMPREPLY=( $( compgen -W "$options" -- "$2" ) )
-</code></pre>
-
-<p>}</p>
-
-<p>_mytool()
-{</p>
-
-<pre><code>local cur prev command options
-COMPREPLY=( )
-_get_comp_words_by_ref cur prev
-commands='new compile test'
-
-if [[ $COMP_CWORD -eq 1 ]]; then
-    COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
-elif [[ "$prev" == = ]]; then
-    _mytool_long_options "${COMP_WORDS[COMP_CWORD-2]}" "$cur"
-elif [[ "$cur" == = ]]; then
-    _mytool_long_options "$prev"
-elif [[ "$cur" == -* ]]; then
-    command=${COMP_WORDS[1]}
-    case $command in
-        new)
-            options='--without-test'
-            ;;
-        compile)
-            options='--verbose'
-            ;;
-        test)
-            options='--format='
-            compopt -o nospace
-            ;;
-    esac
-    COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
-fi
-</code></pre>
-
-<p>}
-complete -F _mytool mytool</p>
-
-<h1>vim: ft=sh ts=4 sw=4</h1>
-
-<p>```</p>
-
-<p>La fonction <code>_mytool_long_options</code> prend un paramètre obligatoire et
-un second optionnel. Le premier est le mot <em>avant</em> le signe <code>=</code> et le
-second est l'éventuel mot <em>après</em> le signe <code>=</code>:</p>
-
-<p>``` bash
-_mytool_long_options()
-{</p>
-
-<pre><code>case $1 in
-    --format)
-        options='dot documentation'
-        ;;
-esac
-COMPREPLY=( $( compgen -W "$options" -- "$2" ) )
-</code></pre>
-
-<p>}
-```</p>
-
-<p>J'ai ajouté deux <code>elif</code>, qui regarde si le mot sous le curseur (<code>$cur</code>)
-ou le mot précédent (<code>$pre</code>) est le caractère <code>=</code>. Dans ce cas,
-on appelle la fonction <code>_mytool_long_options</code> qui s'occupe de gérer
-la complétion des options du style <code>--foo=bar</code>:</p>
-
-<p>``` bash</p>
-
-<pre><code>elif [[ "$prev" == = ]]; then
-    _mytool_long_options "${COMP_WORDS[COMP_CWORD-2]}" "$cur"
-elif [[ "$cur" == = ]]; then
-    _mytool_long_options "$prev"
-</code></pre>
-
-<p>```</p>
-
-<p>Même si cela fonctionne, je pense pouvoir trouver plus simple, et c'est
-ce que j'espère faire dans un prochain article.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

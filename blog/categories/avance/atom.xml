@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : avancé | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/avance/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-02-20T21:09:01+01:00</updated>
+  <updated>2014-02-21T21:00:17+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,97 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 11]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11/"/>
+    <updated>2014-02-21T20:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/02/21/lauto-completion-programmable-en-bash-partie-11</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
+
+<p>Cet article est la suite de:
+<a href="/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">L'auto complétion programmable en bash: partie 10</a>.</p>
+
+<h2>Complétion des options longues &ndash; suite</h2>
+
+<p>Aujourd'hui on voit que <code>_get_comp_words_by_ref</code> peut être appellée
+avec une option bien utile qui modifie <code>COMP_WORDBREAKS</code>.</p>
+
+<!-- more -->
+
+
+<p>La variable <code>COMP_WORDBREAKS</code> contient les caractères qui permettent
+de splitter les mots pour la complétion. Voici son contenu:</p>
+
+<pre><code>$  echo $COMP_WORDBREAKS 
+"'&gt;&lt;=;|&amp;(:
+</code></pre>
+
+<p>On voit que <code>=</code> en fait partie, et c'est ce qui rendait un peu compliqué
+le <a href="/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">code de la dernière fois</a>.
+Grâce à l'option <code>-n</code> de la fonction <code>_get_comp_words_by_ref</code>, on va pouvoir
+simplifier ça:</p>
+
+<p>``` bash
+_mytool_long_options()
+{</p>
+
+<pre><code>case $1 in
+    --format)
+        options='dot documentation'
+        ;;
+esac
+COMPREPLY=( $( compgen -W "$options" -- "$2" ) )
+</code></pre>
+
+<p>}</p>
+
+<p>_mytool()
+{</p>
+
+<pre><code>local cur prev command options
+COMPREPLY=( )
+_get_comp_words_by_ref -n = cur prev
+commands='new compile test'
+
+if [[ $COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=( $( compgen -W "$commands" -- "$cur" ) )
+elif [[ "$cur" == --*=* ]]; then
+    _split_longopt
+    _mytool_long_options "$prev" "$cur" 
+elif [[ "$cur" == -* ]]; then
+    command=${COMP_WORDS[1]}
+    case $command in
+        new)
+            options='--without-test'
+            ;;
+        compile)
+            options='--verbose'
+            ;;
+        test)
+            options='--format='
+            compopt -o nospace
+            ;;
+    esac
+    COMPREPLY=( $( compgen -W "$options" -- "$cur" ) )
+fi
+</code></pre>
+
+<p>}
+complete -F _mytool mytool
+```</p>
+
+<p>Ce code fait la même chose que celui du <a href="/blog/2014/02/10/lauto-completion-programmable-en-bash-partie-10/">dernier article</a>,
+mais est bien plus simple et lisible.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 10]]></title>
@@ -503,127 +594,6 @@ fonction (ici <code>_mytool</code>) qui va calculer la complétion. Cette fameus
 <code>-F</code> permet aussi à <code>complete</code> de savoir qu'elle doit chercher des résultats
 dans la variable <code>COMPREPLY</code>. Notez la convention utilisée: la fonction
 <code>_mytool</code> calcule la complétion du programme <code>mytool</code>.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[L'auto-complétion programmable en Bash - partie 6]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6/"/>
-    <updated>2014-01-29T20:47:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/29/lauto-completion-programmable-en-bash-partie-6</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
-
-<p>Cet article est la suite de:
-<a href="/blog/2014/01/15/lauto-completion-en-bash-partie-5/">L'auto complétion programmable en bash: partie 5</a>.</p>
-
-<h2>Un motif général et basique</h2>
-
-<p>Nous avons écrit un petit <a href="/blog/2014/01/14/lauto-completion-programmable-en-bash-partie-4/">programme pour tester</a>,
-puis nous avons écrit <a href="/blog/2014/01/15/lauto-completion-en-bash-partie-5/">un script d'auto-complétion très simple</a>.
-Reprenons notre jeu de rôle: nous avons un programme <code>mytool</code> qui
-attend une des trois commandes suivantes: <code>new</code>, <code>compile</code> ou
-<code>test</code>. On va ajouter ceci: la commande <code>new</code> peut prendre
-l'option <code>--without-test</code> et la commande <code>compile</code> peut prendre
-l'option <code>--verbose</code>. Ça reste encore très simple, mais on ne peut
-déjà plus se servir uniquement de la fonction <code>complete</code>, vue
-la dernière fois.</p>
-
-<p>Voyons donc le motif général utilisé par beaucoup de scripts
-d'auto-complétion:</p>
-
-<!-- more -->
-
-
-<p>``` bash /etc/bash_completion.d/mytool
-_mytool()
-{</p>
-
-<pre><code>local current=${COMP_WORDS[COMP_CWORD]}
-COMPREPLY=( $(compgen -W "new compile test" -- $current) )
-</code></pre>
-
-<p>}
-complete -F _mytool mytool
-```</p>
-
-<p>Le script ci-dessus fait exactement la même chose que notre simple
-script de la dernière fois, qui était le suivant:</p>
-
-<p><code>bash /etc/bash_completion.d/mytool
-complete -W "new compile test" mytool
-</code></p>
-
-<p>Mais il le fait d'une manière plus compliquée. En effet,
-pourquoi faire simple… Les explications viendront plus tard.</p>
-
-<p>En fait, pour aller plus loin, il est important de comprendre le rôle
-des variables <code>COMP_WORDS</code>, <code>COMP_CWORD</code> et <code>COMPREPLY</code>. Pour ça, on
-va modifier notre script, et chercher à comprendre ce que
-représente <code>COMPREPLY</code>:</p>
-
-<p>``` bash /etc/bash_completion.d/mytool
-_mytool()
-{</p>
-
-<pre><code>COMPREPLY=( this is some replacement )
-</code></pre>
-
-<p>}
-complete -F _mytool mytool
-```</p>
-
-<p>Pour qu'il soit pris en compte tout de suite, il faut le sourcer:</p>
-
-<pre><code>$ source /etc/bash_completion.d/mytool
-</code></pre>
-
-<p>Alors, que fait-il ? Si je tapes <code>mytool foo bar[TAB]</code>, voici ce que
-le script sort:</p>
-
-<pre><code>$ mytool foo bar[TAB]
-is           replacement  some         this   
-</code></pre>
-
-<p>COMPREPLY accepte un tableau de chaînes, qui sont les suggestions que
-nous renvoit l'auto-complétion. On note au passage que ces suggestions
-sont triées alphabétiquement.</p>
-
-<p>Modifions à nouveau notre script:</p>
-
-<p>``` bash /etc/bash_completion.d/mytool
-_mytool()
-{</p>
-
-<pre><code>COMPREPLY=( replacement )
-</code></pre>
-
-<p>}
-complete -F _mytool mytool
-```</p>
-
-<p>Cette fois, COMPREPLY représente un tableau d'un seul élément.
-N'oubliez pas de sourcer le script avant de le tester:</p>
-
-<pre><code>$ mytool foo bar[TAB]
-</code></pre>
-
-<p>devient:</p>
-
-<pre><code>$ mytool foo replacement
-</code></pre>
-
-<p>Vous devriez maintenant avoir bien compris à quoi sert la variable
-<code>COMPREPLY</code>.</p>
-
-<p>La prochaine fois, on regardera en détail les variables <code>COMP_WORDS</code>
-et <code>COMP_CWORD</code>.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
