@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : terminal | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/terminal/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-03-01T18:00:04+01:00</updated>
+  <updated>2014-03-02T21:08:14+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,82 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 5]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5/"/>
+    <updated>2014-03-02T20:54:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>La bibliothèque <em>curses</em> sait gérer le fenêtrage. Voici un programme qui
+montre comment faire.</p>
+
+<!-- more -->
+
+
+<p>C'est une traduction en ruby d'un programme C issu d'un tutoriel
+sur <em>ncurses</em> (dont je ne retrouve plus la référence dans l'immédiat).</p>
+
+<p>``` ruby
+require &lsquo;curses&rsquo;
+include Curses</p>
+
+<p>def create_newwin(height, width, top, left)
+  local_win = Window.new(height, width, top, left)
+  local_win.box(?|, ?&ndash;)
+  local_win.refresh
+  local_win
+end</p>
+
+<p>def destroy_win(w)
+  w.clear
+  w.refresh
+  w.close
+end</p>
+
+<p>begin
+  init_screen
+  cbreak
+  stdscr.keypad(true)
+  height = 3
+  width = 10
+  top = (lines &ndash; height) / 2
+  left = (cols &ndash; width) / 2
+  addstr(&ldquo;Press F1 to exit&rdquo;)
+  refresh
+  my_win = create_newwin(height, width, top, left)</p>
+
+<p>  while (ch = getch) != KEY_F1</p>
+
+<pre><code>case ch
+when KEY_LEFT then left -= 1
+when KEY_RIGHT then left += 1
+when KEY_UP then top -= 1
+when KEY_DOWN then top += 1
+end
+destroy_win(my_win)
+my_win = create_newwin(height, width, top, left)
+</code></pre>
+
+<p>  end
+ensure
+  close_screen
+end
+```</p>
+
+<p>En étudiant ce programme avec en parallèle la documentation ruby
+de <a href="http://ruby-doc.org/stdlib-2.1.0/libdoc/curses/rdoc/Curses.html">curses</a>,
+vous devriez comprendre sans problèmes la gestion des fenêtres.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 4]]></title>
@@ -216,65 +292,6 @@ end
 que ça fonctionne ;)</p>
 
 <p>Ces informations nous seront bien utiles pour l'écriture d'un éditeur…</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/23/ecrire-un-editeur-pour-le-terminal-partie-2/"/>
-    <updated>2014-02-23T16:33:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/23/ecrire-un-editeur-pour-le-terminal-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Comme j'ai eu un peu trop de problêmes à faire tourner <em>ncurses</em> sur
-plusieurs machines, j'ai décidé de repasser à <em>curses</em>.</p>
-
-<!-- more -->
-
-
-<p>Voici donc le programme de <a href="/blog/2014/02/22/ecrire-un-editeur-pour-le-terminal-partie-1/">la dernière fois</a>, réécrit pour <em>curses</em>:</p>
-
-<p>``` ruby redvim.rb</p>
-
-<h1>!/usr/bin/env ruby</h1>
-
-<p>require &lsquo;curses&rsquo;
-include Curses</p>
-
-<p>file = File.open ARGV[0]</p>
-
-<p>begin
-  init_screen
-  file.each {|line| addstr(line) }
-  refresh
-  getch
-ensure
-  close_screen
-end
-```</p>
-
-<h2>Un problème avec Unicode ?</h2>
-
-<p>Il se peut que vous ayez des problèmes pour afficher correctement les
-caractères unicode. À tous les coups, c'est parce que la gem <em>curses</em>
-à été compilée sans les headers indispensables.
-Installez donc ces headers: libncurses5.dev et libncurses5w.dev, ensuite
-vous avez deux solutions:</p>
-
-<ol>
-<li>Si vous utilisez Ruby 2.1, désinstallez <em>curses</em> et réinstallez la:
-<code>gem uninstall curses &amp;&amp; gem install curses</code>.</li>
-<li>Si vous utilisez Ruby 2.0 ou inférieur, <em>curses</em> fait partie de la
-bibliothèque standard, c'est donc Ruby qu'il faudra recompiler.</li>
-</ol>
-
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
