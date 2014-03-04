@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-03-03T21:18:02+01:00</updated>
+  <updated>2014-03-04T21:21:11+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,159 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/04/ecrire-un-editeur-pour-le-terminal-partie-7/"/>
+    <updated>2014-03-04T21:04:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/04/ecrire-un-editeur-pour-le-terminal-partie-7</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Notre futur éditeur aura un certain nombre de fenêtre (au sens de
+<em>curses</em>) et pour les gérer, on sera bien inspiré d&#8217;utiliser un peu
+de POO.
+Voici donc une réécriture du programme vu
+<a href="http://lkdjiin.github.io/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5/">ici</a>.</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;curses&#39;</span>
+</span><span class='line'><span class="kp">include</span> <span class="no">Curses</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">StatusWindow</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@filename</span> <span class="o">=</span> <span class="n">filename</span>
+</span><span class='line'>    <span class="vi">@win</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span>
+</span><span class='line'>    <span class="vi">@win</span><span class="o">.</span><span class="n">setpos</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="vi">@win</span><span class="o">.</span><span class="n">maxx</span> <span class="o">-</span> <span class="vi">@filename</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@win</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="vi">@filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@win</span><span class="o">.</span><span class="n">refresh</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">close</span>
+</span><span class='line'>    <span class="vi">@win</span><span class="o">.</span><span class="n">close</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">FileWindow</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@filename</span> <span class="o">=</span> <span class="n">filename</span>
+</span><span class='line'>    <span class="vi">@win</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">lines</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span>
+</span><span class='line'>    <span class="vi">@win</span><span class="o">.</span><span class="n">setpos</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="vi">@filename</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">line</span><span class="o">|</span> <span class="vi">@win</span><span class="o">.</span><span class="n">addstr</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="vi">@win</span><span class="o">.</span><span class="n">refresh</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">close</span>
+</span><span class='line'>    <span class="vi">@win</span><span class="o">.</span><span class="n">close</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">begin</span>
+</span><span class='line'>  <span class="n">init_screen</span>
+</span><span class='line'>  <span class="n">refresh</span>
+</span><span class='line'>  <span class="n">status_window</span> <span class="o">=</span> <span class="no">StatusWindow</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">file_window</span> <span class="o">=</span> <span class="no">FileWindow</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">status_window</span><span class="o">.</span><span class="n">display</span>
+</span><span class='line'>  <span class="n">file_window</span><span class="o">.</span><span class="n">display</span>
+</span><span class='line'>  <span class="n">getch</span>
+</span><span class='line'>  <span class="n">status_window</span><span class="o">.</span><span class="n">close</span>
+</span><span class='line'>  <span class="n">file_window</span><span class="o">.</span><span class="n">close</span>
+</span><span class='line'><span class="k">ensure</span>
+</span><span class='line'>  <span class="n">close_screen</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le code est plus conséquent, c&#8217;est vrai, mais la structure sera plus
+claire, surtout quand on coupera le code en plusieurs fichiers, et
+qu&#8217;on utilisera un peu, ou plutôt beaucoup, d&#8217;héritage.</p>
+
+<p>Le détail à retenir, curieusement, est celui-ci:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">begin</span>
+</span><span class='line'>  <span class="n">init_screen</span>
+</span><span class='line'>  <span class="n">refresh</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Il faut rafraichir l&#8217;écran juste après l&#8217;initialisation de <em>curses</em>, sinon
+aucune fenêtre ne s&#8217;affichera…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 6]]></title>
@@ -1468,83 +1621,6 @@ par exemple:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/26/de-linux-debian-vers-os-x-supprimer-un-fichier-dans-le-finder/'>De Linux (Debian) vers OS X &ndash; Supprimer un fichier dans le finder</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/14/de-linux-debian-vers-os-x-un-terminal-qui-dechire/'>De Linux (Debian) vers OS X &ndash; Un terminal qui déchire</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/06/de-linux-debian-vers-os-x-dossier-parent-dans-lexplorateur/'>De Linux (Debian) vers OS X &ndash; Dossier parent dans l&#8217;explorateur</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Quelques commandes Git par Michael Hartl]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/12/quelques-commandes-git-par-michael-hartl/"/>
-    <updated>2014-02-12T20:29:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/12/quelques-commandes-git-par-michael-hartl</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Michael Hartl, l&#8217;auteur de <a href="http://ruby.railstutorial.org/">Ruby on Rails Tutorial</a>
-a écrit plusieurs commandes Git bien utiles.</p>
-
-<!-- more -->
-
-
-<p>Le code se trouve sur Github : <a href="https://github.com/mhartl/git-utils">git-utils</a>.
-On y trouve par exemple une commande <code>git cleanup</code>, qui supprime toutes
-les branches locales qui ne sont pas encore mergées dans la branche
-courante. Ou encore <code>git merge-branch</code>, qui merge la branche courante
-dans master par défaut.</p>
-
-<p>Aujourd&#8217;hui, toutes ces commandes sont écrites en Ruby, mais avant
-elle l&#8217;était en Bash, comme la suivante:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c">#!/bin/bash git-merge-branch</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Copyright (c) 2013 Michael Hartl</span>
-</span><span class='line'><span class="c"># Released under the MIT License (http://opensource.org/licenses/MIT)</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Merges the current branch into the given branch (defaults to master).</span>
-</span><span class='line'><span class="c"># E.g., &#39;git merge-branch foobar&#39; merges the current branch into foobar.</span>
-</span><span class='line'><span class="c"># &#39;git merge-branch&#39;, merges the current branch into master.</span>
-</span><span class='line'><span class="c"># git merge-branch uses the --no-ff --log options to ensure that the </span>
-</span><span class='line'><span class="c"># merge creates a new commit object and that the individual commits appear</span>
-</span><span class='line'><span class="c"># in the log file.</span>
-</span><span class='line'><span class="nv">CURRENT_BRANCH</span><span class="o">=</span><span class="sb">`</span>git rev-parse --abbrev-ref HEAD<span class="sb">`</span>
-</span><span class='line'><span class="k">if</span> <span class="o">[</span> <span class="nv">$# </span>-eq 1 <span class="o">]</span>
-</span><span class='line'><span class="k">then</span>
-</span><span class='line'><span class="k">  </span><span class="nv">TARGET_BRANCH</span><span class="o">=</span><span class="nv">$1</span>
-</span><span class='line'><span class="k">else</span>
-</span><span class='line'><span class="k">  </span><span class="nv">TARGET_BRANCH</span><span class="o">=</span><span class="s2">&quot;master&quot;</span>
-</span><span class='line'><span class="k">fi</span>
-</span><span class='line'>git checkout <span class="nv">$TARGET_BRANCH</span>
-</span><span class='line'>git merge --no-ff --log <span class="nv">$CURRENT_BRANCH</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Essayez les, certaines pourraient bien vous changer la vie.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/19/astuce-pour-git-merge-et-checkout-en-une-commande/'>Astuce pour Git &ndash; merge et checkout en une commande</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/03/ecrire-un-editeur-pour-le-terminal-partie-6/'>Écrire un éditeur pour le terminal &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5/'>Écrire un éditeur pour le terminal &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
