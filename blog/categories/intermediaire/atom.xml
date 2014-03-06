@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-03-05T21:19:23+01:00</updated>
+  <updated>2014-03-06T21:12:42+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,203 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un éditeur pour le terminal - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/06/un-editeur-pour-le-terminal-partie-8/"/>
+    <updated>2014-03-06T20:59:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/06/un-editeur-pour-le-terminal-partie-8</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans l'article d'aujourd'hui, on regarde comment utiliser la couleur.</p>
+
+<!-- more -->
+
+
+<p>``` ruby
+require &lsquo;curses&rsquo;
+include Curses</p>
+
+<p>begin
+  init_screen
+  unless has_colors?</p>
+
+<pre><code>close_screen
+puts "Your terminal has no colors"
+exit 1
+</code></pre>
+
+<p>  end
+  start_color
+  init_pair(1, COLOR_RED, COLOR_BLACK)
+  attron(color_pair(1))
+  setpos(10, 10)
+  addstr(&ldquo;In colors&hellip;&rdquo;)
+  attroff(color_pair(1))
+  refresh
+  getch
+ensure
+  close_screen
+end
+```</p>
+
+<p>On peut savoir si le terminal est capable d'afficher en couleur grâce à
+<code>has_colors?</code>:</p>
+
+<p><code>ruby
+  unless has_colors?
+</code></p>
+
+<p>Avant de pouvoir utiliser la couleur, il faut faire appel à <code>start_color</code>:</p>
+
+<p><code>ruby
+  start_color
+</code></p>
+
+<p>On crée un «assemblage» de couleurs avec <code>init_pair</code>, en lui passant un
+identifiant, auquel on pourra se référer plus tard, une couleur de premier
+plan et une couleur d'arrière plan:</p>
+
+<p><code>ruby
+  init_pair(1, COLOR_RED, COLOR_BLACK)
+</code></p>
+
+<p>On active un «assemblage» comme ceci:</p>
+
+<p><code>ruby
+  attron(color_pair(1))
+</code></p>
+
+<p>Et on le désactive comme cela:</p>
+
+<p><code>ruby
+  attroff(color_pair(1))
+</code></p>
+
+<p>Voilà.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/04/ecrire-un-editeur-pour-le-terminal-partie-7/"/>
+    <updated>2014-03-04T21:04:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/04/ecrire-un-editeur-pour-le-terminal-partie-7</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Notre futur éditeur aura un certain nombre de fenêtre (au sens de
+<em>curses</em>) et pour les gérer, on sera bien inspiré d'utiliser un peu
+de POO.
+Voici donc une réécriture du programme vu
+<a href="/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5/">ici</a>.</p>
+
+<!-- more -->
+
+
+<p>``` ruby</p>
+
+<h1>!/usr/bin/env ruby</h1>
+
+<p>require &lsquo;curses&rsquo;
+include Curses</p>
+
+<p>class StatusWindow
+  def initialize(filename)</p>
+
+<pre><code>@filename = filename
+@win = Window.new(1, cols, 0, 0)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def display</p>
+
+<pre><code>@win.setpos(0, (@win.maxx - @filename.size) / 2)
+@win.addstr(@filename)
+@win.refresh
+</code></pre>
+
+<p>  end</p>
+
+<p>  def close</p>
+
+<pre><code>@win.close
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class FileWindow
+  def initialize(filename)</p>
+
+<pre><code>@filename = filename
+@win = Window.new(lines - 2, cols, 2, 0)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def display</p>
+
+<pre><code>@win.setpos(0, 0)
+File.open(@filename).each {|line| @win.addstr(line) }
+@win.refresh
+</code></pre>
+
+<p>  end</p>
+
+<p>  def close</p>
+
+<pre><code>@win.close
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>begin
+  init_screen
+  refresh
+  status_window = StatusWindow.new(ARGV[0])
+  file_window = FileWindow.new(ARGV[0])
+  status_window.display
+  file_window.display
+  getch
+  status_window.close
+  file_window.close
+ensure
+  close_screen
+end
+```</p>
+
+<p>Le code est plus conséquent, c'est vrai, mais la structure sera plus
+claire, surtout quand on coupera le code en plusieurs fichiers, et
+qu'on utilisera un peu, ou plutôt beaucoup, d'héritage.</p>
+
+<p>Le détail à retenir, curieusement, est celui-ci:</p>
+
+<p><code>ruby
+begin
+  init_screen
+  refresh
+</code></p>
+
+<p>Il faut rafraichir l'écran juste après l'initialisation de <em>curses</em>, sinon
+aucune fenêtre ne s'affichera…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 6]]></title>
@@ -207,104 +404,6 @@ terminal:</p>
 qui vous rappelera des choses si vous avez fait du C, est ce que j'ai
 trouvé de mieux pour ne pas avoir de soucis avec les caractères
 non ASCII.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Filtrer ses logs en direct]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/28/filtrer-ses-logs-en-direct/"/>
-    <updated>2014-02-28T20:50:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/28/filtrer-ses-logs-en-direct</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Aujourd'hui on voit comment filtrer nos fichiers de log en direct à l'aide
-des commandes UNIX <code>tail</code> et <code>sed</code>.</p>
-
-<!-- more -->
-
-
-<p>Pour afficher un fichier en direct live sur le terminal, autrement dit pour
-visualiser au fur et à mesure les ajouts dans ce fichier, on utilise
-<code>tail -f</code>:</p>
-
-<p><code>bash
-tail -f un/fichier/de/log
-</code></p>
-
-<p>Pour afficher <strong>uniquement</strong> les lignes d'un fichier qui contiennent la
-chaîne de caractères <code>ERROR</code>, on va utiliser <code>sed</code>:</p>
-
-<p><code>bash
-sed -n '/ERROR/p' un/fichier/de/log
-</code></p>
-
-<p>Ou bien pour afficher toutes les lignes d'un fichier <strong>sauf</strong> celles qui
-contiennent la chaîne de caractères <code>bruit</code>, on utilisera:</p>
-
-<p><code>bash
-sed '/bruit/d' un/fichier/de/log
-</code></p>
-
-<p>Et en combinant les deux, on aura un log en direct et filtré:</p>
-
-<p><code>bash
-tail -f un/fichier/de/log | sed -n '/ERROR/p'
-</code></p>
-
-<p>Et vous, vous utilisez quelle(s) commande(s) ?</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Sed - Remplacer la n-ième occurence]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/25/sed-remplacer-la-n-ieme-occurence/"/>
-    <updated>2014-02-25T21:10:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/25/sed-remplacer-la-n-ieme-occurence</id>
-    <content type="html"><![CDATA[<p>J'adore Sed. Je l'utilise depuis de longues années. Et pourtant je n'avais
-jamais remarqué qu'on pouvait remplacer la n-ième occurence d'un pattern
-dans une ligne.</p>
-
-<!-- more -->
-
-
-<p>Soit le fichier <code>test</code> suivant:</p>
-
-<pre><code>Bonjour le monde !
-</code></pre>
-
-<p>Pour remplacer le premier <code>o</code> par un <code>-</code>:</p>
-
-<p><code>bash
-sed 's/o/-/' test
-</code></p>
-
-<p>Pour remplacer tous les <code>o</code> par des <code>-</code>:</p>
-
-<p><code>bash
-sed 's/o/-/g' test
-</code></p>
-
-<p>Pour remplacer le deuxième <code>o</code> par un <code>-</code>:</p>
-
-<p><code>bash
-sed 's/o/-/2' test
-</code></p>
-
-<p>Sed, c'est magique !</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

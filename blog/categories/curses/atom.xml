@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : curses | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/curses/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-03-05T21:19:23+01:00</updated>
+  <updated>2014-03-06T21:12:42+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,203 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un éditeur pour le terminal - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/06/un-editeur-pour-le-terminal-partie-8/"/>
+    <updated>2014-03-06T20:59:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/06/un-editeur-pour-le-terminal-partie-8</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans l'article d'aujourd'hui, on regarde comment utiliser la couleur.</p>
+
+<!-- more -->
+
+
+<p>``` ruby
+require &lsquo;curses&rsquo;
+include Curses</p>
+
+<p>begin
+  init_screen
+  unless has_colors?</p>
+
+<pre><code>close_screen
+puts "Your terminal has no colors"
+exit 1
+</code></pre>
+
+<p>  end
+  start_color
+  init_pair(1, COLOR_RED, COLOR_BLACK)
+  attron(color_pair(1))
+  setpos(10, 10)
+  addstr(&ldquo;In colors&hellip;&rdquo;)
+  attroff(color_pair(1))
+  refresh
+  getch
+ensure
+  close_screen
+end
+```</p>
+
+<p>On peut savoir si le terminal est capable d'afficher en couleur grâce à
+<code>has_colors?</code>:</p>
+
+<p><code>ruby
+  unless has_colors?
+</code></p>
+
+<p>Avant de pouvoir utiliser la couleur, il faut faire appel à <code>start_color</code>:</p>
+
+<p><code>ruby
+  start_color
+</code></p>
+
+<p>On crée un «assemblage» de couleurs avec <code>init_pair</code>, en lui passant un
+identifiant, auquel on pourra se référer plus tard, une couleur de premier
+plan et une couleur d'arrière plan:</p>
+
+<p><code>ruby
+  init_pair(1, COLOR_RED, COLOR_BLACK)
+</code></p>
+
+<p>On active un «assemblage» comme ceci:</p>
+
+<p><code>ruby
+  attron(color_pair(1))
+</code></p>
+
+<p>Et on le désactive comme cela:</p>
+
+<p><code>ruby
+  attroff(color_pair(1))
+</code></p>
+
+<p>Voilà.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/04/ecrire-un-editeur-pour-le-terminal-partie-7/"/>
+    <updated>2014-03-04T21:04:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/04/ecrire-un-editeur-pour-le-terminal-partie-7</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Notre futur éditeur aura un certain nombre de fenêtre (au sens de
+<em>curses</em>) et pour les gérer, on sera bien inspiré d'utiliser un peu
+de POO.
+Voici donc une réécriture du programme vu
+<a href="/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5/">ici</a>.</p>
+
+<!-- more -->
+
+
+<p>``` ruby</p>
+
+<h1>!/usr/bin/env ruby</h1>
+
+<p>require &lsquo;curses&rsquo;
+include Curses</p>
+
+<p>class StatusWindow
+  def initialize(filename)</p>
+
+<pre><code>@filename = filename
+@win = Window.new(1, cols, 0, 0)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def display</p>
+
+<pre><code>@win.setpos(0, (@win.maxx - @filename.size) / 2)
+@win.addstr(@filename)
+@win.refresh
+</code></pre>
+
+<p>  end</p>
+
+<p>  def close</p>
+
+<pre><code>@win.close
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class FileWindow
+  def initialize(filename)</p>
+
+<pre><code>@filename = filename
+@win = Window.new(lines - 2, cols, 2, 0)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def display</p>
+
+<pre><code>@win.setpos(0, 0)
+File.open(@filename).each {|line| @win.addstr(line) }
+@win.refresh
+</code></pre>
+
+<p>  end</p>
+
+<p>  def close</p>
+
+<pre><code>@win.close
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>begin
+  init_screen
+  refresh
+  status_window = StatusWindow.new(ARGV[0])
+  file_window = FileWindow.new(ARGV[0])
+  status_window.display
+  file_window.display
+  getch
+  status_window.close
+  file_window.close
+ensure
+  close_screen
+end
+```</p>
+
+<p>Le code est plus conséquent, c'est vrai, mais la structure sera plus
+claire, surtout quand on coupera le code en plusieurs fichiers, et
+qu'on utilisera un peu, ou plutôt beaucoup, d'héritage.</p>
+
+<p>Le détail à retenir, curieusement, est celui-ci:</p>
+
+<p><code>ruby
+begin
+  init_screen
+  refresh
+</code></p>
+
+<p>Il faut rafraichir l'écran juste après l'initialisation de <em>curses</em>, sinon
+aucune fenêtre ne s'affichera…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 6]]></title>
@@ -207,108 +404,6 @@ terminal:</p>
 qui vous rappelera des choses si vous avez fait du C, est ce que j'ai
 trouvé de mieux pour ne pas avoir de soucis avec les caractères
 non ASCII.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/24/ecrire-un-editeur-pour-le-terminal-partie-3/"/>
-    <updated>2014-02-24T20:59:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/24/ecrire-un-editeur-pour-le-terminal-partie-3</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Comment connaitre le nombre de lignes et de colonnes du terminal ?
-Voici la réponse…</p>
-
-<!-- more -->
-
-
-<p>Le programme suivant utilise les méthodes <code>cols</code> et <code>lines</code> de la
-bibliothèque <code>Curses</code> pour avoir ces informations:</p>
-
-<p>``` ruby
-require &lsquo;curses&rsquo;
-include Curses</p>
-
-<p>begin
-  init_screen
-  addstr(&ldquo;#{cols} x #{lines}&rdquo;)
-  getch
-ensure
-  close_screen
-end
-```</p>
-
-<p>Redimensionnez votre terminal et relancez le programme pour être sûr
-que ça fonctionne ;)</p>
-
-<p>Ces informations nous seront bien utiles pour l'écriture d'un éditeur…</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/23/ecrire-un-editeur-pour-le-terminal-partie-2/"/>
-    <updated>2014-02-23T16:33:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/23/ecrire-un-editeur-pour-le-terminal-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Comme j'ai eu un peu trop de problêmes à faire tourner <em>ncurses</em> sur
-plusieurs machines, j'ai décidé de repasser à <em>curses</em>.</p>
-
-<!-- more -->
-
-
-<p>Voici donc le programme de <a href="/blog/2014/02/22/ecrire-un-editeur-pour-le-terminal-partie-1/">la dernière fois</a>, réécrit pour <em>curses</em>:</p>
-
-<p>``` ruby redvim.rb</p>
-
-<h1>!/usr/bin/env ruby</h1>
-
-<p>require &lsquo;curses&rsquo;
-include Curses</p>
-
-<p>file = File.open ARGV[0]</p>
-
-<p>begin
-  init_screen
-  file.each {|line| addstr(line) }
-  refresh
-  getch
-ensure
-  close_screen
-end
-```</p>
-
-<h2>Un problème avec Unicode ?</h2>
-
-<p>Il se peut que vous ayez des problèmes pour afficher correctement les
-caractères unicode. À tous les coups, c'est parce que la gem <em>curses</em>
-à été compilée sans les headers indispensables.
-Installez donc ces headers: libncurses5.dev et libncurses5w.dev, ensuite
-vous avez deux solutions:</p>
-
-<ol>
-<li>Si vous utilisez Ruby 2.1, désinstallez <em>curses</em> et réinstallez la:
-<code>gem uninstall curses &amp;&amp; gem install curses</code>.</li>
-<li>Si vous utilisez Ruby 2.0 ou inférieur, <em>curses</em> fait partie de la
-bibliothèque standard, c'est donc Ruby qu'il faudra recompiler.</li>
-</ol>
-
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
