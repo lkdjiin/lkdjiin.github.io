@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : refactoring | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/refactoring/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-03-09T16:21:38+01:00</updated>
+  <updated>2014-03-10T16:46:01+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,199 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Utiliser les blocs pour faire du refactoring - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/10/ruby-utiliser-les-blocs-pour-faire-du-refactoring-partie-2/"/>
+    <updated>2014-03-10T15:58:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/10/ruby-utiliser-les-blocs-pour-faire-du-refactoring-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Suite à l'article d'hier
+(<a href="/blog/2014/03/09/ruby-utiliser-les-blocs-pour-faire-du-refactoring/">Utiliser les blocs pour faire du refactoring</a>),
+on m'a demandé la différence entre <code>block.call</code> et <code>yield</code>. C'est parti.</p>
+
+<!-- more -->
+
+
+<p>On s'était arrêté là:</p>
+
+<p>``` ruby test.rb
+class Bidule
+  def un</p>
+
+<pre><code>helper('un') { puts 'Au milieu de la méthode un' }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def deux</p>
+
+<pre><code>helper('deux') do
+  puts 'Ceci est le milieu de la méthode deux'
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def helper(argument, &amp;block)</p>
+
+<pre><code>puts "Début de la méthode #{argument}"
+block.call
+puts "Fin de la méthode #{argument}"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>bidule = Bidule.new
+bidule.un
+bidule.deux
+```</p>
+
+<p>Essayons de remplacer <code>block.call</code> par <code>yield</code>:</p>
+
+<p>``` ruby test.rb
+class Bidule
+  def un</p>
+
+<pre><code>helper('un') { puts 'Au milieu de la méthode un' }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def deux</p>
+
+<pre><code>helper('deux') do
+  puts 'Ceci est le milieu de la méthode deux'
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def helper(argument, &amp;block)</p>
+
+<pre><code>puts "Début de la méthode #{argument}"
+yield
+puts "Fin de la méthode #{argument}"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>bidule = Bidule.new
+bidule.un
+bidule.deux
+```</p>
+
+<p>Lorsqu'on lance le programme, on voit qu'il n'y a pas de différences:</p>
+
+<p><code>bash
+$ ruby test.rb
+Début de la méthode un
+Au milieu de la méthode un
+Fin de la méthode un
+Début de la méthode deux
+Ceci est le milieu de la méthode deux
+Fin de la méthode deux
+</code></p>
+
+<p>Ok, donc <code>block.call</code> et <code>yield</code> c'est pareil ? Attends encore. Essayons
+maintenant de supprimer le <code>&amp;block</code>:</p>
+
+<p>``` ruby test.rb
+class Bidule
+  def un</p>
+
+<pre><code>helper('un') { puts 'Au milieu de la méthode un' }
+</code></pre>
+
+<p>  end</p>
+
+<p>  def deux</p>
+
+<pre><code>helper('deux') do
+  puts 'Ceci est le milieu de la méthode deux'
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def helper(argument)</p>
+
+<pre><code>puts "Début de la méthode #{argument}"
+yield
+puts "Fin de la méthode #{argument}"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>bidule = Bidule.new
+bidule.un
+bidule.deux
+```</p>
+
+<p>Toujours pas de différences ! Par contre, on ne pourra pas appeler
+<code>block.call</code> sans avoir défini <code>&amp;block</code>:</p>
+
+<p>``` ruby
+  def helper(argument)</p>
+
+<pre><code>puts "Début de la méthode #{argument}"
+block.call
+puts "Fin de la méthode #{argument}"
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Le code ci-dessus donnera évidemment une erreur:</p>
+
+<p><code>`` bash
+$ ruby test.rb
+Début de la méthode un
+test.rb:16:in</code>helper': undefined local variable or method `block' for</p>
+
+<h1>&lt;Bidule:0x9eaf6ec> (NameError)</h1>
+
+<p>```</p>
+
+<p>Toutes ces expérimentations nous ammène à une première conclusion: <em>Les
+blocs sont implicites, et donc ils sont partout</em>. Ce que confirme, s'il en
+est encore besoin, la session irb suivante:</p>
+
+<p>``` irb</p>
+
+<blockquote><blockquote><p>def foo(arg)
+  puts arg
+end
+=> :foo
+foo(&lsquo;ok&rsquo;) { puts &lsquo;I am in a block&rsquo; }
+ok
+```</p></blockquote></blockquote>
+
+<p>Le contenu du bloc n'est jamais évalué, mais ne provoque pas d'erreur
+lors de l'appel de <code>foo</code>.</p>
+
+<p>Seconde conclusion, <code>block.call</code> et <code>yield</code> fonctionnent à l'identique.
+Bien que je préfère <code>block.call</code>, qui me force à documenter la méthode
+avec le <code>&amp;block</code>.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Utiliser les blocs pour faire du refactoring]]></title>
