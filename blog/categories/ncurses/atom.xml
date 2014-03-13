@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : ncurses | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/ncurses/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-03-12T21:51:06+01:00</updated>
+  <updated>2014-03-13T21:19:13+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,102 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un éditeur pour le terminal - partie 9]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/13/un-editeur-pour-le-terminal-partie-9/"/>
+    <updated>2014-03-13T21:04:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/13/un-editeur-pour-le-terminal-partie-9</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Dans le programme d'aujourd'hui, on s'occupe de déplacer le curseur.</p>
+
+<!-- more -->
+
+
+<p>``` ruby
+require &lsquo;curses&rsquo;
+include Curses</p>
+
+<p>begin
+  init_screen
+  cbreak
+  noecho
+  stdscr.keypad(true)
+  x = 0
+  y = 0</p>
+
+<p>  while (ch = getch) != KEY_F1</p>
+
+<pre><code>case ch
+when KEY_LEFT then x -= 1
+when KEY_RIGHT then x += 1
+when KEY_UP then y -= 1
+when KEY_DOWN then y += 1
+end
+setpos(y, x)
+refresh
+</code></pre>
+
+<p>  end
+ensure
+  close_screen
+end
+```</p>
+
+<p>Les détails:</p>
+
+<p>Pour éviter que les caractères s'affiche sur le terminal:</p>
+
+<p><code>ruby
+  noecho
+</code></p>
+
+<p>Pour rappel, le code suivant permet d'activer le pavé numérique, les
+flèches, etc.</p>
+
+<p><code>ruby
+  stdscr.keypad(true)
+</code></p>
+
+<p>Positionner le curseur est aussi simple que ce qui suit. Comme toujours,
+attention, c'est y d'abord et x ensuite:</p>
+
+<p>``` ruby</p>
+
+<pre><code>setpos(y, x)
+</code></pre>
+
+<p>```</p>
+
+<p>Par contre, si vous jouer un peu avec ce programme, on voit que les
+sauts de lignes ne sont pas gérer automatiquement (quand j'arrive à la
+fin de la ligne et que j'appuie sur flèche droite, on ne passe pas à
+la ligne suivante par exemple). Ce sera à nous de le gérer…</p>
+
+<p>Si on veut utiliser HJKL (comme dans Vim) pour se déplacer, on peut
+remplacer le contenu du <code>case</code> par:</p>
+
+<p>``` ruby</p>
+
+<pre><code>when ?h then x -= 1
+when ?l then x += 1
+when ?k then y -= 1
+when ?j then y += 1
+</code></pre>
+
+<p>```</p>
+
+<p>Voilà.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un éditeur pour le terminal - partie 8]]></title>
@@ -332,78 +428,6 @@ end
 <p>En étudiant ce programme avec en parallèle la documentation ruby
 de <a href="http://ruby-doc.org/stdlib-2.1.0/libdoc/curses/rdoc/Curses.html">curses</a>,
 vous devriez comprendre sans problèmes la gestion des fenêtres.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 4]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/01/ecrire-un-editeur-pour-le-terminal-partie-4/"/>
-    <updated>2014-03-01T17:47:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/01/ecrire-un-editeur-pour-le-terminal-partie-4</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Aujourd'hui on voit comment écrire un message centré horizontalement et
-verticalement, comment lire une chaîne de caractères, et comment être
-tranquille avec les caractères non ASCII.</p>
-
-<!-- more -->
-
-
-<p>Voici un programme qui montre tout ça:</p>
-
-<p>``` ruby
-require &lsquo;curses&rsquo;
-include Curses</p>
-
-<p>message = &ldquo;Enter a string: &rdquo;</p>
-
-<p>begin
-  init_screen
-  setpos(lines / 2, (cols &ndash; message.size) / 2)
-  addstr(message)
-  str = getstr
-  setpos(lines &ndash; 2, 0)
-  addstr(sprintf(&ldquo;You entered: %s&rdquo;, str))
-  getch
-ensure
-  close_screen
-end
-```</p>
-
-<p>Quelques brèves explications maintenant:</p>
-
-<p>Tout d'abord, on affiche un message centré ainsi:</p>
-
-<p><code>ruby
-  setpos(lines / 2, (cols - message.size) / 2)
-  addstr(message)
-</code></p>
-
-<p>Pour lire une chaîne de caractères, on utilise <code>getstr</code>:</p>
-
-<p><code>ruby
-  str = getstr
-</code></p>
-
-<p>Puis on affiche ce qu'on vient de lire sur l'avant-dernière ligne du
-terminal:</p>
-
-<p><code>ruby
-  setpos(lines - 2, 0)
-  addstr(sprintf("You entered: %s", str))
-</code></p>
-
-<p>Le <a href="http://www.ruby-doc.org/core-2.1.1/Kernel.html#method-i-sprintf">sprintf</a>,
-qui vous rappelera des choses si vous avez fait du C, est ce que j'ai
-trouvé de mieux pour ne pas avoir de soucis avec les caractères
-non ASCII.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
