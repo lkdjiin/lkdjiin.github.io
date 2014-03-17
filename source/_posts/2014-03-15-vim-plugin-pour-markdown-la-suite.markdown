@@ -6,6 +6,8 @@ comments: true
 categories: [vim, débutant, markdown, plugin, bépo]
 ---
 
+{% level 2 %}
+
 L'embryon de plugin Vim pour les titres en markdown écrit
 [la dernière fois](/blog/2014/03/12/vim-un-plugin-minimal-pour-les-titres-markdown/)
 ne me satisfait pas du tout. En effet, il ne fonctionne pas avec ma
