@@ -3,7 +3,7 @@ layout: post
 title: "Vader, un framework de test pour Vim"
 date: 2014-03-16 20:52
 comments: true
-categories: [vim, test, plugin, framework]
+categories: [vim, test, plugin, framework, vader]
 ---
 
 [Vader](https://github.com/junegunn/vader.vim) est un framework de test pour Vim, écrit en VimScript. Sa syntaxe très simple
