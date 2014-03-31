@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-03-30T21:40:45+02:00</updated>
+  <updated>2014-03-31T21:12:36+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,132 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Vim - Un plugin pour markdown - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/"/>
+    <updated>2014-03-31T20:58:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>On continue d&#8217;implémenter <a href="http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/">la fonctionnalité commencée hier</a>
+en testant deux cas exceptionnels, toujours à l&#8217;aide de Vader.</p>
+
+<!-- more -->
+
+
+<p>Revoici le fichier de test d&#8217;hier:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">Given (some text):</span>
+</span><span class='line'><span class="err">  abc def ghi jkl mno</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Execute (starting in middle of a word):</span>
+</span><span class='line'><span class="err">  execute &quot;normal! fe&quot;</span>
+</span><span class='line'><span class="err">  QuickMarkdownItalic</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Expect (2nd word in italic):</span>
+</span><span class='line'><span class="err">  abc *def* ghi jkl mno</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je vais ajouter deux tests. L&#8217;un pour voir ce qu&#8217;il se passe quand le
+curseur se trouve au début d&#8217;un mot, et idem pour la fin d&#8217;un mot:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">Given (some text):</span>
+</span><span class='line'><span class="err">  abc def ghi jkl mno</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Execute (starting in middle of a word):</span>
+</span><span class='line'><span class="err">  execute &quot;normal! fe&quot;</span>
+</span><span class='line'><span class="err">  QuickMarkdownItalic</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Expect (2nd word in italic):</span>
+</span><span class='line'><span class="err">  abc *def* ghi jkl mno</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Execute (starting at beginning of a word):</span>
+</span><span class='line'><span class="err">  execute &quot;normal! fd&quot;</span>
+</span><span class='line'><span class="err">  QuickMarkdownItalic</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Expect (2nd word in italic):</span>
+</span><span class='line'><span class="err">  abc *def* ghi jkl mno</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Execute (starting at the end of a word):</span>
+</span><span class='line'><span class="err">  execute &quot;normal! ff&quot;</span>
+</span><span class='line'><span class="err">  QuickMarkdownItalic</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">Expect (2nd word in italic):</span>
+</span><span class='line'><span class="err">  abc *def* ghi jkl mno</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et avec l&#8217;implémentation de la dernière fois:</p>
+
+<figure class='code'><figcaption><span>autoload/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#<span class="nb">italic</span><span class="p">()</span>
+</span><span class='line'>  execute <span class="s2">&quot;normal! bi*\&lt;Esc&gt;ea*\&lt;Esc&gt;&quot;</span>
+</span><span class='line'><span class="k">endfunction</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>… le test où le curseur se trouve au début d&#8217;un mot échoue
+misérablement.</p>
+
+<p>Pour le faire passer, on doit d&#8217;abord déplacer le curseur d&#8217;un cran
+vers la droite:</p>
+
+<figure class='code'><figcaption><span>autoload/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#<span class="nb">italic</span><span class="p">()</span>
+</span><span class='line'>  execute <span class="s2">&quot;normal! lbi*\&lt;Esc&gt;ea*\&lt;Esc&gt;&quot;</span>
+</span><span class='line'><span class="k">endfunction</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La prochaine fois on continue avec d&#8217;autres cas exceptionnels.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Vim - Un plugin pour markdown - partie 7]]></title>
@@ -99,7 +225,7 @@ cas particuliers. Ce sera pour une prochaine fois.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/12/vim-un-plugin-minimal-pour-les-titres-markdown/'>Vim &ndash; Un plugin minimal pour les titres markdown</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -220,7 +346,7 @@ passe bien cette fois-ci.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/16/vader-un-framework-de-test-pour-vim/'>Vader, un framework de test pour Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/16/vader-un-framework-de-test-pour-vim/'>Vader, un framework de test pour Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -398,7 +524,7 @@ de <code>split</code>).</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1355,7 +1481,7 @@ d&#8217;évaluations:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1453,7 +1579,7 @@ fichiers et d&#8217;autres choses encore…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/29/exemple-de-test-pour-vim-avec-le-framework-vader/'>Exemple de test pour Vim avec le framework Vader</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/29/exemple-de-test-pour-vim-avec-le-framework-vader/'>Exemple de test pour Vim avec le framework Vader</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1509,7 +1635,7 @@ que ça fonctionne même si vous avez remappé <code>y</code> ou <code>p</code>�
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1554,7 +1680,7 @@ pas plus mal de trouver une autre solution).</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/29/exemple-de-test-pour-vim-avec-le-framework-vader/'>Exemple de test pour Vim avec le framework Vader</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/26/vim-comment-ouvrir-la-fenetre-courante-dans-un-nouvel-onglet/'>Vim &ndash; Comment ouvrir la fenêtre courante dans un nouvel onglet</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/29/exemple-de-test-pour-vim-avec-le-framework-vader/'>Exemple de test pour Vim avec le framework Vader</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1738,57 +1864,7 @@ la documentation et quelques explications ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vim - Cas pratique pour les débutants : les titres en markdown]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/11/vim-cas-pratique-pour-les-debutants-les-titres-en-markdown/"/>
-    <updated>2014-03-11T21:09:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/11/vim-cas-pratique-pour-les-debutants-les-titres-en-markdown</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Vous débutez sur Vim ? Je vous propose aujourd&#8217;hui des exercices pratiques
-pour définir des titres au format markdown.</p>
-
-<!-- more -->
-
-
-<p>Un titre de niveau 1 en markdown s&#8217;écrit comme ceci:</p>
-
-<pre><code>Titre de niveau 1
-=================
-</code></pre>
-
-<p>On est pas obligé de mettre autant de <code>=</code> que de caractères dans le titre
-(de mémoire je crois que 3 suffisent), mais c&#8217;est quand même agréable à
-l&#8217;œil.</p>
-
-<p>La suite de commandes pour obtenir ça est: <code>yypVr=</code>. On décortique:</p>
-
-<ul>
-<li><code>yy</code> copie la ligne du titre dans un buffer.</li>
-<li><code>p</code> affiche ce buffer sur la ligne du dessous et nous place sur cette
-nouvelle ligne.</li>
-<li><code>V</code> passe cette nouvelle ligne en mode selection.</li>
-<li><code>r=</code> remplace toute la selection par autant de <code>=</code>.</li>
-</ul>
-
-
-<p>Pour les titres de niveau 2, on remplace le <code>=</code> par un <code>-</code>.</p>
-
-<p>Voilà, la prochaine fois on en fera peut-être un plugin, allez savoir…</p>
-
-<p>Et vous, vous faites comment ?</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
