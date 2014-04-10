@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-09T21:20:32+02:00</updated>
+  <updated>2014-04-10T21:56:29+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,152 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Introduction à la meta-programmation en Ruby]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/"/>
+    <updated>2014-04-10T21:15:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>La méta programmation, qu&#8217;est-ce que c&#8217;est ? C&#8217;est le fait
+de <em>modifier</em> le code au moment de l&#8217;exécution d&#8217;un
+programme. Par modifier, il faut aussi entendre créer et
+supprimer. C&#8217;est un peu le pendant naturel de
+<a href="http://lkdjiin.github.io/blog/2014/04/08/introduction-a-lintrospection-en-ruby/">l&#8217;introspection</a> dont j&#8217;ai parlé récemment.</p>
+
+<!-- more -->
+
+
+<p>Pour cette introduction au concept de méta programmation, on
+va y aller en douceur. Prenons la bête classe suivante:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Greeting</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">alphonse</span>
+</span><span class='line'>    <span class="s1">&#39;Hello Alphonse&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="no">Greeting</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">alphonse</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">#=&gt; Hello Alphonse</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On définit la méthode <code>alphonse</code> de manière classique:</p>
+
+<pre><code>def alphonse
+  'Hello Alphonse'
+end
+</code></pre>
+
+<p>C&#8217;est comme ça qu&#8217;on fait tous les jours ;) En fait cette
+façon de définir la méthode <code>alphonse</code> est du
+<a href="http://fr.wikipedia.org/wiki/Sucre_syntaxique">sucre syntaxique</a>. Ruby est bourré de sucre syntaxique.
+Pour définir notre méthode <code>alphonse</code> on pourrait utiliser…
+une méthode ! Voyons l&#8217;exemple suivant:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Greeting</span>
+</span><span class='line'>  <span class="n">define_method</span><span class="p">(</span><span class="s1">&#39;alphonse&#39;</span><span class="p">)</span> <span class="p">{</span> <span class="s1">&#39;Hello Alphonse&#39;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="no">Greeting</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">alphonse</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">#=&gt; Hello Alphonse</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le résultat est identique, et pour cause: c&#8217;est la même
+méthode, on l&#8217;a simplement définit autrement.</p>
+
+<p>On a donc:</p>
+
+<pre><code>def alphonse
+  'Hello Alphonse'
+end
+</code></pre>
+
+<p>qui est identique à:</p>
+
+<pre><code>define_method('alphonse') { 'Hello Alphonse' }
+</code></pre>
+
+<p>Alors ça nous fait une belle jambe ! Parce que honnêtement,
+qu&#8217;est-ce qu&#8217;on y gagne ? Pas en lisibilité en tous cas.
+Alors quoi ? Un indice: <strong>on a utilisé une méthode pour
+définir une méthode</strong>. Ce qui nous permet de faire ce qui
+suit:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Greeting</span>
+</span><span class='line'>  <span class="o">[</span><span class="s1">&#39;alphonse&#39;</span><span class="p">,</span> <span class="s1">&#39;charlotte&#39;</span><span class="p">,</span> <span class="s1">&#39;marcel&#39;</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">method</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">define_method</span><span class="p">(</span><span class="nb">method</span><span class="p">)</span> <span class="p">{</span> <span class="s2">&quot;Hello </span><span class="si">#{</span><span class="nb">method</span><span class="o">.</span><span class="n">capitalize</span><span class="si">}</span><span class="s2">&quot;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="no">Greeting</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">alphonse</span>
+</span><span class='line'><span class="nb">puts</span> <span class="no">Greeting</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">charlotte</span>
+</span><span class='line'><span class="nb">puts</span> <span class="no">Greeting</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">marcel</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">#=&gt; Hello Alphonse</span>
+</span><span class='line'><span class="c1">#=&gt; Hello Charlotte</span>
+</span><span class='line'><span class="c1">#=&gt; Hello Marcel</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Bon, on a toujours pas gagné en lisibilité. Par contre on
+gagne en compacité, imaginez un peu si il y avait 20
+méthodes.</p>
+
+<p>Et sinon, concrètement, ça sert à quoi ? Sans cette
+capacité de méta programmation, comment feriez vous si,
+mettons, les noms des méthodes à implémenter ne sont pas
+connus au lancement du programme ? C&#8217;est par exemple une
+grande par de la <em>magie</em> de Rails. Dans Rails vous pouvez
+chercher <code>User.find_by_name('charlotte')</code> alors même que
+vous n&#8217;avez nulle-part définit cette méthode. C&#8217;est grâce
+à la méta programmation.</p>
+
+<p>Ça me donne l&#8217;idée de faire quelques prochains articles sur
+ce sujet.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/13/un-editeur-pour-le-terminal-partie-9/'>Un éditeur pour le terminal &ndash; partie 9</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Projet de client Twitter en console]]></title>
@@ -1015,7 +1161,7 @@ d&#8217;aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/'>Tester facilement vos dates avec Timecop</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/20/quelques-trucs-pour-lancer-rspec/'>Quelques trucs pour lancer Rspec</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/'>Tester facilement vos dates avec Timecop</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1656,7 +1802,7 @@ comment y accéder si vous en avez besoin ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/03/activerecord-voir-la-requete-sql-pendant-lecriture-des-tests/'>ActiveRecord &ndash; Voir la requête SQL pendant l&#8217;écriture des tests</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/13/un-editeur-pour-le-terminal-partie-9/'>Un éditeur pour le terminal &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/03/activerecord-voir-la-requete-sql-pendant-lecriture-des-tests/'>ActiveRecord &ndash; Voir la requête SQL pendant l&#8217;écriture des tests</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2253,54 +2399,6 @@ bien sûr quelques problèmes ;) Voici le mapping pour un clavier qwerty:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Redis - Comment supprimer un ensemble de clés]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/21/redis-comment-supprimer-un-ensemble-de-cles/"/>
-    <updated>2014-03-21T21:44:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/21/redis-comment-supprimer-un-ensemble-de-cles</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Tiens, mon premier article sur Redis ! Normal, c&#8217;est une technologie que
-j&#8217;ai découvert il y a peu…</p>
-
-<!-- more -->
-
-
-<p>Pour supprimer une clé dans Redis, on se connecte et on utilise la commande
-<code>del</code>:</p>
-
-<pre><code>$ redis-cli
-&gt; del "nom:de:la:clef"
-</code></pre>
-
-<p>Mais quand on a des dizaines/centaines de clés, bof… Bien souvent (toujours
-même ça vaut mieux) le nom des clés suit un motif. Par exemple:</p>
-
-<pre><code>"motif:foo"
-"motif:bar"
-"motif:baz"
-etc...
-</code></pre>
-
-<p>Dans ce cas on peut utiliser Bash pour s&#8217;en sortir rapidement:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>redis-cli keys <span class="s2">&quot;*motif*&quot;</span> | xargs redis-cli del
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et voilà, au revoir toutes les clés.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/02/19/astuce-pour-git-merge-et-checkout-en-une-commande/'>Astuce pour Git &ndash; merge et checkout en une commande</a></li><li><a href='http://lkdjiin.github.io/blog/2014/02/12/quelques-commandes-git-par-michael-hartl/'>Quelques commandes Git par Michael Hartl</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/15/lauto-completion-en-bash-partie-5/'>L&#8217;auto-complétion en Bash &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
