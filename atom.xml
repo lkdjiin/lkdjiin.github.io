@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-10T21:56:29+02:00</updated>
+  <updated>2014-04-11T22:08:40+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,170 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[La méta programmation en Ruby - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/"/>
+    <updated>2014-04-11T21:41:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Hier j&#8217;ai écris une <a href="http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/">introduction à la méta programmation</a>.
+Aujourd&#8217;hui j&#8217;approfondis un peu plus le sujet avec l&#8217;écriture d&#8217;un
+<em>query builder</em> sommaire.</p>
+
+<!-- more -->
+
+
+<p>On va commencer avec une classe <code>Article</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Article</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut pas faire plus simple ;) Cette classe ne sera pas très importante
+pour la démonstration, c&#8217;est juste un support pour la pensée.
+Ce que je veux, c&#8217;est écrire un <em>fabricant de requête SQL</em>. Je me limite
+à un simple SELECT:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">QueryBuilder</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">find</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span class='line'>    <span class="s2">&quot;SELECT * from </span><span class="si">#{</span><span class="n">table</span><span class="si">}</span><span class="s2"> where </span><span class="si">#{</span><span class="n">column</span><span class="si">}</span><span class="s2"> = </span><span class="si">#{</span><span class="n">value</span><span class="si">}</span><span class="s2">;&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="no">QueryBuilder</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;article&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;Foo&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Résultat:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ruby meta2.rb
+</span><span class='line'>SELECT * from article where <span class="nv">name</span> <span class="o">=</span> Foo;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notre <code>QueryBuilder</code> fait son travail. Il peut servir quelle que soit la
+table (et la colonne) recherchée. Mais j&#8217;aime pas :( Trop d&#8217;arguments et
+la classe <code>Article</code> ne sert à rien…</p>
+
+<p>On va donc réécrire le <code>QueryBuilder</code> pour qu&#8217;il trouve tout seul comme
+un grand le nom de la table:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">QueryBuilder</span>
+</span><span class='line'>  <span class="kp">extend</span> <span class="nb">self</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="n">column</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span class='line'>    <span class="s2">&quot;SELECT * from </span><span class="si">#{</span><span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2"> where </span><span class="si">#{</span><span class="n">column</span><span class="si">}</span><span class="s2"> = </span><span class="si">#{</span><span class="n">value</span><span class="si">}</span><span class="s2">;&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Article</span>
+</span><span class='line'>  <span class="kp">extend</span> <span class="no">QueryBuilder</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="no">Article</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;Foo&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C&#8217;est bien mieux ! Maintenant le nom de la table est déduit du nom de la
+classe. Bien sûr ça nécessite de suivre une convention. Ici la convention
+est «Un objet <code>Article</code> = une table <code>article</code>». Ça donne ceci:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ruby meta2.rb
+</span><span class='line'>SELECT * from article where <span class="nv">name</span> <span class="o">=</span> Foo;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ça marche bien et je pourrais vivre avec ça. Mais Ruby permet de faire
+encore mieux, en tous cas il permet d&#8217;ajouter de la <em>magie</em> comme on
+entend souvent. Voyons cela, on va à nouveau réécrire le <code>QueryBuilder</code>
+pour n&#8217;avoir à passer qu&#8217;un seul argument:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">QueryBuilder</span>
+</span><span class='line'>  <span class="kp">extend</span> <span class="nb">self</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">column</span> <span class="o">=</span> <span class="nb">method</span><span class="o">.</span><span class="n">id2name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sr">/find_by_/</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="s2">&quot;SELECT * from </span><span class="si">#{</span><span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="si">}</span><span class="s2"> where </span><span class="si">#{</span><span class="n">column</span><span class="si">}</span><span class="s2"> = </span><span class="si">#{</span><span class="n">value</span><span class="si">}</span><span class="s2">;&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Article</span>
+</span><span class='line'>  <span class="kp">extend</span> <span class="no">QueryBuilder</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">p</span> <span class="no">Article</span><span class="o">.</span><span class="n">find_by_id</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+</span><span class='line'><span class="nb">p</span> <span class="no">Article</span><span class="o">.</span><span class="n">find_by_name</span><span class="p">(</span><span class="s1">&#39;Foo&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="nb">p</span> <span class="no">Article</span><span class="o">.</span><span class="n">find_by_price</span><span class="p">(</span><span class="mi">12</span><span class="o">.</span><span class="mi">34</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et c&#8217;est magique, on a maintenant autant de méthode <code>find_by_*</code> que
+l&#8217;on veut:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ruby meta2.rb
+</span><span class='line'><span class="s2">&quot;SELECT * from article where id = 123;&quot;</span>
+</span><span class='line'><span class="s2">&quot;SELECT * from article where name = Foo;&quot;</span>
+</span><span class='line'><span class="s2">&quot;SELECT * from article where price = 12.34;&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je vous laisse méditer là-dessus et j&#8217;expliquerais <code>method_missing</code>
+dans le prochain article car il est déjà tard…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Introduction à la meta-programmation en Ruby]]></title>
@@ -155,7 +319,7 @@ ce sujet.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/13/un-editeur-pour-le-terminal-partie-9/'>Un éditeur pour le terminal &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1161,7 +1325,7 @@ d&#8217;aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/'>Tester facilement vos dates avec Timecop</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/'>Tester facilement vos dates avec Timecop</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1802,7 +1966,7 @@ comment y accéder si vous en avez besoin ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/03/activerecord-voir-la-requete-sql-pendant-lecriture-des-tests/'>ActiveRecord &ndash; Voir la requête SQL pendant l&#8217;écriture des tests</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/03/activerecord-voir-la-requete-sql-pendant-lecriture-des-tests/'>ActiveRecord &ndash; Voir la requête SQL pendant l&#8217;écriture des tests</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2236,169 +2400,6 @@ bien sûr quelques problèmes ;) Voici le mapping pour un clavier qwerty:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4/'>Vim &ndash; un plugin pour markdown &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vim - un plugin pour markdown - partie 4]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4/"/>
-    <updated>2014-03-22T20:42:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Maintenant on fait tous les titres, jusqu&#8217;au niveau 6 donc.</p>
-
-<!-- more -->
-
-
-
-
-<figure class='code'><figcaption><span>autoload/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span> <span class="k">s</span>:build_big_title<span class="p">(</span>char<span class="p">)</span>
-</span><span class='line'>  <span class="k">let</span> <span class="k">s</span>:line_content <span class="p">=</span> substitute<span class="p">(</span>getline<span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">),</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="k">a</span>:char<span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">call</span> append<span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="k">s</span>:line_content<span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span> <span class="k">s</span>:build_little_title<span class="p">(</span>str<span class="p">)</span>
-</span><span class='line'>  <span class="k">call</span> setline<span class="p">(</span>line<span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="k">a</span>:str . getline<span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">))</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#title1<span class="p">()</span>
-</span><span class='line'>  <span class="k">call</span> <span class="k">s</span>:build_big_title<span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#title2<span class="p">()</span>
-</span><span class='line'>  <span class="k">call</span> <span class="k">s</span>:build_big_title<span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#title3<span class="p">()</span>
-</span><span class='line'>  <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;### &quot;</span><span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#title4<span class="p">()</span>
-</span><span class='line'>  <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;#### &quot;</span><span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#title5<span class="p">()</span>
-</span><span class='line'>  <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;##### &quot;</span><span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#title6<span class="p">()</span>
-</span><span class='line'>  <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;###### &quot;</span><span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>plugin/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>command<span class="p">!</span> QuickMarkdownTitle1 <span class="k">call</span> quickmarkdown#title1<span class="p">()</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle2 <span class="k">call</span> quickmarkdown#title2<span class="p">()</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle3 <span class="k">call</span> quickmarkdown#title3<span class="p">()</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle4 <span class="k">call</span> quickmarkdown#title4<span class="p">()</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle5 <span class="k">call</span> quickmarkdown#title5<span class="p">()</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle6 <span class="k">call</span> quickmarkdown#title6<span class="p">()</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>J&#8217;ai aussi changé mon mapping pour qu&#8217;il soit plus homogène.</p>
-
-<p><strong>En qwerty:</strong></p>
-
-<figure class='code'><figcaption><span>.vimrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>m1 :QuickMarkdownTitle1<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>m2 :QuickMarkdownTitle2<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>m3 :QuickMarkdownTitle3<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>m4 :QuickMarkdownTitle4<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>m5 :QuickMarkdownTitle5<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>m6 :QuickMarkdownTitle6<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>En azerty:</strong></p>
-
-<figure class='code'><figcaption><span>.vimrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>&amp; :QuickMarkdownTitle1<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>é :QuickMarkdownTitle2<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>&quot; :QuickMarkdownTitle3<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>&#39; :QuickMarkdownTitle4<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span><span class="p">(</span> :QuickMarkdownTitle5<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span><span class="p">-</span> :QuickMarkdownTitle6<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>En bépo:</strong></p>
-
-<figure class='code'><figcaption><span>.vimrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>&quot; :QuickMarkdownTitle1<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>« :QuickMarkdownTitle2<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>» :QuickMarkdownTitle3<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span><span class="p">(</span> :QuickMarkdownTitle4<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span><span class="p">)</span> :QuickMarkdownTitle5<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span><span class="k">m</span>@ :QuickMarkdownTitle6<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
 ]]></content>
   </entry>
   

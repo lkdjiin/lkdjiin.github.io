@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : meta | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/meta/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-10T21:56:29+02:00</updated>
+  <updated>2014-04-11T22:08:40+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,134 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[La méta programmation en Ruby - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/"/>
+    <updated>2014-04-11T21:41:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Hier j'ai écris une <a href="http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/">introduction à la méta programmation</a>.
+Aujourd'hui j'approfondis un peu plus le sujet avec l'écriture d'un
+<em>query builder</em> sommaire.</p>
+
+<!-- more -->
+
+
+<p>On va commencer avec une classe <code>Article</code>:</p>
+
+<p><code>ruby
+class Article
+end
+</code></p>
+
+<p>On peut pas faire plus simple ;) Cette classe ne sera pas très importante
+pour la démonstration, c'est juste un support pour la pensée.
+Ce que je veux, c'est écrire un <em>fabricant de requête SQL</em>. Je me limite
+à un simple SELECT:</p>
+
+<p>``` ruby
+class QueryBuilder
+  def self.find(table, column, value)</p>
+
+<pre><code>"SELECT * from #{table} where #{column} = #{value};"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>puts QueryBuilder.find(&lsquo;article&rsquo;, &lsquo;name&rsquo;, &lsquo;Foo&rsquo;)
+```</p>
+
+<p>Résultat:</p>
+
+<p><code>bash
+$ ruby meta2.rb
+SELECT * from article where name = Foo;
+</code></p>
+
+<p>Notre <code>QueryBuilder</code> fait son travail. Il peut servir quelle que soit la
+table (et la colonne) recherchée. Mais j'aime pas :( Trop d'arguments et
+la classe <code>Article</code> ne sert à rien…</p>
+
+<p>On va donc réécrire le <code>QueryBuilder</code> pour qu'il trouve tout seul comme
+un grand le nom de la table:</p>
+
+<p>``` ruby
+module QueryBuilder
+  extend self
+  def find(column, value)</p>
+
+<pre><code>"SELECT * from #{self.to_s.downcase} where #{column} = #{value};"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class Article
+  extend QueryBuilder
+end</p>
+
+<p>puts Article.find(&lsquo;name&rsquo;, &lsquo;Foo&rsquo;)
+```</p>
+
+<p>C'est bien mieux ! Maintenant le nom de la table est déduit du nom de la
+classe. Bien sûr ça nécessite de suivre une convention. Ici la convention
+est «Un objet <code>Article</code> = une table <code>article</code>». Ça donne ceci:</p>
+
+<p><code>bash
+$ ruby meta2.rb
+SELECT * from article where name = Foo;
+</code></p>
+
+<p>Ça marche bien et je pourrais vivre avec ça. Mais Ruby permet de faire
+encore mieux, en tous cas il permet d'ajouter de la <em>magie</em> comme on
+entend souvent. Voyons cela, on va à nouveau réécrire le <code>QueryBuilder</code>
+pour n'avoir à passer qu'un seul argument:</p>
+
+<p>``` ruby
+module QueryBuilder
+  extend self
+  def method_missing(method, value)</p>
+
+<pre><code>column = method.id2name.to_s.sub(/find_by_/, '')
+"SELECT * from #{self.to_s.downcase} where #{column} = #{value};"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class Article
+  extend QueryBuilder
+end</p>
+
+<p>p Article.find_by_id(123)
+p Article.find_by_name(&lsquo;Foo&rsquo;)
+p Article.find_by_price(12.34)
+```</p>
+
+<p>Et c'est magique, on a maintenant autant de méthode <code>find_by_*</code> que
+l'on veut:</p>
+
+<p><code>bash
+$ ruby meta2.rb
+"SELECT * from article where id = 123;"
+"SELECT * from article where name = Foo;"
+"SELECT * from article where price = 12.34;"
+</code></p>
+
+<p>Je vous laisse méditer là-dessus et j'expliquerais <code>method_missing</code>
+dans le prochain article car il est déjà tard…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Introduction à la meta-programmation en Ruby]]></title>

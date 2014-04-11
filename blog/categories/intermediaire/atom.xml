@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-10T21:56:29+02:00</updated>
+  <updated>2014-04-11T22:08:40+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,134 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[La méta programmation en Ruby - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/"/>
+    <updated>2014-04-11T21:41:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Hier j'ai écris une <a href="http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/">introduction à la méta programmation</a>.
+Aujourd'hui j'approfondis un peu plus le sujet avec l'écriture d'un
+<em>query builder</em> sommaire.</p>
+
+<!-- more -->
+
+
+<p>On va commencer avec une classe <code>Article</code>:</p>
+
+<p><code>ruby
+class Article
+end
+</code></p>
+
+<p>On peut pas faire plus simple ;) Cette classe ne sera pas très importante
+pour la démonstration, c'est juste un support pour la pensée.
+Ce que je veux, c'est écrire un <em>fabricant de requête SQL</em>. Je me limite
+à un simple SELECT:</p>
+
+<p>``` ruby
+class QueryBuilder
+  def self.find(table, column, value)</p>
+
+<pre><code>"SELECT * from #{table} where #{column} = #{value};"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>puts QueryBuilder.find(&lsquo;article&rsquo;, &lsquo;name&rsquo;, &lsquo;Foo&rsquo;)
+```</p>
+
+<p>Résultat:</p>
+
+<p><code>bash
+$ ruby meta2.rb
+SELECT * from article where name = Foo;
+</code></p>
+
+<p>Notre <code>QueryBuilder</code> fait son travail. Il peut servir quelle que soit la
+table (et la colonne) recherchée. Mais j'aime pas :( Trop d'arguments et
+la classe <code>Article</code> ne sert à rien…</p>
+
+<p>On va donc réécrire le <code>QueryBuilder</code> pour qu'il trouve tout seul comme
+un grand le nom de la table:</p>
+
+<p>``` ruby
+module QueryBuilder
+  extend self
+  def find(column, value)</p>
+
+<pre><code>"SELECT * from #{self.to_s.downcase} where #{column} = #{value};"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class Article
+  extend QueryBuilder
+end</p>
+
+<p>puts Article.find(&lsquo;name&rsquo;, &lsquo;Foo&rsquo;)
+```</p>
+
+<p>C'est bien mieux ! Maintenant le nom de la table est déduit du nom de la
+classe. Bien sûr ça nécessite de suivre une convention. Ici la convention
+est «Un objet <code>Article</code> = une table <code>article</code>». Ça donne ceci:</p>
+
+<p><code>bash
+$ ruby meta2.rb
+SELECT * from article where name = Foo;
+</code></p>
+
+<p>Ça marche bien et je pourrais vivre avec ça. Mais Ruby permet de faire
+encore mieux, en tous cas il permet d'ajouter de la <em>magie</em> comme on
+entend souvent. Voyons cela, on va à nouveau réécrire le <code>QueryBuilder</code>
+pour n'avoir à passer qu'un seul argument:</p>
+
+<p>``` ruby
+module QueryBuilder
+  extend self
+  def method_missing(method, value)</p>
+
+<pre><code>column = method.id2name.to_s.sub(/find_by_/, '')
+"SELECT * from #{self.to_s.downcase} where #{column} = #{value};"
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class Article
+  extend QueryBuilder
+end</p>
+
+<p>p Article.find_by_id(123)
+p Article.find_by_name(&lsquo;Foo&rsquo;)
+p Article.find_by_price(12.34)
+```</p>
+
+<p>Et c'est magique, on a maintenant autant de méthode <code>find_by_*</code> que
+l'on veut:</p>
+
+<p><code>bash
+$ ruby meta2.rb
+"SELECT * from article where id = 123;"
+"SELECT * from article where name = Foo;"
+"SELECT * from article where price = 12.34;"
+</code></p>
+
+<p>Je vous laisse méditer là-dessus et j'expliquerais <code>method_missing</code>
+dans le prochain article car il est déjà tard…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Introduction à la meta-programmation en Ruby]]></title>
@@ -502,106 +630,6 @@ imap &lt;C-q&gt;6 &lt;C-o&gt;:QuickMarkdownTitle6&lt;Enter&gt;
 </code></p>
 
 <p>Au fait, vous pouvez trouver ce plugin sur <a href="https://github.com/lkdjiin/quickmarkdown">Github</a>.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vim - un plugin pour markdown - partie 4]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4/"/>
-    <updated>2014-03-22T20:42:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Maintenant on fait tous les titres, jusqu'au niveau 6 donc.</p>
-
-<!-- more -->
-
-
-<p>``` vim autoload/quickmarkdown.vim
-function s:build_big_title(char)
-  let s:line_content = substitute(getline(&ldquo;.&rdquo;), &lsquo;.&rsquo;, a:char, &lsquo;g&rsquo;)
-  call append(&lsquo;.&rsquo;, s:line_content)
-endfunction</p>
-
-<p>function s:build_little_title(str)
-  call setline(line(&lsquo;.&rsquo;), a:str . getline(&lsquo;.&rsquo;))
-endfunction</p>
-
-<p>function! quickmarkdown#title1()
-  call s:build_big_title(&ldquo;=&rdquo;)
-endfunction</p>
-
-<p>function! quickmarkdown#title2()
-  call s:build_big_title(&ldquo;&ndash;&rdquo;)
-endfunction</p>
-
-<p>function! quickmarkdown#title3()
-  call s:build_little_title(&ldquo;### &rdquo;)
-endfunction</p>
-
-<p>function! quickmarkdown#title4()
-  call s:build_little_title(&ldquo;#### &rdquo;)
-endfunction</p>
-
-<p>function! quickmarkdown#title5()
-  call s:build_little_title(&ldquo;##### &rdquo;)
-endfunction</p>
-
-<p>function! quickmarkdown#title6()
-  call s:build_little_title(&ldquo;###### &rdquo;)
-endfunction
-```</p>
-
-<p><code>vim plugin/quickmarkdown.vim
-command! QuickMarkdownTitle1 call quickmarkdown#title1()
-command! QuickMarkdownTitle2 call quickmarkdown#title2()
-command! QuickMarkdownTitle3 call quickmarkdown#title3()
-command! QuickMarkdownTitle4 call quickmarkdown#title4()
-command! QuickMarkdownTitle5 call quickmarkdown#title5()
-command! QuickMarkdownTitle6 call quickmarkdown#title6()
-</code></p>
-
-<p>J'ai aussi changé mon mapping pour qu'il soit plus homogène.</p>
-
-<p><strong>En qwerty:</strong></p>
-
-<p><code>vim .vimrc
-nmap &lt;Leader&gt;m1 :QuickMarkdownTitle1&lt;Enter&gt;
-nmap &lt;Leader&gt;m2 :QuickMarkdownTitle2&lt;Enter&gt;
-nmap &lt;Leader&gt;m3 :QuickMarkdownTitle3&lt;Enter&gt;
-nmap &lt;Leader&gt;m4 :QuickMarkdownTitle4&lt;Enter&gt;
-nmap &lt;Leader&gt;m5 :QuickMarkdownTitle5&lt;Enter&gt;
-nmap &lt;Leader&gt;m6 :QuickMarkdownTitle6&lt;Enter&gt;
-</code></p>
-
-<p><strong>En azerty:</strong></p>
-
-<p><code>vim .vimrc
-nmap &lt;Leader&gt;m&amp; :QuickMarkdownTitle1&lt;Enter&gt;
-nmap &lt;Leader&gt;mé :QuickMarkdownTitle2&lt;Enter&gt;
-nmap &lt;Leader&gt;m" :QuickMarkdownTitle3&lt;Enter&gt;
-nmap &lt;Leader&gt;m' :QuickMarkdownTitle4&lt;Enter&gt;
-nmap &lt;Leader&gt;m( :QuickMarkdownTitle5&lt;Enter&gt;
-nmap &lt;Leader&gt;m- :QuickMarkdownTitle6&lt;Enter&gt;
-</code></p>
-
-<p><strong>En bépo:</strong></p>
-
-<p><code>vim .vimrc
-nmap &lt;Leader&gt;m" :QuickMarkdownTitle1&lt;Enter&gt;
-nmap &lt;Leader&gt;m« :QuickMarkdownTitle2&lt;Enter&gt;
-nmap &lt;Leader&gt;m» :QuickMarkdownTitle3&lt;Enter&gt;
-nmap &lt;Leader&gt;m( :QuickMarkdownTitle4&lt;Enter&gt;
-nmap &lt;Leader&gt;m) :QuickMarkdownTitle5&lt;Enter&gt;
-nmap &lt;Leader&gt;m@ :QuickMarkdownTitle6&lt;Enter&gt;
-</code></p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
