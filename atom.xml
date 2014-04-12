@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-11T22:08:40+02:00</updated>
+  <updated>2014-04-12T21:26:14+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,184 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[La méta programmation en Ruby - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/"/>
+    <updated>2014-04-12T19:30:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Aujourd&#8217;hui une explication de <code>method_missing</code>, utilisée hier pour
+écrire le constructeur de requête.</p>
+
+<!-- more -->
+
+
+<p>Tout d&#8217;abord un peu de pratique:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span>
+</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foobarbaz</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+Inside method_missing ---
+foobarbaz
+</code></pre>
+
+<p>Et maintenant la théorie. Lorsque vous passez un message a un objet, comme
+<code>Foo.new.foo</code> et que ce message (cette méthode) n&#8217;existe pas, Ruby regarde
+si l&#8217;objet possède la méthode <code>method_missing</code> et dans ce cas, l&#8217;appelle.
+L&#8217;argument passé à <code>method_missing</code> est le nom de la <em>méthode manquante</em>.</p>
+
+<p>Maintenant on ajoute un argument à <code>method_missing</code>, c&#8217;est l&#8217;argument de
+la <em>méthode manquante</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">arg</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+bar
+</code></pre>
+
+<p>Alors que ce passe-t-il si on passe plusieurs arguments ? Essayons:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="s1">&#39;baz&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>meta3.rb:13:in `method_missing': wrong number of arguments (3 for 2) 
+</code></pre>
+
+<p>Et oui, ça ne fonctionne pas. Comme on ne peut pas connaître à l&#8217;avance
+le nombre d&#8217;arguments de la <em>méthode manquante</em>, il est bon de tous les
+récupérer dans un tableau:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">,</span> <span class="o">*</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">arg</span><span class="o">.</span><span class="n">inspect</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span>
+</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="s1">&#39;baz&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et dans ce cas là, il n&#8217;y a plus de problèmes, on peut gérer n&#8217;importe
+quel nombre d&#8217;arguments:</p>
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+[]
+Inside method_missing ---
+foo
+["bar"]
+Inside method_missing ---
+foo
+["bar", "baz"]
+</code></pre>
+
+<p>Pour finir, il faut noter qu&#8217;on peut comme toujours passer un bloc:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">,</span> <span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">arg</span><span class="o">.</span><span class="n">inspect</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="n">block</span><span class="o">.</span><span class="n">call</span> <span class="k">if</span> <span class="nb">block_given?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="s1">&#39;return from a block&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+["bar"]
+return from a block
+</code></pre>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[La méta programmation en Ruby - partie 2]]></title>
@@ -173,7 +351,7 @@ dans le prochain article car il est déjà tard…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -319,7 +497,7 @@ ce sujet.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/'>ActiveRecord &ndash; Executer une commande SQL quelconque</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1325,7 +1503,7 @@ d&#8217;aujourd&#8217;hui.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/'>Tester facilement vos dates avec Timecop</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/'>Tester facilement vos dates avec Timecop</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1966,7 +2144,7 @@ comment y accéder si vous en avez besoin ?</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/03/activerecord-voir-la-requete-sql-pendant-lecriture-des-tests/'>ActiveRecord &ndash; Voir la requête SQL pendant l&#8217;écriture des tests</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/03/activerecord-voir-la-requete-sql-pendant-lecriture-des-tests/'>ActiveRecord &ndash; Voir la requête SQL pendant l&#8217;écriture des tests</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2269,137 +2447,6 @@ paramètres que l&#8217;on veut:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/25/la-methode-super-en-ruby-partie-2/'>La méthode super en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/07/le-duck-typing-avec-ruby/'>Le duck typing avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/28/ruby-extend-self/'>Ruby &ndash; extend self</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vim - Un plugin pour markdown - partie 5]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/"/>
-    <updated>2014-03-23T20:57:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>On fait un peu de nettoyage en mettant du code en commun, et on voit un
-mapping plus intéressant.</p>
-
-<!-- more -->
-
-
-<p>Voici ce que ça donne après un refactoring:</p>
-
-<figure class='code'><figcaption><span>autoload/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span> <span class="k">s</span>:build_big_title<span class="p">(</span>char<span class="p">)</span>
-</span><span class='line'>  <span class="k">let</span> <span class="k">s</span>:line_content <span class="p">=</span> substitute<span class="p">(</span>getline<span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">),</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="k">a</span>:char<span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">call</span> append<span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="k">s</span>:line_content<span class="p">)</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span> <span class="k">s</span>:build_little_title<span class="p">(</span>str<span class="p">)</span>
-</span><span class='line'>  <span class="k">call</span> setline<span class="p">(</span>line<span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">),</span> <span class="k">a</span>:str . getline<span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">))</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#<span class="nb">title</span><span class="p">(</span>level<span class="p">)</span>
-</span><span class='line'>  <span class="k">if</span> <span class="k">a</span>:level <span class="p">==</span> <span class="m">1</span>
-</span><span class='line'>    <span class="k">call</span> <span class="k">s</span>:build_big_title<span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">elseif</span> <span class="k">a</span>:level <span class="p">==</span> <span class="m">2</span>
-</span><span class='line'>    <span class="k">call</span> <span class="k">s</span>:build_big_title<span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">elseif</span> <span class="k">a</span>:level <span class="p">==</span> <span class="m">3</span>
-</span><span class='line'>    <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;### &quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">elseif</span> <span class="k">a</span>:level <span class="p">==</span> <span class="m">4</span>
-</span><span class='line'>    <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;#### &quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">elseif</span> <span class="k">a</span>:level <span class="p">==</span> <span class="m">5</span>
-</span><span class='line'>    <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;##### &quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">elseif</span> <span class="k">a</span>:level <span class="p">==</span> <span class="m">6</span>
-</span><span class='line'>    <span class="k">call</span> <span class="k">s</span>:build_little_title<span class="p">(</span><span class="s2">&quot;###### &quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">endif</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>plugin/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>command<span class="p">!</span> QuickMarkdownTitle1 <span class="k">call</span> quickmarkdown#<span class="nb">title</span><span class="p">(</span><span class="m">1</span><span class="p">)</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle2 <span class="k">call</span> quickmarkdown#<span class="nb">title</span><span class="p">(</span><span class="m">2</span><span class="p">)</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle3 <span class="k">call</span> quickmarkdown#<span class="nb">title</span><span class="p">(</span><span class="m">3</span><span class="p">)</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle4 <span class="k">call</span> quickmarkdown#<span class="nb">title</span><span class="p">(</span><span class="m">4</span><span class="p">)</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle5 <span class="k">call</span> quickmarkdown#<span class="nb">title</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-</span><span class='line'>command<span class="p">!</span> QuickMarkdownTitle6 <span class="k">call</span> quickmarkdown#<span class="nb">title</span><span class="p">(</span><span class="m">6</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On n&#8217;a plus qu&#8217;un seule fonction <code>quickmarkdown#title</code>, à laquelle on passe
-en paramêtre le niveau du titre.</p>
-
-<p>J&#8217;ai aussi changé le mapping.
-Tout d&#8217;abord j&#8217;utilise leader+q, au lieu de leader+m. Pourquoi, parce que
-je voulais m&#8217;en servir aussi en mode insertion avec la touche Control. Et
-en mode insertion, Control+m est équivalent à la touche Entrée, ce qui pose
-bien sûr quelques problèmes ;) Voici le mapping pour un clavier qwerty:</p>
-
-<figure class='code'><figcaption><span>.vimrc</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>q1 :QuickMarkdownTitle1<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>q2 :QuickMarkdownTitle2<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>q3 :QuickMarkdownTitle3<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>q4 :QuickMarkdownTitle4<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>q5 :QuickMarkdownTitle5<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>nmap <span class="p">&lt;</span>Leader<span class="p">&gt;</span>q6 :QuickMarkdownTitle6<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>imap <span class="p">&lt;</span>C<span class="p">-</span><span class="k">q</span><span class="p">&gt;</span><span class="m">1</span> <span class="p">&lt;</span>C<span class="p">-</span><span class="k">o</span><span class="p">&gt;</span>:QuickMarkdownTitle1<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>imap <span class="p">&lt;</span>C<span class="p">-</span><span class="k">q</span><span class="p">&gt;</span><span class="m">2</span> <span class="p">&lt;</span>C<span class="p">-</span><span class="k">o</span><span class="p">&gt;</span>:QuickMarkdownTitle2<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>imap <span class="p">&lt;</span>C<span class="p">-</span><span class="k">q</span><span class="p">&gt;</span><span class="m">3</span> <span class="p">&lt;</span>C<span class="p">-</span><span class="k">o</span><span class="p">&gt;</span>:QuickMarkdownTitle3<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>imap <span class="p">&lt;</span>C<span class="p">-</span><span class="k">q</span><span class="p">&gt;</span><span class="m">4</span> <span class="p">&lt;</span>C<span class="p">-</span><span class="k">o</span><span class="p">&gt;</span>:QuickMarkdownTitle4<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>imap <span class="p">&lt;</span>C<span class="p">-</span><span class="k">q</span><span class="p">&gt;</span><span class="m">5</span> <span class="p">&lt;</span>C<span class="p">-</span><span class="k">o</span><span class="p">&gt;</span>:QuickMarkdownTitle5<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span><span class='line'>imap <span class="p">&lt;</span>C<span class="p">-</span><span class="k">q</span><span class="p">&gt;</span><span class="m">6</span> <span class="p">&lt;</span>C<span class="p">-</span><span class="k">o</span><span class="p">&gt;</span>:QuickMarkdownTitle6<span class="p">&lt;</span>Enter<span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Au fait, vous pouvez trouver ce plugin sur <a href="https://github.com/lkdjiin/quickmarkdown">Github</a>.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4/'>Vim &ndash; un plugin pour markdown &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/15/vim-plugin-pour-markdown-la-suite/'>Vim &ndash; plugin pour markdown &ndash; la suite</a></li></ul></section></p>
 ]]></content>
   </entry>
   

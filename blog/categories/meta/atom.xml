@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : meta | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/meta/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-11T22:08:40+02:00</updated>
+  <updated>2014-04-12T21:26:14+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,153 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[La méta programmation en Ruby - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/"/>
+    <updated>2014-04-12T19:30:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Aujourd'hui une explication de <code>method_missing</code>, utilisée hier pour
+écrire le constructeur de requête.</p>
+
+<!-- more -->
+
+
+<p>Tout d'abord un peu de pratique:</p>
+
+<p>``` ruby
+class Foo
+  def method_missing(met)</p>
+
+<pre><code>puts 'Inside method_missing ---'
+puts met
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>Foo.new.foo
+Foo.new.foobarbaz
+```</p>
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+Inside method_missing ---
+foobarbaz
+</code></pre>
+
+<p>Et maintenant la théorie. Lorsque vous passez un message a un objet, comme
+<code>Foo.new.foo</code> et que ce message (cette méthode) n'existe pas, Ruby regarde
+si l'objet possède la méthode <code>method_missing</code> et dans ce cas, l'appelle.
+L'argument passé à <code>method_missing</code> est le nom de la <em>méthode manquante</em>.</p>
+
+<p>Maintenant on ajoute un argument à <code>method_missing</code>, c'est l'argument de
+la <em>méthode manquante</em>:</p>
+
+<p>``` ruby
+class Foo
+  def method_missing(met, arg)</p>
+
+<pre><code>puts 'Inside method_missing ---'
+puts met
+puts arg
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>Foo.new.foo(&lsquo;bar&rsquo;)
+```</p>
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+bar
+</code></pre>
+
+<p>Alors que ce passe-t-il si on passe plusieurs arguments ? Essayons:</p>
+
+<p><code>ruby
+Foo.new.foo('bar', 'baz')
+</code></p>
+
+<pre><code>meta3.rb:13:in `method_missing': wrong number of arguments (3 for 2) 
+</code></pre>
+
+<p>Et oui, ça ne fonctionne pas. Comme on ne peut pas connaître à l'avance
+le nombre d'arguments de la <em>méthode manquante</em>, il est bon de tous les
+récupérer dans un tableau:</p>
+
+<p>``` ruby
+class Foo
+  def method_missing(met, *arg)</p>
+
+<pre><code>puts 'Inside method_missing ---'
+puts met
+puts arg.inspect
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>Foo.new.foo
+Foo.new.foo(&lsquo;bar&rsquo;)
+Foo.new.foo(&lsquo;bar&rsquo;, &lsquo;baz&rsquo;)
+```</p>
+
+<p>Et dans ce cas là, il n'y a plus de problèmes, on peut gérer n'importe
+quel nombre d'arguments:</p>
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+[]
+Inside method_missing ---
+foo
+["bar"]
+Inside method_missing ---
+foo
+["bar", "baz"]
+</code></pre>
+
+<p>Pour finir, il faut noter qu'on peut comme toujours passer un bloc:</p>
+
+<p>``` ruby
+class Foo
+  def method_missing(met, *arg, &amp;block)</p>
+
+<pre><code>puts 'Inside method_missing ---'
+puts met
+puts arg.inspect
+puts block.call if block_given?
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>Foo.new.foo(&lsquo;bar&rsquo;) do
+  &lsquo;return from a block&rsquo;
+end
+```</p>
+
+<pre><code>$ ruby meta3.rb 
+Inside method_missing ---
+foo
+["bar"]
+return from a block
+</code></pre>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[La méta programmation en Ruby - partie 2]]></title>
