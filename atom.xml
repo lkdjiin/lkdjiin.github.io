@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-15T21:32:03+02:00</updated>
+  <updated>2014-04-16T21:45:36+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,148 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/"/>
+    <updated>2014-04-16T21:23:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Cette fois je me dis qu&#8217;il faudrait quand même se connecter à la base de
+données avant d&#8217;aller plus loin…</p>
+
+<!-- more -->
+
+
+<p>Alors au départ, la connexion est inexistante:</p>
+
+<figure class='code'><figcaption><span>sorm_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./sorm&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">describe</span> <span class="no">SORM</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;connection&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;is not connected&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="no">SORM</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On fait passer ce test très facilement:</p>
+
+<figure class='code'><figcaption><span>sorm.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sqlite3&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">SORM</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class='line'>    <span class="kp">false</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Maintenant on cherche à se connecter à une base de données existante
+(n&#8217;oubliez pas de la créer):</p>
+
+<figure class='code'><figcaption><span>sorm_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./sorm&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">describe</span> <span class="no">SORM</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;connection&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;is not connected&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="no">SORM</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">describe</span> <span class="s1">&#39;after connection&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">it</span> <span class="s1">&#39;is connected&#39;</span> <span class="k">do</span>
+</span><span class='line'>        <span class="no">SORM</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;test.db&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">expect</span><span class="p">(</span><span class="no">SORM</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">true</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour implémenter cette fonctionnalité, ce à quoi je pense de plus rapide
+et de plus simple est une variable de classe. Même si on a parfois des
+scrupules à utiliser les variables de classe parce qu&#8217;elles sont partagées
+aussi par les sous-classes, je me dis que c&#8217;est bien le comportement que
+je voudrais obtenir. Donc voici le code qui fait passer notre test:</p>
+
+<figure class='code'><figcaption><span>sorm.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sqlite3&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">SORM</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="vc">@@db</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="vc">@@db</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class='line'>    <span class="vc">@@db</span> <span class="p">?</span> <span class="kp">true</span> <span class="p">:</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/13/ruby-et-si-on-ecrivait-un-orm-partie-1/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Plugin vim-refactor pour Ruby]]></title>
@@ -222,7 +364,7 @@ classe <code>SORM</code>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/13/ruby-et-si-on-ecrivait-un-orm-partie-1/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/13/ruby-et-si-on-ecrivait-un-orm-partie-1/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -301,7 +443,7 @@ loin. On va donc utiliser la gem <a href="https://github.com/sparklemotion/sqlit
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/'>La méta programmation en Ruby &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2388,55 +2530,6 @@ Ce qui est parfois tentant, mais c&#8217;est mal. Mais tentant. Mais mal…</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/07/le-duck-typing-avec-ruby/'>Le duck typing avec Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/25/la-methode-super-en-ruby-partie-2/'>La méthode super en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/24/la-methode-super-en-ruby/'>La méthode super en Ruby</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ActiveRecord - Executer une commande SQL quelconque]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque/"/>
-    <updated>2014-03-27T20:59:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/27/activerecord-executer-une-commande-sql-quelconque</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Chaque SGBD (Systême de Gestion de Base de Données), comme postgresql ou
-mysql par exemple, définissent des tables avec des infos très
-intéressantes (appelées meta-data, shéma, catalogue, etc.).</p>
-
-<p>Ces <em>méta-données</em> ne sont pas reliées à un modèle ActiveRecord, alors
-comment y accéder si vous en avez besoin ?</p>
-
-<!-- more -->
-
-
-<p>En utilisant la méthode <code>execute</code> sur la méthode <code>connection</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;ma requete SQL&quot;</span>
-</span><span class='line'><span class="n">result</span> <span class="o">=</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Base</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>result</code> possède maintenant les lignes dont vous aviez tant besoin:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">result</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">row</span><span class="o">|</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="n">row</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/03/activerecord-voir-la-requete-sql-pendant-lecriture-des-tests/'>ActiveRecord &ndash; Voir la requête SQL pendant l&#8217;écriture des tests</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/13/ruby-et-si-on-ecrivait-un-orm-partie-1/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
