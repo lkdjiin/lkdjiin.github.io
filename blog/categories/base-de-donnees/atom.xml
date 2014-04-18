@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : base de données | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/base-de-donnees/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-17T21:22:08+02:00</updated>
+  <updated>2014-04-18T21:27:24+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,161 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 4]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/"/>
+    <updated>2014-04-18T21:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Maintenant qu'on peut se connecter à une base sqlite, je pense qu'il faut
+qu'on puisse écrire des requêtes en pur SQL à partir d'un objet qui
+hérite de SORM.</p>
+
+<!-- more -->
+
+
+<p>Voilà donc mon nouveau test:</p>
+
+<p>``` ruby sorm_spec.rb
+require &lsquo;./sorm&rsquo;</p>
+
+<p>describe SORM do
+  describe &lsquo;connection&rsquo; do</p>
+
+<pre><code># ...
+
+describe 'after connection' do
+  # ...
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Article &lt; SORM
+  end</p>
+
+<p>  describe &lsquo;.sql&rsquo; do</p>
+
+<pre><code>it 'executes raw sql query on a table' do
+  Article.sql("INSERT INTO article VALUES(1, 'Foo');")
+  Article.sql("INSERT INTO article VALUES(2, 'Bar');")
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows.size).to eq 2
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Je veux enregistrer deux lignes en base et les récupérer. Si on lance les
+tests, Rspec se plaint que la méthode <code>sql</code> n'existe pas. Jusqu'ici tout
+va bien:</p>
+
+<pre><code>$ rspec sorm_spec.rb 
+..F
+
+Failures:
+
+  1) SORM.sql executes raw sql query on a table
+     Failure/Error: Article.sql("INSERT INTO article VALUES(1, 'Foo');")
+     NoMethodError:
+       undefined method `sql' for Article:Class
+</code></pre>
+
+<p>Pour faire passer ce test, le code est simple, on ajoute la méthode <code>sql</code>:</p>
+
+<p>``` ruby sorm.rb
+require &lsquo;sqlite3&rsquo;</p>
+
+<p>class SORM</p>
+
+<p>  @@db = false</p>
+
+<p>  def self.connect(database_filename)</p>
+
+<pre><code>@@db = SQLite3::Database.open(database_filename)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def self.connected?</p>
+
+<pre><code>@@db ? true : false
+</code></pre>
+
+<p>  end</p>
+
+<p>  def self.sql(raw_query)</p>
+
+<pre><code>@@db.execute(raw_query)
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Et hop:</p>
+
+<pre><code>$ rspec sorm_spec.rb 
+...
+
+Finished in 0.01381 seconds
+3 examples, 0 failures
+</code></pre>
+
+<p>Comme je suis curieux, j'ai envie de voir à quoi ressemble le contenu de
+<code>rows</code> dans le test:</p>
+
+<p>``` ruby
+  describe &lsquo;.sql&rsquo; do</p>
+
+<pre><code>it 'executes raw sql query on a table' do
+  Article.sql("INSERT INTO article VALUES(1, 'Foo');")
+  Article.sql("INSERT INTO article VALUES(2, 'Bar');")
+  rows = Article.sql("SELECT * FROM article;")
+  p rows
+  expect(rows.size).to eq 2
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Et là, une petite surprise m'attend au tournant:</p>
+
+<pre><code>$ rspec sorm_spec.rb 
+..[[1, "Foo"], [2, "Bar"], [1, "Foo"], [2, "Bar"]]
+F
+
+Failures:
+
+  1) SORM.sql executes raw sql query on a table
+     Failure/Error: expect(rows.size).to eq 2
+
+       expected: 2
+            got: 4
+
+       (compared using ==)
+     # ./sorm_spec.rb:26:in `block (3 levels) in &lt;top (required)&gt;'
+</code></pre>
+
+<p>Tout d'abord, j'ai oublié de vider la table après le test qui fait des
+insertions. Et ensuite j'ai négligé de spécifier <code>id</code> comme clé primaire !
+Bref, j'ai encore du boulot pour que SORM fonctionne ;)</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 3]]></title>
