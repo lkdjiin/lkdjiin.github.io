@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : base de données | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/base-de-donnees/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-18T21:27:24+02:00</updated>
+  <updated>2014-04-19T21:38:56+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,152 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 5]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5/"/>
+    <updated>2014-04-19T21:14:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Au menu d'aujourd'hui: réparation du test défecteux et début de la
+création/insertion d'un objet.</p>
+
+<!-- more -->
+
+
+<p>Tout d'abord on répare le test d'hier. Je sors les appels à <code>INSERT</code> dans
+un bloc <code>before</code> et j'ajoute ce qui manquait cruellement, un appel à
+<code>DELETE</code> dans un bloc <code>after</code>:</p>
+
+<p>``` ruby
+  describe &lsquo;.sql&rsquo; do</p>
+
+<pre><code>before do
+  Article.sql("INSERT INTO article VALUES(1, 'Foo');")
+  Article.sql("INSERT INTO article VALUES(2, 'Bar');")
+end
+
+after do
+  Article.sql("DELETE FROM article;")
+end
+
+it 'returns the correct number of rows' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows.size).to eq 2
+end
+
+it 'returns correct values' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'Foo'
+  expect(rows[1][0]).to eq 2
+  expect(rows[1][1]).to eq 'Bar'
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Voilà, maintenant on peut passer à la partie création. J'ai envie que SORM
+ait une méthode <code>save</code>, qui enregistrera les données en base et
+renverra un objet. On commence avec un test pour l'enregistrement:</p>
+
+<p>``` ruby sorm_spec.rb
+require &lsquo;./sorm&rsquo;</p>
+
+<p>describe SORM do
+  describe &lsquo;connection&rsquo; do</p>
+
+<pre><code># ...
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Article &lt; SORM
+  end</p>
+
+<p>  describe &lsquo;.sql&rsquo; do</p>
+
+<pre><code># ...
+</code></pre>
+
+<p>  end</p>
+
+<p>  describe &lsquo;object creation&rsquo; do</p>
+
+<pre><code>after { Article.sql("DELETE FROM article;") }
+
+it 'creates a record' do
+  Article.save(id: 1, name: 'bépo')
+  rows = Article.sql("SELECT * FROM article WHERE id = 1;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'bépo'
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>J'écris un premier jet de la méthode <code>save</code>, pour faire passer le test:</p>
+
+<p>``` ruby sorm.rb
+require &lsquo;sqlite3&rsquo;</p>
+
+<p>class SORM</p>
+
+<p>  @@db = false</p>
+
+<p>  def self.connect(database_filename)</p>
+
+<pre><code>@@db = SQLite3::Database.open(database_filename)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def self.connected?</p>
+
+<pre><code>@@db ? true : false
+</code></pre>
+
+<p>  end</p>
+
+<p>  def self.sql(raw_query)</p>
+
+<pre><code>@@db.execute(raw_query)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def self.save(parameters)</p>
+
+<pre><code>table = self.to_s.downcase
+columns = parameters.keys.join(',')
+values = parameters.values.map do |item|
+  item.class == String ? "'#{item}'" : item
+end.join(',')
+query = "INSERT INTO #{table} (#{columns}) VALUES(#{values});"
+@@db.execute(query)
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Ça fonctionne, mais la méthode est moche. Ce sera l'occasion de faire du
+refactoring dans un prochain article.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 4]]></title>
@@ -461,52 +607,6 @@ db.execute &lsquo;select * from article;&rsquo;
 ```</p></blockquote></blockquote>
 
 <p><em>To be continued</em></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Redis - Comment supprimer un ensemble de clés]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/21/redis-comment-supprimer-un-ensemble-de-cles/"/>
-    <updated>2014-03-21T21:44:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/21/redis-comment-supprimer-un-ensemble-de-cles</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Tiens, mon premier article sur Redis ! Normal, c'est une technologie que
-j'ai découvert il y a peu…</p>
-
-<!-- more -->
-
-
-<p>Pour supprimer une clé dans Redis, on se connecte et on utilise la commande
-<code>del</code>:</p>
-
-<pre><code>$ redis-cli
-&gt; del "nom:de:la:clef"
-</code></pre>
-
-<p>Mais quand on a des dizaines/centaines de clés, bof… Bien souvent (toujours
-même ça vaut mieux) le nom des clés suit un motif. Par exemple:</p>
-
-<pre><code>"motif:foo"
-"motif:bar"
-"motif:baz"
-etc...
-</code></pre>
-
-<p>Dans ce cas on peut utiliser Bash pour s'en sortir rapidement:</p>
-
-<p><code>bash
-redis-cli keys "*motif*" | xargs redis-cli del
-</code></p>
-
-<p>Et voilà, au revoir toutes les clés.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

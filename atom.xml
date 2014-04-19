@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-18T21:27:24+02:00</updated>
+  <updated>2014-04-19T21:38:56+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,205 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 5]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5/"/>
+    <updated>2014-04-19T21:14:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Au menu d&#8217;aujourd&#8217;hui: réparation du test défecteux et début de la
+création/insertion d&#8217;un objet.</p>
+
+<!-- more -->
+
+
+<p>Tout d&#8217;abord on répare le test d&#8217;hier. Je sors les appels à <code>INSERT</code> dans
+un bloc <code>before</code> et j&#8217;ajoute ce qui manquait cruellement, un appel à
+<code>DELETE</code> dans un bloc <code>after</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;.sql&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">before</span> <span class="k">do</span>
+</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(1, &#39;Foo&#39;);&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(2, &#39;Bar&#39;);&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">after</span> <span class="k">do</span>
+</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;DELETE FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns the correct number of rows&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns correct values&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;Foo&#39;</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">1</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">1</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;Bar&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voilà, maintenant on peut passer à la partie création. J&#8217;ai envie que SORM
+ait une méthode <code>save</code>, qui enregistrera les données en base et
+renverra un objet. On commence avec un test pour l&#8217;enregistrement:</p>
+
+<figure class='code'><figcaption><span>sorm_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./sorm&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">describe</span> <span class="no">SORM</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;connection&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Article</span> <span class="o">&lt;</span> <span class="no">SORM</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;.sql&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;object creation&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">after</span> <span class="p">{</span> <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;DELETE FROM article;&quot;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;creates a record&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">name</span><span class="p">:</span> <span class="s1">&#39;bépo&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article WHERE id = 1;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;bépo&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;écris un premier jet de la méthode <code>save</code>, pour faire passer le test:</p>
+
+<figure class='code'><figcaption><span>sorm.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sqlite3&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">SORM</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="vc">@@db</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="vc">@@db</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class='line'>    <span class="vc">@@db</span> <span class="p">?</span> <span class="kp">true</span> <span class="p">:</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
+</span><span class='line'>    <span class="vc">@@db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">table</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span>
+</span><span class='line'>    <span class="n">columns</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">values</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">item</span><span class="o">.</span><span class="n">class</span> <span class="o">==</span> <span class="nb">String</span> <span class="p">?</span> <span class="s2">&quot;&#39;</span><span class="si">#{</span><span class="n">item</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="p">:</span> <span class="n">item</span>
+</span><span class='line'>    <span class="k">end</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;INSERT INTO </span><span class="si">#{</span><span class="n">table</span><span class="si">}</span><span class="s2"> (</span><span class="si">#{</span><span class="n">columns</span><span class="si">}</span><span class="s2">) VALUES(</span><span class="si">#{</span><span class="n">values</span><span class="si">}</span><span class="s2">);&quot;</span>
+</span><span class='line'>    <span class="vc">@@db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ça fonctionne, mais la méthode est moche. Ce sera l&#8217;occasion de faire du
+refactoring dans un prochain article.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 4]]></title>
@@ -197,7 +396,7 @@ Bref, j&#8217;ai encore du boulot pour que SORM fonctionne ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/13/ruby-et-si-on-ecrivait-un-orm-partie-1/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -380,7 +579,7 @@ je voudrais obtenir. Donc voici le code qui fait passer notre test:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/13/ruby-et-si-on-ecrivait-un-orm-partie-1/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -593,7 +792,7 @@ classe <code>SORM</code>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/13/ruby-et-si-on-ecrivait-un-orm-partie-1/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -672,7 +871,7 @@ loin. On va donc utiliser la gem <a href="https://github.com/sparklemotion/sqlit
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/19/ruby-et-si-on-ecrivait-un-orm-partie-5/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2455,96 +2654,6 @@ vers la droite:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/04/vim-un-plugin-pour-markdown-partie-9/'>Vim &ndash; Un plugin pour markdown &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/'>Vim &ndash; Un plugin pour markdown &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Vim - Un plugin pour markdown - partie 7]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7/"/>
-    <updated>2014-03-30T21:20:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/30/vim-un-plugin-pour-markdown-partie-7</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Pour mon plugin Vim qui aide à écrire du markdown, j&#8217;ai envie d&#8217;une
-fonctionnalité pour mettre un mot en italique (et aussi en gras).
-Si j&#8217;ai le texte suivant:</p>
-
-<pre><code>foo bar baz
-</code></pre>
-
-<p>et que le curseur est dans le mot <code>bar</code>, je veux que la combinaison de
-touches <code>&lt;Leader&gt;qi</code> donne ceci:</p>
-
-<pre><code>foo *bar* baz
-</code></pre>
-
-<p>Pour implémenter ça, j&#8217;utiliserais encore le framework de test Vader.</p>
-
-<!-- more -->
-
-
-<p>Voici un premier test, pour le cas général:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">Given (some text):</span>
-</span><span class='line'><span class="err">  abc def ghi jkl mno</span>
-</span><span class='line'>
-</span><span class='line'><span class="err">Execute (starting in middle of a word):</span>
-</span><span class='line'><span class="err">  execute &quot;normal! fe&quot;</span>
-</span><span class='line'><span class="err">  QuickMarkdownItalic</span>
-</span><span class='line'>
-</span><span class='line'><span class="err">Expect (2nd word in italic):</span>
-</span><span class='line'><span class="err">  abc *def* ghi jkl mno</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le bloc <code>Execute</code> place d&#8217;abord le curseur sur le caractêre <code>e</code>,
-autrement dit <em>à l&#8217;intérieur</em> du mot <code>def</code>. Il lance ensuite la fonction
-<code>QuickMarkdownItalic</code> qui devra faire le travail.</p>
-
-<p>Dans le fichier <code>plugin/quickmarkdown.vim</code>, j&#8217;ajoute la nouvelle
-fonction:</p>
-
-<figure class='code'><figcaption><span>plugin/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>command<span class="p">!</span> QuickMarkdownItalic <span class="k">call</span> quickmarkdown#<span class="nb">italic</span><span class="p">()</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Puis j&#8217;implémente la fonction de la manière la plus simple à laquelle
-je puisse penser:</p>
-
-<figure class='code'><figcaption><span>autoload/quickmarkdown.vim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'><span class="k">function</span><span class="p">!</span> quickmarkdown#<span class="nb">italic</span><span class="p">()</span>
-</span><span class='line'>  execute <span class="s2">&quot;normal! bi*\&lt;Esc&gt;ea*\&lt;Esc&gt;&quot;</span>
-</span><span class='line'><span class="k">endfunction</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Décodage: <code>b</code> place le curseur au début du mot. <code>i*\&lt;Esc&gt;</code> passe en
-mode insertion, ajoute un <code>*</code> et revient en mode normal. <code>e</code> place le
-curseur à la fin du mot. <code>a*\&lt;Esc&gt;</code> passe en mode insertion <em>derrière</em>
-le mot et ajoute un <code>*</code> puis revient encore en mode normal.</p>
-
-<p>Cette fonction sera amenée à bouger une fois qu&#8217;on se sera occupé des
-cas particuliers. Ce sera pour une prochaine fois.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/04/vim-un-plugin-pour-markdown-partie-9/'>Vim &ndash; Un plugin pour markdown &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/31/vim-un-plugin-pour-markdown-partie-8/'>Vim &ndash; Un plugin pour markdown &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/17/vim-un-plugin-pour-markdown-partie-3/'>Vim &ndash; un plugin pour markdown &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
