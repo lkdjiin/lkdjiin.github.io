@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : sqlite | lkdjiin's blog]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/sqlite/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2014-04-20T13:11:42+02:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 6]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/20/ruby-et-si-on-ecrivait-un-orm-partie-6/"/>
+    <updated>2014-04-20T12:53:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/20/ruby-et-si-on-ecrivait-un-orm-partie-6</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Hier je m'étais arrêté sur cette implémentation de <code>SORM.save</code>:</p>
+
+<p>``` ruby
+  def self.save(parameters)</p>
+
+<pre><code>table = self.to_s.downcase
+columns = parameters.keys.join(',')
+values = parameters.values.map do |item|
+  item.class == String ? "'#{item}'" : item
+end.join(',')
+query = "INSERT INTO #{table} (#{columns}) VALUES(#{values});"
+@@db.execute(query)
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Cette méthode est déja bien trop longue selon mes critères, et si on ne fait
+pas quelque chose tout de suite on va vite se retrouver avec un tas de
+méthodes de classe impossibles à remanier.</p>
+
+<!-- more -->
+
+
+<p>Une première partie du refactoring va consister à extraire une classe que
+je vais nommer <code>Recorder</code>:</p>
+
+<p>``` ruby
+  def self.save(parameters)</p>
+
+<pre><code>recorder = Recorder.new(@@db, self.to_s.downcase, parameters)
+recorder.save
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Recorder</p>
+
+<pre><code>def initialize(connection, table, parameters)
+  @connection = connection
+  @table = table
+  @parameters = parameters
+end
+
+def save
+  @connection.execute(query)
+end
+
+def query
+  "INSERT INTO #@table (#{columns}) VALUES(#{values});"
+end
+
+def columns
+  @parameters.keys.join(',')
+end
+
+def values
+  @parameters.values.map do |item|
+    item.class == String ? "'#{item}'" : item
+  end.join(',')
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Ça permet d'avoir des méthodes simples, faciles à comprendre.</p>
+
+<p>Une seconde partie du refactoring consistera à <em>namespacer</em> correctement
+les différentes parties de SORM. Pour ça il faudra aussi modifier les tests.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>
