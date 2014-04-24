@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : sqlite | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/sqlite/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-23T21:30:20+02:00</updated>
+  <updated>2014-04-24T21:16:17+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,197 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/"/>
+    <updated>2014-04-24T21:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Seconde partie du refactoring de SORM, mon <em>toy ORM</em> qui me sert de
+prétexte pour quelques articles ;)</p>
+
+<!-- more -->
+
+
+<p>Parce que j'espère que vous avez compris que je n'était pas sérieusement
+en train d'écrire un nouvel ORM pour Ruby, hein ? C'est juste pour étudier
+un peu ensemble comment ça fonctionne…</p>
+
+<p>Bref, il est temps je pense d'utiliser quelques namespace. <code>SORM::Database</code>
+pour gérer la connexion et <code>SORM::Base</code> comme modèle de base. Voici donc les
+tests remaniés:</p>
+
+<p>``` ruby sorm_spec.rb
+require &lsquo;./sorm&rsquo;</p>
+
+<p>describe SORM::Database do
+  describe &lsquo;connection&rsquo; do</p>
+
+<pre><code>it 'is not connected' do
+  expect(SORM::Database.connected?).to be false
+end
+
+describe 'after connection' do
+  it 'is connected' do
+    SORM::Database.connect('test.db')
+    expect(SORM::Database.connected?).to be true
+  end
+end
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>describe SORM::Base do
+  class Article &lt; SORM::Base ; end</p>
+
+<p>  describe &lsquo;.sql&rsquo; do</p>
+
+<pre><code>before do
+  Article.sql("INSERT INTO article VALUES(1, 'Foo');")
+  Article.sql("INSERT INTO article VALUES(2, 'Bar');")
+end
+
+after do
+  Article.sql("DELETE FROM article;")
+end
+
+it 'returns the correct number of rows' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows.size).to eq 2
+end
+
+it 'returns correct values' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'Foo'
+  expect(rows[1][0]).to eq 2
+  expect(rows[1][1]).to eq 'Bar'
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  describe &lsquo;object creation&rsquo; do</p>
+
+<pre><code>after { Article.sql("DELETE FROM article;") }
+
+it 'creates a record' do
+  Article.save(id: 1, name: 'bépo')
+  rows = Article.sql("SELECT * FROM article WHERE id = 1;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'bépo'
+end
+
+it 'returns an object with correct class' do
+  article = Article.save(id: 1, name: 'bépo')
+  expect(article.class).to eq Article
+end
+
+it 'returns an object with correct attributes' do
+  article = Article.save(id: 1, name: 'bépo')
+  expect(article.id).to eq 1
+  expect(article.name).to eq 'bépo'
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Et bien sûr la nouvelle implémentation qui va avec:</p>
+
+<p>``` ruby sorm.rb
+require &lsquo;sqlite3&rsquo;</p>
+
+<p>module SORM</p>
+
+<p>  class Database</p>
+
+<pre><code>@@db = false
+
+def self.connect(database_filename)
+  @@db = SQLite3::Database.open(database_filename)
+end
+
+def self.connected?
+  @@db ? true : false
+end
+
+def self.connection
+  @@db
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Base</p>
+
+<pre><code>def self.sql(raw_query)
+  Database.connection.execute(raw_query)
+end
+
+def self.save(parameters)
+  Recorder.new(Database.connection, self.to_s.downcase, parameters).save
+  self.new(parameters)
+end
+
+def initialize(attributes)
+  attributes.each do |name, value|
+    instance_variable_set("@#{name}", value)
+    singleton_class.class_eval{attr_reader name.to_sym}
+  end
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Recorder</p>
+
+<pre><code>def initialize(connection, table, parameters)
+  @connection = connection
+  @table = table
+  @parameters = parameters
+end
+
+def save
+  @connection.execute(query)
+end
+
+def query
+  "INSERT INTO #@table (#{columns}) VALUES(#{values});"
+end
+
+def columns
+  @parameters.keys.join(',')
+end
+
+def values
+  @parameters.values.map do |item|
+    item.class == String ? "'#{item}'" : item
+  end.join(',')
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voilà, ça fait pas mal de code sans explication :( mais j'ai peu de temps
+aujourd'hui. La prochaine on fera… je sais pas… on verra bien ;)</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 6]]></title>

@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : orm | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/orm/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-23T21:30:20+02:00</updated>
+  <updated>2014-04-24T21:16:17+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,197 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/"/>
+    <updated>2014-04-24T21:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Seconde partie du refactoring de SORM, mon <em>toy ORM</em> qui me sert de
+prétexte pour quelques articles ;)</p>
+
+<!-- more -->
+
+
+<p>Parce que j'espère que vous avez compris que je n'était pas sérieusement
+en train d'écrire un nouvel ORM pour Ruby, hein ? C'est juste pour étudier
+un peu ensemble comment ça fonctionne…</p>
+
+<p>Bref, il est temps je pense d'utiliser quelques namespace. <code>SORM::Database</code>
+pour gérer la connexion et <code>SORM::Base</code> comme modèle de base. Voici donc les
+tests remaniés:</p>
+
+<p>``` ruby sorm_spec.rb
+require &lsquo;./sorm&rsquo;</p>
+
+<p>describe SORM::Database do
+  describe &lsquo;connection&rsquo; do</p>
+
+<pre><code>it 'is not connected' do
+  expect(SORM::Database.connected?).to be false
+end
+
+describe 'after connection' do
+  it 'is connected' do
+    SORM::Database.connect('test.db')
+    expect(SORM::Database.connected?).to be true
+  end
+end
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>describe SORM::Base do
+  class Article &lt; SORM::Base ; end</p>
+
+<p>  describe &lsquo;.sql&rsquo; do</p>
+
+<pre><code>before do
+  Article.sql("INSERT INTO article VALUES(1, 'Foo');")
+  Article.sql("INSERT INTO article VALUES(2, 'Bar');")
+end
+
+after do
+  Article.sql("DELETE FROM article;")
+end
+
+it 'returns the correct number of rows' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows.size).to eq 2
+end
+
+it 'returns correct values' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'Foo'
+  expect(rows[1][0]).to eq 2
+  expect(rows[1][1]).to eq 'Bar'
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  describe &lsquo;object creation&rsquo; do</p>
+
+<pre><code>after { Article.sql("DELETE FROM article;") }
+
+it 'creates a record' do
+  Article.save(id: 1, name: 'bépo')
+  rows = Article.sql("SELECT * FROM article WHERE id = 1;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'bépo'
+end
+
+it 'returns an object with correct class' do
+  article = Article.save(id: 1, name: 'bépo')
+  expect(article.class).to eq Article
+end
+
+it 'returns an object with correct attributes' do
+  article = Article.save(id: 1, name: 'bépo')
+  expect(article.id).to eq 1
+  expect(article.name).to eq 'bépo'
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Et bien sûr la nouvelle implémentation qui va avec:</p>
+
+<p>``` ruby sorm.rb
+require &lsquo;sqlite3&rsquo;</p>
+
+<p>module SORM</p>
+
+<p>  class Database</p>
+
+<pre><code>@@db = false
+
+def self.connect(database_filename)
+  @@db = SQLite3::Database.open(database_filename)
+end
+
+def self.connected?
+  @@db ? true : false
+end
+
+def self.connection
+  @@db
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Base</p>
+
+<pre><code>def self.sql(raw_query)
+  Database.connection.execute(raw_query)
+end
+
+def self.save(parameters)
+  Recorder.new(Database.connection, self.to_s.downcase, parameters).save
+  self.new(parameters)
+end
+
+def initialize(attributes)
+  attributes.each do |name, value|
+    instance_variable_set("@#{name}", value)
+    singleton_class.class_eval{attr_reader name.to_sym}
+  end
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Recorder</p>
+
+<pre><code>def initialize(connection, table, parameters)
+  @connection = connection
+  @table = table
+  @parameters = parameters
+end
+
+def save
+  @connection.execute(query)
+end
+
+def query
+  "INSERT INTO #@table (#{columns}) VALUES(#{values});"
+end
+
+def columns
+  @parameters.keys.join(',')
+end
+
+def values
+  @parameters.values.map do |item|
+    item.class == String ? "'#{item}'" : item
+  end.join(',')
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voilà, ça fait pas mal de code sans explication :( mais j'ai peu de temps
+aujourd'hui. La prochaine on fera… je sais pas… on verra bien ;)</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 6]]></title>
@@ -501,125 +692,6 @@ require &lsquo;sqlite3&rsquo;</p>
 <p>  end
 end
 ```</p>
-
-<p><em>To be continued</em></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2/"/>
-    <updated>2014-04-14T21:08:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/14/ruby-et-si-on-ecrivait-un-orm-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir installé sqlite et la gem sqlite3-ruby, on installe maintenant
-rspec et on fait passer un premier test pour notre futur <em>Simple ORM</em>.</p>
-
-<!-- more -->
-
-
-<p>Pour écrire SORM, on va faire du <em>Test Driven Development</em>, parce que j'ai
-envie d'encourager les bonnes pratiques ;) Pour les tests j'utiliserai
-Rspec, puisque c'est le framework que je connais le mieux:</p>
-
-<pre><code>gem install rspec
-</code></pre>
-
-<p>On écrit un premier test:</p>
-
-<p>``` ruby sorm_spec.rb
-require &lsquo;./sorm&rsquo;</p>
-
-<p>describe SORM do</p>
-
-<p>  class Article &lt; SORM
-  end</p>
-
-<p>  describe &lsquo;.find_by_*&rsquo; do</p>
-
-<pre><code>it 'returns an array' do
-  article = Article.find_by_whatever('foobar')
-  expect(article.class).to eq Array
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Alors c'est un test un peu <em>foireux</em>, ok. J'avoue que je n'ai pas réfléchi
-une seconde au design de SORM. Je me dis qu'on s'adaptera au fur et à mesure.
-Ici je teste qu'une méthode <code>.find_by_whatever</code> renvoie un tableau, c'est
-tout. C'est histoire de se mettre en marche. Lancement du test:</p>
-
-<pre><code>$ rspec sorm_spec.rb 
-sorm_spec.rb:3:in `&lt;top (required)&gt;': uninitialized constant SORM (NameError)
-</code></pre>
-
-<p>Et c'est partie pour l'écriture de notre classe <code>SORM</code>:</p>
-
-<p>``` ruby sorm.rb
-class SORM</p>
-
-<p>end
-```</p>
-
-<p>Je relance le test:</p>
-
-<pre><code>$ rspec sorm_spec.rb 
-F
-
-Failures:
-
-  1) SORM.find_by_* returns an array
-     Failure/Error: article = Article.find_by_whatever('foobar')
-     NoMethodError:
-       undefined method `find_by_whatever' for Article:Class
-     # ./sorm_spec.rb:10:in `block (3 levels) in &lt;top (required)&gt;'
-
-Finished in 0.0009 seconds
-1 example, 1 failure
-
-Failed examples:
-
-rspec ./sorm_spec.rb:9 # SORM.find_by_* returns an array
-</code></pre>
-
-<p>La méthode <code>find_by_whatever</code> est bien sûr inconnue. Comme je veux gérer
-les méthodes <code>find_by_*</code> avec <code>method_missing</code> j'écris:</p>
-
-<p>``` ruby sorm.rb
-class SORM</p>
-
-<p>  def self.method_missing(method, *args)</p>
-
-<pre><code>[]
-</code></pre>
-
-<p>  end</p>
-
-<p>end
-```</p>
-
-<p>Et maintenant on est sur la voie:</p>
-
-<pre><code>$ rspec sorm_spec.rb 
-.
-
-Finished in 0.01664 seconds
-1 example, 0 failures
-</code></pre>
-
-<p>On a pas avancé beaucoup, mais on a quand même mis en place le TDD et notre
-classe <code>SORM</code>.</p>
 
 <p><em>To be continued</em></p>
 
