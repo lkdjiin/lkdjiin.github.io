@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : base de données | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/base-de-donnees/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-24T21:16:17+02:00</updated>
+  <updated>2014-04-25T21:35:12+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,114 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/"/>
+    <updated>2014-04-25T21:17:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Je continue le refactoring de SORM. Voici la classe <code>Database</code> dans son
+état actuel:</p>
+
+<p>``` ruby sorm.rb
+require &lsquo;sqlite3&rsquo;</p>
+
+<p>module SORM</p>
+
+<p>  class Database</p>
+
+<pre><code>@@db = false
+
+def self.connect(database_filename)
+  @@db = SQLite3::Database.open(database_filename)
+end
+
+def self.connected?
+  @@db ? true : false
+end
+
+def self.connection
+  @@db
+end
+</code></pre>
+
+<p>  end</p>
+
+<h1>&hellip;</h1>
+
+<p>end
+```</p>
+
+<!-- more -->
+
+
+<p>La première chose que j'ai envie de faire, c'est de supprimer l'abbréviation
+<code>db</code>. De plus, comme il s'agit plutôt d'établir une <em>connexion</em>, je change
+pour <code>connection</code>:</p>
+
+<p>``` ruby
+  class Database</p>
+
+<pre><code>@@connection = false
+
+def self.connect(database_filename)
+  @@connection = SQLite3::Database.open(database_filename)
+end
+
+def self.connected?
+  @@connection ? true : false
+end
+
+def self.connection
+  @@connection
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>À ce sujet, j'applique <a href="http://lkdjiin.github.io/blog/2013/08/21/code-propre-non-aux-abreviations/">mes propres principes</a> ;)</p>
+
+<p>Ensuite je vais modifier l'implémentation de la méthode <code>.connected?</code>. Elle
+va passer de:</p>
+
+<p>``` ruby</p>
+
+<pre><code>def self.connected?
+  @@db ? true : false
+end
+</code></pre>
+
+<p>```</p>
+
+<p>À quelque chose de plus expressif:</p>
+
+<p>``` ruby</p>
+
+<pre><code>def self.connected?
+  !!@@connection
+end
+</code></pre>
+
+<p>```</p>
+
+<p>J'ai écris récemment un article sur <a href="http://lkdjiin.github.io/blog/2014/04/23/le-double-bang-en-ruby/">le double bang</a> si vous vous
+demandez ce que c'est ;)</p>
+
+<p>La prochaine fois, on <em>refactorera</em> un peu plus la classe <code>Base</code>.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 7]]></title>
@@ -582,116 +690,6 @@ Failures:
 <p>Tout d'abord, j'ai oublié de vider la table après le test qui fait des
 insertions. Et ensuite j'ai négligé de spécifier <code>id</code> comme clé primaire !
 Bref, j'ai encore du boulot pour que SORM fonctionne ;)</p>
-
-<p><em>To be continued</em></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3/"/>
-    <updated>2014-04-16T21:23:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/16/ruby-et-si-on-ecrivait-un-orm-partie-3</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Cette fois je me dis qu'il faudrait quand même se connecter à la base de
-données avant d'aller plus loin…</p>
-
-<!-- more -->
-
-
-<p>Alors au départ, la connexion est inexistante:</p>
-
-<p>``` ruby sorm_spec.rb
-require &lsquo;./sorm&rsquo;</p>
-
-<p>describe SORM do
-  describe &lsquo;connection&rsquo; do</p>
-
-<pre><code>it 'is not connected' do
-  expect(SORM.connected?).to be false
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>On fait passer ce test très facilement:</p>
-
-<p>``` ruby sorm.rb
-require &lsquo;sqlite3&rsquo;</p>
-
-<p>class SORM
-  def self.connected?</p>
-
-<pre><code>false
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Maintenant on cherche à se connecter à une base de données existante
-(n'oubliez pas de la créer):</p>
-
-<p>``` ruby sorm_spec.rb
-require &lsquo;./sorm&rsquo;</p>
-
-<p>describe SORM do
-  describe &lsquo;connection&rsquo; do</p>
-
-<pre><code>it 'is not connected' do
-  expect(SORM.connected?).to be false
-end
-
-describe 'after connection' do
-  it 'is connected' do
-    SORM.connect('test.db')
-    expect(SORM.connected?).to be true
-  end
-end
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Pour implémenter cette fonctionnalité, ce à quoi je pense de plus rapide
-et de plus simple est une variable de classe. Même si on a parfois des
-scrupules à utiliser les variables de classe parce qu'elles sont partagées
-aussi par les sous-classes, je me dis que c'est bien le comportement que
-je voudrais obtenir. Donc voici le code qui fait passer notre test:</p>
-
-<p>``` ruby sorm.rb
-require &lsquo;sqlite3&rsquo;</p>
-
-<p>class SORM</p>
-
-<p>  @@db = false</p>
-
-<p>  def self.connect(database_filename)</p>
-
-<pre><code>@@db = SQLite3::Database.open(database_filename)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def self.connected?</p>
-
-<pre><code>@@db ? true : false
-</code></pre>
-
-<p>  end
-end
-```</p>
 
 <p><em>To be continued</em></p>
 

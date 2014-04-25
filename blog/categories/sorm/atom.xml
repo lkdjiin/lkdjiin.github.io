@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : sorm | lkdjiin's blog]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/sorm/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2014-04-25T21:35:12+02:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/"/>
+    <updated>2014-04-25T21:17:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Je continue le refactoring de SORM. Voici la classe <code>Database</code> dans son
+état actuel:</p>
+
+<p>``` ruby sorm.rb
+require &lsquo;sqlite3&rsquo;</p>
+
+<p>module SORM</p>
+
+<p>  class Database</p>
+
+<pre><code>@@db = false
+
+def self.connect(database_filename)
+  @@db = SQLite3::Database.open(database_filename)
+end
+
+def self.connected?
+  @@db ? true : false
+end
+
+def self.connection
+  @@db
+end
+</code></pre>
+
+<p>  end</p>
+
+<h1>&hellip;</h1>
+
+<p>end
+```</p>
+
+<!-- more -->
+
+
+<p>La première chose que j'ai envie de faire, c'est de supprimer l'abbréviation
+<code>db</code>. De plus, comme il s'agit plutôt d'établir une <em>connexion</em>, je change
+pour <code>connection</code>:</p>
+
+<p>``` ruby
+  class Database</p>
+
+<pre><code>@@connection = false
+
+def self.connect(database_filename)
+  @@connection = SQLite3::Database.open(database_filename)
+end
+
+def self.connected?
+  @@connection ? true : false
+end
+
+def self.connection
+  @@connection
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>À ce sujet, j'applique <a href="http://lkdjiin.github.io/blog/2013/08/21/code-propre-non-aux-abreviations/">mes propres principes</a> ;)</p>
+
+<p>Ensuite je vais modifier l'implémentation de la méthode <code>.connected?</code>. Elle
+va passer de:</p>
+
+<p>``` ruby</p>
+
+<pre><code>def self.connected?
+  @@db ? true : false
+end
+</code></pre>
+
+<p>```</p>
+
+<p>À quelque chose de plus expressif:</p>
+
+<p>``` ruby</p>
+
+<pre><code>def self.connected?
+  !!@@connection
+end
+</code></pre>
+
+<p>```</p>
+
+<p>J'ai écris récemment un article sur <a href="http://lkdjiin.github.io/blog/2014/04/23/le-double-bang-en-ruby/">le double bang</a> si vous vous
+demandez ce que c'est ;)</p>
+
+<p>La prochaine fois, on <em>refactorera</em> un peu plus la classe <code>Base</code>.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/"/>
+    <updated>2014-04-24T21:01:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Seconde partie du refactoring de SORM, mon <em>toy ORM</em> qui me sert de
+prétexte pour quelques articles ;)</p>
+
+<!-- more -->
+
+
+<p>Parce que j'espère que vous avez compris que je n'était pas sérieusement
+en train d'écrire un nouvel ORM pour Ruby, hein ? C'est juste pour étudier
+un peu ensemble comment ça fonctionne…</p>
+
+<p>Bref, il est temps je pense d'utiliser quelques namespace. <code>SORM::Database</code>
+pour gérer la connexion et <code>SORM::Base</code> comme modèle de base. Voici donc les
+tests remaniés:</p>
+
+<p>``` ruby sorm_spec.rb
+require &lsquo;./sorm&rsquo;</p>
+
+<p>describe SORM::Database do
+  describe &lsquo;connection&rsquo; do</p>
+
+<pre><code>it 'is not connected' do
+  expect(SORM::Database.connected?).to be false
+end
+
+describe 'after connection' do
+  it 'is connected' do
+    SORM::Database.connect('test.db')
+    expect(SORM::Database.connected?).to be true
+  end
+end
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>describe SORM::Base do
+  class Article &lt; SORM::Base ; end</p>
+
+<p>  describe &lsquo;.sql&rsquo; do</p>
+
+<pre><code>before do
+  Article.sql("INSERT INTO article VALUES(1, 'Foo');")
+  Article.sql("INSERT INTO article VALUES(2, 'Bar');")
+end
+
+after do
+  Article.sql("DELETE FROM article;")
+end
+
+it 'returns the correct number of rows' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows.size).to eq 2
+end
+
+it 'returns correct values' do
+  rows = Article.sql("SELECT * FROM article;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'Foo'
+  expect(rows[1][0]).to eq 2
+  expect(rows[1][1]).to eq 'Bar'
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  describe &lsquo;object creation&rsquo; do</p>
+
+<pre><code>after { Article.sql("DELETE FROM article;") }
+
+it 'creates a record' do
+  Article.save(id: 1, name: 'bépo')
+  rows = Article.sql("SELECT * FROM article WHERE id = 1;")
+  expect(rows[0][0]).to eq 1
+  expect(rows[0][1]).to eq 'bépo'
+end
+
+it 'returns an object with correct class' do
+  article = Article.save(id: 1, name: 'bépo')
+  expect(article.class).to eq Article
+end
+
+it 'returns an object with correct attributes' do
+  article = Article.save(id: 1, name: 'bépo')
+  expect(article.id).to eq 1
+  expect(article.name).to eq 'bépo'
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Et bien sûr la nouvelle implémentation qui va avec:</p>
+
+<p>``` ruby sorm.rb
+require &lsquo;sqlite3&rsquo;</p>
+
+<p>module SORM</p>
+
+<p>  class Database</p>
+
+<pre><code>@@db = false
+
+def self.connect(database_filename)
+  @@db = SQLite3::Database.open(database_filename)
+end
+
+def self.connected?
+  @@db ? true : false
+end
+
+def self.connection
+  @@db
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Base</p>
+
+<pre><code>def self.sql(raw_query)
+  Database.connection.execute(raw_query)
+end
+
+def self.save(parameters)
+  Recorder.new(Database.connection, self.to_s.downcase, parameters).save
+  self.new(parameters)
+end
+
+def initialize(attributes)
+  attributes.each do |name, value|
+    instance_variable_set("@#{name}", value)
+    singleton_class.class_eval{attr_reader name.to_sym}
+  end
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  class Recorder</p>
+
+<pre><code>def initialize(connection, table, parameters)
+  @connection = connection
+  @table = table
+  @parameters = parameters
+end
+
+def save
+  @connection.execute(query)
+end
+
+def query
+  "INSERT INTO #@table (#{columns}) VALUES(#{values});"
+end
+
+def columns
+  @parameters.keys.join(',')
+end
+
+def values
+  @parameters.values.map do |item|
+    item.class == String ? "'#{item}'" : item
+  end.join(',')
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Voilà, ça fait pas mal de code sans explication :( mais j'ai peu de temps
+aujourd'hui. La prochaine on fera… je sais pas… on verra bien ;)</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>
