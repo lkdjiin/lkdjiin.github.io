@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-26T14:46:41+02:00</updated>
+  <updated>2014-04-27T18:14:16+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,424 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 10]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/"/>
+    <updated>2014-04-27T18:07:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Je continue toujours le refactoring de SORM, cette fois je veux supprimer
+le paramêtre <code>connection</code> dans l&#8217;initialisation de <code>Recorder</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Recorder</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">connection</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@connection</span> <span class="o">=</span> <span class="n">connection</span>
+</span><span class='line'>      <span class="vi">@table</span> <span class="o">=</span> <span class="n">table</span>
+</span><span class='line'>      <span class="vi">@parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">save</span>
+</span><span class='line'>      <span class="vi">@connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!-- more -->
+
+
+<p>Bon, c&#8217;est tout simple, on utilise directement la classe <code>Database</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Recorder</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@table</span> <span class="o">=</span> <span class="n">table</span>
+</span><span class='line'>      <span class="vi">@parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">save</span>
+</span><span class='line'>      <span class="no">Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Base</span>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
+</span><span class='line'>      <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ok, c&#8217;est trop court comme article, non ? Alors je continue. Comme dit la
+dernière fois, la méthode <code>Base.sql</code> me semble inutile. Je la supprime donc,
+ce qui conduit à ce code:</p>
+
+<figure class='code'><figcaption><span>sorm.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sqlite3&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">SORM</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
+</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+</span><span class='line'>      <span class="vc">@@connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Base</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
+</span><span class='line'>      <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">attributes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="p">,</span> <span class="n">value</span><span class="o">|</span>
+</span><span class='line'>        <span class="nb">instance_variable_set</span><span class="p">(</span><span class="s2">&quot;@</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">singleton_class</span><span class="o">.</span><span class="n">class_eval</span><span class="p">{</span><span class="kp">attr_reader</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_sym</span><span class="p">}</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Recorder</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@table</span> <span class="o">=</span> <span class="n">table</span>
+</span><span class='line'>      <span class="vi">@parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">save</span>
+</span><span class='line'>      <span class="no">Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">query</span>
+</span><span class='line'>      <span class="s2">&quot;INSERT INTO </span><span class="si">#@table</span><span class="s2"> (</span><span class="si">#{</span><span class="n">columns</span><span class="si">}</span><span class="s2">) VALUES(</span><span class="si">#{</span><span class="n">values</span><span class="si">}</span><span class="s2">);&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">columns</span>
+</span><span class='line'>      <span class="vi">@parameters</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">values</span>
+</span><span class='line'>      <span class="vi">@parameters</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span>
+</span><span class='line'>        <span class="n">item</span><span class="o">.</span><span class="n">class</span> <span class="o">==</span> <span class="nb">String</span> <span class="p">?</span> <span class="s2">&quot;&#39;</span><span class="si">#{</span><span class="n">item</span><span class="si">}</span><span class="s2">&#39;&quot;</span> <span class="p">:</span> <span class="n">item</span>
+</span><span class='line'>      <span class="k">end</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Mais maintenant ce sont les tests qui sont dans les choux ! Il faut
+remplacer toutes les occurences de <code>Article.sql</code> par
+<code>SORM::Database.execute</code>. Ce qui donne:</p>
+
+<figure class='code'><figcaption><span>sorm_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./sorm&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">describe</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;connection&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;is not connected&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">describe</span> <span class="s1">&#39;after connection&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">it</span> <span class="s1">&#39;is connected&#39;</span> <span class="k">do</span>
+</span><span class='line'>        <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;test.db&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">expect</span><span class="p">(</span><span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">true</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">describe</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Base</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Article</span> <span class="o">&lt;</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Base</span> <span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;.sql&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">before</span> <span class="k">do</span>
+</span><span class='line'>      <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(1, &#39;Foo&#39;);&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(2, &#39;Bar&#39;);&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">after</span> <span class="k">do</span>
+</span><span class='line'>      <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;DELETE FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns the correct number of rows&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns correct values&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;Foo&#39;</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">1</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">1</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;Bar&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;object creation&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">after</span> <span class="p">{</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;DELETE FROM article;&quot;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;creates a record&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">name</span><span class="p">:</span> <span class="s1">&#39;bépo&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article WHERE id = 1;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;bépo&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns an object with correct class&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">article</span> <span class="o">=</span> <span class="no">Article</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">name</span><span class="p">:</span> <span class="s1">&#39;bépo&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">class</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="no">Article</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns an object with correct attributes&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">article</span> <span class="o">=</span> <span class="no">Article</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">name</span><span class="p">:</span> <span class="s1">&#39;bépo&#39;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">id</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;bépo&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et les tests passent de nouveau. Mais on a un nouveau problème !
+Le bloc <code>describe '.sql'</code> suivant est devenu ridicule:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">describe</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Base</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Article</span> <span class="o">&lt;</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Base</span> <span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;.sql&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">before</span> <span class="k">do</span>
+</span><span class='line'>      <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(1, &#39;Foo&#39;);&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(2, &#39;Bar&#39;);&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">after</span> <span class="k">do</span>
+</span><span class='line'>      <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;DELETE FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns the correct number of rows&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns correct values&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">0</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;Foo&#39;</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">1</span><span class="o">][</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">[</span><span class="mi">1</span><span class="o">][</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="s1">&#39;Bar&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>1) Il n&#8217;y a plus de méthode <code>sql</code> et 2) il teste <code>Database.execute</code> et
+n&#8217;a donc rien à faire ici. Je corrigerais ça la prochaine fois, et je pense
+qu&#8217;il est temps aussi de <em>splitter</em> les fichiers tests et sources…</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 9]]></title>
@@ -206,7 +624,7 @@ passent plus, à cause de ce code:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/20/ruby-et-si-on-ecrivait-un-orm-partie-6/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -347,7 +765,7 @@ demandez ce que c&#8217;est ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/20/ruby-et-si-on-ecrivait-un-orm-partie-6/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -651,7 +1069,7 @@ aujourd&#8217;hui. La prochaine on fera… je sais pas… on verra bien ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/20/ruby-et-si-on-ecrivait-un-orm-partie-6/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1189,7 +1607,7 @@ les différentes parties de SORM. Pour ça il faudra aussi modifier les tests.</
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1388,7 +1806,7 @@ refactoring dans un prochain article.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1576,7 +1994,7 @@ Bref, j&#8217;ai encore du boulot pour que SORM fonctionne ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1759,7 +2177,7 @@ je voudrais obtenir. Donc voici le code qui fait passer notre test:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1972,7 +2390,7 @@ classe <code>SORM</code>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2051,7 +2469,7 @@ loin. On va donc utiliser la gem <a href="https://github.com/sparklemotion/sqlit
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/24/ruby-et-si-on-ecrivait-un-orm-partie-7/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 7</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2753,271 +3171,6 @@ Pour le <em>à quoi ça sert ?</em>, il faudra attendre un prochain article ;)</
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/23/le-double-bang-en-ruby/'>Le double bang en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/22/demandez-conseil-regulierement/'>Demandez conseil régulièrement</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/15/plugin-vim-refactor-pour-ruby/'>Plugin vim-refactor pour Ruby</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le duck typing avec Ruby]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/07/le-duck-typing-avec-ruby/"/>
-    <updated>2014-04-07T21:19:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/07/le-duck-typing-avec-ruby</id>
-    <content type="html"><![CDATA[<p>Vous faites du Ruby depuis peu ? Vous venez d&#8217;un langage
-orienté objet plus <em>classique</em>, comme par exemple Java ?
-Vous entendez parler de <strong>duck typing</strong> régulièrement sans
-trop voir de quoi il retourne ?
-Aujourd&#8217;hui on voit ce qu&#8217;est le duck typing.</p>
-
-<!-- more -->
-
-
-<p>Pour la petite histoire, nous allons faire marcher (<em>walk</em>) des
-rats (<em>Rat</em>) et des souris (<em>Mice</em>). Rat et souris étants des
-mammifères (<em>Mammal</em>).</p>
-
-<p>En mimant un langage comme Java, nous allons d&#8217;abord créer
-une classe de base qui implémente une méthode <code>walk</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Mammal</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="k">raise</span> <span class="no">NotImplementedError</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">Mammal</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">walk</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Vous remarquez que cette méthode <code>walk</code> soulève une
-exception si elle est appelée. Elle n&#8217;est ici que pour nous
-rappeler que les classes filles devront l&#8217;implémenter:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">$ ruby duck.rb </span>
-</span><span class='line'><span class="err">duck.rb:3:in `walk&#39;: NotImplementedError (NotImplementedError)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Poursuivons le mimétisme Java en créant les classes <code>Rat</code> et
-<code>Mice</code> qui héritent de <code>Mammal</code>, et qui donc implémentent
-conciencieusement la méthode <code>walk</code></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Mammal</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="k">raise</span> <span class="no">NotImplementedError</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Rat</span> <span class="o">&lt;</span> <span class="no">Mammal</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="s2">&quot;I am a Rat and I walk&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Mice</span> <span class="o">&lt;</span> <span class="no">Mammal</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="s2">&quot;I am a Mice and I walk&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">puts</span> <span class="no">Rat</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">walk</span>
-</span><span class='line'><span class="nb">puts</span> <span class="no">Mice</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">walk</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le résultat est celui qu&#8217;on attend:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">$ ruby duck.rb </span>
-</span><span class='line'><span class="err">I am a Rat and I walk</span>
-</span><span class='line'><span class="err">I am a Mice and I walk</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Maintenant ajoutons une classe <code>Laboratory</code> qui a pour rôle
-de manipuler nos animaux, en les faisant marcher à la
-demande:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Mammal</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="k">raise</span> <span class="no">NotImplementedError</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Rat</span> <span class="o">&lt;</span> <span class="no">Mammal</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="s2">&quot;I am a Rat and I walk&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Mice</span> <span class="o">&lt;</span> <span class="no">Mammal</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="s2">&quot;I am a Mice and I walk&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Laboratory</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">make_walk</span><span class="p">(</span><span class="n">pet</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">pet</span><span class="o">.</span><span class="n">walk</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">puts</span> <span class="no">Laboratory</span><span class="o">.</span><span class="n">make_walk</span><span class="p">(</span><span class="no">Rat</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
-</span><span class='line'><span class="nb">puts</span> <span class="no">Laboratory</span><span class="o">.</span><span class="n">make_walk</span><span class="p">(</span><span class="no">Mice</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">$ ruby duck.rb </span>
-</span><span class='line'><span class="err">I am a Rat and I walk</span>
-</span><span class='line'><span class="err">I am a Mice and I walk</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et là, si vous venez d&#8217;un langage orienté objet dit
-<em>classique</em>, vous devriez avoir tiqué, fait la grimace,
-vous être gratté la barbe, etc. Et oui, la classe
-<code>Laboratory</code> n&#8217;a <em>aucune connaissance</em> de la classe
-<code>Mammal</code>. Et pourtant la ligne <code>pet.walk</code> fonctionne
-comme un charme. C&#8217;est parce que nous sommes en Ruby,
-un langage <em>dynamique</em>. On pourrait dire un langage qui
-n&#8217;a que faire des <em>types</em> (bon c&#8217;est exagéré, hein).</p>
-
-<p>Si <code>Laboratory</code> n&#8217;utilise pas <code>Mammal</code>, on pourrait
-peut-être carrément la supprimer ?
-On essaye :</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Rat</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="s2">&quot;I am a Rat and I walk&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Mice</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">walk</span>
-</span><span class='line'>    <span class="s2">&quot;I am a Mice and I walk&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Laboratory</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">make_walk</span><span class="p">(</span><span class="n">pet</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">pet</span><span class="o">.</span><span class="n">walk</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">puts</span> <span class="no">Laboratory</span><span class="o">.</span><span class="n">make_walk</span><span class="p">(</span><span class="no">Rat</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
-</span><span class='line'><span class="nb">puts</span> <span class="no">Laboratory</span><span class="o">.</span><span class="n">make_walk</span><span class="p">(</span><span class="no">Mice</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">$ ruby duck.rb </span>
-</span><span class='line'><span class="err">I am a Rat and I walk</span>
-</span><span class='line'><span class="err">I am a Mice and I walk</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>C&#8217;est ça le duck typing. On ne s&#8217;intéresse pas à ce
-<strong>qu&#8217;est</strong> l&#8217;objet mais à ce <strong>qu&#8217;il sait faire</strong>.</p>
-
-<p>Alors ça ne veut pas dire pour autant que l&#8217;héritage est
-inutile ou inutilisé avec Ruby. Mais simplement qu&#8217;on
-va l&#8217;utiliser moins qu&#8217;ailleurs parce que 1) on peut le
-faire et 2) parce qu&#8217;on va se concentrer sur le
-comportement et pas sur l&#8217;être.</p>
-
-<p>Voilà, c&#8217;était une explication parmi d&#8217;autres du
-duck typing.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/28/ruby-extend-self/'>Ruby &ndash; extend self</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/25/la-methode-super-en-ruby-partie-2/'>La méthode super en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/24/la-methode-super-en-ruby/'>La méthode super en Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
