@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-04-29T21:57:51+02:00</updated>
+  <updated>2014-04-30T21:46:30+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,190 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 11]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/"/>
+    <updated>2014-04-30T21:39:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>On a dit qu'il était temps de <em>splitter</em> les fichiers, aussi bien pour
+les tests que pour le code d'implémentation.</p>
+
+<!-- more -->
+
+
+<p>On commence par créer un dossier spec avec à l'intérieur le fichier
+<code>database_spec.rb</code>:</p>
+
+<p>``` ruby spec/database_spec.rb
+require &lsquo;./sorm&rsquo;</p>
+
+<p>describe SORM::Database do
+  describe &lsquo;connection&rsquo; do</p>
+
+<pre><code>it 'is not connected' do
+  expect(SORM::Database.connected?).to be false
+end
+
+describe 'after connection' do
+  it 'is connected' do
+    SORM::Database.connect('test.db')
+    expect(SORM::Database.connected?).to be true
+  end
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Puis on vérifie que tout va bien:</p>
+
+<pre><code>$ rspec spec/database_spec.rb 
+..
+Finished in 0.00267 seconds
+2 examples, 0 failures
+</code></pre>
+
+<p>Au tour de la classe <code>Base</code> d'avoir son propre fichier de tests. Je vous
+épargne le contenu des méthodes <code>it</code>, il n'a pas changé:</p>
+
+<p>``` ruby spec/base_spec.rb
+require &lsquo;./sorm&rsquo;</p>
+
+<p>describe SORM::Base do
+  class Article &lt; SORM::Base ; end</p>
+
+<p>  describe &lsquo;.execute&rsquo; do</p>
+
+<pre><code>before do
+  SORM::Database.execute("INSERT INTO article VALUES(1, 'Foo');")
+  SORM::Database.execute("INSERT INTO article VALUES(2, 'Bar');")
+end
+
+after do
+  SORM::Database.execute("DELETE FROM article;")
+end
+
+it 'returns the correct number of rows' do
+  #
+end
+
+it 'returns correct values' do
+  #
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  describe &lsquo;object creation&rsquo; do</p>
+
+<pre><code>after { SORM::Database.execute("DELETE FROM article;") }
+
+it 'creates a record' do
+  #
+end
+
+it 'returns an object with correct class' do
+  #
+end
+
+it 'returns an object with correct attributes' do
+  #
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Place à la vérification:</p>
+
+<pre><code>$ rspec spec/base_spec.rb 
+An error occurred in an after hook
+  NoMethodError: undefined method `execute' for false:FalseClass
+[...]
+5 examples, 5 failures
+</code></pre>
+
+<p>Bah oui, ça ne devrait pas nous surprendre. Notre ancien fichier de
+test <em>global</em> était mal conçu. On n'est plus connecté à la base de
+données. Et là se pose la question de savoir si on doit se connecter
+avant chaque test, dans un <code>before :each</code> ou bien une fois pour toute
+au début du fichier, dans un <code>before :all</code> ? La seconde solution me parait
+la plus adaptée, mais on pourra toujours en changer par la suite si besoin
+est:</p>
+
+<p>``` ruby
+describe SORM::Base do
+  class Article &lt; SORM::Base ; end</p>
+
+<p>  before :all do</p>
+
+<pre><code>SORM::Database.connect('test.db')
+</code></pre>
+
+<p>  end</p>
+
+<p>[&hellip;]
+```</p>
+
+<p>Or relance les tests:</p>
+
+<pre><code>$ rspec spec/base_spec.rb 
+.....
+Finished in 0.10185 seconds
+5 examples, 0 failures
+</code></pre>
+
+<p>Ok, cool. Reste encore à lancer les tests <strong>au complet</strong> avant de crier
+victoire:</p>
+
+<pre><code>$ rspec
+.....F.
+
+Failures:
+
+  1) SORM::Database connection is not connected
+     Failure/Error: expect(SORM::Database.connected?).to be false
+
+       expected #&lt;FalseClass:0&gt; =&gt; false
+            got #&lt;TrueClass:2&gt; =&gt; true
+
+       Compared using equal?, which compares object identity,
+       but expected and actual are not the same object. Use
+       `expect(actual).to eq(expected)` if you don't care about
+       object identity in this example.
+     # ./spec/database_spec.rb:6:in `block (3 levels) in &lt;top (required)&gt;'
+
+Finished in 0.03452 seconds
+7 examples, 1 failure
+
+Failed examples:
+
+rspec ./spec/database_spec.rb:5 # SORM::Database connection is not connected
+</code></pre>
+
+<p>Et oui, on ne maitrise plus l'ordre des tests ! <code>base_spec.rb</code>, premier
+dans l'ordre alphabétique a été joué avant, et donc <code>database_spec.rb</code> se
+retrouve avec une base de données connectée.</p>
+
+<p>On ajoutera donc la prochaine fois une méthode <code>disconnect</code>. Et ça me
+fait penser aussi qu'il faudra configurer Rspec pour jouer les tests dans
+un ordre aléatoire.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 10]]></title>
@@ -724,95 +908,6 @@ end
 
 <p>Voilà, ça fait pas mal de code sans explication :( mais j'ai peu de temps
 aujourd'hui. La prochaine on fera… je sais pas… on verra bien ;)</p>
-
-<p><em>To be continued</em></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 6]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/20/ruby-et-si-on-ecrivait-un-orm-partie-6/"/>
-    <updated>2014-04-20T12:53:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/20/ruby-et-si-on-ecrivait-un-orm-partie-6</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Hier je m'étais arrêté sur cette implémentation de <code>SORM.save</code>:</p>
-
-<p>``` ruby
-  def self.save(parameters)</p>
-
-<pre><code>table = self.to_s.downcase
-columns = parameters.keys.join(',')
-values = parameters.values.map do |item|
-  item.class == String ? "'#{item}'" : item
-end.join(',')
-query = "INSERT INTO #{table} (#{columns}) VALUES(#{values});"
-@@db.execute(query)
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>Cette méthode est déja bien trop longue selon mes critères, et si on ne fait
-pas quelque chose tout de suite on va vite se retrouver avec un tas de
-méthodes de classe impossibles à remanier.</p>
-
-<!-- more -->
-
-
-<p>Une première partie du refactoring va consister à extraire une classe que
-je vais nommer <code>Recorder</code>:</p>
-
-<p>``` ruby
-  def self.save(parameters)</p>
-
-<pre><code>recorder = Recorder.new(@@db, self.to_s.downcase, parameters)
-recorder.save
-</code></pre>
-
-<p>  end</p>
-
-<p>  class Recorder</p>
-
-<pre><code>def initialize(connection, table, parameters)
-  @connection = connection
-  @table = table
-  @parameters = parameters
-end
-
-def save
-  @connection.execute(query)
-end
-
-def query
-  "INSERT INTO #@table (#{columns}) VALUES(#{values});"
-end
-
-def columns
-  @parameters.keys.join(',')
-end
-
-def values
-  @parameters.values.map do |item|
-    item.class == String ? "'#{item}'" : item
-  end.join(',')
-end
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>Ça permet d'avoir des méthodes simples, faciles à comprendre.</p>
-
-<p>Une seconde partie du refactoring consistera à <em>namespacer</em> correctement
-les différentes parties de SORM. Pour ça il faudra aussi modifier les tests.</p>
 
 <p><em>To be continued</em></p>
 
