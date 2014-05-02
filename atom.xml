@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-01T17:01:41+02:00</updated>
+  <updated>2014-05-02T21:20:59+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,147 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 12]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/"/>
+    <updated>2014-05-02T20:59:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Douzième partie déjà de cette série sur la construction d&#8217;un ORM en Ruby…</p>
+
+<!-- more -->
+
+
+<p>On doit ajouter une méthode <code>disconnect</code> à notre classe <code>Database</code>, voici
+d&#8217;abord le test:</p>
+
+<figure class='code'><figcaption><span>spec/database_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./sorm&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">describe</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span> <span class="k">do</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">it</span> <span class="s1">&#39;is not connected by default&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">expect</span><span class="p">(</span><span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;after connection&#39;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">before</span> <span class="p">{</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;test.db&#39;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">after</span>  <span class="p">{</span> <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">disconnect</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;is connected&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">true</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;is disconnected after disconnection&#39;</span> <span class="k">do</span>
+</span><span class='line'>      <span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">disconnect</span>
+</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="ss">SORM</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">connected?</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">be</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et maintenant l&#8217;implémentation:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
+</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">disconnect</span>
+</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+</span><span class='line'>      <span class="vc">@@connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Rien à dire d&#8217;intéressant là-dessus. Je vais aussi configurer Rspec pour
+qu&#8217;il joue les tests dans un ordre alétoire, et tant que j&#8217;y suis j&#8217;ajoute
+un peu de couleur à la sortie:</p>
+
+<figure class='code'><figcaption><span>.rspec</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">--color</span>
+</span><span class='line'><span class="err">--order=random</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici l&#8217;instant de vérité:</p>
+
+<pre><code>$ rspec
+........
+Finished in 0.03996 seconds
+8 examples, 0 failures
+Randomized with seed 55135
+</code></pre>
+
+<p>Parfait, on a splitté les tests, on les a mis dans un dossier <code>spec/</code>,
+on les a amélioré. C&#8217;est tout bon. Maintenant on devrait pouvoir faire
+facilement un truc similaire avec le fichier <code>sorm.rb</code>.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[La balise hr dans votre console]]></title>
@@ -292,7 +433,7 @@ un ordre aléatoire.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -858,7 +999,7 @@ qu&#8217;il est temps aussi de <em>splitter</em> les fichiers tests et sources�
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1055,7 +1196,7 @@ passent plus, à cause de ce code:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 8</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1196,7 +1337,7 @@ demandez ce que c&#8217;est ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1500,7 +1641,7 @@ aujourd&#8217;hui. La prochaine on fera… je sais pas… on verra bien ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2038,7 +2179,7 @@ les différentes parties de SORM. Pour ça il faudra aussi modifier les tests.</
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2237,7 +2378,7 @@ refactoring dans un prochain article.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2425,7 +2566,7 @@ Bref, j&#8217;ai encore du boulot pour que SORM fonctionne ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2608,7 +2749,7 @@ je voudrais obtenir. Donc voici le code qui fait passer notre test:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2821,7 +2962,7 @@ classe <code>SORM</code>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2900,185 +3041,7 @@ loin. On va donc utiliser la gem <a href="https://github.com/sparklemotion/sqlit
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 9</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[La méta programmation en Ruby - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3/"/>
-    <updated>2014-04-12T19:30:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/12/la-meta-programmation-en-ruby-partie-3</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Aujourd&#8217;hui une explication de <code>method_missing</code>, utilisée hier pour
-écrire le constructeur de requête.</p>
-
-<!-- more -->
-
-
-<p>Tout d&#8217;abord un peu de pratique:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span>
-</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foobarbaz</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>$ ruby meta3.rb 
-Inside method_missing ---
-foo
-Inside method_missing ---
-foobarbaz
-</code></pre>
-
-<p>Et maintenant la théorie. Lorsque vous passez un message a un objet, comme
-<code>Foo.new.foo</code> et que ce message (cette méthode) n&#8217;existe pas, Ruby regarde
-si l&#8217;objet possède la méthode <code>method_missing</code> et dans ce cas, l&#8217;appelle.
-L&#8217;argument passé à <code>method_missing</code> est le nom de la <em>méthode manquante</em>.</p>
-
-<p>Maintenant on ajoute un argument à <code>method_missing</code>, c&#8217;est l&#8217;argument de
-la <em>méthode manquante</em>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">,</span> <span class="n">arg</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">arg</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>$ ruby meta3.rb 
-Inside method_missing ---
-foo
-bar
-</code></pre>
-
-<p>Alors que ce passe-t-il si on passe plusieurs arguments ? Essayons:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="s1">&#39;baz&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>meta3.rb:13:in `method_missing': wrong number of arguments (3 for 2) 
-</code></pre>
-
-<p>Et oui, ça ne fonctionne pas. Comme on ne peut pas connaître à l&#8217;avance
-le nombre d&#8217;arguments de la <em>méthode manquante</em>, il est bon de tous les
-récupérer dans un tableau:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">,</span> <span class="o">*</span><span class="n">arg</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">arg</span><span class="o">.</span><span class="n">inspect</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span>
-</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="s1">&#39;baz&#39;</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et dans ce cas là, il n&#8217;y a plus de problèmes, on peut gérer n&#8217;importe
-quel nombre d&#8217;arguments:</p>
-
-<pre><code>$ ruby meta3.rb 
-Inside method_missing ---
-foo
-[]
-Inside method_missing ---
-foo
-["bar"]
-Inside method_missing ---
-foo
-["bar", "baz"]
-</code></pre>
-
-<p>Pour finir, il faut noter qu&#8217;on peut comme toujours passer un bloc:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Foo</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">method_missing</span><span class="p">(</span><span class="n">met</span><span class="p">,</span> <span class="o">*</span><span class="n">arg</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;Inside method_missing ---&#39;</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">met</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">arg</span><span class="o">.</span><span class="n">inspect</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="n">block</span><span class="o">.</span><span class="n">call</span> <span class="k">if</span> <span class="nb">block_given?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">Foo</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>  <span class="s1">&#39;return from a block&#39;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>$ ruby meta3.rb 
-Inside method_missing ---
-foo
-["bar"]
-return from a block
-</code></pre>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/11/la-meta-programmation-en-ruby-partie-2/'>La méta programmation en Ruby &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/10/introduction-a-la-meta-programmation-en-ruby/'>Introduction à la meta-programmation en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
