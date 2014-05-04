@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : sqlite | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/sqlite/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-03T22:20:59+02:00</updated>
+  <updated>2014-05-04T21:27:56+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,143 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 13]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/"/>
+    <updated>2014-05-04T21:09:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Aujourd'hui on termine de structurer quelque peu le projet. Voici ce que je
+veux obtenir:</p>
+
+<pre><code>$ tree -a
+.
+├── lib/
+│   ├── base.rb
+│   ├── database.rb
+│   └── recorder.rb
+├── .rspec
+├── sorm.rb
+├── spec/
+│   ├── base_spec.rb
+│   └── database_spec.rb
+└── test.db
+</code></pre>
+
+<!-- more -->
+
+
+<p>Le fichier <code>sorm.rb</code> à la racine du projet va contenir nos require:</p>
+
+<p><code>ruby sorm.rb
+require 'sqlite3'
+require './lib/database'
+require './lib/base'
+require './lib/recorder'
+</code></p>
+
+<p>Quant aux 3 fichiers sous <code>lib/</code> ils contiennent chacun une classe
+de notre ancien fichier <code>sorm.rb</code>, qui était un fourre-tout.
+Voici ces fichiers:</p>
+
+<p>``` ruby lib/base.rb
+module SORM
+  class Base</p>
+
+<pre><code>def self.save(parameters)
+  Recorder.new(self.to_s.downcase, parameters).save
+  self.new(parameters)
+end
+
+def initialize(attributes)
+  attributes.each do |name, value|
+    instance_variable_set("@#{name}", value)
+    singleton_class.class_eval{attr_reader name.to_sym}
+  end
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>``` ruby lib/database.rb
+module SORM
+  class Database</p>
+
+<pre><code>@@connection = false
+
+def self.connect(database_filename)
+  @@connection = SQLite3::Database.open(database_filename)
+end
+
+def self.disconnect
+  @@connection = false
+end
+
+def self.connected?
+  !!@@connection
+end
+
+def self.execute(sql)
+  @@connection.execute(sql)
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>``` ruby lib/recorder.rb
+module SORM
+  class Recorder</p>
+
+<pre><code>def initialize(table, parameters)
+  @table = table
+  @parameters = parameters
+end
+
+def save
+  Database.execute(query)
+end
+
+def query
+  "INSERT INTO #@table (#{columns}) VALUES(#{values});"
+end
+
+def columns
+  @parameters.keys.join(',')
+end
+
+def values
+  @parameters.values.map do |item|
+    item.class == String ? "'#{item}'" : item
+  end.join(',')
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>On va enfin pouvoir ajouter de nouvelles fonctionnalités à notre ORM !
+C'est pas trop tôt, je commençais à m'ennuyer ;)</p>
+
+<p>Je tâcherais aussi de mettre le projet sur Github prochainement pour
+qu'il soit plus facile à suivre.</p>
+
+<p><em>To be continued</em></p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 12]]></title>
@@ -715,114 +852,6 @@ end
 <p>```</p>
 
 <p>On s'en occupera la prochaine fois.</p>
-
-<p><em>To be continued</em></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 8]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8/"/>
-    <updated>2014-04-25T21:17:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/25/ruby-et-si-on-ecrivait-un-orm-partie-8</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Je continue le refactoring de SORM. Voici la classe <code>Database</code> dans son
-état actuel:</p>
-
-<p>``` ruby sorm.rb
-require &lsquo;sqlite3&rsquo;</p>
-
-<p>module SORM</p>
-
-<p>  class Database</p>
-
-<pre><code>@@db = false
-
-def self.connect(database_filename)
-  @@db = SQLite3::Database.open(database_filename)
-end
-
-def self.connected?
-  @@db ? true : false
-end
-
-def self.connection
-  @@db
-end
-</code></pre>
-
-<p>  end</p>
-
-<h1>&hellip;</h1>
-
-<p>end
-```</p>
-
-<!-- more -->
-
-
-<p>La première chose que j'ai envie de faire, c'est de supprimer l'abbréviation
-<code>db</code>. De plus, comme il s'agit plutôt d'établir une <em>connexion</em>, je change
-pour <code>connection</code>:</p>
-
-<p>``` ruby
-  class Database</p>
-
-<pre><code>@@connection = false
-
-def self.connect(database_filename)
-  @@connection = SQLite3::Database.open(database_filename)
-end
-
-def self.connected?
-  @@connection ? true : false
-end
-
-def self.connection
-  @@connection
-end
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>À ce sujet, j'applique <a href="http://lkdjiin.github.io/blog/2013/08/21/code-propre-non-aux-abreviations/">mes propres principes</a> ;)</p>
-
-<p>Ensuite je vais modifier l'implémentation de la méthode <code>.connected?</code>. Elle
-va passer de:</p>
-
-<p>``` ruby</p>
-
-<pre><code>def self.connected?
-  @@db ? true : false
-end
-</code></pre>
-
-<p>```</p>
-
-<p>À quelque chose de plus expressif:</p>
-
-<p>``` ruby</p>
-
-<pre><code>def self.connected?
-  !!@@connection
-end
-</code></pre>
-
-<p>```</p>
-
-<p>J'ai écris récemment un article sur <a href="http://lkdjiin.github.io/blog/2014/04/23/le-double-bang-en-ruby/">le double bang</a> si vous vous
-demandez ce que c'est ;)</p>
-
-<p>La prochaine fois, on <em>refactorera</em> un peu plus la classe <code>Base</code>.</p>
 
 <p><em>To be continued</em></p>
 
