@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-06T21:43:07+02:00</updated>
+  <updated>2014-05-07T19:27:24+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,215 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Programmation concurrente pour Ruby avec eldritch - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/"/>
+    <updated>2014-05-07T19:18:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Suite du test de la gem <a href="https://github.com/beraboris/eldritch">eldritch</a>
+qui facilite la programmation concurrente en Ruby.</p>
+
+<!-- more -->
+
+
+<p>Prenons le programme de référence suivant:</p>
+
+<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">long_task</span>
+</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La méthode <code>long_task</code> va <em>dormir</em> pendant une seconde puis renvoyer la
+date courante. Si on l&#8217;appelle 10 fois de suite, voici la sortie:</p>
+
+<pre><code>$ time ruby test.rb
+0 : 2014-05-07 18:15:52 +0200
+1 : 2014-05-07 18:15:53 +0200
+2 : 2014-05-07 18:15:54 +0200
+3 : 2014-05-07 18:15:55 +0200
+4 : 2014-05-07 18:15:56 +0200
+5 : 2014-05-07 18:15:57 +0200
+6 : 2014-05-07 18:15:58 +0200
+7 : 2014-05-07 18:15:59 +0200
+8 : 2014-05-07 18:16:00 +0200
+9 : 2014-05-07 18:16:01 +0200
+
+real    0m10.809s
+</code></pre>
+
+<p>Un appel par seconde, normal.</p>
+
+<p>Maintenant on va se servir de <strong>eldritch</strong> pour que les 10 appels à
+<code>long_task</code> soient concurrents:</p>
+
+<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">long_task</span>
+</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">together</span> <span class="k">do</span>
+</span><span class='line'>  <span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">async</span> <span class="k">do</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le bloc <code>together</code> permet au programme d&#8217;attendre que chacune des <em>tâches</em>
+soient terminées avant d&#8217;aller plus loin. Voici ce que ça donne:</p>
+
+<pre><code>$ time ruby test.rb
+0 : 2014-05-07 18:16:52 +02002 : 2014-05-07 18:16:52 +0200
+
+3 : 2014-05-07 18:16:52 +0200
+4 : 2014-05-07 18:16:52 +0200
+5 : 2014-05-07 18:16:52 +0200
+6 : 2014-05-07 18:16:52 +0200
+7 : 2014-05-07 18:16:52 +0200
+8 : 2014-05-07 18:16:52 +0200
+9 : 2014-05-07 18:16:52 +0200
+1 : 2014-05-07 18:16:52 +0200
+
+real    0m1.890s
+</code></pre>
+
+<p>Que nous apprend cette sortie ? Chacune des dix tâches a été démarrée à la
+même seconde (pas en même temps exactement bien sûr). On voit bien aussi
+que l&#8217;ordre de terminaison des 10 tâches est aléatoires, ce qui est normal
+en programmation concurrente. Le programme s&#8217;est terminé 10 fois plus vite,
+c&#8217;est normal puisque <code>long_task</code> passe son temps à ne rien faire ;)</p>
+
+<p>À quoi sert exactement ce bloc <code>together</code> ? Voyons ce qu&#8217;il se passe si on le
+retire:</p>
+
+<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">long_task</span>
+</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">async</span> <span class="k">do</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ time ruby test.rb
+
+real    0m0.846s
+</code></pre>
+
+<p>Oups ! Le programme s&#8217;est terminé <em>avant</em> la fin des tâches, elles sont
+perdues !</p>
+
+<p>Une autre façon de faire est de créer <em>explicitement</em> une tâche, avec
+<code>task = async do ...</code> et d&#8217;utiliser <code>task.value</code> qui attend que la tâche
+soit complètée:</p>
+
+<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">long_task</span> <span class="o">=</span> <span class="n">async</span> <span class="k">do</span>
+</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ time ruby eldritch2.rb
+0 : 2014-05-07 18:38:20 +0200
+1 : 2014-05-07 18:38:20 +0200
+2 : 2014-05-07 18:38:20 +0200
+3 : 2014-05-07 18:38:20 +0200
+4 : 2014-05-07 18:38:20 +0200
+5 : 2014-05-07 18:38:20 +0200
+6 : 2014-05-07 18:38:20 +0200
+7 : 2014-05-07 18:38:20 +0200
+8 : 2014-05-07 18:38:20 +0200
+9 : 2014-05-07 18:38:20 +0200
+
+real    0m1.861s
+</code></pre>
+
+<p>Tout les tests que j&#8217;ai fait avec cette méthode montrent que l&#8217;ordre des
+tâches est respecté, de 0 à 9. Est-ce que c&#8217;est vraiment le cas ou bien
+est-ce une coincidence ? Je n&#8217;ai pas encore de réponses…</p>
+
+<p>Quoiqu&#8217;il en soit, je suis pressé d&#8217;essayer <strong>eldritch</strong> avec les algorithmes génétiques, ce
+qui par la même occasion me permettra d&#8217;en reparler (des algos) dans ce blog.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/'>Le LOAD_PATH dans Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Programmation concurrente pour Ruby avec eldritch]]></title>
@@ -135,7 +344,7 @@ tester le reste demain.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/'>Le LOAD_PATH dans Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/03/trois-centieme-article-aujourdhui-slash/'>Trois-centième article aujourd&#8217;hui !</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/'>Programmation concurrente pour Ruby avec eldritch &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/'>Le LOAD_PATH dans Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -239,7 +448,7 @@ fait très bien cela tout seul.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/03/trois-centieme-article-aujourdhui-slash/'>Trois-centième article aujourd&#8217;hui !</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/'>Programmation concurrente pour Ruby avec eldritch &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -509,7 +718,7 @@ inutiles, mais surtout, ça permet à des service externes comme
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/'>Le LOAD_PATH dans Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/'>Programmation concurrente pour Ruby avec eldritch &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/'>Le LOAD_PATH dans Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3067,47 +3276,6 @@ Bref, j&#8217;ai encore du boulot pour que SORM fonctionne ;)</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Mapper la souris dans Vim : pour quel usage ?]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/17/mapper-la-souris-dans-vim-pour-quel-usage/"/>
-    <updated>2014-04-17T21:10:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/17/mapper-la-souris-dans-vim-pour-quel-usage</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Suite à <a href="https://twitter.com/VimLinks/status/456746951283720192">un tweet de @VimLinks</a>
-j&#8217;ai (re)découvert aujourd&#8217;hui qu&#8217;on pouvait très bien mapper la souris dans
-Vim.</p>
-
-<!-- more -->
-
-
-<p>Par exemple avec les mappings suivant:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='vim'><span class='line'>nmap <span class="p">&lt;</span>LeftMouse<span class="p">&gt;</span> gg
-</span><span class='line'>nmap <span class="p">&lt;</span>RightMouse<span class="p">&gt;</span> G
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le bouton gauche de la souris nous place au tout début du buffer, alors que le
-bouton droit nous place à la fin.</p>
-
-<p>J&#8217;y ai pensé un peu dans la journée mais je n&#8217;ai pas trouvé
-un truc intéressant à faire faire à ma souris :(</p>
-
-<p>Est-ce que vous auriez une idée ?</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4/'>Vim &ndash; un plugin pour markdown &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/08/vim-debarassez-vous-des-buffers-inutilises/'>Vim &ndash; Débarassez vous des buffers inutilisés</a></li></ul></section></p>
 ]]></content>
   </entry>
   

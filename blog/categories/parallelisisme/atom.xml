@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : parallèlisisme | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/parallelisisme/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-06T21:43:07+02:00</updated>
+  <updated>2014-05-07T19:27:24+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,176 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Programmation concurrente pour Ruby avec eldritch - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/"/>
+    <updated>2014-05-07T19:18:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Suite du test de la gem <a href="https://github.com/beraboris/eldritch">eldritch</a>
+qui facilite la programmation concurrente en Ruby.</p>
+
+<!-- more -->
+
+
+<p>Prenons le programme de référence suivant:</p>
+
+<p>``` ruby test.rb
+def long_task
+  sleep(1)
+  Time.now
+end</p>
+
+<p>10.times do |i|
+  puts &ldquo;#{i} : #{long_task}&rdquo;
+end
+```</p>
+
+<p>La méthode <code>long_task</code> va <em>dormir</em> pendant une seconde puis renvoyer la
+date courante. Si on l'appelle 10 fois de suite, voici la sortie:</p>
+
+<pre><code>$ time ruby test.rb
+0 : 2014-05-07 18:15:52 +0200
+1 : 2014-05-07 18:15:53 +0200
+2 : 2014-05-07 18:15:54 +0200
+3 : 2014-05-07 18:15:55 +0200
+4 : 2014-05-07 18:15:56 +0200
+5 : 2014-05-07 18:15:57 +0200
+6 : 2014-05-07 18:15:58 +0200
+7 : 2014-05-07 18:15:59 +0200
+8 : 2014-05-07 18:16:00 +0200
+9 : 2014-05-07 18:16:01 +0200
+
+real    0m10.809s
+</code></pre>
+
+<p>Un appel par seconde, normal.</p>
+
+<p>Maintenant on va se servir de <strong>eldritch</strong> pour que les 10 appels à
+<code>long_task</code> soient concurrents:</p>
+
+<p>``` ruby test.rb
+require &lsquo;eldritch&rsquo;</p>
+
+<p>def long_task
+  sleep(1)
+  Time.now
+end</p>
+
+<p>together do
+  10.times do |i|</p>
+
+<pre><code>async do
+  puts "#{i} : #{long_task}"
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Le bloc <code>together</code> permet au programme d'attendre que chacune des <em>tâches</em>
+soient terminées avant d'aller plus loin. Voici ce que ça donne:</p>
+
+<pre><code>$ time ruby test.rb
+0 : 2014-05-07 18:16:52 +02002 : 2014-05-07 18:16:52 +0200
+
+3 : 2014-05-07 18:16:52 +0200
+4 : 2014-05-07 18:16:52 +0200
+5 : 2014-05-07 18:16:52 +0200
+6 : 2014-05-07 18:16:52 +0200
+7 : 2014-05-07 18:16:52 +0200
+8 : 2014-05-07 18:16:52 +0200
+9 : 2014-05-07 18:16:52 +0200
+1 : 2014-05-07 18:16:52 +0200
+
+real    0m1.890s
+</code></pre>
+
+<p>Que nous apprend cette sortie ? Chacune des dix tâches a été démarrée à la
+même seconde (pas en même temps exactement bien sûr). On voit bien aussi
+que l'ordre de terminaison des 10 tâches est aléatoires, ce qui est normal
+en programmation concurrente. Le programme s'est terminé 10 fois plus vite,
+c'est normal puisque <code>long_task</code> passe son temps à ne rien faire ;)</p>
+
+<p>À quoi sert exactement ce bloc <code>together</code> ? Voyons ce qu'il se passe si on le
+retire:</p>
+
+<p>``` ruby test.rb
+require &lsquo;eldritch&rsquo;</p>
+
+<p>def long_task
+  sleep(1)
+  Time.now
+end</p>
+
+<p>10.times do |i|
+  async do</p>
+
+<pre><code>puts "#{i} : #{long_task}"
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<pre><code>$ time ruby test.rb
+
+real    0m0.846s
+</code></pre>
+
+<p>Oups ! Le programme s'est terminé <em>avant</em> la fin des tâches, elles sont
+perdues !</p>
+
+<p>Une autre façon de faire est de créer <em>explicitement</em> une tâche, avec
+<code>task = async do ...</code> et d'utiliser <code>task.value</code> qui attend que la tâche
+soit complètée:</p>
+
+<p>``` ruby test.rb
+require &lsquo;eldritch&rsquo;</p>
+
+<p>long_task = async do
+  sleep(1)
+  Time.now
+end</p>
+
+<p>10.times do |i|
+  puts &ldquo;#{i} : #{long_task.value}&rdquo;
+end
+```</p>
+
+<pre><code>$ time ruby eldritch2.rb
+0 : 2014-05-07 18:38:20 +0200
+1 : 2014-05-07 18:38:20 +0200
+2 : 2014-05-07 18:38:20 +0200
+3 : 2014-05-07 18:38:20 +0200
+4 : 2014-05-07 18:38:20 +0200
+5 : 2014-05-07 18:38:20 +0200
+6 : 2014-05-07 18:38:20 +0200
+7 : 2014-05-07 18:38:20 +0200
+8 : 2014-05-07 18:38:20 +0200
+9 : 2014-05-07 18:38:20 +0200
+
+real    0m1.861s
+</code></pre>
+
+<p>Tout les tests que j'ai fait avec cette méthode montrent que l'ordre des
+tâches est respecté, de 0 à 9. Est-ce que c'est vraiment le cas ou bien
+est-ce une coincidence ? Je n'ai pas encore de réponses…</p>
+
+<p>Quoiqu'il en soit, je suis pressé d'essayer <strong>eldritch</strong> avec les algorithmes génétiques, ce
+qui par la même occasion me permettra d'en reparler (des algos) dans ce blog.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Programmation concurrente pour Ruby avec eldritch]]></title>
