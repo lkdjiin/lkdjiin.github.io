@@ -1,0 +1,400 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Des benchmarks en général et de Ruby en particulier - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile En ce moment je fais quelques recherches sur la lenteur de Ruby.
+J&#8217;aimerais faire un article sur pourquoi Ruby est lent et &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Des benchmarks en général et de Ruby en particulier</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-08T18:24:00+02:00" pubdate data-updated="true">8 mai 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>En ce moment je fais quelques recherches sur la <em>lenteur</em> de Ruby.
+J&#8217;aimerais faire un article sur pourquoi Ruby est lent et pourquoi ça
+n&#8217;est pas un problême la plupart du temps.</p>
+
+<p>Pendant ces recherches je suis tombé sur cet article:
+<a href="http://blog.clifreeder.com/blog/2013/04/21/ruby-is-too-slow-for-programming-competitions/">Ruby Is Too Slow for Programming Competitions</a>.
+Dans cet article, l&#8217;auteur utilise ce <a href="https://gist.github.com/clifff/5401367">script</a> de benchmark pour comparer deux manières différentes pour savoir
+si un nombre est un <a href="http://fr.wikipedia.org/wiki/Nombre_palindrome">palindrome</a>.
+La première manière utilise une méthode mathématique et la seconde manière
+transforme le nombre en chaîne de caractères.</p>
+
+<!-- more -->
+
+
+<p>Alors je n&#8217;ai pas regardé le code en détail, j&#8217;ai juste voulu faire tourner
+le benchmark sur quelques version de Ruby. On commence avec la version
+1.9.3:</p>
+
+<p><strong>ruby MRI 1.9.3</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method  18.800000   0.000000  18.800000 ( 18.814018)
+String palindrome method    9.860000   0.010000   9.870000 (  9.885368)
+--------------------------------------------------- total: 28.670000sec
+
+                                user     system      total        real
+Integer palindrome method  18.150000   0.000000  18.150000 ( 18.168135)
+String palindrome method    9.830000   0.000000   9.830000 (  9.844366)
+</code></pre>
+
+<p>On voit que la méthode qui utilise les nombres est deux fois plus lente que
+la méthode qui utilise les chaînes de caractères.</p>
+
+<p>Passons à la version 2.0 de Ruby:</p>
+
+<p><strong>ruby MRI 2.0</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method  19.250000   0.010000  19.260000 ( 19.273625)
+String palindrome method    8.910000   0.000000   8.910000 (  8.922845)
+--------------------------------------------------- total: 28.170000sec
+
+                                user     system      total        real
+Integer palindrome method  19.560000   0.000000  19.560000 ( 19.555138)
+String palindrome method    8.760000   0.100000   8.860000 (  8.866579)
+</code></pre>
+
+<p>Je ne m&#8217;attendais pas du tout à ça ! La seconde méthode est bien légèrement
+plus rapide mais la première méthode est au contraire légèrement plus lente
+qu&#8217;avec Ruby 1.9.3. Utilisant Ruby au quotidien, j&#8217;avais noté une réelle
+amélioration de la vitesse lors du passage à 2.0.</p>
+
+<p>Maintenant voyons ce que donne la version 2.1:</p>
+
+<p><strong>ruby MRI 2.1</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method  13.930000   0.010000  13.940000 ( 13.938652)
+String palindrome method    8.160000   0.000000   8.160000 (  8.165836)
+--------------------------------------------------- total: 22.100000sec
+
+                                user     system      total        real
+Integer palindrome method  14.000000   0.000000  14.000000 ( 13.992662)
+String palindrome method    8.320000   0.000000   8.320000 (  8.323284)
+</code></pre>
+
+<p>C&#8217;est plus conforme à mes attentes, on voit une nette amélioration avec la
+première méthode.</p>
+
+<p>Comme j&#8217;ai un rubinius sous la main et que j&#8217;ai déjà pu constater que cette
+implémentation de Ruby pouvait être rapide, j&#8217;essaye:</p>
+
+<p><strong>rubinius 2.0</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method   3.768236   0.000000   3.768236 (  3.781376)
+String palindrome method   10.240640   0.044002  10.284642 ( 10.293314)
+--------------------------------------------------- total: 14.052878sec
+
+                                user     system      total        real
+Integer palindrome method   2.140134   0.000000   2.140134 (  2.141363)
+String palindrome method    8.472530   0.048003   8.520533 (  8.533402)
+</code></pre>
+
+<p>Waow ! Si la seconde méthode (avec les chaînes de caractères) est
+sensiblement équivalente à Ruby 2.1, la première méthode (avec les
+nombres) est pratiquement <strong>7 fois plus rapide</strong>.</p>
+
+<p>De là à dire que les benchmarks ne servent à rien, il n&#8217;y a qu&#8217;un pas que
+je ne veux pas franchir. Je veux seulement dire qu&#8217;il faut faire très
+attention avec les benchmarks et ne pas tirer de conclusions hatives.
+L&#8217;auteur de ce benchmark concluait à tort que la seconde méthode est plus
+rapide que la première. Alors que c&#8217;est plus une question de contexte,
+d&#8217;algorithme utilisé, d&#8217;implémentation du langage, et peut-être encore
+d&#8217;autres choses qui m&#8217;échappent.</p>
+
+<p>La seule conclusion que je peux tirer de ça est: d&#8217;une manière générale,
+pensez à tester votre application avec Rubinius, vous pourriez être
+agréablement surpris ;)</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/04/28/mettre-a-jour-des-gems-ayants-des-references-circulaires-avec-bundle/'>Mettre à jour des gems ayants des références circulaires avec Bundle</a></li><li><a href='/blog/2014/04/23/le-double-bang-en-ruby/'>Le double bang en Ruby</a></li><li><a href='/blog/2014/04/22/demandez-conseil-regulierement/'>Demandez conseil régulièrement</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-08T18:24:00+02:00" pubdate data-updated="true">8 mai 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/benchmark/'>benchmark</a>, <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/" title="Previous Post: Programmation concurrente pour Ruby avec eldritch - partie 2">&laquo; Programmation concurrente pour Ruby avec eldritch - partie 2</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/">Programmation concurrente pour Ruby avec eldritch - partie 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/">Programmation concurrente pour Ruby avec eldritch</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/05/le-load-path-dans-ruby/">Le LOAD_PATH dans Ruby</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/">Ruby - Et si on écrivait un ORM ? - partie 13</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/03/trois-centieme-article-aujourdhui-slash/">Trois-centième article aujourd'hui !</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/">Ruby - Et si on écrivait un ORM ? - partie 12</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

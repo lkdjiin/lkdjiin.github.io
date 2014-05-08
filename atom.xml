@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-07T19:27:24+02:00</updated>
+  <updated>2014-05-08T18:30:26+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,123 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Des benchmarks en général et de Ruby en particulier]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/"/>
+    <updated>2014-05-08T18:24:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>En ce moment je fais quelques recherches sur la <em>lenteur</em> de Ruby.
+J&#8217;aimerais faire un article sur pourquoi Ruby est lent et pourquoi ça
+n&#8217;est pas un problême la plupart du temps.</p>
+
+<p>Pendant ces recherches je suis tombé sur cet article:
+<a href="http://blog.clifreeder.com/blog/2013/04/21/ruby-is-too-slow-for-programming-competitions/">Ruby Is Too Slow for Programming Competitions</a>.
+Dans cet article, l&#8217;auteur utilise ce <a href="https://gist.github.com/clifff/5401367">script</a> de benchmark pour comparer deux manières différentes pour savoir
+si un nombre est un <a href="http://fr.wikipedia.org/wiki/Nombre_palindrome">palindrome</a>.
+La première manière utilise une méthode mathématique et la seconde manière
+transforme le nombre en chaîne de caractères.</p>
+
+<!-- more -->
+
+
+<p>Alors je n&#8217;ai pas regardé le code en détail, j&#8217;ai juste voulu faire tourner
+le benchmark sur quelques version de Ruby. On commence avec la version
+1.9.3:</p>
+
+<p><strong>ruby MRI 1.9.3</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method  18.800000   0.000000  18.800000 ( 18.814018)
+String palindrome method    9.860000   0.010000   9.870000 (  9.885368)
+--------------------------------------------------- total: 28.670000sec
+
+                                user     system      total        real
+Integer palindrome method  18.150000   0.000000  18.150000 ( 18.168135)
+String palindrome method    9.830000   0.000000   9.830000 (  9.844366)
+</code></pre>
+
+<p>On voit que la méthode qui utilise les nombres est deux fois plus lente que
+la méthode qui utilise les chaînes de caractères.</p>
+
+<p>Passons à la version 2.0 de Ruby:</p>
+
+<p><strong>ruby MRI 2.0</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method  19.250000   0.010000  19.260000 ( 19.273625)
+String palindrome method    8.910000   0.000000   8.910000 (  8.922845)
+--------------------------------------------------- total: 28.170000sec
+
+                                user     system      total        real
+Integer palindrome method  19.560000   0.000000  19.560000 ( 19.555138)
+String palindrome method    8.760000   0.100000   8.860000 (  8.866579)
+</code></pre>
+
+<p>Je ne m&#8217;attendais pas du tout à ça ! La seconde méthode est bien légèrement
+plus rapide mais la première méthode est au contraire légèrement plus lente
+qu&#8217;avec Ruby 1.9.3. Utilisant Ruby au quotidien, j&#8217;avais noté une réelle
+amélioration de la vitesse lors du passage à 2.0.</p>
+
+<p>Maintenant voyons ce que donne la version 2.1:</p>
+
+<p><strong>ruby MRI 2.1</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method  13.930000   0.010000  13.940000 ( 13.938652)
+String palindrome method    8.160000   0.000000   8.160000 (  8.165836)
+--------------------------------------------------- total: 22.100000sec
+
+                                user     system      total        real
+Integer palindrome method  14.000000   0.000000  14.000000 ( 13.992662)
+String palindrome method    8.320000   0.000000   8.320000 (  8.323284)
+</code></pre>
+
+<p>C&#8217;est plus conforme à mes attentes, on voit une nette amélioration avec la
+première méthode.</p>
+
+<p>Comme j&#8217;ai un rubinius sous la main et que j&#8217;ai déjà pu constater que cette
+implémentation de Ruby pouvait être rapide, j&#8217;essaye:</p>
+
+<p><strong>rubinius 2.0</strong></p>
+
+<pre><code>Rehearsal -------------------------------------------------------------
+Integer palindrome method   3.768236   0.000000   3.768236 (  3.781376)
+String palindrome method   10.240640   0.044002  10.284642 ( 10.293314)
+--------------------------------------------------- total: 14.052878sec
+
+                                user     system      total        real
+Integer palindrome method   2.140134   0.000000   2.140134 (  2.141363)
+String palindrome method    8.472530   0.048003   8.520533 (  8.533402)
+</code></pre>
+
+<p>Waow ! Si la seconde méthode (avec les chaînes de caractères) est
+sensiblement équivalente à Ruby 2.1, la première méthode (avec les
+nombres) est pratiquement <strong>7 fois plus rapide</strong>.</p>
+
+<p>De là à dire que les benchmarks ne servent à rien, il n&#8217;y a qu&#8217;un pas que
+je ne veux pas franchir. Je veux seulement dire qu&#8217;il faut faire très
+attention avec les benchmarks et ne pas tirer de conclusions hatives.
+L&#8217;auteur de ce benchmark concluait à tort que la seconde méthode est plus
+rapide que la première. Alors que c&#8217;est plus une question de contexte,
+d&#8217;algorithme utilisé, d&#8217;implémentation du langage, et peut-être encore
+d&#8217;autres choses qui m&#8217;échappent.</p>
+
+<p>La seule conclusion que je peux tirer de ça est: d&#8217;une manière générale,
+pensez à tester votre application avec Rubinius, vous pourriez être
+agréablement surpris ;)</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/28/mettre-a-jour-des-gems-ayants-des-references-circulaires-avec-bundle/'>Mettre à jour des gems ayants des références circulaires avec Bundle</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/23/le-double-bang-en-ruby/'>Le double bang en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/22/demandez-conseil-regulierement/'>Demandez conseil régulièrement</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Programmation concurrente pour Ruby avec eldritch - partie 2]]></title>
@@ -1290,7 +1407,7 @@ raté cette partie de Bundle.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/14/remplacer-sed-et-awk-par-ruby-11-la-gem-english/'>Remplacer Sed et Awk par Ruby 11: La gem English</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/07/prise-en-main-de-la-gem-chunky-png/'>Prise en main de la gem chunky_png</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/23/le-double-bang-en-ruby/'>Le double bang en Ruby</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2013/12/14/remplacer-sed-et-awk-par-ruby-11-la-gem-english/'>Remplacer Sed et Awk par Ruby 11: La gem English</a></li><li><a href='http://lkdjiin.github.io/blog/2013/11/07/prise-en-main-de-la-gem-chunky-png/'>Prise en main de la gem chunky_png</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/'>Des benchmarks en général et de Ruby en particulier</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2498,7 +2615,7 @@ surtout exprime bien le <em>cast</em> en booléen:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/28/mettre-a-jour-des-gems-ayants-des-references-circulaires-avec-bundle/'>Mettre à jour des gems ayants des références circulaires avec Bundle</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/22/demandez-conseil-regulierement/'>Demandez conseil régulièrement</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/15/plugin-vim-refactor-pour-ruby/'>Plugin vim-refactor pour Ruby</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/'>Des benchmarks en général et de Ruby en particulier</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/28/mettre-a-jour-des-gems-ayants-des-references-circulaires-avec-bundle/'>Mettre à jour des gems ayants des références circulaires avec Bundle</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/22/demandez-conseil-regulierement/'>Demandez conseil régulièrement</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2768,7 +2885,7 @@ rails g minitest:install
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/20/quelques-trucs-pour-lancer-rspec/'>Quelques trucs pour lancer Rspec</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/01/la-balise-hr-dans-votre-console/'>La balise hr dans votre console</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/29/inserer-le-contenu-dun-fichier-ou-dune-commande-shell-dans-vim/'>Insérer le contenu d&#8217;un fichier ou d&#8217;une commande shell dans Vim</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/20/quelques-trucs-pour-lancer-rspec/'>Quelques trucs pour lancer Rspec</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/'>Des benchmarks en général et de Ruby en particulier</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/01/la-balise-hr-dans-votre-console/'>La balise hr dans votre console</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3079,194 +3196,6 @@ renverra un objet. On commence avec un test pour l&#8217;enregistrement:</p>
 
 <p>Ça fonctionne, mais la méthode est moche. Ce sera l&#8217;occasion de faire du
 refactoring dans un prochain article.</p>
-
-<p><em>To be continued</em></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 4]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4/"/>
-    <updated>2014-04-18T21:01:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/18/ruby-et-si-on-ecrivait-un-orm-partie-4</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Maintenant qu&#8217;on peut se connecter à une base sqlite, je pense qu&#8217;il faut
-qu&#8217;on puisse écrire des requêtes en pur SQL à partir d&#8217;un objet qui
-hérite de SORM.</p>
-
-<!-- more -->
-
-
-<p>Voilà donc mon nouveau test:</p>
-
-<figure class='code'><figcaption><span>sorm_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./sorm&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">describe</span> <span class="no">SORM</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;connection&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="c1"># ...</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">describe</span> <span class="s1">&#39;after connection&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="c1"># ...</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">Article</span> <span class="o">&lt;</span> <span class="no">SORM</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;.sql&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;executes raw sql query on a table&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(1, &#39;Foo&#39;);&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(2, &#39;Bar&#39;);&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je veux enregistrer deux lignes en base et les récupérer. Si on lance les
-tests, Rspec se plaint que la méthode <code>sql</code> n&#8217;existe pas. Jusqu&#8217;ici tout
-va bien:</p>
-
-<pre><code>$ rspec sorm_spec.rb 
-..F
-
-Failures:
-
-  1) SORM.sql executes raw sql query on a table
-     Failure/Error: Article.sql("INSERT INTO article VALUES(1, 'Foo');")
-     NoMethodError:
-       undefined method `sql' for Article:Class
-</code></pre>
-
-<p>Pour faire passer ce test, le code est simple, on ajoute la méthode <code>sql</code>:</p>
-
-<figure class='code'><figcaption><span>sorm.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sqlite3&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">SORM</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="vc">@@db</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="vc">@@db</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
-</span><span class='line'>    <span class="vc">@@db</span> <span class="p">?</span> <span class="kp">true</span> <span class="p">:</span> <span class="kp">false</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>    <span class="vc">@@db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et hop:</p>
-
-<pre><code>$ rspec sorm_spec.rb 
-...
-
-Finished in 0.01381 seconds
-3 examples, 0 failures
-</code></pre>
-
-<p>Comme je suis curieux, j&#8217;ai envie de voir à quoi ressemble le contenu de
-<code>rows</code> dans le test:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;.sql&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;executes raw sql query on a table&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(1, &#39;Foo&#39;);&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;INSERT INTO article VALUES(2, &#39;Bar&#39;);&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">rows</span> <span class="o">=</span> <span class="no">Article</span><span class="o">.</span><span class="n">sql</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM article;&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="nb">p</span> <span class="n">rows</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">rows</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">2</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et là, une petite surprise m&#8217;attend au tournant:</p>
-
-<pre><code>$ rspec sorm_spec.rb 
-..[[1, "Foo"], [2, "Bar"], [1, "Foo"], [2, "Bar"]]
-F
-
-Failures:
-
-  1) SORM.sql executes raw sql query on a table
-     Failure/Error: expect(rows.size).to eq 2
-
-       expected: 2
-            got: 4
-
-       (compared using ==)
-     # ./sorm_spec.rb:26:in `block (3 levels) in &lt;top (required)&gt;'
-</code></pre>
-
-<p>Tout d&#8217;abord, j&#8217;ai oublié de vider la table après le test qui fait des
-insertions. Et ensuite j&#8217;ai négligé de spécifier <code>id</code> comme clé primaire !
-Bref, j&#8217;ai encore du boulot pour que SORM fonctionne ;)</p>
 
 <p><em>To be continued</em></p>
 
