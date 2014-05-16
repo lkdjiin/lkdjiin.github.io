@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-15T22:01:16+02:00</updated>
+  <updated>2014-05-16T21:09:48+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,123 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 4]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/"/>
+    <updated>2014-05-16T21:00:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Voici le fichier actuel:</p>
+
+<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">create_chromosome</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">[</span> <span class="n">create_chromosome</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">score</span><span class="p">(</span><span class="n">population</span><span class="p">)</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">sum</span><span class="p">,</span> <span class="n">population</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">scores</span><span class="p">[</span><span class="n">index1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scores</span><span class="p">[</span><span class="n">index2</span><span class="p">]</span> <span class="o">?</span> <span class="n">index1</span> <span class="p">:</span> <span class="n">index2</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Aujourd&#8217;hui on ajoute la fonction <code>tournament</code>.</p>
+
+<!-- more -->
+
+
+<p>La voilà:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">function</span><span class="nf"> tournament</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">population_size</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">selection_size</span> <span class="o">=</span> <span class="n">population_size</span> <span class="o">*</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="p">[</span> <span class="n">fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">),</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">selection_size</span> <span class="p">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On voit que pour connaître la taille d&#8217;un tableau, on utilise la fonction
+<code>length</code> et que je me sers encore d&#8217;une compréhension de liste pour produire
+un tableau qui contiendra les index (sur la population) de mes reproducteurs.</p>
+
+<pre><code>julia&gt; include("main.jl")
+tournament (generic function with 1 method)
+
+julia&gt; pop = create_population(8, 20)
+8-element Array{Array{Int32,1},1}:
+ [0,0,0,0,1,1,0,0,0,0,0,1,0,1,1,0,0,1,1,0]
+ [1,0,1,1,1,0,1,1,0,0,1,1,1,0,1,1,1,1,0,0]
+ [1,0,1,1,0,1,0,0,1,0,0,1,0,0,0,0,1,1,0,1]
+ [1,1,1,0,1,0,1,0,1,0,0,1,0,1,1,1,0,0,0,1]
+ [1,1,1,1,0,1,0,0,0,1,0,0,1,0,1,0,1,1,0,1]
+ [1,1,1,1,1,1,1,0,0,1,0,0,0,1,1,1,0,1,1,0]
+ [0,1,1,1,1,1,1,0,1,1,1,1,0,1,0,0,0,1,1,0]
+ [0,0,1,1,1,0,1,0,0,1,1,1,0,0,0,1,0,1,0,0]
+
+julia&gt; scores = score(pop)
+8-element Array{Int32,1}:
+  7
+ 13
+  9
+ 11
+ 11
+ 13
+ 13
+  9
+
+julia&gt; tournament(scores)
+16-element Array{Int32,1}:
+ 5
+ 6
+ 6
+ 4
+ 4
+ 6
+ 7
+ 2
+ 6
+ 6
+ 3
+ 7
+ 2
+ 2
+ 6
+ 3
+</code></pre>
+
+<p>À plus tard pour la suite…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/14/un-algorithme-genetique-en-julia-partie-2/'>Un algorithme génétique en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/13/un-algorithme-genetique-en-julia-partie-1/'>Un algorithme génétique en Julia &ndash; partie 1</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 3]]></title>
@@ -109,7 +226,7 @@ julia&gt; fight(scores, 7, 8)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/14/un-algorithme-genetique-en-julia-partie-2/'>Un algorithme génétique en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/13/un-algorithme-genetique-en-julia-partie-1/'>Un algorithme génétique en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/12/les-fonctions-en-julia-partie-2/'>Les fonctions en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/14/un-algorithme-genetique-en-julia-partie-2/'>Un algorithme génétique en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/13/un-algorithme-genetique-en-julia-partie-1/'>Un algorithme génétique en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -224,7 +341,7 @@ julia&gt; score(population)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/13/un-algorithme-genetique-en-julia-partie-1/'>Un algorithme génétique en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/12/les-fonctions-en-julia-partie-2/'>Les fonctions en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/13/un-algorithme-genetique-en-julia-partie-1/'>Un algorithme génétique en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -292,7 +409,7 @@ Je peux donc avoir une population:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/14/un-algorithme-genetique-en-julia-partie-2/'>Un algorithme génétique en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/12/les-fonctions-en-julia-partie-2/'>Les fonctions en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/14/un-algorithme-genetique-en-julia-partie-2/'>Un algorithme génétique en Julia &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2468,203 +2585,6 @@ Le bloc <code>describe '.sql'</code> suivant est devenu ridicule:</p>
 <p>1) Il n&#8217;y a plus de méthode <code>sql</code> et 2) il teste <code>Database.execute</code> et
 n&#8217;a donc rien à faire ici. Je corrigerais ça la prochaine fois, et je pense
 qu&#8217;il est temps aussi de <em>splitter</em> les fichiers tests et sources…</p>
-
-<p><em>To be continued</em></p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby - Et si on écrivait un ORM ? - partie 9]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9/"/>
-    <updated>2014-04-26T14:23:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/26/ruby-et-si-on-ecrivait-un-orm-partie-9</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Encore du refactoring, cette fois ci dans la classe <code>Base</code>. Regardons le
-code suivant:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Base</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>      <span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le <code>Database.connection.execute</code> me dérange. Il viole
-<a href="http://fr.wikipedia.org/wiki/Loi_de_D%C3%A9m%C3%A9ter">la loi de Demeter</a>.</p>
-
-<!-- more -->
-
-
-<p>À bien y réfléchir, je n&#8217;ai tout simplement pas envie d&#8217;exposer la méthode
-<code>connection</code>, qu&#8217;on trouve aussi un peu plus loin dans la class <code>Base</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
-</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La classe <code>Database</code> est actuellement comme ça:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
-</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
-</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connection</span>
-</span><span class='line'>      <span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je supprime purement et simplement la méthode <code>connection</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
-</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
-</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Maintenant, on rejoue les tests, qui vont nous indiquer ce qui doit être
-réécrit:</p>
-
-<pre><code>$ rspec sorm_spec.rb 
-[...]
-     NoMethodError:
-       undefined method `connection' for SORM::Database:Class
-     # ./sorm.rb:19:in `sql'
-[...]
-     NoMethodError:
-       undefined method `connection' for SORM::Database:Class
-     # ./sorm.rb:23:in `save'
-[...]
-7 examples, 5 failures
-</code></pre>
-
-<p>On va simplement créer une méthode <code>Database.execute</code>, qui elle, pourra
-utiliser l&#8217;objet <code>connection</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
-</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
-</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">Base</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>      <span class="no">Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="c1"># ...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>À y regarder de près, je ne suis plus certain de trouver un intérêt à
-<code>Base.sql</code>. Il faudrait la supprimer puisqu&#8217;elle peut être remplacée par
-<code>Database.execute</code>. Mais il faudra attendre car il y a encore des tests qui ne
-passent plus, à cause de ce code:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
-</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On s&#8217;en occupera la prochaine fois.</p>
 
 <p><em>To be continued</em></p>
 
