@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-17T21:34:53+02:00</updated>
+  <updated>2014-05-18T21:19:00+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,174 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 6]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/"/>
+    <updated>2014-05-18T20:47:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Aujourd'hui je tente d'écrire une fonction de reproduction.
+Je me dis qu'une fonction récursive serait ici la bienvenue:</p>
+
+<p>``` julia
+function reproduction(new_population, current_population, selection)
+  if selection == []</p>
+
+<pre><code>return new_population
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>father = current_population[selection[1]]
+mother = current_population[selection[2]]
+child = crossover(father, mother)
+reproduction([new_population, child], current_population, selection[3:end])
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<!-- more -->
+
+
+<p>Explications ligne par ligne:</p>
+
+<pre><code>function reproduction(new_population, current_population, selection)
+</code></pre>
+
+<p><code>new_population</code> est un accumulateur, qui débute comme un tableau vide.
+<code>current_population</code> est un tableau qui contient la génération courante et qui
+ne changera pas. <code>selection</code> est un tableau qui contient les indexs des
+reproducteurs par rapport à <code>current_population</code>.</p>
+
+<pre><code>if selection == []
+  return new_population
+</code></pre>
+
+<p>C'est la condition de sortie de cette fonction récursive. Au fur et à mesure,
+<code>selection</code> va être vidé des ses éléments.</p>
+
+<pre><code>father = current_population[selection[1]]
+mother = current_population[selection[2]]
+child = crossover(father, mother)
+</code></pre>
+
+<p>On produit un nouvel individu (<code>child</code>) par le croisement de deux éléments de
+<code>current_population</code>, pointés par les deux premiers éléments de <code>selection</code>.</p>
+
+<pre><code>reproduction([new_population, child], current_population, selection[3:end])
+</code></pre>
+
+<p>On appelle à nouveau la fonction <code>reproduction</code>, en ajoutant le nouvel individu
+et en retirant les deux premiers éléments de <code>selection</code>.</p>
+
+<p>Ça fonctionne presque, mais pas tout à fait !
+En effet:</p>
+
+<pre><code>julia&gt; include("main.jl")
+reproduction (generic function with 1 method)
+
+julia&gt; population = create_population(8, 20)
+8-element Array{Array{Int32,1},1}:
+ [1,0,1,1,1,1,0,0,1,0,0,0,0,0,1,0,1,0,1,0]
+ [0,1,0,1,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,1]
+ [0,1,1,0,1,0,1,0,0,0,1,0,0,1,1,0,0,1,0,1]
+ [1,1,0,1,1,1,0,1,0,0,0,0,1,0,0,1,1,1,0,1]
+ [1,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,1,1]
+ [0,0,0,1,0,1,1,0,0,1,0,0,0,0,0,1,0,0,0,0]
+ [1,0,0,0,1,0,1,1,1,1,1,1,0,1,0,0,0,0,1,1]
+ [0,1,0,0,0,1,0,0,1,1,1,0,1,0,0,1,0,0,0,1]
+
+julia&gt; scores = score(population)
+8-element Array{Int32,1}:
+  9
+  9
+  9
+ 11
+ 11
+  5
+ 11
+  8
+
+julia&gt; selection = tournament(scores)
+16-element Array{Int32,1}:
+ 2
+ 5
+ 4
+ 1
+ 5
+ 6
+ 5
+ 5
+ 4
+ 4
+ 6
+ 5
+ 4
+ 1
+ 1
+ 6
+
+julia&gt; selection = tournament(scores)
+16-element Array{Int32,1}:
+ 2
+ 7
+ 3
+ 1
+ 3
+ 3
+ 1
+ 4
+ 7
+ 7
+ 7
+ 8
+ 5
+ 4
+ 7
+ 4
+
+julia&gt; generation2 = reproduction([], population, selection)
+160-element Array{Int32,1}:
+ 0
+ 1
+ 0
+ 1
+ 0
+ 0
+ 0
+ 0
+ 1
+ 1
+ ⋮
+ 1
+ 1
+ 0
+ 1
+ 0
+ 0
+ 0
+ 0
+ 1
+ 1
+</code></pre>
+
+<p>La fonction <code>reproduction</code> ne produit pas un tableau de 8 chromosomes de
+longueur 20, mais un tableau de 160 entiers. Je sens qu'il y a un truc
+vraiment cool avec les tableaux en Julia, mais j'ai la preuve que je n'ai pas
+encore tout compris ;)</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 5]]></title>
@@ -386,73 +554,6 @@ julia&gt; score(population)
  6
  6
  6
-</code></pre>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 1]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/05/13/un-algorithme-genetique-en-julia-partie-1/"/>
-    <updated>2014-05-13T21:09:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/05/13/un-algorithme-genetique-en-julia-partie-1</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Pour continuer d'apprendre le langage Julia, je vais coder un algorithme
-génétique simple.</p>
-
-<!-- more -->
-
-
-<p>Tout d'abord un chromosome, qui va contenir 10 valeurs, chaque valeur pouvant
-être soit zéro, soit un:</p>
-
-<pre><code>julia&gt; chromosome() = rand(0:1, 10)
-</code></pre>
-
-<p>La fonction <code>rand</code> prend un <em>range</em> en premier paramêtre.</p>
-
-<p>On teste cette fonction:</p>
-
-<pre><code>julia&gt; chromosome()
-10-element Array{Int32,1}:
- 0
- 1
- 1
- 1
- 1
- 1
- 1
- 0
- 1
- 1
-</code></pre>
-
-<p>Maintenant je veux une population:</p>
-
-<pre><code>julia&gt; population(size) = [ chromosome() for _ in 1:size ]
-</code></pre>
-
-<p>Il s'agit d'une <em>compréhension de liste</em>. Pour chaque valeur (symbolisée
-par le <code>_</code>) du <em>range</em> de 1 à <code>size</code>, on applique la fonction <code>chromosome</code>.
-Je peux donc avoir une population:</p>
-
-<pre><code>julia&gt; population(8)
-8-element Array{Array{Int32,1},1}:
- [1,0,1,0,1,0,0,1,1,0]
- [1,1,0,1,0,1,0,1,0,0]
- [1,0,1,1,0,1,1,1,1,1]
- [0,0,1,0,0,1,0,0,1,1]
- [1,0,0,1,0,1,1,1,1,0]
- [0,1,0,0,1,1,1,0,1,1]
- [0,0,0,1,0,1,0,1,1,1]
- [0,1,0,0,0,1,0,1,1,0]
 </code></pre>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
