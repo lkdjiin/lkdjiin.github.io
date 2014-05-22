@@ -1,0 +1,344 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Recherchez avec grep dans un fichier compressé - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile Il vous arrive peut-être parfois d&#8217;avoir à fouiller des fichiers de log ?
+Vous utiliser grep pour ça ? Et comment faire quand &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/05/22/recherchez-avec-grep-dans-un-fichier-compresse">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Recherchez avec grep dans un fichier compressé</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-22T21:10:00+02:00" pubdate data-updated="true">22 mai 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Il vous arrive peut-être parfois d&#8217;avoir à fouiller des fichiers de log ?
+Vous utiliser <code>grep</code> pour ça ? Et comment faire quand les logs sont
+compressés ?</p>
+
+<!-- more -->
+
+
+<p>Lorsque le log est normal, c&#8217;est à dire non-compressé, on peut utiliser la
+commande <code>grep</code> suivante:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>grep --color <span class="s1">&#39;LOWER&#39;</span> test.log
+</span><span class='line'>  User Exists <span class="o">(</span>0.8ms<span class="o">)</span>  SELECT 1 AS one FROM <span class="s2">&quot;users&quot;</span> WHERE LOWER<span class="o">(</span><span class="s2">&quot;users&quot;</span>.<span class="s2">&quot;email&quot;</span><span class="o">)</span>   <span class="o">=</span> LOWER<span class="o">(</span><span class="s1">&#39;foo@example.com&#39;</span><span class="o">)</span> LIMIT 1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Elle va afficher toutes les lignes du fichier <code>test.log</code> qui contiennent le
+mot <code>LOWER</code>.</p>
+
+<p>Mais si on fait la même chose sur un log compressé:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>grep --color <span class="s1">&#39;LOWER&#39;</span> test.log.1.gz
+</span><span class='line'><span class="nv">$ </span>1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ça ne fonctionne pas. Ci-dessus, le <code>$ 1</code>, c&#8217;est mon shell qui m&#8217;affiche
+une erreur sous la forme du code de retour (une idée pour un futur article).</p>
+
+<p>Pour chercher dans un fichier compressé avec <code>grep</code>, on peut utiliser très
+simplement la commande <code>zgrep</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>zgrep --color <span class="s1">&#39;LOWER&#39;</span> test.log.1.gz
+</span><span class='line'>  User Exists <span class="o">(</span>0.8ms<span class="o">)</span>  SELECT 1 AS one FROM <span class="s2">&quot;users&quot;</span> WHERE LOWER<span class="o">(</span><span class="s2">&quot;users&quot;</span>.<span class="s2">&quot;email&quot;</span><span class="o">)</span>   <span class="o">=</span> LOWER<span class="o">(</span><span class="s1">&#39;foo@example.com&#39;</span><span class="o">)</span> LIMIT 1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voilà.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/04/29/inserer-le-contenu-dun-fichier-ou-dune-commande-shell-dans-vim/'>Insérer le contenu d&#8217;un fichier ou d&#8217;une commande shell dans Vim</a></li><li><a href='/blog/2014/03/26/vim-comment-ouvrir-la-fenetre-courante-dans-un-nouvel-onglet/'>Vim &ndash; Comment ouvrir la fenêtre courante dans un nouvel onglet</a></li><li><a href='/blog/2014/02/20/astuce-bash-ameliorer-lhistorique/'>Astuce Bash &ndash; Améliorer l&#8217;historique</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-22T21:10:00+02:00" pubdate data-updated="true">22 mai 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/astuce/'>astuce</a>, <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/ligne-de-commande/'>ligne de commande</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/05/22/recherchez-avec-grep-dans-un-fichier-compresse/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/05/22/recherchez-avec-grep-dans-un-fichier-compresse/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/21/utiliser-une-version-particuliere-dune-gem-ruby-dot-dot-dot-dans-une-gem/" title="Previous Post: Utiliser une version particulière d'une gem Ruby... dans une gem">&laquo; Utiliser une version particulière d'une gem Ruby... dans une gem</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/22/recherchez-avec-grep-dans-un-fichier-compresse/">Recherchez avec grep dans un fichier compressé</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/21/utiliser-une-version-particuliere-dune-gem-ruby-dot-dot-dot-dans-une-gem/">Utiliser une version particulière d'une gem Ruby... dans une gem</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/20/hub-git-plus-facile-avec-github/">Hub - Git plus facile avec Github</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/le-theme-gruvbox-pour-vim/">Le thème Gruvbox pour Vim</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/">Un algorithme génétique en Julia - partie 6</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/">Un algorithme génétique en Julia - partie 5</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/">Un algorithme génétique en Julia - partie 4</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/05/22/recherchez-avec-grep-dans-un-fichier-compresse/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/05/22/recherchez-avec-grep-dans-un-fichier-compresse/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
