@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Recherchez avec grep dans un fichier compressé"
+title: "Rechercher avec grep dans un fichier compressé"
 date: 2014-05-22 21:10
 comments: true
 categories: [débutant, astuce, ligne de commande]
