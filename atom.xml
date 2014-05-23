@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-22T21:29:03+02:00</updated>
+  <updated>2014-05-23T21:35:40+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,105 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/"/>
+    <updated>2014-05-23T21:15:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Dans le <a href="blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/">dernier article</a> sur Julia, j&#8217;avais eu un problème avec les
+tableaux. En effet, leur comportement n&#8217;est pas celui que j&#8217;attendais:</p>
+
+<pre><code>julia&gt; a = [1, 2]
+julia&gt; b = [3, 4]
+
+julia&gt; [a, b]
+4-element Array{Int32,1}:
+ 1
+ 2
+ 3
+ 4
+
+julia&gt; append!(a, b)
+4-element Array{Int32,1}:
+ 1
+ 2
+ 3
+ 4
+</code></pre>
+
+<p>Alors que j&#8217;attendais plutôt ceci : <code>[ [1, 2], [3, 4] ]</code>.</p>
+
+<!-- more -->
+
+
+<p>Pour régler ça, on doit pouvoir utiliser les tableaux multi-dimensionnels,
+que Julia à tendance à nommer des «matrices». Vu mon niveau en math, ça
+ne m&#8217;a pas vraiment attiré ;)</p>
+
+<p>J&#8217;ai préféré regarder du coté des types. Pour l&#8217;instant, je comprends les
+types comme des structures dans le genre de C, c&#8217;est-à-dire un ensemble de
+donnés regroupées au sein d&#8217;une même référence.</p>
+
+<p>J&#8217;ai donc besoin d&#8217;un type, que j&#8217;appelerais <code>Chromosome</code>, qui va contenir
+le tableau des gènes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">type</span><span class="nc"> Chromosome</span>
+</span><span class='line'>  <span class="n">genes</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On l&#8217;utilise comme ceci:</p>
+
+<pre><code>julia&gt; Chromosome([1, 2, 3])
+Chromosome([1,2,3])
+</code></pre>
+
+<p>Je vais devoir modifier un peu les fonctions définies jusqu&#8217;ici pour qu&#8217;elle
+fonctionnent avec des <code>Chromosome</code>s. Par exemple, pour créer la population:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">create_chromosome</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">[</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">create_chromosome</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ce qui donne:</p>
+
+<pre><code>julia&gt; pop = create_population(8, 20)
+8-element Array{Chromosome,1}:
+ Chromosome([0,1,0,0,0,1,0,0,0,0,0,1,1,0,0,1,0,1,0,0])
+ Chromosome([1,1,0,0,0,1,1,1,0,1,0,0,0,1,0,0,0,1,0,1])
+ Chromosome([1,1,0,0,0,1,1,0,1,1,0,0,0,1,1,1,1,1,0,1])
+ Chromosome([1,1,1,1,1,0,0,0,0,1,0,1,1,1,1,1,0,0,0,1])
+ Chromosome([0,0,0,0,1,0,0,1,1,0,0,1,1,0,0,0,0,1,0,1])
+ Chromosome([1,0,1,1,0,0,0,1,1,0,1,0,1,1,1,1,0,0,0,1])
+ Chromosome([1,0,1,1,1,1,1,0,0,1,1,1,1,0,0,0,0,0,1,0])
+ Chromosome([1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,1,1,1,1,0])
+</code></pre>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Rechercher avec grep dans un fichier compressé]]></title>
@@ -386,7 +485,7 @@ encore tout compris ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -475,7 +574,7 @@ chromosome:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -592,7 +691,7 @@ julia&gt; tournament(scores)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/15/un-algorithme-genetique-en-julia-partie-3/'>Un algorithme génétique en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -692,7 +791,7 @@ julia&gt; fight(scores, 7, 8)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -807,7 +906,7 @@ julia&gt; score(population)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -875,7 +974,7 @@ Je peux donc avoir une population:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1999,77 +2098,6 @@ qu&#8217;il soit plus facile à suivre.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/27/ruby-et-si-on-ecrivait-un-orm-partie-10/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 10</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Trois-centième article aujourd'hui !]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/05/03/trois-centieme-article-aujourdhui-slash/"/>
-    <updated>2014-05-03T21:56:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/05/03/trois-centieme-article-aujourdhui-slash</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Aujourd&#8217;hui c&#8217;est le 300ème article de ce blog ! Voilà 300 jours que je
-pond un article au quotidien. J&#8217;en reviens pas !</p>
-
-<!-- more -->
-
-
-<p>Encore 65 et j&#8217;aurais réussi le défi que je m&#8217;étais fixé il y a 300 jours:
-écrire un article par jour pendant un an.</p>
-
-<p>Bref, le contenu du jour sera : le fichier <code>.yardopts</code>. Qu&#8217;est-ce que c&#8217;est
-encore que ça ?</p>
-
-<p>Pour générer une documentation de vos gems Ruby avec
-<a href="http://yardoc.org/">Yard</a> vous écrivez peut-être comme moi une tâche Rake dans ce genre:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">desc</span> <span class="s1">&#39;Create documentation&#39;</span>
-</span><span class='line'><span class="n">task</span> <span class="ss">:doc</span> <span class="k">do</span>
-</span><span class='line'>  <span class="nb">exec</span> <span class="s1">&#39;yardoc --title &quot;Titre de la doc&quot;&#39;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Là j&#8217;ai mis une seule option, mais on en a souvent d&#8217;autres, plus des fichiers
-à inclure (comme la licence, le changelog, etc).</p>
-
-<p>Et bien j&#8217;ai appris aujourd&#8217;hui que ces options pouvaient être mises dans
-un fichier <code>.yardopts</code>. En reprenant l&#8217;exemple précédant, cela deviendrait:</p>
-
-<figure class='code'><figcaption><span>.yardopts</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">--title &quot;Titre de la doc&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">desc</span> <span class="s1">&#39;Create documentation&#39;</span>
-</span><span class='line'><span class="n">task</span> <span class="ss">:doc</span> <span class="k">do</span>
-</span><span class='line'>  <span class="nb">exec</span> <span class="s1">&#39;yardoc&#39;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Non seulement ça évite de surcharger la tâche rake avec des informations
-inutiles, mais surtout, ça permet à des service externes comme
-<a href="http://www.rubydoc.info/">RubyDoc</a> de savoir exactement ce que vous voulez.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/'>Programmation concurrente pour Ruby avec eldritch &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/'>Le LOAD_PATH dans Ruby</a></li></ul></section></p>
 ]]></content>
   </entry>
   
