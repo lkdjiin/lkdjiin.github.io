@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-05-24T21:13:35+02:00</updated>
+  <updated>2014-05-25T19:13:24+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,181 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 8]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/"/>
+    <updated>2014-05-25T19:03:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Voici le programme actuel, qui tient compte de l&#8217;utilisation du type
+<code>Chromosome</code>, ajouté dans la partie 7.</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">type</span><span class="nc"> Chromosome</span>
+</span><span class='line'>  <span class="n">genes</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">create_genes</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">[</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">create_genes</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">score</span><span class="p">(</span><span class="n">population</span><span class="p">)</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">genes</span><span class="p">),</span> <span class="n">population</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">scores</span><span class="p">[</span><span class="n">index1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scores</span><span class="p">[</span><span class="n">index2</span><span class="p">]</span> <span class="o">?</span> <span class="n">index1</span> <span class="p">:</span> <span class="n">index2</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> tournament</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">population_size</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">selection_size</span> <span class="o">=</span> <span class="n">population_size</span> <span class="o">*</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="p">[</span> <span class="n">fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">),</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">selection_size</span> <span class="p">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> crossover</span><span class="p">(</span><span class="n">chromosome1</span><span class="p">,</span> <span class="n">chromosome2</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">cut_point</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">length</span><span class="p">(</span><span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
+</span><span class='line'>  <span class="n">first_part</span> <span class="o">=</span> <span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">cut_point</span><span class="p">]</span>
+</span><span class='line'>  <span class="n">second_part</span> <span class="o">=</span> <span class="n">chromosome2</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">cut_point</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="k">end</span><span class="p">]</span>
+</span><span class='line'>  <span class="n">Chromosome</span><span class="p">([</span> <span class="n">first_part</span><span class="p">,</span> <span class="n">second_part</span><span class="p">])</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> reproduction</span><span class="p">(</span><span class="n">new_population</span><span class="p">,</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">new_population</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">father</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+</span><span class='line'>    <span class="n">mother</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+</span><span class='line'>    <span class="n">child</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">father</span><span class="p">,</span> <span class="n">mother</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">reproduction</span><span class="p">([</span><span class="n">new_population</span><span class="p">,</span> <span class="n">child</span><span class="p">],</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="k">end</span><span class="p">])</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le changement le plus important est l&#8217;utilisation d&#8217;une fonction anonyme:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">score</span><span class="p">(</span><span class="n">population</span><span class="p">)</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">genes</span><span class="p">),</span> <span class="n">population</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On arrive bien à calculer la génération suivante:</p>
+
+<pre><code>julia&gt; include("main.jl")
+reproduction (generic function with 1 method)
+
+julia&gt; pop = create_population(8, 20)
+8-element Array{Chromosome,1}:
+ Chromosome([1,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1])
+ Chromosome([0,1,0,0,1,1,1,0,1,0,0,1,0,1,1,0,1,0,0,0])
+ Chromosome([0,0,1,0,0,1,0,1,0,0,0,0,1,0,0,0,1,0,0,0])
+ Chromosome([0,0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0])
+ Chromosome([1,1,0,1,1,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0])
+ Chromosome([1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1])
+ Chromosome([1,1,0,0,1,0,1,0,0,1,0,1,0,1,0,0,1,1,1,1])
+ Chromosome([0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,1,1,1,0])
+
+julia&gt; scores = score(pop)
+8-element Array{Int32,1}:
+  7
+  9
+  5
+  7
+  9
+ 10
+ 11
+ 10
+
+julia&gt; selection = tournament(scores)
+16-element Array{Int32,1}:
+ 2
+ 4
+ 6
+ 1
+ 6
+ 5
+ 8
+ 7
+ 5
+ 7
+ 5
+ 6
+ 8
+ 4
+ 6
+ 6
+
+julia&gt; generation2 = reproduction([], pop, selection)
+8-element Array{Chromosome,1}:
+ Chromosome([0,1,0,0,1,1,1,0,1,1,0,0,0,1,1,0,0,1,0,0])
+ Chromosome([1,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1])
+ Chromosome([1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,0,0])
+ Chromosome([0,1,1,0,0,1,1,0,0,1,0,1,0,1,0,0,1,1,1,1])
+ Chromosome([1,1,0,1,1,0,0,0,1,1,0,0,0,1,0,0,1,1,1,1])
+ Chromosome([1,1,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1])
+ Chromosome([0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,1,1,0,0])
+ Chromosome([1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1])
+</code></pre>
+
+<p>La première version de l&#8217;algorithme est bientôt finie…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Sortie de Coco version 0.11.0]]></title>
@@ -138,7 +313,7 @@ fonctionnent avec des <code>Chromosome</code>s. Par exemple, pour créer la popu
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/'>Un algorithme génétique en Julia &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -515,7 +690,7 @@ encore tout compris ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/'>Un algorithme génétique en Julia &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -604,7 +779,7 @@ chromosome:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/16/un-algorithme-genetique-en-julia-partie-4/'>Un algorithme génétique en Julia &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/'>Un algorithme génétique en Julia &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -721,7 +896,7 @@ julia&gt; tournament(scores)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/'>Un algorithme génétique en Julia &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -821,7 +996,7 @@ julia&gt; fight(scores, 7, 8)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/'>Un algorithme génétique en Julia &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -936,7 +1111,7 @@ julia&gt; score(population)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/'>Un algorithme génétique en Julia &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1004,7 +1179,7 @@ Je peux donc avoir une population:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/17/un-algorithme-genetique-en-julia-partie-5/'>Un algorithme génétique en Julia &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/'>Un algorithme génétique en Julia &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/23/un-algorithme-genetique-en-julia-partie-7/'>Un algorithme génétique en Julia &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/'>Un algorithme génétique en Julia &ndash; partie 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1825,110 +2000,6 @@ tester le reste demain.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/'>Programmation concurrente pour Ruby avec eldritch &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/'>Le LOAD_PATH dans Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le LOAD_PATH dans Ruby]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby/"/>
-    <updated>2014-05-05T21:02:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/05/05/le-load-path-dans-ruby</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>En Ruby, la variable <code>$LOAD_PATH</code> contient tous les chemins vers les
-bibliothèques chargées.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="vg">$LOAD_PATH</span>
-</span><span class='line'><span class="go">[</span>
-</span><span class='line'><span class="go">    [0] &quot;/home/xavier/.rvm/gems/ruby-2.1.0/gems/awesome_print-1.2.0/lib&quot;,</span>
-</span><span class='line'><span class="go">    [1] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/site_ruby/2.1.0&quot;,</span>
-</span><span class='line'><span class="go">    [2] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/site_ruby/2.1.0/i686-linux&quot;,</span>
-</span><span class='line'><span class="go">    [3] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/site_ruby&quot;,</span>
-</span><span class='line'><span class="go">    [4] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/vendor_ruby/2.1.0&quot;,</span>
-</span><span class='line'><span class="go">    [5] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/vendor_ruby/2.1.0/i686-linux&quot;,</span>
-</span><span class='line'><span class="go">    [6] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/vendor_ruby&quot;,</span>
-</span><span class='line'><span class="go">    [7] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0&quot;,</span>
-</span><span class='line'><span class="go">    [8] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/i686-linux&quot;</span>
-</span><span class='line'><span class="go">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<!-- more -->
-
-
-<p>Si je charge Rspec, par exemple, son chemin va être ajouté dans la variable
-<code>$LOAD_PATH</code>, ainsi que toutes les bibliothèques dont dépend Rspec:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="gp">&gt;&gt; </span><span class="nb">require</span> <span class="s1">&#39;rspec&#39;</span>
-</span><span class='line'><span class="go">true</span>
-</span><span class='line'><span class="gp">&gt;&gt; </span><span class="vg">$LOAD_PATH</span>
-</span><span class='line'><span class="go">[</span>
-</span><span class='line'><span class="go">    [ 0] &quot;/home/xavier/.rvm/gems/ruby-2.1.0/gems/awesome_print-1.2.0/lib&quot;,</span>
-</span><span class='line'><span class="go">    [ 1] &quot;/home/xavier/.rvm/gems/ruby-2.1.0/gems/rspec-2.14.1/lib&quot;,</span>
-</span><span class='line'><span class="go">    [ 2] &quot;/home/xavier/.rvm/gems/ruby-2.1.0/gems/rspec-core-2.14.8/lib&quot;,</span>
-</span><span class='line'><span class="go">    [ 3] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/site_ruby/2.1.0&quot;,</span>
-</span><span class='line'><span class="go">    [ 4] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/site_ruby/2.1.0/i686-linux&quot;,</span>
-</span><span class='line'><span class="go">    [ 5] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/site_ruby&quot;,</span>
-</span><span class='line'><span class="go">    [ 6] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/vendor_ruby/2.1.0&quot;,</span>
-</span><span class='line'><span class="go">    [ 7] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/vendor_ruby/2.1.0/i686-linux&quot;,</span>
-</span><span class='line'><span class="go">    [ 8] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/vendor_ruby&quot;,</span>
-</span><span class='line'><span class="go">    [ 9] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0&quot;,</span>
-</span><span class='line'><span class="go">    [10] &quot;/home/xavier/.rvm/rubies/ruby-2.1.0/lib/ruby/2.1.0/i686-linux&quot;</span>
-</span><span class='line'><span class="go">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Il y a encore quelques jours, je faisais systématiquement cela au début de
-toutes mes gems:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="vg">$LOAD_PATH</span><span class="o">.</span><span class="n">unshift</span> <span class="no">File</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">__FILE__</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ceci pour que ma gem ajoute son propre chemin dans le <code>LOAD_PATH</code>.
-Et bien je viens d&#8217;apprendre que non, c&#8217;est inutile ! L&#8217;utilitaire <code>gem</code>
-fait très bien cela tout seul.</p>
-
-<p>Aujourd&#8217;hui j&#8217;ai (encore) appris quelque chose ;)</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/07/programmation-concurrente-pour-ruby-avec-eldritch-partie-2/'>Programmation concurrente pour Ruby avec eldritch &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
