@@ -1,0 +1,462 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Un algorithme génétique en Julia - partie 14 - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Ça y est ! J&#8217;ai enfin un algorithme génétique écrit en Julia. Le programme
+est certainement maladroit par endroit, mais &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Un algorithme génétique en Julia - partie 14</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-01T18:53:00+02:00" pubdate data-updated="true">1<span>er</span> juin 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Ça y est ! J&#8217;ai enfin un algorithme génétique écrit en Julia. Le programme
+est certainement maladroit par endroit, mais il fonctionne.</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">type</span><span class="nc"> Chromosome</span>
+</span><span class='line'>  <span class="n">genes</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">create_genes</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">[</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">create_genes</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">score</span><span class="p">(</span><span class="n">population</span><span class="p">)</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">genes</span><span class="p">),</span> <span class="n">population</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.8</span>
+</span><span class='line'>    <span class="n">scores</span><span class="p">[</span><span class="n">index1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scores</span><span class="p">[</span><span class="n">index2</span><span class="p">]</span> <span class="o">?</span> <span class="n">index1</span> <span class="p">:</span> <span class="n">index2</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">scores</span><span class="p">[</span><span class="n">index1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scores</span><span class="p">[</span><span class="n">index2</span><span class="p">]</span> <span class="o">?</span> <span class="n">index2</span> <span class="p">:</span> <span class="n">index1</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> tournament</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">population_size</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">selection_size</span> <span class="o">=</span> <span class="n">population_size</span> <span class="o">*</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="p">[</span> <span class="n">fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">),</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">selection_size</span> <span class="p">]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> crossover</span><span class="p">(</span><span class="n">chromosome1</span><span class="p">,</span> <span class="n">chromosome2</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">cut_point</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">length</span><span class="p">(</span><span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
+</span><span class='line'>  <span class="n">first_part</span> <span class="o">=</span> <span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">cut_point</span><span class="p">]</span>
+</span><span class='line'>  <span class="n">second_part</span> <span class="o">=</span> <span class="n">chromosome2</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">cut_point</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="k">end</span><span class="p">]</span>
+</span><span class='line'>  <span class="n">mutate</span><span class="p">(</span><span class="n">Chromosome</span><span class="p">([</span> <span class="n">first_part</span><span class="p">,</span> <span class="n">second_part</span><span class="p">]))</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> reproduction</span><span class="p">(</span><span class="n">new_population</span><span class="p">,</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="p">[]</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">new_population</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">father</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+</span><span class='line'>    <span class="n">mother</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+</span><span class='line'>    <span class="n">child</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">father</span><span class="p">,</span> <span class="n">mother</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">reproduction</span><span class="p">([</span><span class="n">new_population</span><span class="p">,</span> <span class="n">child</span><span class="p">],</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="k">end</span><span class="p">])</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> mutate</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">mutator</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">=</span> <span class="k">if</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">400</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">g</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="mi">0</span> <span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">g</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">Chromosome</span><span class="p">([</span> <span class="n">mutator</span><span class="p">(</span><span class="n">x</span><span class="p">)::</span><span class="kt">Int</span> <span class="k">for</span> <span class="n">x</span> <span class="k">in</span> <span class="n">ch</span><span class="o">.</span><span class="n">genes</span> <span class="p">])</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> run</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">current</span> <span class="o">=</span> <span class="n">create_population</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="mi">50</span>
+</span><span class='line'>    <span class="n">scores</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">best</span> <span class="o">=</span> <span class="n">maximum</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">println</span><span class="p">(</span><span class="s">&quot;Generation </span><span class="si">$</span><span class="s">i Best </span><span class="si">$</span><span class="s">best&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selection</span> <span class="o">=</span> <span class="n">tournament</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">current</span> <span class="o">=</span> <span class="n">reproduction</span><span class="p">([],</span> <span class="n">current</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voici un exemple d&#8217;utilisation:</p>
+
+<pre><code>julia&gt; include("main.jl")
+run (generic function with 1 method)
+
+julia&gt; run()
+Generation 1 Best 18
+Generation 2 Best 18
+Generation 3 Best 17
+Generation 4 Best 17
+Generation 5 Best 18
+Generation 6 Best 17
+Generation 7 Best 18
+Generation 8 Best 19
+Generation 9 Best 19
+Generation 10 Best 19
+Generation 11 Best 20
+...
+</code></pre>
+
+<p>Il me reste encore pas mal de choses à faire pour améliorer ce programme,
+mais c&#8217;était un bon début pour apprendre le langage Julia.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/05/31/un-algorithme-genetique-en-julia-partie-13/'>Un algorithme génétique en Julia &ndash; partie 13</a></li><li><a href='/blog/2014/05/30/un-algorithme-genetique-en-julia-partie-12/'>Un algorithme génétique en Julia &ndash; partie 12</a></li><li><a href='/blog/2014/05/29/un-algorithme-genetique-en-julia-partie-11/'>Un algorithme génétique en Julia &ndash; partie 11</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-01T18:53:00+02:00" pubdate data-updated="true">1<span>er</span> juin 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/algorithme-genetique/'>algorithme génétique</a>, <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/julia/'>julia</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/31/un-algorithme-genetique-en-julia-partie-13/" title="Previous Post: Un algorithme génétique en Julia - partie 13">&laquo; Un algorithme génétique en Julia - partie 13</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/">Un algorithme génétique en Julia - partie 14</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/31/un-algorithme-genetique-en-julia-partie-13/">Un algorithme génétique en Julia - partie 13</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/30/un-algorithme-genetique-en-julia-partie-12/">Un algorithme génétique en Julia - partie 12</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/29/un-algorithme-genetique-en-julia-partie-11/">Un algorithme génétique en Julia - partie 11</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/28/un-algorithme-genetique-en-julia-partie-10/">Un algorithme génétique en Julia - partie 10</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/27/un-algorithme-genetique-en-julia-partie-9/">Un algorithme génétique en Julia - partie 9</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/26/cherchez-avec-grep-dans-vim/">Cherchez avec grep dans Vim</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
