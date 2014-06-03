@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-02T21:15:51+02:00</updated>
+  <updated>2014-06-03T21:15:22+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,146 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 16]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/"/>
+    <updated>2014-06-03T21:02:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>J'ai retiré les nombres magiques et renommé les quelques variables qui étaient
+abrégées. Puis j'ai voulu commencer à documenter le code. Là je me suis
+aperçu que le <em>typage</em> était une bonne façon de documenter Julia. Par
+exemple:</p>
+
+<p><code>julia
+type Chromosome
+  genes::Array{Int}
+end
+</code></p>
+
+<p>m'apparait quasiment comme étant <em>auto-documenté</em>, comparé à la version
+précédente:</p>
+
+<p><code>julia
+type Chromosome
+  genes
+end
+</code></p>
+
+<!-- more -->
+
+
+<p>Plus de documentation plus tard, quand j'aurais trouvé si il y a un
+<em>standard</em> en Julia (j'ai bien l'impression qu'il n'y en a pas :( ).</p>
+
+<p>Pour l'instant, voici le code après son enième remaniement:</p>
+
+<p>``` julia main.jl
+type Chromosome
+  genes::Array{Int}
+end</p>
+
+<p>create_genes(size) = rand(0:1, size)</p>
+
+<p>function create_population(size, chromosome_size)
+  [ Chromosome(create_genes(chromosome_size)) for _ in 1:size ]
+end</p>
+
+<p>score(population) = map(chromosome &ndash;> sum(chromosome.genes), population)</p>
+
+<p>function fight(scores, index1, index2, rate)
+  if rand() &lt; rate</p>
+
+<pre><code>scores[index1] &gt; scores[index2] ? index1 : index2
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>scores[index1] &gt; scores[index2] ? index2 : index1
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>function tournament(scores, rate)
+  population_size = length(scores)
+  selection_size = population_size * 2
+  [ fight(scores, rand(1:population_size), rand(1:population_size), rate)</p>
+
+<pre><code>for _ in 1:selection_size ]
+</code></pre>
+
+<p>end</p>
+
+<p>function crossover(chromosome1, chromosome2, population_size)
+  cut_point = rand(1:length(chromosome1.genes))
+  first_part = chromosome1.genes[1:cut_point]
+  second_part = chromosome2.genes[cut_point + 1:end]
+  mutate(Chromosome([ first_part, second_part]), population_size)
+end</p>
+
+<p>function reproduction(new_population, current_population, selection,</p>
+
+<pre><code>                  population_size)
+</code></pre>
+
+<p>  if selection == []</p>
+
+<pre><code>return new_population
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>father = current_population[selection[1]]
+mother = current_population[selection[2]]
+child = crossover(father, mother, population_size)
+reproduction([new_population, child], current_population, selection[3:end],
+             population_size)
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>function mutate(chromosome, population_size)
+  mutator(gene) = if rand(1:population_size) == 1</p>
+
+<pre><code>gene == 1 ? 0 : 1
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>gene
+</code></pre>
+
+<p>  end
+  Chromosome([ mutator(gene) for gene in chromosome.genes ])
+end</p>
+
+<p>function run(population_size, genes_size, generations, fight_rate)
+  current = create_population(population_size, genes_size)
+  for i in 1:generations</p>
+
+<pre><code>scores = score(current)
+best = maximum(scores)
+println("Generation $i Best $best")
+selection = tournament(scores, fight_rate)
+current = reproduction([], current, selection, population_size)
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 15]]></title>
@@ -331,90 +471,6 @@ julia&gt; gen2 = reproduction([], pop, selection)
  Chromosome([0,0,0,1,0,0,1,1,0,0,1,0,1,1,0,0,1,0,1,1])
  Chromosome([1,0,1,0,1,1,0,0,0,1,1,0,1,0,1,0,1,1,1,0])
 </code></pre>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 11]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/05/29/un-algorithme-genetique-en-julia-partie-11/"/>
-    <updated>2014-05-29T21:13:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/05/29/un-algorithme-genetique-en-julia-partie-11</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Hier on a vu qu'il y avait une légère différence de <em>type</em> entre les gènes
-d'un chromosome avant et après la mutation:</p>
-
-<pre><code>julia&gt; c = Chromosome(create_genes(10))
-Chromosome([0,0,0,1,1,1,1,1,0,1])
-
-julia&gt; d = mutate(c)
-Chromosome({0,0,0,1,1,1,1,1,0,1})
-
-julia&gt; c.genes
-10-element Array{Int32,1}:
-
-julia&gt; d.genes
-10-element Array{Any,1}:
-</code></pre>
-
-<p>C'est l'occasion de regarder un peu les types en Julia.</p>
-
-<!-- more -->
-
-
-<p>Voici une fonction <code>foo</code> qui additionne deux nombres:</p>
-
-<pre><code>julia&gt; foo(a, b) = a + b
-foo (generic function with 1 method)
-
-julia&gt; foo(1, 2)
-3
-</code></pre>
-
-<p>Que se passe-t-il si je lui passe deux chaînes de caractères ?</p>
-
-<pre><code>julia&gt; foo("he", "llo")
-ERROR: no method +(ASCIIString, ASCIIString)
-</code></pre>
-
-<p>C'est une erreur, puisque la fonction <code>+</code> ne sait pas additionner des
-chaînes.</p>
-
-<p>Très bien, apprenons à <code>foo</code> l'addition de chaînes. Pour cela, on indique
-à Julia ce qu'il faut faire lorsque les arguments reçus par <code>foo</code> sont de
-type <code>String</code>:</p>
-
-<pre><code>julia&gt; foo(a::String, b::String) = "$a$b"
-foo (generic function with 2 methods)
-
-julia&gt; foo("he", "llo")
-"hello"
-</code></pre>
-
-<p>Et <code>foo</code> fonctionne toujours avec des nombres:</p>
-
-<pre><code>julia&gt; foo(1, 2)
-3
-</code></pre>
-
-<p>La fonction <code>foo</code> possède 2 <em>méthodes</em>, une à utiliser quand elle reçoit des
-arguments <em>String</em>, et une autre, à utiliser dans tous les autres cas:</p>
-
-<pre><code>julia&gt; methods(foo)
-# 2 methods for generic function "foo":
-foo(a::String,b::String) at none:1
-foo(a,b) at none:1
-</code></pre>
-
-<p>La prochaine fois on arrangera notre fonction <code>mutate</code> pour que les gènes
-conservent le même type.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
