@@ -77,7 +77,7 @@ require 'opal-jquery'
 class SpaceCanvas
 
   def initialize
-    @canvas  = `document.getElementById(#{'canvas'})`
+    @canvas  = `document.getElementById('canvas')`
     @context = `#@canvas.getContext('2d')`
     @height  = `#@canvas.height`
     @width   = `#@canvas.width`
