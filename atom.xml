@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-13T20:09:40+02:00</updated>
+  <updated>2014-06-14T21:45:11+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,176 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 5]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/"/>
+    <updated>2014-06-14T21:15:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>On faire faire un peu d&#8217;animation. Ça va être très simple, on va juste
+faire bouger le joueur automatiquement d&#8217;un coté. Malgré la simplicité,
+on aura après ça tout ce qu&#8217;il nous faut pour animer notre futur jeu.</p>
+
+<!-- more -->
+
+
+<p>Je vais ajouter une méthode <code>update</code> à la classe <code>Player</code>:</p>
+
+<figure class='code'><figcaption><span>app/player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Player</span>
+</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">,</span> <span class="ss">:w</span><span class="p">,</span> <span class="ss">:h</span><span class="p">,</span> <span class="ss">:color</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>    <span class="vi">@x</span> <span class="o">=</span> <span class="mi">325</span>
+</span><span class='line'>    <span class="vi">@y</span> <span class="o">=</span> <span class="mi">560</span>
+</span><span class='line'>    <span class="vi">@w</span> <span class="o">=</span> <span class="mi">50</span>
+</span><span class='line'>    <span class="vi">@h</span> <span class="o">=</span> <span class="mi">30</span>
+</span><span class='line'>    <span class="vi">@color</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">update</span>
+</span><span class='line'>    <span class="vi">@x</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>À chaque appel de cette méthode, la position du joueur sera décalée de 1
+pixel vers la droite. Peux pas faire plus simple ;)</p>
+
+<p>Maintenant, voici le nouveau fichier <code>application.rb</code>, où se trouve
+l&#8217;animation proprement dite:</p>
+
+<figure class='code'><figcaption><span>app/application.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal-jquery&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;space_canvas&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;player&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="vi">@canvas</span> <span class="o">=</span> <span class="no">SpaceCanvas</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'><span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">main_loop</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>  <span class="sb">`setInterval(</span><span class="si">#{</span><span class="n">block</span><span class="o">.</span><span class="n">to_n</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">interval</span><span class="si">}</span><span class="sb">)`</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">start</span>
+</span><span class='line'>  <span class="n">main_loop</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="vi">@canvas</span><span class="o">.</span><span class="n">clear_background</span>
+</span><span class='line'>    <span class="vi">@canvas</span><span class="o">.</span><span class="n">draw_player</span><span class="p">(</span><span class="vi">@player</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@player</span><span class="o">.</span><span class="n">update</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">start</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tout d&#8217;abord, la méthode <code>main_loop</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">main_loop</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>  <span class="sb">`setInterval(</span><span class="si">#{</span><span class="n">block</span><span class="o">.</span><span class="n">to_n</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">interval</span><span class="si">}</span><span class="sb">)`</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Elle prend comme arguments un intervalle en millisecondes et un bloc
+d&#8217;instructions ruby à exécuter toutes les <code>interval</code> millisecondes.
+Elle appelle la méthode javascript <code>setInterval</code> avec ses arguments.
+La méthode <code>to_n</code>, sur <code>#{block.to_n}</code>, convertie le bloc d&#8217;instructions
+ruby en instructions javascript. Il me semble que <code>to_n</code> est là pour
+<em>to native</em>.</p>
+
+<p>Je ne suis pas content de cette méthode. En effet, mélanger deux
+langages différents n&#8217;est pas très heureux. Je ne sais pas si il existe
+une façon de faire cela en ruby pur, mais j&#8217;espère. Je chercherais plus
+tard, pour l&#8217;instant ça fonctionnera comme ça.</p>
+
+<p>Et maintenant la méthode <code>start</code> s&#8217;explique simplement:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">start</span>
+</span><span class='line'>  <span class="n">main_loop</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="vi">@canvas</span><span class="o">.</span><span class="n">clear_background</span>
+</span><span class='line'>    <span class="vi">@canvas</span><span class="o">.</span><span class="n">draw_player</span><span class="p">(</span><span class="vi">@player</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@player</span><span class="o">.</span><span class="n">update</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Toutes les 50 millisecondes (<code>main_loop(50)</code>) on exécute le bloc
+d&#8217;instructions suivantes:</p>
+
+<pre><code>@canvas.clear_background
+@canvas.draw_player(@player)
+@player.update
+</code></pre>
+
+<p>C&#8217;est à dire qu&#8217;on efface l&#8217;écran (le canvas), puis on affiche le joueur,
+et enfin on déplace le joueur.</p>
+
+<p>Après un <code>rake build</code> et un rafraichissement du navigateur, vous devriez
+voir le joueur se déplacer lentement vers la droite. Mission accomplie !</p>
+
+<p>Demain on déplace le joueur avec le clavier ?</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 4]]></title>
@@ -201,7 +371,7 @@ dans des fichiers séparés, pour obtenir ça:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/10/un-space-invaders-avec-opal-dot-rb-partie-1/'>Un space invaders avec Opal.rb &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -356,7 +526,7 @@ fois, ce qui va nous donner une séance de refactoring demain…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/10/un-space-invaders-avec-opal-dot-rb-partie-1/'>Un space invaders avec Opal.rb &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -476,7 +646,7 @@ précédente est equivalente à:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/10/un-space-invaders-avec-opal-dot-rb-partie-1/'>Un space invaders avec Opal.rb &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -650,7 +820,7 @@ rectangle tout noir ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -767,7 +937,7 @@ exemple <code>select</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -935,7 +1105,7 @@ peut voir notre <em>Hello world!</em>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/'>Un space invaders avec Opal.rb &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/'>Un space invaders avec Opal.rb &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/'>Un space invaders avec Opal.rb &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2079,181 +2249,6 @@ ses goûts ;)</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/07/creer-facilement-des-themes-pour-vim/'>Créer facilement des thèmes pour Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/19/le-theme-gruvbox-pour-vim/'>Le thème Gruvbox pour Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/29/inserer-le-contenu-dun-fichier-ou-dune-commande-shell-dans-vim/'>Insérer le contenu d&#8217;un fichier ou d&#8217;une commande shell dans Vim</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 8]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8/"/>
-    <updated>2014-05-25T19:03:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/05/25/un-algorithme-genetique-en-julia-partie-8</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Voici le programme actuel, qui tient compte de l&#8217;utilisation du type
-<code>Chromosome</code>, ajouté dans la partie 7.</p>
-
-<!-- more -->
-
-
-
-
-<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">type</span><span class="nc"> Chromosome</span>
-</span><span class='line'>  <span class="n">genes</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">create_genes</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">[</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">create_genes</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">score</span><span class="p">(</span><span class="n">population</span><span class="p">)</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">genes</span><span class="p">),</span> <span class="n">population</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">scores</span><span class="p">[</span><span class="n">index1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scores</span><span class="p">[</span><span class="n">index2</span><span class="p">]</span> <span class="o">?</span> <span class="n">index1</span> <span class="p">:</span> <span class="n">index2</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> tournament</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">population_size</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">selection_size</span> <span class="o">=</span> <span class="n">population_size</span> <span class="o">*</span> <span class="mi">2</span>
-</span><span class='line'>  <span class="p">[</span> <span class="n">fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">),</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">))</span>
-</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">selection_size</span> <span class="p">]</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> crossover</span><span class="p">(</span><span class="n">chromosome1</span><span class="p">,</span> <span class="n">chromosome2</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">cut_point</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">length</span><span class="p">(</span><span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
-</span><span class='line'>  <span class="n">first_part</span> <span class="o">=</span> <span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">cut_point</span><span class="p">]</span>
-</span><span class='line'>  <span class="n">second_part</span> <span class="o">=</span> <span class="n">chromosome2</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">cut_point</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="k">end</span><span class="p">]</span>
-</span><span class='line'>  <span class="n">Chromosome</span><span class="p">([</span> <span class="n">first_part</span><span class="p">,</span> <span class="n">second_part</span><span class="p">])</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> reproduction</span><span class="p">(</span><span class="n">new_population</span><span class="p">,</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="p">[]</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">new_population</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="n">father</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-</span><span class='line'>    <span class="n">mother</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
-</span><span class='line'>    <span class="n">child</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">father</span><span class="p">,</span> <span class="n">mother</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">reproduction</span><span class="p">([</span><span class="n">new_population</span><span class="p">,</span> <span class="n">child</span><span class="p">],</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="k">end</span><span class="p">])</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le changement le plus important est l&#8217;utilisation d&#8217;une fonction anonyme:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">score</span><span class="p">(</span><span class="n">population</span><span class="p">)</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">genes</span><span class="p">),</span> <span class="n">population</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On arrive bien à calculer la génération suivante:</p>
-
-<pre><code>julia&gt; include("main.jl")
-reproduction (generic function with 1 method)
-
-julia&gt; pop = create_population(8, 20)
-8-element Array{Chromosome,1}:
- Chromosome([1,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1])
- Chromosome([0,1,0,0,1,1,1,0,1,0,0,1,0,1,1,0,1,0,0,0])
- Chromosome([0,0,1,0,0,1,0,1,0,0,0,0,1,0,0,0,1,0,0,0])
- Chromosome([0,0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,0,1,0,0])
- Chromosome([1,1,0,1,1,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0])
- Chromosome([1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1])
- Chromosome([1,1,0,0,1,0,1,0,0,1,0,1,0,1,0,0,1,1,1,1])
- Chromosome([0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,1,1,1,0])
-
-julia&gt; scores = score(pop)
-8-element Array{Int32,1}:
-  7
-  9
-  5
-  7
-  9
- 10
- 11
- 10
-
-julia&gt; selection = tournament(scores)
-16-element Array{Int32,1}:
- 2
- 4
- 6
- 1
- 6
- 5
- 8
- 7
- 5
- 7
- 5
- 6
- 8
- 4
- 6
- 6
-
-julia&gt; generation2 = reproduction([], pop, selection)
-8-element Array{Chromosome,1}:
- Chromosome([0,1,0,0,1,1,1,0,1,1,0,0,0,1,1,0,0,1,0,0])
- Chromosome([1,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1])
- Chromosome([1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,0,0])
- Chromosome([0,1,1,0,0,1,1,0,0,1,0,1,0,1,0,0,1,1,1,1])
- Chromosome([1,1,0,1,1,0,0,0,1,1,0,0,0,1,0,0,1,1,1,1])
- Chromosome([1,1,0,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1])
- Chromosome([0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,1,1,0,0])
- Chromosome([1,0,1,1,1,1,0,0,1,0,0,0,1,0,0,0,0,1,1,1])
-</code></pre>
-
-<p>La première version de l&#8217;algorithme est bientôt finie…</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/'>Un algorithme génétique en Julia &ndash; partie 17</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/'>Un algorithme génétique en Julia &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/'>Un algorithme génétique en Julia &ndash; partie 15</a></li></ul></section></p>
 ]]></content>
   </entry>
   
