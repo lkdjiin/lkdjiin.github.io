@@ -1,0 +1,619 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Un space invaders avec Opal.rb - partie 8 - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Comme promis, on ajoute aujourd&#8217;hui les envahisseurs. Mais comme j&#8217;ai une
+petite flemme ce soir, il y aura peu d&# &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Un space invaders avec Opal.rb - partie 8</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-17T21:08:00+02:00" pubdate data-updated="true">17 juin 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Comme promis, on ajoute aujourd&#8217;hui les envahisseurs. Mais comme j&#8217;ai une
+petite flemme ce soir, il y aura peu d&#8217;explications ;) De plus le code est
+un premier jet…</p>
+
+<p>Quoiqu&#8217;il en soit, c&#8217;est parti.</p>
+
+<!-- more -->
+
+
+<p>La classe <code>Enemy</code>:</p>
+
+<figure class='code'><figcaption><span>app/enemy.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Enemy</span>
+</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">,</span> <span class="ss">:w</span><span class="p">,</span> <span class="ss">:h</span><span class="p">,</span> <span class="ss">:color</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class='line'>    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
+</span><span class='line'>    <span class="vi">@w</span> <span class="o">=</span> <span class="n">w</span>
+</span><span class='line'>    <span class="vi">@h</span> <span class="o">=</span> <span class="n">h</span>
+</span><span class='line'>    <span class="vi">@color</span> <span class="o">=</span> <span class="n">color</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La classe <code>Enemies</code>, pour gérer une collection d&#8217;envahisseurs:</p>
+
+<figure class='code'><figcaption><span>app/enemies.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Enemies</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="no">Enumerable</span>
+</span><span class='line'>  <span class="no">ENEMIES_PER_ROW</span> <span class="o">=</span> <span class="mi">10</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>    <span class="vi">@enemies</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>    <span class="vi">@direction</span> <span class="o">=</span> <span class="ss">:right</span>
+</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="s1">&#39;#0000ff&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="s1">&#39;#0000dd&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="s1">&#39;#0000bb&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="s1">&#39;#000099&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="s1">&#39;#000077&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">update</span>
+</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">10</span> <span class="o">||</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">w</span> <span class="o">&gt;=</span> <span class="mi">690</span>
+</span><span class='line'>        <span class="n">change_enemies_direction</span>
+</span><span class='line'>        <span class="n">enemies_down</span>
+</span><span class='line'>        <span class="k">break</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="vi">@direction</span> <span class="o">==</span> <span class="ss">:left</span>
+</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">2</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">change_enemies_direction</span>
+</span><span class='line'>    <span class="k">if</span> <span class="vi">@direction</span> <span class="o">==</span> <span class="ss">:left</span>
+</span><span class='line'>      <span class="vi">@direction</span> <span class="o">=</span> <span class="ss">:right</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="vi">@direction</span> <span class="o">=</span> <span class="ss">:left</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">enemies_down</span>
+</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">e</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mi">4</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="no">ENEMIES_PER_ROW</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class='line'>      <span class="vi">@enemies</span> <span class="o">&lt;&lt;</span> <span class="no">Enemy</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">50</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La classe <code>Game</code>, remaniée:</p>
+
+<figure class='code'><figcaption><span>app/game.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Game</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>    <span class="vi">@canvas</span> <span class="o">=</span> <span class="no">SpaceCanvas</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>    <span class="vi">@enemies</span> <span class="o">=</span> <span class="no">Enemies</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">start</span>
+</span><span class='line'>    <span class="n">init_keyboard</span>
+</span><span class='line'>    <span class="n">main_loop</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="vi">@canvas</span><span class="o">.</span><span class="n">clear_background</span>
+</span><span class='line'>      <span class="vi">@canvas</span><span class="o">.</span><span class="n">draw_player</span><span class="p">(</span><span class="vi">@player</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@enemies</span><span class="o">.</span><span class="n">update</span>
+</span><span class='line'>      <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">e</span><span class="o">|</span> <span class="vi">@canvas</span><span class="o">.</span><span class="n">draw_enemy</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">main_loop</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>    <span class="sb">`setInterval(</span><span class="si">#{</span><span class="n">block</span><span class="o">.</span><span class="n">to_n</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">interval</span><span class="si">}</span><span class="sb">)`</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">init_keyboard</span>
+</span><span class='line'>    <span class="sx">%x(</span>
+</span><span class='line'><span class="sx">      window.addEventListener(&quot;keydown&quot;,</span>
+</span><span class='line'><span class="sx">        function(e) {</span>
+</span><span class='line'><span class="sx">          if(e.keyCode == 37) { </span><span class="si">#{</span><span class="vi">@player</span><span class="o">.</span><span class="n">move_left</span><span class="si">}</span><span class="sx"> }</span>
+</span><span class='line'><span class="sx">          if(e.keyCode == 39) { </span><span class="si">#{</span><span class="vi">@player</span><span class="o">.</span><span class="n">move_right</span><span class="si">}</span><span class="sx"> }</span>
+</span><span class='line'><span class="sx">        },</span>
+</span><span class='line'><span class="sx">        false);</span>
+</span><span class='line'><span class="sx">    )</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La classe <code>SpaceCanvas</code>, avec sa nouvelle méthode <code>draw_enemy</code>:</p>
+
+<figure class='code'><figcaption><span>app/space_canvas.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">SpaceCanvas</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>    <span class="vi">@canvas</span>  <span class="o">=</span> <span class="sb">`document.getElementById(&#39;canvas&#39;)`</span>
+</span><span class='line'>    <span class="vi">@context</span> <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.getContext(&#39;2d&#39;)`</span>
+</span><span class='line'>    <span class="vi">@height</span>  <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.height`</span>
+</span><span class='line'>    <span class="vi">@width</span>   <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.width`</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">clear_background</span>
+</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="vi">@width</span><span class="p">,</span> <span class="vi">@height</span><span class="p">,</span> <span class="s1">&#39;black&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_player</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_enemy</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">enemy</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillStyle = </span><span class="si">#{</span><span class="n">color</span><span class="si">}</span><span class="sb">`</span>
+</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillRect(</span><span class="si">#{</span><span class="n">x</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">y</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">w</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">h</span><span class="si">}</span><span class="sb">)`</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et enfin <code>application.rb</code>, qui inclus les nouvelles classes:</p>
+
+<figure class='code'><figcaption><span>app/application.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal-jquery&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;space_canvas&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;player&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;game&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;enemy&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;enemies&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">game</span> <span class="o">=</span> <span class="no">Game</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'><span class="n">game</span><span class="o">.</span><span class="n">start</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voilà, il y aura surement un petit travail de refactoring à faire
+prochainement ;)</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li><li><a href='/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-06-17T21:08:00+02:00" pubdate data-updated="true">17 juin 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/intermediaire/'>intermédiaire</a>, <a class='category' href='/blog/categories/javascript/'>javascript</a>, <a class='category' href='/blog/categories/jeu/'>jeu</a>, <a class='category' href='/blog/categories/opal-dot-rb/'>opal.rb</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>, <a class='category' href='/blog/categories/space-invaders/'>space invaders</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/" title="Previous Post: Un space invaders avec Opal.rb - partie 7">&laquo; Un space invaders avec Opal.rb - partie 7</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/">Un space invaders avec Opal.rb - partie 8</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/">Un space invaders avec Opal.rb - partie 7</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/">Un space invaders avec Opal.rb - partie 6</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/">Un space invaders avec Opal.rb - partie 5</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/13/un-space-invaders-avec-opal-dot-rb-partie-4/">Un space invaders avec Opal.rb - partie 4</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/">Un space invaders avec Opal.rb - partie 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/11/un-space-invaders-avec-opal-dot-rb-partie-2/">Un space invaders avec Opal.rb - partie 2</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
