@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-17T21:21:48+02:00</updated>
+  <updated>2014-06-18T21:31:54+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,175 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 9]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/"/>
+    <updated>2014-06-18T21:05:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Le code que j&#8217;ai posté hier, pour gérer le déplacement des envahisseurs,
+a été écrit vite et sans trop de réflexion. Il nécessite donc un <del>petit</del>
+gros coup de refactoring.</p>
+
+<!-- more -->
+
+
+<p>Le pire morceau, tout du moins celui qui me saute aux yeux ce soir, est
+la méthode <code>update</code> de la classe <code>Enemies</code>. C&#8217;est le genre de chose que je
+ne laisserais jamais passer au boulot, par exemple. C&#8217;est un concentré de
+mauvais code et de <em>code smells</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">update</span>
+</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">10</span> <span class="o">||</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">w</span> <span class="o">&gt;=</span> <span class="mi">690</span>
+</span><span class='line'>        <span class="n">change_enemies_direction</span>
+</span><span class='line'>        <span class="n">enemies_down</span>
+</span><span class='line'>        <span class="k">break</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
+</span><span class='line'>      <span class="k">if</span> <span class="vi">@direction</span> <span class="o">==</span> <span class="ss">:left</span>
+</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">2</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je vais m&#8217;occuper d&#8217;abord de la seconde partie, celle qui déplace les
+envahisseurs à droite ou à gauche:</p>
+
+<pre><code>@enemies.each do |e|
+  if @direction == :left
+    e.x = e.x - 2
+  else
+    e.x = e.x + 2
+  end
+end
+</code></pre>
+
+<p>Comme on a des méthodes <code>move_left</code> et <code>move_right</code> pour la classe <code>Player</code>,
+pourquoi ne pas faire pareil avec la classe <code>Enemy</code> ? Voici donc une
+nouvelle écriture de la classe <code>Enemy</code>:</p>
+
+<figure class='code'><figcaption><span>app/enemy.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Enemy</span>
+</span><span class='line'>  <span class="no">DELTA</span> <span class="o">=</span> <span class="mi">2</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">,</span> <span class="ss">:w</span><span class="p">,</span> <span class="ss">:h</span><span class="p">,</span> <span class="ss">:color</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class='line'>    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
+</span><span class='line'>    <span class="vi">@w</span> <span class="o">=</span> <span class="n">w</span>
+</span><span class='line'>    <span class="vi">@h</span> <span class="o">=</span> <span class="n">h</span>
+</span><span class='line'>    <span class="vi">@color</span> <span class="o">=</span> <span class="n">color</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">move_left</span>
+</span><span class='line'>    <span class="vi">@x</span> <span class="o">-=</span> <span class="no">DELTA</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">move_right</span>
+</span><span class='line'>    <span class="vi">@x</span> <span class="o">+=</span> <span class="no">DELTA</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Si on la compare avec la classe <code>Player</code>, on s&#8217;aperçoit qu&#8217;elles sont
+bien trop similaires. Mais on verra ça plus tard, retournons à
+<code>Enemies#update</code>.</p>
+
+<p>Avant:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@direction</span> <span class="o">==</span> <span class="ss">:left</span>
+</span><span class='line'>    <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Après:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="vi">@enemies</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">enemy</span><span class="o">|</span>
+</span><span class='line'>  <span class="vi">@direction</span> <span class="o">==</span> <span class="ss">:left</span> <span class="p">?</span> <span class="n">enemy</span><span class="o">.</span><span class="n">move_left</span> <span class="p">:</span> <span class="n">enemy</span><span class="o">.</span><span class="n">move_right</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;utilise <code>map</code> au lieu de <code>each</code>, qui marque mieux l&#8217;intention de modifier
+la collection. L&#8217;argument <code>e</code>, illisible, est devenu <code>enemy</code>, clair. Et
+grâce à <code>move_left</code> et <code>move_right</code>, les messages envoyés à un objet
+<code>Enemy</code> sont plus simples. On s&#8217;est aussi débarrassé d&#8217;un nombre magique.</p>
+
+<p>OK, c&#8217;est bien mieux. Mais y a encore un truc qui me dérange profondément.
+Vous voyez ce que je veux dire ? Non ? Alors rendez-vous demain ;)</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 8]]></title>
@@ -345,7 +514,7 @@ prochainement ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -483,7 +652,7 @@ mais là je n&#8217;ai plus le temps ! On verra demain.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -685,7 +854,7 @@ utiliser l&#8217;interpolation de chaînes de caractères ruby…).</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/'>Un space invaders avec Opal.rb &ndash; partie 5</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -855,7 +1024,7 @@ voir le joueur se déplacer lentement vers la droite. Mission accomplie !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1047,7 +1216,7 @@ dans des fichiers séparés, pour obtenir ça:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1202,7 +1371,7 @@ fois, ce qui va nous donner une séance de refactoring demain…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1322,7 +1491,7 @@ précédente est equivalente à:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1496,7 +1665,7 @@ rectangle tout noir ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1613,7 +1782,7 @@ exemple <code>select</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1781,7 +1950,7 @@ peut voir notre <em>Hello world!</em>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/'>Un space invaders avec Opal.rb &ndash; partie 6</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/16/un-space-invaders-avec-opal-dot-rb-partie-7/'>Un space invaders avec Opal.rb &ndash; partie 7</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2498,91 +2667,6 @@ julia&gt; gen2 = reproduction([], pop, selection)
  Chromosome([0,0,0,1,0,0,1,1,0,0,1,0,1,1,0,0,1,0,1,1])
  Chromosome([1,0,1,0,1,1,0,0,0,1,1,0,1,0,1,0,1,1,1,0])
 </code></pre>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/'>Un algorithme génétique en Julia &ndash; partie 17</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/'>Un algorithme génétique en Julia &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/'>Un algorithme génétique en Julia &ndash; partie 15</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 11]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/05/29/un-algorithme-genetique-en-julia-partie-11/"/>
-    <updated>2014-05-29T21:13:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/05/29/un-algorithme-genetique-en-julia-partie-11</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Hier on a vu qu&#8217;il y avait une légère différence de <em>type</em> entre les gènes
-d&#8217;un chromosome avant et après la mutation:</p>
-
-<pre><code>julia&gt; c = Chromosome(create_genes(10))
-Chromosome([0,0,0,1,1,1,1,1,0,1])
-
-julia&gt; d = mutate(c)
-Chromosome({0,0,0,1,1,1,1,1,0,1})
-
-julia&gt; c.genes
-10-element Array{Int32,1}:
-
-julia&gt; d.genes
-10-element Array{Any,1}:
-</code></pre>
-
-<p>C&#8217;est l&#8217;occasion de regarder un peu les types en Julia.</p>
-
-<!-- more -->
-
-
-<p>Voici une fonction <code>foo</code> qui additionne deux nombres:</p>
-
-<pre><code>julia&gt; foo(a, b) = a + b
-foo (generic function with 1 method)
-
-julia&gt; foo(1, 2)
-3
-</code></pre>
-
-<p>Que se passe-t-il si je lui passe deux chaînes de caractères ?</p>
-
-<pre><code>julia&gt; foo("he", "llo")
-ERROR: no method +(ASCIIString, ASCIIString)
-</code></pre>
-
-<p>C&#8217;est une erreur, puisque la fonction <code>+</code> ne sait pas additionner des
-chaînes.</p>
-
-<p>Très bien, apprenons à <code>foo</code> l&#8217;addition de chaînes. Pour cela, on indique
-à Julia ce qu&#8217;il faut faire lorsque les arguments reçus par <code>foo</code> sont de
-type <code>String</code>:</p>
-
-<pre><code>julia&gt; foo(a::String, b::String) = "$a$b"
-foo (generic function with 2 methods)
-
-julia&gt; foo("he", "llo")
-"hello"
-</code></pre>
-
-<p>Et <code>foo</code> fonctionne toujours avec des nombres:</p>
-
-<pre><code>julia&gt; foo(1, 2)
-3
-</code></pre>
-
-<p>La fonction <code>foo</code> possède 2 <em>méthodes</em>, une à utiliser quand elle reçoit des
-arguments <em>String</em>, et une autre, à utiliser dans tous les autres cas:</p>
-
-<pre><code>julia&gt; methods(foo)
-# 2 methods for generic function "foo":
-foo(a::String,b::String) at none:1
-foo(a,b) at none:1
-</code></pre>
-
-<p>La prochaine fois on arrangera notre fonction <code>mutate</code> pour que les gènes
-conservent le même type.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
