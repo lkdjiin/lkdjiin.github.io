@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : opal.rb | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/opal-dot-rb/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-18T21:31:54+02:00</updated>
+  <updated>2014-06-19T21:35:10+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,218 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 10]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/"/>
+    <updated>2014-06-19T21:04:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Le code suivant ne me convient toujours pas :</p>
+
+<p>``` ruby</p>
+
+<pre><code>@enemies.map do |enemy|
+  @direction == :left ? enemy.move_left : enemy.move_right
+end
+</code></pre>
+
+<p>```</p>
+
+<p>Pourquoi ne pas dire
+simplement à la classe <code>Enemy</code> ce qu'elle doit faire en une seule fois:</p>
+
+<p>``` ruby</p>
+
+<pre><code>@enemies.map {|enemy| enemy.move(@direction) }
+</code></pre>
+
+<p>```</p>
+
+<!-- more -->
+
+
+<p>C'est quand même bien plus simple ! Bien sûr, pour que ça fonctionne il
+faut ajouter une méthode à la classe <code>Enemy</code>:</p>
+
+<p>``` ruby
+  def move(direction)</p>
+
+<pre><code>direction == :left ? move_left : move_right
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Et tant qu'on y est, on fait pareil avec la méthode <code>enemies_down</code>.</p>
+
+<p>Avant:</p>
+
+<p>``` ruby
+  def enemies_down</p>
+
+<pre><code>@enemies.each do |e|
+  e.y = e.y + 4
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Après:</p>
+
+<p>``` ruby
+  def enemies_down</p>
+
+<pre><code>@enemies.map(&amp;:move_down)
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Et on ajoute ceci à <code>Enemy</code>:</p>
+
+<p>``` ruby
+  def move_down</p>
+
+<pre><code>@y += 4
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Pour terminer cet article,
+voici le code des classes <code>Enemy</code> et <code>Enemies</code>:</p>
+
+<p>``` ruby app/enemy.rb
+class Enemy
+  DELTA = 2</p>
+
+<p>  attr_accessor :x, :y, :w, :h, :color</p>
+
+<p>  def initialize(x, y, w, h, color)</p>
+
+<pre><code>@x = x
+@y = y
+@w = w
+@h = h
+@color = color
+</code></pre>
+
+<p>  end</p>
+
+<p>  def move_left</p>
+
+<pre><code>@x -= DELTA
+</code></pre>
+
+<p>  end</p>
+
+<p>  def move_right</p>
+
+<pre><code>@x += DELTA
+</code></pre>
+
+<p>  end</p>
+
+<p>  def move(direction)</p>
+
+<pre><code>direction == :left ? move_left : move_right
+</code></pre>
+
+<p>  end</p>
+
+<p>  def move_down</p>
+
+<pre><code>@y += 4
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>``` ruby app/enemies.rb
+class Enemies
+  include Enumerable
+  ENEMIES_PER_ROW = 10</p>
+
+<p>  def initialize</p>
+
+<pre><code>@enemies = []
+@direction = :right
+build(60, '#0000ff')
+build(120, '#0000dd')
+build(180, '#0000bb')
+build(240, '#000099')
+build(300, '#000077')
+</code></pre>
+
+<p>  end</p>
+
+<p>  def each(&amp;block)</p>
+
+<pre><code>@enemies.each(&amp;block)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def update</p>
+
+<pre><code>@enemies.each do |e|
+  if e.x &lt;= 10 || e.x + e.w &gt;= 690
+    change_enemies_direction
+    enemies_down
+    break
+  end
+end
+@enemies.map {|enemy| enemy.move(@direction) }
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def change_enemies_direction</p>
+
+<pre><code>if @direction == :left
+  @direction = :right
+else
+  @direction = :left
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>  def enemies_down</p>
+
+<pre><code>@enemies.map(&amp;:move_down)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def build(y, color)</p>
+
+<pre><code>(1..ENEMIES_PER_ROW).each do |i|
+  @enemies &lt;&lt; Enemy.new(50 + i * 60, y, 40, 40, color)
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>end
+```</p>
+
+<p>Il reste encore un peu de travail…</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 9]]></title>
@@ -641,140 +853,6 @@ end</p>
 ```</p>
 
 <p>Je pense que demain, on commencera à s'occuper des envahisseurs…</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 5]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5/"/>
-    <updated>2014-06-14T21:15:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/14/un-space-invaders-avec-opal-dot-rb-partie-5</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>On faire faire un peu d'animation. Ça va être très simple, on va juste
-faire bouger le joueur automatiquement d'un coté. Malgré la simplicité,
-on aura après ça tout ce qu'il nous faut pour animer notre futur jeu.</p>
-
-<!-- more -->
-
-
-<p>Je vais ajouter une méthode <code>update</code> à la classe <code>Player</code>:</p>
-
-<p>``` ruby app/player.rb
-class Player
-  attr_accessor :x, :y, :w, :h, :color</p>
-
-<p>  def initialize</p>
-
-<pre><code>@x = 325
-@y = 560
-@w = 50
-@h = 30
-@color = 'green'
-</code></pre>
-
-<p>  end</p>
-
-<p>  def update</p>
-
-<pre><code>@x += 1
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>À chaque appel de cette méthode, la position du joueur sera décalée de 1
-pixel vers la droite. Peux pas faire plus simple ;)</p>
-
-<p>Maintenant, voici le nouveau fichier <code>application.rb</code>, où se trouve
-l'animation proprement dite:</p>
-
-<p>``` ruby app/application.rb
-require &lsquo;opal&rsquo;
-require &lsquo;opal-jquery&rsquo;</p>
-
-<p>require &lsquo;space_canvas&rsquo;
-require &lsquo;player&rsquo;</p>
-
-<p>@canvas = SpaceCanvas.new
-@player = Player.new</p>
-
-<p>def main_loop(interval, &amp;block)
-  <code>setInterval(#{block.to_n}, #{interval})</code>
-end</p>
-
-<p>def start
-  main_loop(50) do</p>
-
-<pre><code>@canvas.clear_background
-@canvas.draw_player(@player)
-@player.update
-</code></pre>
-
-<p>  end
-end</p>
-
-<p>start
-```</p>
-
-<p>Tout d'abord, la méthode <code>main_loop</code>:</p>
-
-<p><code>ruby
-def main_loop(interval, &amp;block)
-  `setInterval(#{block.to_n}, #{interval})`
-end
-</code></p>
-
-<p>Elle prend comme arguments un intervalle en millisecondes et un bloc
-d'instructions ruby à exécuter toutes les <code>interval</code> millisecondes.
-Elle appelle la méthode javascript <code>setInterval</code> avec ses arguments.
-La méthode <code>to_n</code>, sur <code>#{block.to_n}</code>, convertie le bloc d'instructions
-ruby en instructions javascript. Il me semble que <code>to_n</code> est là pour
-<em>to native</em>.</p>
-
-<p>Je ne suis pas content de cette méthode. En effet, mélanger deux
-langages différents n'est pas très heureux. Je ne sais pas si il existe
-une façon de faire cela en ruby pur, mais j'espère. Je chercherais plus
-tard, pour l'instant ça fonctionnera comme ça.</p>
-
-<p>Et maintenant la méthode <code>start</code> s'explique simplement:</p>
-
-<p>``` ruby
-def start
-  main_loop(50) do</p>
-
-<pre><code>@canvas.clear_background
-@canvas.draw_player(@player)
-@player.update
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Toutes les 50 millisecondes (<code>main_loop(50)</code>) on exécute le bloc
-d'instructions suivantes:</p>
-
-<pre><code>@canvas.clear_background
-@canvas.draw_player(@player)
-@player.update
-</code></pre>
-
-<p>C'est à dire qu'on efface l'écran (le canvas), puis on affiche le joueur,
-et enfin on déplace le joueur.</p>
-
-<p>Après un <code>rake build</code> et un rafraichissement du navigateur, vous devriez
-voir le joueur se déplacer lentement vers la droite. Mission accomplie !</p>
-
-<p>Demain on déplace le joueur avec le clavier ?</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
