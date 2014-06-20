@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-19T21:35:10+02:00</updated>
+  <updated>2014-06-20T21:43:54+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,108 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 11]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/"/>
+    <updated>2014-06-20T21:16:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Je continue le refactoring de la méthode <code>update</code>:</p>
+
+<p>``` ruby
+  def update</p>
+
+<pre><code>@enemies.each do |e|
+  if e.x &lt;= 10 || e.x + e.w &gt;= 690
+    change_enemies_direction
+    enemies_down
+    break
+  end
+end
+@enemies.map {|enemy| enemy.move(@direction) }
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Je n'aime pas la condition multiple après le <code>if</code>. Je préfère:</p>
+
+<!-- more -->
+
+
+<p>``` ruby
+  def update</p>
+
+<pre><code>@enemies.each do |enemy|
+  if side?(enemy)
+    change_enemies_direction
+    enemies_down
+    break
+  end
+end
+@enemies.map {|enemy| enemy.move(@direction) }
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>C'est bien mieux. La définition de la méthode <code>side?</code> pourrait être:</p>
+
+<p>``` ruby
+  private</p>
+
+<p>  def side?(enemy)</p>
+
+<pre><code>enemy.x &lt;= 10 || enemy.x + enemy.w &gt;= 690
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Mais il reste des nombres magiques. En particulier le nombre 690, qui
+signifie 10 pixel <em>avant</em> la largeur du canvas. J'ai donc besoin d'ajouter
+ces notions à la classe <code>Enemies</code>:</p>
+
+<p>``` ruby
+class Enemies
+  include Enumerable
+  ENEMIES_PER_ROW = 10
+  SIDE_MARGIN = 10</p>
+
+<p>  def initialize(world_width)</p>
+
+<pre><code>@world_width = world_width
+.
+.
+.
+</code></pre>
+
+<p>```</p>
+
+<p>La méthode <code>side?</code> devient donc:</p>
+
+<p>``` ruby
+  def side?(enemy)</p>
+
+<pre><code>enemy.x &lt;= SIDE_MARGIN || enemy.x + enemy.w &gt;= @world_width - SIDE_MARGIN
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>C'est pas encore le top, mais ça ira pour l'instant. On voir pouvoir
+ajouter quelques nouvelles fonctionnalités.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 10]]></title>
@@ -705,154 +807,6 @@ game.start
 
 <p>Je sais que j'avais dit qu'on ajouterait les envahisseurs aujourd'hui,
 mais là je n'ai plus le temps ! On verra demain.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 6]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6/"/>
-    <updated>2014-06-15T19:53:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/15/un-space-invaders-avec-opal-dot-rb-partie-6</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Et si on controlait notre joueur au clavier ? On commence par ajouter deux
-méthodes à la classe <code>Player</code>, une pour changer sa position vers la
-gauche (<code>move_left</code>), et une autre pour aller à droite (<code>move_right</code>):</p>
-
-<p>``` ruby app/player.rb
-class Player
-  DELTA = 10</p>
-
-<p>  attr_accessor :x, :y, :w, :h, :color</p>
-
-<p>  def initialize</p>
-
-<pre><code>@x = 325
-@y = 560
-@w = 50
-@h = 30
-@color = 'green'
-</code></pre>
-
-<p>  end</p>
-
-<p>  def move_left</p>
-
-<pre><code>@x -= DELTA
-</code></pre>
-
-<p>  end</p>
-
-<p>  def move_right</p>
-
-<pre><code>@x += DELTA
-</code></pre>
-
-<p>  end</p>
-
-<p>end
-```</p>
-
-<!-- more -->
-
-
-<p>Maintenant, il faut faire en sorte qu'un appui sur la touche <em>flêche gauche</em>
-appelle la méthode <code>move_left</code> (et qu'un appui sur <em>flêche droite</em> appelle
-<code>move_right</code>). Pour ça, je vais encore écrire un mélange de ruby/javascript:</p>
-
-<p>``` ruby
-def init_keyboard
-  %x(</p>
-
-<pre><code>window.addEventListener("keydown",
-  function(e) {
-    if(e.keyCode == 37) { #{@player.move_left} }
-    if(e.keyCode == 39) { #{@player.move_right} }
-  },
-  false);
-</code></pre>
-
-<p>  )
-end
-```</p>
-
-<p>Le <code>%x()</code> joue le même rôle que les backticks, mais sur plusieurs lignes.
-Ce qui est entre <code>%x(</code> et <code>)</code> est donc du code javascript (mais qui peut
-utiliser l'interpolation de chaînes de caractères ruby…).</p>
-
-<p>Le code javascript est simple, on enregistre un <em>listener</em> sur l'évenement
-<code>"keydown"</code>. Le code <code>37</code> correspond à la touche <em>flêche gauche</em>, le code
-<code>39</code>, bin, vous avez deviné ;)</p>
-
-<p>Il reste a insérer la méthode <code>init_keyboard</code> dans la méthode <code>start</code>:</p>
-
-<p>``` ruby
-def start
-  init_keyboard
-  main_loop(50) do</p>
-
-<pre><code>@canvas.clear_background
-@canvas.draw_player(@player)
-</code></pre>
-
-<p>  end
-end
-```</p>
-
-<p>Après un <code>rake build</code>, vous pouvez déplacer le joueur au clavier.</p>
-
-<p>Pour info, voici le code complet de <code>application.rb</code>:</p>
-
-<p>``` ruby app/application.rb
-require &lsquo;opal&rsquo;
-require &lsquo;opal-jquery&rsquo;</p>
-
-<p>require &lsquo;space_canvas&rsquo;
-require &lsquo;player&rsquo;</p>
-
-<p>@canvas = SpaceCanvas.new
-@player = Player.new</p>
-
-<p>def main_loop(interval, &amp;block)
-  <code>setInterval(#{block.to_n}, #{interval})</code>
-end</p>
-
-<p>def init_keyboard
-  %x(</p>
-
-<pre><code>window.addEventListener("keydown",
-  function(e) {
-    if(e.keyCode == 37) { #{@player.move_left} }
-    if(e.keyCode == 39) { #{@player.move_right} }
-  },
-  false);
-</code></pre>
-
-<p>  )
-end</p>
-
-<p>def start
-  init_keyboard
-  main_loop(50) do</p>
-
-<pre><code>@canvas.clear_background
-@canvas.draw_player(@player)
-</code></pre>
-
-<p>  end
-end</p>
-
-<p>start
-```</p>
-
-<p>Je pense que demain, on commencera à s'occuper des envahisseurs…</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
