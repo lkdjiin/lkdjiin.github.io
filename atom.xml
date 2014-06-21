@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-20T21:43:54+02:00</updated>
+  <updated>2014-06-21T22:47:21+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,162 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 12]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/"/>
+    <updated>2014-06-21T16:25:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>On commence aujourd&#8217;hui à ajouter les tirs du joueur. Le code que je vous
+propose est un brouillon, qu&#8217;il faudra améliorer successivement.</p>
+
+<p>D&#8217;abord dans la classe <code>Game</code>, j&#8217;ajoute un champ <code>@fires</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Game</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>    <span class="vi">@canvas</span> <span class="o">=</span> <span class="no">SpaceCanvas</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>    <span class="vi">@enemies</span> <span class="o">=</span> <span class="no">Enemies</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@canvas</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@fires</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!-- more -->
+
+
+<p>On déclenchera la méthode <code>fire</code> lors d&#8217;un appui sur la barre d&#8217;espace (32):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">init_keyboard</span>
+</span><span class='line'>    <span class="sx">%x(</span>
+</span><span class='line'><span class="sx">      window.addEventListener(&quot;keydown&quot;,</span>
+</span><span class='line'><span class="sx">        function(e) {</span>
+</span><span class='line'><span class="sx">          if(e.keyCode == 32) { </span><span class="si">#{</span><span class="n">fire</span><span class="si">}</span><span class="sx"> }</span>
+</span><span class='line'><span class="sx">          if(e.keyCode == 37) { </span><span class="si">#{</span><span class="vi">@player</span><span class="o">.</span><span class="n">move_left</span><span class="si">}</span><span class="sx"> }</span>
+</span><span class='line'><span class="sx">          if(e.keyCode == 39) { </span><span class="si">#{</span><span class="vi">@player</span><span class="o">.</span><span class="n">move_right</span><span class="si">}</span><span class="sx"> }</span>
+</span><span class='line'><span class="sx">        },</span>
+</span><span class='line'><span class="sx">        false);</span>
+</span><span class='line'><span class="sx">    )</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voici la méthode <code>fire</code>, qui ajoute simplement un objet à la collection:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">fire</span>
+</span><span class='line'>    <span class="vi">@fires</span> <span class="o">&lt;&lt;</span> <span class="no">Fire</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@player</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="vi">@player</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et maintenant une méthode qui met à jour les tirs du joueur:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">update_fires</span>
+</span><span class='line'>    <span class="vi">@fires</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">fire</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">fire</span><span class="o">.</span><span class="n">update_position</span>
+</span><span class='line'>      <span class="vi">@canvas</span><span class="o">.</span><span class="n">draw_fire</span><span class="p">(</span><span class="n">fire</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="vi">@fires</span><span class="o">.</span><span class="n">select!</span> <span class="p">{</span><span class="o">|</span><span class="n">fire</span><span class="o">|</span> <span class="n">fire</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La dernière ligne de cette méthode supprime de la collection les tirs qui
+ne sont plus visibles à l&#8217;écran.</p>
+
+<p>Pour finir, voici la classe <code>Fire</code>:</p>
+
+<figure class='code'><figcaption><span>app/fire.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Fire</span>
+</span><span class='line'>  <span class="no">WIDTH</span> <span class="o">=</span> <span class="mi">4</span>
+</span><span class='line'>  <span class="no">DELTA</span> <span class="o">=</span> <span class="mi">5</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class='line'>    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">w</span><span class="p">;</span> <span class="no">WIDTH</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">h</span><span class="p">;</span> <span class="no">WIDTH</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">color</span><span class="p">;</span> <span class="s2">&quot;white&quot;</span><span class="p">;</span> <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">update_position</span>
+</span><span class='line'>    <span class="vi">@y</span> <span class="o">-=</span> <span class="no">DELTA</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tout ce code pose un certain nombre de problèmes sur lesquels je reviendrais
+dans les prochains jours. Demain je pense que je mettrais le code sur Github.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 11]]></title>
@@ -137,7 +293,7 @@ ajouter quelques nouvelles fonctionnalités.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -400,7 +556,7 @@ voici le code des classes <code>Enemy</code> et <code>Enemies</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -569,7 +725,7 @@ Vous voyez ce que je veux dire ? Non ? Alors rendez-vous demain ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/'>Un space invaders avec Opal.rb &ndash; partie 8</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -905,7 +1061,7 @@ prochainement ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1043,7 +1199,7 @@ mais là je n&#8217;ai plus le temps ! On verra demain.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1245,7 +1401,7 @@ utiliser l&#8217;interpolation de chaînes de caractères ruby…).</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1415,7 +1571,7 @@ voir le joueur se déplacer lentement vers la droite. Mission accomplie !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1607,7 +1763,7 @@ dans des fichiers séparés, pour obtenir ça:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1762,7 +1918,7 @@ fois, ce qui va nous donner une séance de refactoring demain…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1882,7 +2038,7 @@ précédente est equivalente à:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2056,7 +2212,7 @@ rectangle tout noir ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2173,7 +2329,7 @@ exemple <code>select</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2341,7 +2497,7 @@ peut voir notre <em>Hello world!</em>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2733,185 +2889,6 @@ Julia ;)</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/'>Un algorithme génétique en Julia &ndash; partie 17</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/'>Un algorithme génétique en Julia &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/'>Un algorithme génétique en Julia &ndash; partie 14</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 14]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/"/>
-    <updated>2014-06-01T18:53:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Ça y est ! J&#8217;ai enfin un algorithme génétique écrit en Julia. Le programme
-est certainement maladroit par endroit, mais il fonctionne.</p>
-
-<!-- more -->
-
-
-
-
-<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">type</span><span class="nc"> Chromosome</span>
-</span><span class='line'>  <span class="n">genes</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">create_genes</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">[</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">create_genes</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">score</span><span class="p">(</span><span class="n">population</span><span class="p">)</span> <span class="o">=</span> <span class="n">map</span><span class="p">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">genes</span><span class="p">),</span> <span class="n">population</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">index1</span><span class="p">,</span> <span class="n">index2</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">0.8</span>
-</span><span class='line'>    <span class="n">scores</span><span class="p">[</span><span class="n">index1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scores</span><span class="p">[</span><span class="n">index2</span><span class="p">]</span> <span class="o">?</span> <span class="n">index1</span> <span class="p">:</span> <span class="n">index2</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="n">scores</span><span class="p">[</span><span class="n">index1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">scores</span><span class="p">[</span><span class="n">index2</span><span class="p">]</span> <span class="o">?</span> <span class="n">index2</span> <span class="p">:</span> <span class="n">index1</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> tournament</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">population_size</span> <span class="o">=</span> <span class="n">length</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">selection_size</span> <span class="o">=</span> <span class="n">population_size</span> <span class="o">*</span> <span class="mi">2</span>
-</span><span class='line'>  <span class="p">[</span> <span class="n">fight</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">),</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">population_size</span><span class="p">))</span>
-</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">selection_size</span> <span class="p">]</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> crossover</span><span class="p">(</span><span class="n">chromosome1</span><span class="p">,</span> <span class="n">chromosome2</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">cut_point</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">length</span><span class="p">(</span><span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">))</span>
-</span><span class='line'>  <span class="n">first_part</span> <span class="o">=</span> <span class="n">chromosome1</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">cut_point</span><span class="p">]</span>
-</span><span class='line'>  <span class="n">second_part</span> <span class="o">=</span> <span class="n">chromosome2</span><span class="o">.</span><span class="n">genes</span><span class="p">[</span><span class="n">cut_point</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="k">end</span><span class="p">]</span>
-</span><span class='line'>  <span class="n">mutate</span><span class="p">(</span><span class="n">Chromosome</span><span class="p">([</span> <span class="n">first_part</span><span class="p">,</span> <span class="n">second_part</span><span class="p">]))</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> reproduction</span><span class="p">(</span><span class="n">new_population</span><span class="p">,</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">selection</span> <span class="o">==</span> <span class="p">[]</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">new_population</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="n">father</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-</span><span class='line'>    <span class="n">mother</span> <span class="o">=</span> <span class="n">current_population</span><span class="p">[</span><span class="n">selection</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
-</span><span class='line'>    <span class="n">child</span> <span class="o">=</span> <span class="n">crossover</span><span class="p">(</span><span class="n">father</span><span class="p">,</span> <span class="n">mother</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">reproduction</span><span class="p">([</span><span class="n">new_population</span><span class="p">,</span> <span class="n">child</span><span class="p">],</span> <span class="n">current_population</span><span class="p">,</span> <span class="n">selection</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="k">end</span><span class="p">])</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> mutate</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">mutator</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">=</span> <span class="k">if</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">400</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="n">g</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="mi">0</span> <span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="n">g</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="n">Chromosome</span><span class="p">([</span> <span class="n">mutator</span><span class="p">(</span><span class="n">x</span><span class="p">)::</span><span class="kt">Int</span> <span class="k">for</span> <span class="n">x</span> <span class="k">in</span> <span class="n">ch</span><span class="o">.</span><span class="n">genes</span> <span class="p">])</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> run</span><span class="p">()</span>
-</span><span class='line'>  <span class="n">current</span> <span class="o">=</span> <span class="n">create_population</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="mi">50</span>
-</span><span class='line'>    <span class="n">scores</span> <span class="o">=</span> <span class="n">score</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">best</span> <span class="o">=</span> <span class="n">maximum</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">println</span><span class="p">(</span><span class="s">&quot;Generation </span><span class="si">$</span><span class="s">i Best </span><span class="si">$</span><span class="s">best&quot;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">selection</span> <span class="o">=</span> <span class="n">tournament</span><span class="p">(</span><span class="n">scores</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">current</span> <span class="o">=</span> <span class="n">reproduction</span><span class="p">([],</span> <span class="n">current</span><span class="p">,</span> <span class="n">selection</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voici un exemple d&#8217;utilisation:</p>
-
-<pre><code>julia&gt; include("main.jl")
-run (generic function with 1 method)
-
-julia&gt; run()
-Generation 1 Best 18
-Generation 2 Best 18
-Generation 3 Best 17
-Generation 4 Best 17
-Generation 5 Best 18
-Generation 6 Best 17
-Generation 7 Best 18
-Generation 8 Best 19
-Generation 9 Best 19
-Generation 10 Best 19
-Generation 11 Best 20
-...
-</code></pre>
-
-<p>Il me reste encore pas mal de choses à faire pour améliorer ce programme,
-mais c&#8217;était un bon début pour apprendre le langage Julia.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/'>Un algorithme génétique en Julia &ndash; partie 17</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/'>Un algorithme génétique en Julia &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/'>Un algorithme génétique en Julia &ndash; partie 15</a></li></ul></section></p>
 ]]></content>
   </entry>
   
