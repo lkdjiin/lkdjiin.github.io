@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-21T22:47:21+02:00</updated>
+  <updated>2014-06-22T15:24:35+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,114 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders in Opal.rb - partie 13]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/"/>
+    <updated>2014-06-22T13:42:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Voici un extrait de la classe <code>SpaceCanvas</code> actuelle:</p>
+
+<figure class='code'><figcaption><span>app/space_canvas</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">SpaceCanvas</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_player</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_enemy</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">enemy</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_fire</span><span class="p">(</span><span class="n">fire</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">fire</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">fire</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">fire</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">fire</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">fire</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pas bien ! Le code est dupliqué, et si j&#8217;aime l&#8217;idée d&#8217;avoir trois méthodes
+différentes, dont le nom est explicite, je ne veux pas avoir à réécrire
+le même code chaque fois que j&#8217;ajouterais ce genre de méthode (<code>draw_ship</code>,
+<code>draw_special_fire</code>, <code>draw_bomb</code>, etc).</p>
+
+<!-- more -->
+
+
+<p>La solution réside dans l&#8217;utilisation de <code>alias_method</code>:</p>
+
+<figure class='code'><figcaption><span>app/space_canvas</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">SpaceCanvas</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_object</span><span class="p">(</span><span class="n">object</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">object</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">object</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">object</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">object</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">object</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">alias_method</span> <span class="ss">:draw_player</span><span class="p">,</span> <span class="ss">:draw_object</span>
+</span><span class='line'>  <span class="n">alias_method</span> <span class="ss">:draw_enemy</span><span class="p">,</span> <span class="ss">:draw_object</span>
+</span><span class='line'>  <span class="n">alias_method</span> <span class="ss">:draw_fire</span><span class="p">,</span> <span class="ss">:draw_object</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Il n&#8217;y a plus de duplication, et l&#8217;ajout d&#8217;une nouvelle méthode se fait
+simplement en ajoutant un nouvel alias.</p>
+
+<p>Le code de cette série d&#8217;articles est désormais sur Github ici :
+<a href="https://github.com/lkdjiin/space-invaders-in-opal-rb">space-invaders-in-opal-rb</a>,
+et le jeu lui-même (du moins dans son état actuel, c&#8217;est à dire pas grand chose) est visible ici : <a href="http://lkdjiin.github.io/space-invaders-in-opal-rb/">http://lkdjiin.github.io/space-invaders-in-opal-rb/</a>.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 12]]></title>
@@ -165,7 +273,7 @@ dans les prochains jours. Demain je pense que je mettrais le code sur Github.</p
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -293,7 +401,7 @@ ajouter quelques nouvelles fonctionnalités.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -556,7 +664,7 @@ voici le code des classes <code>Enemy</code> et <code>Enemies</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/'>Un space invaders avec Opal.rb &ndash; partie 9</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -725,7 +833,7 @@ Vous voyez ce que je veux dire ? Non ? Alors rendez-vous demain ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1061,7 +1169,7 @@ prochainement ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1199,7 +1307,7 @@ mais là je n&#8217;ai plus le temps ! On verra demain.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1401,7 +1509,7 @@ utiliser l&#8217;interpolation de chaînes de caractères ruby…).</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1571,7 +1679,7 @@ voir le joueur se déplacer lentement vers la droite. Mission accomplie !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1763,7 +1871,7 @@ dans des fichiers séparés, pour obtenir ça:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1918,7 +2026,7 @@ fois, ce qui va nous donner une séance de refactoring demain…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2038,7 +2146,7 @@ précédente est equivalente à:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2212,7 +2320,7 @@ rectangle tout noir ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2329,7 +2437,7 @@ exemple <code>select</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2497,7 +2605,7 @@ peut voir notre <em>Hello world!</em>.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/19/un-space-invaders-avec-opal-dot-rb-partie-10/'>Un space invaders avec Opal.rb &ndash; partie 10</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/20/un-space-invaders-avec-opal-dot-rb-partie-11/'>Un space invaders avec Opal.rb &ndash; partie 11</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2842,53 +2950,6 @@ précédente:</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/'>Un algorithme génétique en Julia &ndash; partie 17</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/'>Un algorithme génétique en Julia &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/'>Un algorithme génétique en Julia &ndash; partie 14</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 15]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/"/>
-    <updated>2014-06-02T21:02:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Après avoir pondu <a href="blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/">une première version</a>
-de l&#8217;algorithme hier, je me demande ce que je pourrais améliorer. C&#8217;était
-un programme sympa pour découvrir Julia, mais je n&#8217;ai fait que gratter la
-surface de ce langage.</p>
-
-<!-- more -->
-
-
-<p>Donc, voici ce que je compte/espère faire encore avec ce programme pour
-comprendre un peu mieux Julia:</p>
-
-<ul>
-<li>Retirer les nombres magiques restants.</li>
-<li>Retirer les abbreviations restantes.</li>
-<li>Documenter les fonctions, sinon dans un mois, j&#8217;aurais tout oublié !</li>
-<li>Essayer une version récursive de la fonction <code>run</code>.</li>
-<li>Lire quelques tutos pour voir ce que je peux en tirer.</li>
-<li>Lire du code julia pour mieux <em>sentir</em> (le code source de Julia <em>itself</em>
-serait un bon début).</li>
-<li>Mettre le code sur github et le donner à lire/critiquer à des développeurs qui
-connaissent le langage.</li>
-<li>Comprendre pourquoi avec 10.000 individus de 100 gènes, l&#8217;empreinte
-mémoire est de 800 Mo ! Ça me semble beaucoup…</li>
-<li>Écrire le même en Ruby et comparer le temps d&#8217;exécution.</li>
-</ul>
-
-
-<p>Voilà, il devrait donc y avoir encore pas mal d&#8217;articles sur le langage
-Julia ;)</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/'>Un algorithme génétique en Julia &ndash; partie 17</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/'>Un algorithme génétique en Julia &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/'>Un algorithme génétique en Julia &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
