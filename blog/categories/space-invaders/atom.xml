@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : space invaders | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/space-invaders/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-22T15:24:35+02:00</updated>
+  <updated>2014-06-23T21:32:11+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,84 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 14]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/"/>
+    <updated>2014-06-23T21:19:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Lorsque le joueur faisait feu, le tir prenait naissance dans le coin
+supérieur gauche du joueur. On le voudrait plutôt au milieu.</p>
+
+<!-- more -->
+
+
+<p>Voici donc la nouvelle classe <code>Fire</code>:</p>
+
+<p>``` ruby app/fire.rb
+class Fire
+  SIDE = 4
+  DELTA = 5</p>
+
+<p>  attr_reader :x, :y</p>
+
+<p>  def initialize(player)</p>
+
+<pre><code>@x = player.x + player.w / 2
+@y = player.y - SIDE
+</code></pre>
+
+<p>  end</p>
+
+<p>  def w; SIDE; end</p>
+
+<p>  def h; SIDE; end</p>
+
+<p>  def color; &ldquo;white&rdquo;; end</p>
+
+<p>  def update_position</p>
+
+<pre><code>@y -= DELTA
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Dans <code>initialize</code>, on calcule la position d'origine du tir par rapport
+au joueur, passé en argument.</p>
+
+<p>Il faut donc changer aussi la méthode <code>fire</code> de la classe <code>Game</code>:</p>
+
+<p>``` ruby
+class Game</p>
+
+<p>  &hellip;</p>
+
+<p>  def fire</p>
+
+<pre><code>@fires &lt;&lt; Fire.new(@player)
+</code></pre>
+
+<p>  end</p>
+
+<p>  &hellip;
+end
+```</p>
+
+<p>Voilà, ça c'est fait. N'oubliez pas que le code est maintenant disponible
+sur <a href="https://github.com/lkdjiin/space-invaders-in-opal-rb">Github</a>.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders in Opal.rb - partie 13]]></title>
@@ -524,144 +602,6 @@ end
 ```</p>
 
 <p>Il reste encore un peu de travail…</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 9]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9/"/>
-    <updated>2014-06-18T21:05:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/18/un-space-invaders-avec-opal-dot-rb-partie-9</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Le code que j'ai posté hier, pour gérer le déplacement des envahisseurs,
-a été écrit vite et sans trop de réflexion. Il nécessite donc un <del>petit</del>
-gros coup de refactoring.</p>
-
-<!-- more -->
-
-
-<p>Le pire morceau, tout du moins celui qui me saute aux yeux ce soir, est
-la méthode <code>update</code> de la classe <code>Enemies</code>. C'est le genre de chose que je
-ne laisserais jamais passer au boulot, par exemple. C'est un concentré de
-mauvais code et de <em>code smells</em>:</p>
-
-<p>``` ruby
-  def update</p>
-
-<pre><code>@enemies.each do |e|
-  if e.x &lt;= 10 || e.x + e.w &gt;= 690
-    change_enemies_direction
-    enemies_down
-    break
-  end
-end
-@enemies.each do |e|
-  if @direction == :left
-    e.x = e.x - 2
-  else
-    e.x = e.x + 2
-  end
-end
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>Je vais m'occuper d'abord de la seconde partie, celle qui déplace les
-envahisseurs à droite ou à gauche:</p>
-
-<pre><code>@enemies.each do |e|
-  if @direction == :left
-    e.x = e.x - 2
-  else
-    e.x = e.x + 2
-  end
-end
-</code></pre>
-
-<p>Comme on a des méthodes <code>move_left</code> et <code>move_right</code> pour la classe <code>Player</code>,
-pourquoi ne pas faire pareil avec la classe <code>Enemy</code> ? Voici donc une
-nouvelle écriture de la classe <code>Enemy</code>:</p>
-
-<p>``` ruby app/enemy.rb
-class Enemy
-  DELTA = 2</p>
-
-<p>  attr_accessor :x, :y, :w, :h, :color</p>
-
-<p>  def initialize(x, y, w, h, color)</p>
-
-<pre><code>@x = x
-@y = y
-@w = w
-@h = h
-@color = color
-</code></pre>
-
-<p>  end</p>
-
-<p>  def move_left</p>
-
-<pre><code>@x -= DELTA
-</code></pre>
-
-<p>  end</p>
-
-<p>  def move_right</p>
-
-<pre><code>@x += DELTA
-</code></pre>
-
-<p>  end</p>
-
-<p>end
-```</p>
-
-<p>Si on la compare avec la classe <code>Player</code>, on s'aperçoit qu'elles sont
-bien trop similaires. Mais on verra ça plus tard, retournons à
-<code>Enemies#update</code>.</p>
-
-<p>Avant:</p>
-
-<p>``` ruby</p>
-
-<pre><code>@enemies.each do |e|
-  if @direction == :left
-    e.x = e.x - 2
-  else
-    e.x = e.x + 2
-  end
-end
-</code></pre>
-
-<p>```</p>
-
-<p>Après:</p>
-
-<p>``` ruby</p>
-
-<pre><code>@enemies.map do |enemy|
-  @direction == :left ? enemy.move_left : enemy.move_right
-end
-</code></pre>
-
-<p>```</p>
-
-<p>J'utilise <code>map</code> au lieu de <code>each</code>, qui marque mieux l'intention de modifier
-la collection. L'argument <code>e</code>, illisible, est devenu <code>enemy</code>, clair. Et
-grâce à <code>move_left</code> et <code>move_right</code>, les messages envoyés à un objet
-<code>Enemy</code> sont plus simples. On s'est aussi débarrassé d'un nombre magique.</p>
-
-<p>OK, c'est bien mieux. Mais y a encore un truc qui me dérange profondément.
-Vous voyez ce que je veux dire ? Non ? Alors rendez-vous demain ;)</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
