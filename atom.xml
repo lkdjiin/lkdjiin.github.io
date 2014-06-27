@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-06-26T21:21:47+02:00</updated>
+  <updated>2014-06-27T21:45:53+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,164 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 16]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/"/>
+    <updated>2014-06-27T21:23:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Hier on a vu comment lancer une appli rack pour le développement. Seulement
+je n&#8217;ai pas envie de choisir entre les deux méthodes. Je veux les deux !
+Le serveur rack pour le développement, et le build classique du fichier
+javascript pour la mise en production.</p>
+
+<p>On va se bricoler deux tâches <code>rake</code> en quelques minutes pour obtenir ça.</p>
+
+<!-- more -->
+
+
+<p>Alors j&#8217;avertis tout de suite : le script n&#8217;est pas parfait. C&#8217;est malgré une
+bonne base pour commencer.</p>
+
+<p>Voici le nouveau <code>Rakefile</code>, dans lequel j&#8217;ai ajouté une tâche <code>development</code>
+et une tâche <code>production</code>:</p>
+
+<figure class='code'><figcaption><span>Rakefile</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal-jquery&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">desc</span> <span class="s2">&quot;Build our app to build.js&quot;</span>
+</span><span class='line'><span class="n">task</span> <span class="ss">:build</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">env</span> <span class="o">=</span> <span class="ss">Opal</span><span class="p">:</span><span class="ss">:Environment</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>  <span class="n">env</span><span class="o">.</span><span class="n">append_path</span> <span class="s2">&quot;app&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;build.js&quot;</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">out</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">out</span> <span class="o">&lt;&lt;</span> <span class="n">env</span><span class="o">[</span><span class="s2">&quot;application&quot;</span><span class="o">].</span><span class="n">to_s</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">desc</span> <span class="s1">&#39;Build app for production&#39;</span>
+</span><span class='line'><span class="n">task</span> <span class="ss">:production</span> <span class="o">=&gt;</span> <span class="ss">:build</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">cp</span> <span class="s1">&#39;app/templates/index_production.html&#39;</span><span class="p">,</span> <span class="s1">&#39;index.html&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">desc</span> <span class="s1">&#39;Run development server&#39;</span>
+</span><span class='line'><span class="n">task</span> <span class="ss">:development</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">cp</span> <span class="s1">&#39;app/templates/index_development.html&#39;</span><span class="p">,</span> <span class="s1">&#39;index.html&#39;</span>
+</span><span class='line'>  <span class="sb">`bundle exec rackup`</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour que le fichier <code>index.html</code> reflète le bon environnement, j&#8217;ai
+ajouté un dossier <code>templates</code>, avec une version de chaque:</p>
+
+<pre><code>$ tree app
+app
+├── application.rb
+├── enemies.rb
+├── enemy.rb
+├── fire.rb
+├── game.rb
+├── player.rb
+├── space_canvas.rb
+└── templates
+    ├── index_development.html
+    └── index_production.html
+</code></pre>
+
+<p>Pour info, voici le contenu des templates:</p>
+
+<figure class='code'><figcaption><span>app/templates/index_development.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;http://code.jquery.com/jquery-1.11.0.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;canvas</span> <span class="na">width=</span><span class="s">&quot;700&quot;</span> <span class="na">height=</span><span class="s">&quot;600&quot;</span> <span class="na">id=</span><span class="s">&quot;canvas&quot;</span><span class="nt">&gt;&lt;/canvas&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;assets/application.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>app/templates/index_production.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;http://code.jquery.com/jquery-1.11.0.min.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;canvas</span> <span class="na">width=</span><span class="s">&quot;700&quot;</span> <span class="na">height=</span><span class="s">&quot;600&quot;</span> <span class="na">id=</span><span class="s">&quot;canvas&quot;</span><span class="nt">&gt;&lt;/canvas&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;build.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Alors oui, les templates sont redondants. Et si on doit modifier le contenu
+de <code>index.html</code>, il faudra faire la modification sur les deux templates.
+J&#8217;avais prévenu que ça n&#8217;était pas parfait ;) Par contre, pour cette appli
+c&#8217;est bien suffisant.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 15]]></title>
@@ -92,7 +250,7 @@ dans le navigateur.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -294,7 +452,7 @@ sur <a href="https://github.com/lkdjiin/space-invaders-in-opal-rb">Github</a>.</
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -402,7 +560,7 @@ et le jeu lui-même (du moins dans son état actuel, c&#8217;est à dire pas gra
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/21/un-space-invaders-avec-opal-dot-rb-partie-12/'>Un space invaders avec Opal.rb &ndash; partie 12</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -558,7 +716,7 @@ dans les prochains jours. Demain je pense que je mettrais le code sur Github.</p
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -686,7 +844,7 @@ ajouter quelques nouvelles fonctionnalités.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -949,7 +1107,7 @@ voici le code des classes <code>Enemy</code> et <code>Enemies</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1118,7 +1276,7 @@ Vous voyez ce que je veux dire ? Non ? Alors rendez-vous demain ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1454,7 +1612,7 @@ prochainement ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1592,7 +1750,7 @@ mais là je n&#8217;ai plus le temps ! On verra demain.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1794,7 +1952,7 @@ utiliser l&#8217;interpolation de chaînes de caractères ruby…).</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1964,7 +2122,7 @@ voir le joueur se déplacer lentement vers la droite. Mission accomplie !</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2156,7 +2314,7 @@ dans des fichiers séparés, pour obtenir ça:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2311,7 +2469,7 @@ fois, ce qui va nous donner une séance de refactoring demain…</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2431,7 +2589,7 @@ précédente est equivalente à:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2605,7 +2763,7 @@ rectangle tout noir ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2722,7 +2880,7 @@ exemple <code>select</code>:</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/'>Un space invaders in Opal.rb &ndash; partie 13</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2760,39 +2918,6 @@ la connexion OAuth, le parsing JSON et quelques algorithmes de hashage.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/03/23/vim-un-plugin-pour-markdown-partie-5/'>Vim &ndash; Un plugin pour markdown &ndash; partie 5</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/22/vim-un-plugin-pour-markdown-partie-4/'>Vim &ndash; un plugin pour markdown &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/28/installation-du-plugin-airline-pour-vim-partie-4/'>Installation du plugin Airline pour Vim &ndash; partie 4</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Créer facilement des thèmes pour Vim]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/07/creer-facilement-des-themes-pour-vim/"/>
-    <updated>2014-06-07T21:12:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/07/creer-facilement-des-themes-pour-vim</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
-
-
-<p>Aujourd&#8217;hui, pas d&#8217;article technique mais une adresse internet :
-<a href="http://www.vimtax.com/">www.vimtax.com</a>.</p>
-
-<!-- more -->
-
-
-<p>Ce site vous permettra de réaliser simplement et rapidement des thèmes
-de coloration syntaxique pour Vim.</p>
-
-<p>Choisissez un thème de base, puis
-cliquez sur un élément (numéro de ligne, commentaire, mot-clé, couleur de
-fond, etc) que vous souhaitez personnaliser. Les changements sont visibles
-en temps réel.</p>
-
-<p>Voilà, bonne création ;)</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/05/19/le-theme-gruvbox-pour-vim/'>Le thème Gruvbox pour Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2014/05/26/cherchez-avec-grep-dans-vim/'>Cherchez avec grep dans Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/29/inserer-le-contenu-dun-fichier-ou-dune-commande-shell-dans-vim/'>Insérer le contenu d&#8217;un fichier ou d&#8217;une commande shell dans Vim</a></li></ul></section></p>
 ]]></content>
   </entry>
   
