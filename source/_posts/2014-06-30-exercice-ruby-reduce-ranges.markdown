@@ -3,7 +3,7 @@ layout: post
 title: "Exercice Ruby : Reduce Ranges"
 date: 2014-06-30 21:09
 comments: true
-categories: [ruby, intérmédiaire]
+categories: [ruby, intermédiaire]
 ---
 
 {% level 2 %}
