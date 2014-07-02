@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-07-01T21:35:30+02:00</updated>
+  <updated>2014-07-02T21:28:44+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,280 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Exercise Ruby - Reduce ranges - d'autres solutions]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/07/02/exercise-ruby-reduce-ranges-dautres-solutions/"/>
+    <updated>2014-07-02T21:03:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/07/02/exercise-ruby-reduce-ranges-dautres-solutions</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Hier j&#8217;ai proposé <a href="http://lkdjiin.github.io/blog/2014/07/01/exercise-ruby-reduce-ranges-une-solution/">une solution</a> à cet exercise de <a href="http://lkdjiin.github.io/blog/2014/06/30/exercice-ruby-reduce-ranges/">Range reduce</a>.
+Bien qu&#8217;élégante (du moins pour moi), elle prenait vraiment trop de temps par
+rapport à l&#8217;originale. En voici d&#8217;autres. Meilleures ?</p>
+
+<!-- more -->
+
+
+<p>Pour rappel, voici l&#8217;originale:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">arr</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">dup</span>
+</span><span class='line'>  <span class="n">arr</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">el</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">range_index</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">prev</span> <span class="o">=</span> <span class="n">el</span>
+</span><span class='line'>    <span class="k">while</span> <span class="n">arr</span><span class="o">[</span><span class="n">range_index</span><span class="o">]</span> <span class="o">==</span> <span class="n">prev</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">prev</span> <span class="o">=</span> <span class="n">arr</span><span class="o">[</span><span class="n">range_index</span><span class="o">]</span>
+</span><span class='line'>      <span class="n">range_index</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">arr</span><span class="o">[</span><span class="n">index</span><span class="o">.</span><span class="n">.range_index</span><span class="o">-</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">.arr</span><span class="o">[</span><span class="n">range_index</span><span class="o">-</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span> <span class="k">unless</span> <span class="n">index</span> <span class="o">==</span> <span class="n">range_index</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici ma solution d&#8217;hier:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">range_reduce</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">previous</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'>  <span class="n">array</span><span class="o">.</span><span class="n">slice_before</span> <span class="k">do</span> <span class="o">|</span><span class="n">element</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">previous</span><span class="p">,</span> <span class="n">previous2</span> <span class="o">=</span> <span class="n">element</span><span class="p">,</span> <span class="n">previous</span>
+</span><span class='line'>    <span class="n">previous2</span><span class="o">.</span><span class="n">succ</span> <span class="o">!=</span> <span class="n">element</span>
+</span><span class='line'>  <span class="k">end</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">element</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">element</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="n">element</span><span class="o">.</span><span class="n">first</span> <span class="p">:</span> <span class="n">element</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">.element</span><span class="o">.</span><span class="n">last</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Maintenant, voici celle que j&#8217;ai eu en tête toute la journée:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">range_reduce_1</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">temp</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="n">result</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">array</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">element</span><span class="o">|</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">temp</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>      <span class="n">temp</span> <span class="o">&lt;&lt;</span> <span class="n">element</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">temp</span><span class="o">.</span><span class="n">last</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">element</span>
+</span><span class='line'>        <span class="n">temp</span> <span class="o">&lt;&lt;</span> <span class="n">element</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">temp</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span>
+</span><span class='line'>          <span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="n">temp</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>          <span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">.temp</span><span class="o">.</span><span class="n">last</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>        <span class="n">temp</span> <span class="o">=</span> <span class="o">[</span><span class="n">element</span><span class="o">]</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">temp</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="n">temp</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">.temp</span><span class="o">.</span><span class="n">last</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">result</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C&#8217;est moche, hein ? Mais ne riez quand même pas trop, attendez de voir les
+benchmarks ;)</p>
+
+<p>Je me suis dis que j&#8217;allais aussi tester une solution <em>propre</em>, avec un
+pattern que j&#8217;aime beaucoup:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">ArrayReduce</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">ranges</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+</span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="n">array</span><span class="p">)</span><span class="o">.</span><span class="n">ranges</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@array</span> <span class="o">=</span> <span class="n">array</span>
+</span><span class='line'>    <span class="vi">@result</span> <span class="o">=</span> <span class="o">[</span> <span class="o">[</span><span class="vi">@array</span><span class="o">.</span><span class="n">first</span><span class="o">]</span> <span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">ranges</span>
+</span><span class='line'>    <span class="vi">@array</span><span class="o">[</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="o">-</span><span class="mi">1</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">element</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">suite?</span><span class="p">(</span><span class="n">element</span><span class="p">)</span> <span class="p">?</span> <span class="vi">@result</span><span class="o">.</span><span class="n">last</span> <span class="o">&lt;&lt;</span> <span class="n">element</span> <span class="p">:</span> <span class="vi">@result</span> <span class="o">&lt;&lt;</span> <span class="o">[</span><span class="n">element</span><span class="o">]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="vi">@result</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">element</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">element</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="n">element</span><span class="o">.</span><span class="n">first</span> <span class="p">:</span> <span class="n">element</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">.element</span><span class="o">.</span><span class="n">last</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">suite?</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@result</span><span class="o">.</span><span class="n">last</span><span class="o">.</span><span class="n">last</span> <span class="o">==</span> <span class="n">element</span><span class="o">.</span><span class="n">pred</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici la solution qu&#8217;a posté un lecteur, Calyhre. J&#8217;ai pris la liberté de
+la transformer en méthode, comme j&#8217;ai fait pour la solution originale qui
+<em>monkey patch</em> la classe Array (<a href="https://gist.github.com/Calyhre/280ee41136ad2a62e6c3">solution originale de Calyhre</a>):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">calyhre</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">temp</span> <span class="o">=</span> <span class="n">results</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="n">array</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">temp</span> <span class="o">&lt;&lt;</span> <span class="n">e</span> <span class="ow">and</span> <span class="k">next</span> <span class="k">if</span> <span class="n">temp</span><span class="o">.</span><span class="n">last</span> <span class="o">==</span> <span class="n">e</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">results</span> <span class="o">&lt;&lt;</span> <span class="p">(</span> <span class="n">temp</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">nil?</span> <span class="p">?</span> <span class="n">temp</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="p">:</span> <span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">.temp</span><span class="o">.</span><span class="n">last</span><span class="p">)</span> <span class="p">)</span> <span class="k">unless</span> <span class="n">temp</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>    <span class="n">temp</span> <span class="o">=</span> <span class="o">[</span><span class="n">e</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">results</span> <span class="o">&lt;&lt;</span> <span class="p">(</span> <span class="n">temp</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">nil?</span> <span class="p">?</span> <span class="n">temp</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="p">:</span> <span class="p">(</span><span class="n">temp</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">.temp</span><span class="o">.</span><span class="n">last</span><span class="p">)</span> <span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Du coup, pour être équitable, il faudrait un autre benchmark pour les
+<em>monkey patches</em> ! Peut-être plus tard.</p>
+
+<p>Voici donc les résultats avec Ruby 2.1:</p>
+
+<pre><code>$ 21:16 [~/devel/ruby/tests] (ruby-2.1.0) 
+$ ruby range_reduce.rb 
+Rehearsal --------------------------------------------------
+original         0.690000   0.000000   0.690000 (  0.694524)
+range_reduce     2.310000   0.000000   2.310000 (  2.305131)
+range_reduce_1   0.650000   0.000000   0.650000 (  0.648863)
+ArrayReduce      1.080000   0.000000   1.080000 (  1.088213)
+Calyhre          0.680000   0.000000   0.680000 (  0.676048)
+----------------------------------------- total: 5.410000sec
+
+                     user     system      total        real
+original         0.690000   0.000000   0.690000 (  0.692163)
+range_reduce     2.250000   0.000000   2.250000 (  2.253139)
+range_reduce_1   0.630000   0.000000   0.630000 (  0.636611)
+ArrayReduce      1.050000   0.010000   1.060000 (  1.077018)
+Calyhre          0.660000   0.000000   0.660000 (  0.662596)
+</code></pre>
+
+<p>Puis avec Rubinius 2.0:</p>
+
+<pre><code>$ 21:19 [~/devel/ruby/tests] (rbx-2.0.0) 
+$ ruby range_reduce.rb 
+Rehearsal --------------------------------------------------
+original         1.984124   0.004000   1.988124 (  1.994156)
+range_reduce     3.220201   0.012001   3.232202 (  3.248281)
+range_reduce_1   0.620038   0.000000   0.620038 (  0.775944)
+ArrayReduce      1.156072   0.000000   1.156072 (  1.195206)
+Calyhre          0.788049   0.000000   0.788049 (  1.007030)
+----------------------------------------- total: 7.784485sec
+
+                     user     system      total        real
+original         1.008063   0.000000   1.008063 (  1.152041)
+range_reduce     2.504157   0.020001   2.524158 (  2.525078)
+range_reduce_1   0.320020   0.000000   0.320020 (  0.319301)
+ArrayReduce      0.652041   0.000000   0.652041 (  0.653359)
+Calyhre          0.352022   0.000000   0.352022 (  0.349252)
+</code></pre>
+
+<p>Ma méthode bien moche fonctionne plutôt bien ici :)</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/01/exercise-ruby-reduce-ranges-une-solution/'>Exercise Ruby : Reduce ranges &ndash; une solution</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/30/exercice-ruby-reduce-ranges/'>Exercice Ruby : Reduce Ranges</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Exercise Ruby : Reduce ranges - une solution]]></title>
@@ -139,7 +413,7 @@ un commentaire.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/30/exercice-ruby-reduce-ranges/'>Exercice Ruby : Reduce Ranges</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/02/exercise-ruby-reduce-ranges-dautres-solutions/'>Exercise Ruby &ndash; Reduce ranges &ndash; d&#8217;autres solutions</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/30/exercice-ruby-reduce-ranges/'>Exercice Ruby : Reduce Ranges</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -178,7 +452,7 @@ le code de la gem et proposez moi le votre ici, où dans l&#8217;article de dema
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/01/exercise-ruby-reduce-ranges-une-solution/'>Exercise Ruby : Reduce ranges &ndash; une solution</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/02/exercise-ruby-reduce-ranges-dautres-solutions/'>Exercise Ruby &ndash; Reduce ranges &ndash; d&#8217;autres solutions</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/01/exercise-ruby-reduce-ranges-une-solution/'>Exercise Ruby : Reduce ranges &ndash; une solution</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2531,161 +2805,6 @@ dans des fichiers séparés, pour obtenir ça:</p>
 <p>Comme toujours, <code>rake build</code> pour s&#8217;assurer que ça fonctionne bien !</p>
 
 <p>Demain, on verra comment faire bouger notre joueur…</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3/"/>
-    <updated>2014-06-12T20:54:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/12/un-space-invaders-avec-opal-dot-rb-partie-3</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>C&#8217;est le moment d&#8217;afficher un joli vaisseau pour le joueur. Bon, en fait,
-ça va être un gros rectangle vert, mais c&#8217;est pareil ;)</p>
-
-<!-- more -->
-
-
-<p>On commence par ajouter une classe <code>Player</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Player</span>
-</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">,</span> <span class="ss">:w</span><span class="p">,</span> <span class="ss">:h</span><span class="p">,</span> <span class="ss">:color</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class='line'>    <span class="vi">@x</span> <span class="o">=</span> <span class="mi">325</span>
-</span><span class='line'>    <span class="vi">@y</span> <span class="o">=</span> <span class="mi">560</span>
-</span><span class='line'>    <span class="vi">@w</span> <span class="o">=</span> <span class="mi">50</span>
-</span><span class='line'>    <span class="vi">@h</span> <span class="o">=</span> <span class="mi">30</span>
-</span><span class='line'>    <span class="vi">@color</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Y a pas grand chose à dire, hein ? X et y sont la position du coin supérieur
-gauche sur le canvas, w est la largeur et h est la hauteur. C&#8217;est tout.</p>
-
-<p>Pour afficher notre joueur, on ajoute une méthode <code>draw_player</code> à la classe
-<code>SpaceCanvas</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">draw_player</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillStyle = </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">color</span><span class="si">}</span><span class="sb">`</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillRect(</span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">y</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">w</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">h</span><span class="si">}</span><span class="sb">)`</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Cette méthode est similaire à la méthode <code>clear_background</code>, vue la dernière
-fois, ce qui va nous donner une séance de refactoring demain…</p>
-
-<p>Finalement, voici le code complet du fichier <code>app/application.rb</code>:</p>
-
-<figure class='code'><figcaption><span>app/application.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal-jquery&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">SpaceCanvas</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class='line'>    <span class="vi">@canvas</span>  <span class="o">=</span> <span class="sb">`document.getElementById(&#39;canvas&#39;)`</span>
-</span><span class='line'>    <span class="vi">@context</span> <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.getContext(&#39;2d&#39;)`</span>
-</span><span class='line'>    <span class="vi">@height</span>  <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.height`</span>
-</span><span class='line'>    <span class="vi">@width</span>   <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.width`</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">clear_background</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillStyle = &#39;black&#39;`</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillRect(0, 0, </span><span class="si">#@width</span><span class="sb">, </span><span class="si">#@height</span><span class="sb">)`</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_player</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillStyle = </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">color</span><span class="si">}</span><span class="sb">`</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillRect(</span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">y</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">w</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">player</span><span class="o">.</span><span class="n">h</span><span class="si">}</span><span class="sb">)`</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Player</span>
-</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">,</span> <span class="ss">:w</span><span class="p">,</span> <span class="ss">:h</span><span class="p">,</span> <span class="ss">:color</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class='line'>    <span class="vi">@x</span> <span class="o">=</span> <span class="mi">325</span>
-</span><span class='line'>    <span class="vi">@y</span> <span class="o">=</span> <span class="mi">560</span>
-</span><span class='line'>    <span class="vi">@w</span> <span class="o">=</span> <span class="mi">50</span>
-</span><span class='line'>    <span class="vi">@h</span> <span class="o">=</span> <span class="mi">30</span>
-</span><span class='line'>    <span class="vi">@color</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">canvas</span> <span class="o">=</span> <span class="no">SpaceCanvas</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'><span class="n">player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'><span class="n">canvas</span><span class="o">.</span><span class="n">clear_background</span>
-</span><span class='line'><span class="n">canvas</span><span class="o">.</span><span class="n">draw_player</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>N&#8217;oubliez pas de faire un <code>rake build</code> avant d&#8217;ouvrir le fichier HTML.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
