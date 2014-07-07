@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-07-06T13:26:35+02:00</updated>
+  <updated>2014-07-07T21:29:15+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,181 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Les tours de Hanoi - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/"/>
+    <updated>2014-07-07T21:13:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>On commence à coder l&#8217;algorithme génétique pour solutionner les tours de
+Hanoi.</p>
+
+<pre><code>$ tree
+.
+├── ga.rb
+├── lib
+│   ├── hanoi
+│   │   ├── board.rb
+│   │   ├── game.rb
+│   │   └── rules.rb
+│   └── hanoi.rb
+└── spec
+    ├── board_spec.rb
+    ├── game_spec.rb
+    ├── integration
+    │   └── game_spec.rb
+    └── spec_helper.rb
+</code></pre>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span>ga.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./lib/hanoi/board&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./lib/hanoi/game&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./lib/hanoi/rules&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Chromosome</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:genes</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">number_of_pieces</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@genes</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">number_of_pieces</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Population</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">number_of_pieces</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@population</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="p">{</span> <span class="no">Chromosome</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">number_of_pieces</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">GA</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class='line'>    <span class="vi">@population</span> <span class="o">=</span> <span class="no">Population</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">evaluate</span>
+</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">chromosome</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">board</span> <span class="o">=</span> <span class="o">::</span><span class="ss">Hanoi</span><span class="p">:</span><span class="ss">:Board</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">game</span> <span class="o">=</span> <span class="o">::</span><span class="ss">Hanoi</span><span class="p">:</span><span class="ss">:Game</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">chromosome</span><span class="o">.</span><span class="n">genes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">gene</span><span class="o">|</span>
+</span><span class='line'>        <span class="k">case</span> <span class="n">gene</span>
+</span><span class='line'>        <span class="k">when</span> <span class="mi">0</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>        <span class="k">when</span> <span class="mi">1</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">3</span>
+</span><span class='line'>        <span class="k">when</span> <span class="mi">2</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>        <span class="k">when</span> <span class="mi">3</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">3</span>
+</span><span class='line'>        <span class="k">when</span> <span class="mi">4</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">1</span>
+</span><span class='line'>        <span class="k">when</span> <span class="mi">5</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">2</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="nb">p</span> <span class="n">board</span><span class="o">.</span><span class="n">eval</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">ga</span> <span class="o">=</span> <span class="no">GA</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'><span class="n">ga</span><span class="o">.</span><span class="n">evaluate</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voilà de quoi commencer, des chromosomes, une population et l&#8217;évaluation
+de chaque chromosome.</p>
+
+<p>Ça fonctionne:</p>
+
+<pre><code>$ ruby ga.rb 
+0
+5
+4
+2
+2
+4
+5
+5
+4
+4
+4
+1
+5
+4
+1
+0
+0
+2
+0
+4
+</code></pre>
+
+<p>Mais la fonction <code>GA#evaluate</code> me dérange. D&#8217;abord elle est trop longue, mais
+rien qui ne puisse s&#8217;arranger avec un refactoring. Ce qui me dérange surtout
+c&#8217;est qu&#8217;elle délègue la <em>vraie</em> évaluation à <code>Board</code>. Or, l&#8217;évaluation
+dévrait faire partie intégrante de l&#8217;algorithme génétique, et pas de la
+mécanique du jeu. C&#8217;est donc un point à améliorer avant d&#8217;aller plus loin.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p>À demain.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les tours de hanoi - partie 2]]></title>
@@ -210,7 +385,7 @@ une suite de mouvements, reste plus qu&#8217;à le coder ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/29/un-algorithme-genetique-avec-opal-dot-rb/'>Un algorithme génétique avec Opal.rb ?</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -394,7 +569,7 @@ end
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/29/un-algorithme-genetique-avec-opal-dot-rb/'>Un algorithme génétique avec Opal.rb ?</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -466,7 +641,7 @@ prend trop de temps de faire les petits dessins ;)</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/29/un-algorithme-genetique-avec-opal-dot-rb/'>Un algorithme génétique avec Opal.rb ?</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -790,7 +965,7 @@ Calyhre          0.352022   0.000000   0.352022 (  0.349252)
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -920,7 +1095,7 @@ un commentaire.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -959,7 +1134,7 @@ le code de la gem et proposez moi le votre ici, où dans l&#8217;article de dema
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -989,7 +1164,7 @@ langage que je connais bien.</p>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2274,342 +2449,6 @@ grâce à <code>move_left</code> et <code>move_right</code>, les messages envoy�
 
 <p>OK, c&#8217;est bien mieux. Mais y a encore un truc qui me dérange profondément.
 Vous voyez ce que je veux dire ? Non ? Alors rendez-vous demain ;)</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/'>Un space invaders avec Opal.rb &ndash; partie 15</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/'>Un space invaders avec Opal.rb &ndash; partie 14</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un space invaders avec Opal.rb - partie 8]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8/"/>
-    <updated>2014-06-17T21:08:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/17/un-space-invaders-avec-opal-dot-rb-partie-8</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Comme promis, on ajoute aujourd&#8217;hui les envahisseurs. Mais comme j&#8217;ai une
-petite flemme ce soir, il y aura peu d&#8217;explications ;) De plus le code est
-un premier jet…</p>
-
-<p>Quoiqu&#8217;il en soit, c&#8217;est parti.</p>
-
-<!-- more -->
-
-
-<p>La classe <code>Enemy</code>:</p>
-
-<figure class='code'><figcaption><span>app/enemy.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Enemy</span>
-</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">,</span> <span class="ss">:w</span><span class="p">,</span> <span class="ss">:h</span><span class="p">,</span> <span class="ss">:color</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
-</span><span class='line'>    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
-</span><span class='line'>    <span class="vi">@w</span> <span class="o">=</span> <span class="n">w</span>
-</span><span class='line'>    <span class="vi">@h</span> <span class="o">=</span> <span class="n">h</span>
-</span><span class='line'>    <span class="vi">@color</span> <span class="o">=</span> <span class="n">color</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La classe <code>Enemies</code>, pour gérer une collection d&#8217;envahisseurs:</p>
-
-<figure class='code'><figcaption><span>app/enemies.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Enemies</span>
-</span><span class='line'>  <span class="kp">include</span> <span class="no">Enumerable</span>
-</span><span class='line'>  <span class="no">ENEMIES_PER_ROW</span> <span class="o">=</span> <span class="mi">10</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class='line'>    <span class="vi">@enemies</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class='line'>    <span class="vi">@direction</span> <span class="o">=</span> <span class="ss">:right</span>
-</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="s1">&#39;#0000ff&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="s1">&#39;#0000dd&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">180</span><span class="p">,</span> <span class="s1">&#39;#0000bb&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">240</span><span class="p">,</span> <span class="s1">&#39;#000099&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">build</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="s1">&#39;#000077&#39;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">update</span>
-</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
-</span><span class='line'>      <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">&lt;=</span> <span class="mi">10</span> <span class="o">||</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">e</span><span class="o">.</span><span class="n">w</span> <span class="o">&gt;=</span> <span class="mi">690</span>
-</span><span class='line'>        <span class="n">change_enemies_direction</span>
-</span><span class='line'>        <span class="n">enemies_down</span>
-</span><span class='line'>        <span class="k">break</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
-</span><span class='line'>      <span class="k">if</span> <span class="vi">@direction</span> <span class="o">==</span> <span class="ss">:left</span>
-</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">-</span> <span class="mi">2</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="mi">2</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kp">private</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">change_enemies_direction</span>
-</span><span class='line'>    <span class="k">if</span> <span class="vi">@direction</span> <span class="o">==</span> <span class="ss">:left</span>
-</span><span class='line'>      <span class="vi">@direction</span> <span class="o">=</span> <span class="ss">:right</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="vi">@direction</span> <span class="o">=</span> <span class="ss">:left</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">enemies_down</span>
-</span><span class='line'>    <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">e</span><span class="o">|</span>
-</span><span class='line'>      <span class="n">e</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">y</span> <span class="o">+</span> <span class="mi">4</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.</span><span class="no">ENEMIES_PER_ROW</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
-</span><span class='line'>      <span class="vi">@enemies</span> <span class="o">&lt;&lt;</span> <span class="no">Enemy</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">50</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La classe <code>Game</code>, remaniée:</p>
-
-<figure class='code'><figcaption><span>app/game.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Game</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class='line'>    <span class="vi">@canvas</span> <span class="o">=</span> <span class="no">SpaceCanvas</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'>    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'>    <span class="vi">@enemies</span> <span class="o">=</span> <span class="no">Enemies</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">start</span>
-</span><span class='line'>    <span class="n">init_keyboard</span>
-</span><span class='line'>    <span class="n">main_loop</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="vi">@canvas</span><span class="o">.</span><span class="n">clear_background</span>
-</span><span class='line'>      <span class="vi">@canvas</span><span class="o">.</span><span class="n">draw_player</span><span class="p">(</span><span class="vi">@player</span><span class="p">)</span>
-</span><span class='line'>      <span class="vi">@enemies</span><span class="o">.</span><span class="n">update</span>
-</span><span class='line'>      <span class="vi">@enemies</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">e</span><span class="o">|</span> <span class="vi">@canvas</span><span class="o">.</span><span class="n">draw_enemy</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">main_loop</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
-</span><span class='line'>    <span class="sb">`setInterval(</span><span class="si">#{</span><span class="n">block</span><span class="o">.</span><span class="n">to_n</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">interval</span><span class="si">}</span><span class="sb">)`</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">init_keyboard</span>
-</span><span class='line'>    <span class="sx">%x(</span>
-</span><span class='line'><span class="sx">      window.addEventListener(&quot;keydown&quot;,</span>
-</span><span class='line'><span class="sx">        function(e) {</span>
-</span><span class='line'><span class="sx">          if(e.keyCode == 37) { </span><span class="si">#{</span><span class="vi">@player</span><span class="o">.</span><span class="n">move_left</span><span class="si">}</span><span class="sx"> }</span>
-</span><span class='line'><span class="sx">          if(e.keyCode == 39) { </span><span class="si">#{</span><span class="vi">@player</span><span class="o">.</span><span class="n">move_right</span><span class="si">}</span><span class="sx"> }</span>
-</span><span class='line'><span class="sx">        },</span>
-</span><span class='line'><span class="sx">        false);</span>
-</span><span class='line'><span class="sx">    )</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La classe <code>SpaceCanvas</code>, avec sa nouvelle méthode <code>draw_enemy</code>:</p>
-
-<figure class='code'><figcaption><span>app/space_canvas.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">SpaceCanvas</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class='line'>    <span class="vi">@canvas</span>  <span class="o">=</span> <span class="sb">`document.getElementById(&#39;canvas&#39;)`</span>
-</span><span class='line'>    <span class="vi">@context</span> <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.getContext(&#39;2d&#39;)`</span>
-</span><span class='line'>    <span class="vi">@height</span>  <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.height`</span>
-</span><span class='line'>    <span class="vi">@width</span>   <span class="o">=</span> <span class="sb">`</span><span class="si">#@canvas</span><span class="sb">.width`</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">clear_background</span>
-</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="vi">@width</span><span class="p">,</span> <span class="vi">@height</span><span class="p">,</span> <span class="s1">&#39;black&#39;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_player</span><span class="p">(</span><span class="n">player</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">player</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">player</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_enemy</span><span class="p">(</span><span class="n">enemy</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">draw_rect</span><span class="p">(</span><span class="n">enemy</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">w</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">h</span><span class="p">,</span> <span class="n">enemy</span><span class="o">.</span><span class="n">color</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kp">private</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">draw_rect</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillStyle = </span><span class="si">#{</span><span class="n">color</span><span class="si">}</span><span class="sb">`</span>
-</span><span class='line'>    <span class="sb">`</span><span class="si">#@context</span><span class="sb">.fillRect(</span><span class="si">#{</span><span class="n">x</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">y</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">w</span><span class="si">}</span><span class="sb">, </span><span class="si">#{</span><span class="n">h</span><span class="si">}</span><span class="sb">)`</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et enfin <code>application.rb</code>, qui inclus les nouvelles classes:</p>
-
-<figure class='code'><figcaption><span>app/application.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;opal-jquery&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;space_canvas&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;player&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;game&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;enemy&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;enemies&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">game</span> <span class="o">=</span> <span class="no">Game</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'><span class="n">game</span><span class="o">.</span><span class="n">start</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voilà, il y aura surement un petit travail de refactoring à faire
-prochainement ;)</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
