@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : javascript | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/javascript/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-10-08T13:13:14+02:00</updated>
+  <updated>2014-10-16T22:37:40+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,283 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en javascript - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/"/>
+    <updated>2014-10-16T22:27:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>C'est parti pour le jeu de la vie version Javascript. Dans ce premier article
+nous allons créer une génération de cellules au hasard et l'afficher.</p>
+
+<p><em>J'avais annoncé dans <a href="blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">l'article précédent</a> que je commencerais par la
+version Ruby/Opal. Je l'ai écrite mais je n'en suis pas satisfait. Les
+performances sont très pauvres et j'ai écrit plus de code que nécessaire.
+Je prendrais donc le temps de la nettoyer un peu avant de la publier.</em></p>
+
+<!-- more -->
+
+
+<p>Pour les tests, j'utiliserais <a href="http://jasmine.github.io/">Jasmine</a> et la structure du projet sera la
+suivante:</p>
+
+<pre><code>$ tree
+.
+├── app
+│   └── application.js
+├── index.html
+├── jasmine
+│   └── lib
+│       └── jasmine-2.0.3
+│           ├── boot.js
+│           ├── console.js
+│           ├── jasmine.css
+│           ├── jasmine_favicon.png
+│           ├── jasmine-html.js
+│           └── jasmine.js
+├── spec
+│   └── test.js
+└── test.html
+</code></pre>
+
+<p>Dans le fichier <code>test.html</code> on charge les dépendances de Jasmine, puis notre
+application (<code>app/application.js</code>) et enfin nos tests (<code>spec/test.js</code>).</p>
+
+<p>``` html test.html
+&lt;!DOCTYPE html>
+<html>
+  <head></p>
+
+<pre><code>&lt;meta charset="utf-8" /&gt;
+&lt;title&gt;Test Game of Life&lt;/title&gt;
+&lt;link rel="shortcut icon" type="image/png" href="jasmine/lib/jasmine-2.0.3/jasmine_favicon.png"&gt;
+&lt;link rel="stylesheet" type="text/css" href="jasmine/lib/jasmine-2.0.3/jasmine.css"&gt;
+
+&lt;script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/jasmine.js"&gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/jasmine-html.js"&gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/boot.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;script type="text/javascript" src="app/application.js"&gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="spec/test.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<h2>Créer une génération de cellules au hasard</h2>
+
+<p>Nous allons écrire la fonction <code>createGeneration</code> qui
+devra <em>fabriquer</em> un ensemble de cellules, mortes (<code>0</code>) ou vivantes (<code>1</code>), au
+hasard. Mon premier test avec Jasmine est de m'assurer que cette fonction
+renvoie un tableau (<code>Array</code>).</p>
+
+<p>``` javascript spec/test.js
+describe(&ldquo;createGeneration&rdquo;, function() {</p>
+
+<p>  it(&ldquo;returns an array&rdquo;, function() {</p>
+
+<pre><code>var result = createGeneration();
+expect(Array.isArray(result)).toBe(true);
+</code></pre>
+
+<p>  });</p>
+
+<p>});
+```</p>
+
+<p>Lorsqu'on lance <code>test.html</code> Jasmine nous dit que <code>createGeneration</code> n'existe
+pas. Le code javascript permettant de faire passer ce test consiste donc à
+renvoyer un tableau vide.</p>
+
+<p><code>javascript app/application.js
+function createGeneration(x, y) {
+  return [];
+}
+</code></p>
+
+<p>Maintenant il nous faut un tableau à 2 dimensions:</p>
+
+<p>``` javascript spec/test.js
+describe(&ldquo;createGeneration&rdquo;, function() {</p>
+
+<p>  &hellip;</p>
+
+<p>  it(&ldquo;creates a 2D array&rdquo;, function() {</p>
+
+<pre><code>var result = createGeneration(3, 5);
+expect(result.length).toBe(5);
+expect(result[0].length).toBe(3);
+</code></pre>
+
+<p>  });</p>
+
+<p>});
+```</p>
+
+<p>La fonction suivante est suffisante pour faire passer le test.</p>
+
+<p>``` javascript app/application.js
+function createGeneration(x, y) {
+  var generation = new Array(y);</p>
+
+<p>  for(var i = 0; i &lt; y; i++) {</p>
+
+<pre><code>generation[i] = new Array(x);
+</code></pre>
+
+<p>  }
+  return generation;
+}
+```</p>
+
+<p>Et maintenant on rempli notre tableau 2D avec des <code>1</code> ou des <code>0</code>. D'abord un
+test pour vérifier que chaque cellule du tableau contient <code>1</code> ou <code>0</code>.</p>
+
+<p>``` javascript spec/test.js
+describe(&ldquo;createGeneration&rdquo;, function() {</p>
+
+<p>  &hellip;</p>
+
+<p>  it(&ldquo;fills each room with 1 or 0&rdquo;, function() {</p>
+
+<pre><code>var generation = createGeneration(2, 3);
+for(var y = 0; y &lt; 3; y++) {
+  for(var x = 0; x &lt; 2; x++) {
+    var cell = generation[y][x];
+    var result = cell === 0 || cell === 1;
+    expect(result).toBe(true);
+  }
+}
+</code></pre>
+
+<p>  });</p>
+
+<p>});
+```</p>
+
+<p>Puis l'implémentation.</p>
+
+<p>``` javascript app/application.js
+function createGeneration(x, y) {
+  var generation = new Array(y);</p>
+
+<p>  for(var i = 0; i &lt; y; i++) {</p>
+
+<pre><code>generation[i] = [];
+for(var j = 0; j &lt; x; j++) {
+  generation[i][j] = Math.floor(Math.random() * 2);
+}
+</code></pre>
+
+<p>  }
+  return generation;
+}
+```</p>
+
+<p>Voilà, cette première partie du jeu de la vie en Javascript était simple et
+rapide à coder. Je vais maintenant mettre les tests de coté pour me
+concentrer sur l'affichage d'une génération.</p>
+
+<h2>Afficher une génération</h2>
+
+<p>Voyons pour commencer le contenu du fichier <code>index.html</code>.</p>
+
+<p>``` html index.html
+&lt;!DOCTYPE html>
+<html>
+  <head></p>
+
+<pre><code>&lt;meta charset="utf-8" /&gt;
+&lt;title&gt;Game of Life&lt;/title&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;canvas width="100" height="100" id="canvas"&gt;&lt;/canvas&gt;
+&lt;script src="app/application.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p>Nous référençons bien entendu notre <code>application.js</code> et nous créons un
+<code>canvas</code> de (petite) dimension 100x100. C'est dans ce <code>canvas</code> que nous allons
+<em>dessiner</em> nos cellules.</p>
+
+<p>Sans plus attendre, voici le contenu de <code>application.js</code>.</p>
+
+<p>``` javascript app/application.js
+function createGeneration(width, height) {
+  var generation = new Array(height);</p>
+
+<p>  for(var y = 0; y &lt; height; y++) {</p>
+
+<pre><code>generation[y] = [];
+for(var x = 0; x &lt; width; x++) {
+  generation[y][x] = Math.floor(Math.random() * 2);
+}
+</code></pre>
+
+<p>  }
+  return generation;
+}</p>
+
+<p>function draw(context2d, generation) {
+  var height = generation.length;
+  var width = generation[0].length;</p>
+
+<p>  clearBackground(context2d, width, height);
+  drawCells(context2d, generation, width, height);
+}</p>
+
+<p>function clearBackground(context2d, width, height) {
+  context2d.fillStyle = &lsquo;black&rsquo;;
+  context2d.fillRect(0, 0, width, height);
+}</p>
+
+<p>function drawCells(context2d, generation, width, height) {
+  context2d.fillStyle = &lsquo;white&rsquo;;
+  for(var y = 0; y &lt; height; y++) {</p>
+
+<pre><code>for(var x = 0; x &lt; width; x++) {
+  if(generation[x][y] === 1) {
+    context2d.fillRect(x, y, 1, 1);
+  }
+}
+</code></pre>
+
+<p>  }
+}</p>
+
+<p>(function() {
+  var generation = createGeneration(100, 100);
+  var c = document.getElementById(&lsquo;canvas&rsquo;);
+  var ctx = c.getContext(&lsquo;2d&rsquo;);</p>
+
+<p>  draw(ctx, generation);
+})()
+```</p>
+
+<p>Ces quelques petites fonctions sont bien suffisantes pour afficher un
+ensemble de cellules.</p>
+
+<p>Dans le prochain article nous calculerons l'état des générations suivantes.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie dans sept langages différents]]></title>
@@ -420,92 +697,6 @@ end
 
 <p>Voilà, ça c'est fait. N'oubliez pas que le code est maintenant disponible
 sur <a href="https://github.com/lkdjiin/space-invaders-in-opal-rb">Github</a>.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un space invaders in Opal.rb - partie 13]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13/"/>
-    <updated>2014-06-22T13:42:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/22/un-space-invaders-in-opal-dot-rb-partie-13</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Voici un extrait de la classe <code>SpaceCanvas</code> actuelle:</p>
-
-<p>``` ruby app/space_canvas
-class SpaceCanvas</p>
-
-<p>  &hellip;</p>
-
-<p>  def draw_player(player)</p>
-
-<pre><code>draw_rect(player.x, player.y, player.w, player.h, player.color)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def draw_enemy(enemy)</p>
-
-<pre><code>draw_rect(enemy.x, enemy.y, enemy.w, enemy.h, enemy.color)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def draw_fire(fire)</p>
-
-<pre><code>draw_rect(fire.x, fire.y, fire.w, fire.h, fire.color)
-</code></pre>
-
-<p>  end</p>
-
-<p>  &hellip;</p>
-
-<p>end
-```</p>
-
-<p>Pas bien ! Le code est dupliqué, et si j'aime l'idée d'avoir trois méthodes
-différentes, dont le nom est explicite, je ne veux pas avoir à réécrire
-le même code chaque fois que j'ajouterais ce genre de méthode (<code>draw_ship</code>,
-<code>draw_special_fire</code>, <code>draw_bomb</code>, etc).</p>
-
-<!-- more -->
-
-
-<p>La solution réside dans l'utilisation de <code>alias_method</code>:</p>
-
-<p>``` ruby app/space_canvas
-class SpaceCanvas</p>
-
-<p>  &hellip;</p>
-
-<p>  def draw_object(object)</p>
-
-<pre><code>draw_rect(object.x, object.y, object.w, object.h, object.color)
-</code></pre>
-
-<p>  end
-  alias_method :draw_player, :draw_object
-  alias_method :draw_enemy, :draw_object
-  alias_method :draw_fire, :draw_object</p>
-
-<p>  &hellip;</p>
-
-<p>end
-```</p>
-
-<p>Il n'y a plus de duplication, et l'ajout d'une nouvelle méthode se fait
-simplement en ajoutant un nouvel alias.</p>
-
-<p>Le code de cette série d'articles est désormais sur Github ici :
-<a href="https://github.com/lkdjiin/space-invaders-in-opal-rb">space-invaders-in-opal-rb</a>,
-et le jeu lui-même (du moins dans son état actuel, c'est à dire pas grand chose) est visible ici : <a href="http://lkdjiin.github.io/space-invaders-in-opal-rb/">http://lkdjiin.github.io/space-invaders-in-opal-rb/</a>.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
