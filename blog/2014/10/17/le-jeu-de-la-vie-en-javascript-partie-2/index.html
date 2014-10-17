@@ -1,0 +1,850 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Le jeu de la vie en javascript - partie 2 - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : intermédiaire Précédement nous avons écrit une fonction pour produire une génération de
+cellules au hasard. Nous allons aujourd&#8217;hui &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Le jeu de la vie en javascript - partie 2</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-17T21:12:00+02:00" pubdate data-updated="true">17 octobre 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p><a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Précédement</a> nous avons écrit une fonction pour produire une génération de
+cellules au hasard. Nous allons aujourd&#8217;hui afficher une telle génération.
+Je veux maintenant calculer le prochain état d&#8217;une cellule, en fonction de son
+voisinage. Pour rappel:</p>
+
+<ul>
+<li>Si la somme des 9 cellules du voisinage est 3, le nouvel état est «vivant».</li>
+<li>Si la somme des 9 cellules du voisinage est 4, le nouvel état est le même
+que l&#8217;ancien.</li>
+<li>Dans tous les autres cas, le nouvel état est «mort».</li>
+</ul>
+
+
+<!-- more -->
+
+
+<h2>Calculer le prochain état d&#8217;une cellule</h2>
+
+<p>Voici les différents tests qui m&#8217;ont conduits à l&#8217;écriture de la fonction
+<code>nextCellState</code>. Notez bien que, selon les principes du TDD, je ne les ai pas
+écrit tous d&#8217;un coup, mais bien un par un, en implémentant la fonction
+minimale à chaque nouveau test.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;nextCellState&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns an integer&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">cells</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="err"> </span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">nextCellState</span><span class="p">(</span><span class="nx">cells</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nb">Number</span><span class="p">.</span><span class="nx">isInteger</span><span class="p">(</span><span class="nx">result</span><span class="p">)).</span><span class="nx">toBe</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns 1 when it&#39;ll be alive&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">cells</span> <span class="o">=</span> <span class="p">[</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="err"> </span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="err"> </span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="err"> </span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">cells</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">nextCellState</span><span class="p">(</span><span class="nx">cells</span><span class="p">[</span><span class="nx">i</span><span class="p">])).</span><span class="nx">toBe</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns 0 when it&#39;ll be dead&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">cells</span> <span class="o">=</span> <span class="p">[</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="err"> </span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="err"> </span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="err"> </span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="p">];</span>
+</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">cells</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">nextCellState</span><span class="p">(</span><span class="nx">cells</span><span class="p">[</span><span class="nx">i</span><span class="p">])).</span><span class="nx">toBe</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns current state as next state&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">cells</span> <span class="o">=</span> <span class="p">[</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="err"> </span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="err"> </span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="p">];</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">nextCellState</span><span class="p">(</span><span class="nx">cells</span><span class="p">[</span><span class="mi">0</span><span class="p">])).</span><span class="nx">toBe</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">nextCellState</span><span class="p">(</span><span class="nx">cells</span><span class="p">[</span><span class="mi">1</span><span class="p">])).</span><span class="nx">toBe</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici cette fonction.</p>
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">nextCellState</span><span class="p">(</span><span class="nx">neighborhood</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">neighborhood</span><span class="p">.</span><span class="nx">reduce</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">a</span> <span class="o">+</span> <span class="nx">b</span>
+</span><span class='line'>  <span class="p">},</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">result</span> <span class="o">===</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="nx">result</span> <span class="o">===</span> <span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">neighborhood</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Maintenant il me faut une fonction qui extrait un <em>voisinage</em> à partir d&#8217;une
+position dans une génération. C&#8217;est la partie la plus complexe. Comme toujours,
+je commence doucement avec un test très simple et son code d&#8217;implémentation.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;extractNeighborhood&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns an array&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">();</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">result</span><span class="p">)).</span><span class="nx">toBe</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">[];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je peux commencer à <em>specer</em> les choses sérieuses.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;extractNeighborhood&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">beforeEach</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">generation</span> <span class="o">=</span> <span class="p">[</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+</span><span class='line'>      <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]];</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns an array&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">result</span><span class="p">)).</span><span class="nx">toBe</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns the neighborhood of a cell at x, y&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On note l&#8217;utilisation de <code>toEqual</code> pour tester l&#8217;égalité de deux tableaux,
+<code>toBe()</code> testant l&#8217;identité d&#8217;après ce que j&#8217;ai compris.
+Et voici le code qui fait passer tout ça, moche mais pragmatique.</p>
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">[</span>
+</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C&#8217;est au tour des cellules du bord, d&#8217;abord en haut.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;extractNeighborhood&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;returns the neighborhood of a border&#39;s cell&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=2, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le code devient de plus en plus moche.</p>
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">firstLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span>
+</span><span class='line'>    <span class="p">[</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">]);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">firstLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Puisqu&#8217;il passe les tests, je cherche à l&#8217;améliorer un peu.</p>
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">firstLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span>
+</span><span class='line'>    <span class="p">[</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span>
+</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="p">]);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">firstLine</span><span class="p">(</span><span class="nx">line</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">line</span> <span class="o">===</span> <span class="k">void</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Cellule du bord en bas, maintenant.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'>  <span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;returns the neighborhood of a border&#39;s cell&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=2, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=2, y=2&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span>
+</span><span class='line'>    <span class="p">[</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">],</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]],</span>
+</span><span class='line'>    <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">line</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">line</span> <span class="o">===</span> <span class="k">void</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">];</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Puis refactoring.</p>
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span>
+</span><span class='line'>         <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">],</span> <span class="nx">x</span><span class="p">),</span>
+</span><span class='line'>         <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On passe au bord gauche.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'>  <span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;returns the neighborhood of a border&#39;s cell&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=2, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=2, y=2&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="p">...</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=0, y=1&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La réponse de Jasmine à ce test est:</p>
+
+<pre><code>Expected [ undefined, 0, 1, undefined, 1, 0, undefined, 0, 1 ] to equal [ 0, 0, 1, 0, 1, 0, 0, 0, 1 ].
+</code></pre>
+
+<p>Si on suit les principes du TDD, il faut écrire le code tout juste suffisant
+pour faire passer ce test. Je me contente donc de mapper les <code>undefined</code> en <code>0</code>.</p>
+
+<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">cells</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span>
+</span><span class='line'>              <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">],</span> <span class="nx">x</span><span class="p">),</span>
+</span><span class='line'>              <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">));</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nx">cells</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">cell</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">cell</span> <span class="o">===</span> <span class="kc">undefined</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="nx">cell</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Si j&#8217;ajoute un test pour une cellule du bord droit, il passe.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=3, y=1&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Très bien, il faut maintenant s&#8217;occuper des cellules de coins. Je me rends
+compte que les quatres tests suivants passent sans que je n&#8217;ai rien à modifier
+dans le code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'>  <span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;returns the neighborhood of a corner&#39;s cell&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=0, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=3, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=0, y=2&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=3, y=2&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
+</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je suis donc prêt à tout mettre ensemble. Ce sera pour le prochain article car
+celui-ci est déjà bien long.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/'>Le jeu de la vie dans sept langages différents</a></li><li><a href='/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/'>Un space invaders avec Opal.rb &ndash; partie 16</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-17T21:12:00+02:00" pubdate data-updated="true">17 octobre 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/javascript/'>javascript</a>, <a class='category' href='/blog/categories/jeu-de-la-vie/'>jeu de la vie</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/" title="Previous Post: Le jeu de la vie en javascript - partie 1">&laquo; Le jeu de la vie en javascript - partie 1</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>Blog ouvert sept jours sur sept, j'écris
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">un article par jour</a>
+  sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/">Le jeu de la vie en javascript - partie 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Le jeu de la vie en javascript - partie 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">Le jeu de la vie dans sept langages différents</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/08/24/retour-sur-un-an-darticle-quotidien/">Retour sur un an d'article quotidien</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/08/un-article-par-jour-pendant-un-an-cest-termine-dot-dot-dot/">Un article par jour pendant un an ! C'est terminé...</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/07/les-tours-de-hanoi-partie-3/">Les tours de Hanoi - partie 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/07/06/les-tours-de-hanoi-partie-2/">Les tours de hanoi - partie 2</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
