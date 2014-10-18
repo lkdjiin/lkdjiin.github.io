@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-10-17T21:22:34+02:00</updated>
+  <updated>2014-10-18T12:53:02+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,456 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en javascript - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/"/>
+    <updated>2014-10-18T12:29:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>C'est le moment de mettre ensemble tous les éléments codés jusqu'ici pour
+contempler le jeu de la vie s'épanouir devant nos yeux.
+Seulement je n'ai pas d'idée claire sur la manière dont ça peut-être fait
+en javascript, et même sur les problèmes que ça pourrait poser, et encore
+moins sur la manière de tester ça avec Jasmine.</p>
+
+<p>Le TDD n'est pas une religion ! Ce n'est pas un précepte qu'on suit
+aveuglement. On peut, et on doit, le questionner. Comment écrire un test quand
+on n'a pas la moindre idée du problème à résoudre ?</p>
+
+<!-- more -->
+
+
+<p>Quand cette situation m'arrive, j'expérimente. Et voilà le résultat de mon
+expérimentation:</p>
+
+<p>``` javascript app/application.js
+&hellip;</p>
+
+<p>function draw(context2d, generation, totalGeneration) {
+  var height = generation.length;
+  var width = generation[0].length;</p>
+
+<p>  clearBackground(context2d, width, height);
+  drawCells(context2d, generation, width, height);</p>
+
+<p>  if(totalGeneration > 0)</p>
+
+<pre><code>setTimeout(update, 500, context2d, generation, totalGeneration);
+</code></pre>
+
+<p>}</p>
+
+<p>&hellip;</p>
+
+<p>function update(context2d, generation, totalGeneration) {
+  var height = generation.length,</p>
+
+<pre><code>  width = generation[0].length;
+</code></pre>
+
+<p>  // Create an empty generation.
+  var nextGeneration = new Array(height);
+  for(var y = 0; y &lt; height; y++) {</p>
+
+<pre><code>nextGeneration[y] = new Array(width);
+</code></pre>
+
+<p>  }</p>
+
+<p>  // Fill the next generation.
+  for(var y = 0; y &lt; height; y++) {</p>
+
+<pre><code>for(var x = 0; x &lt; width; x++) {
+  var neighborhood = extractNeighborhood(generation, x, y);
+  var state = nextCellState(neighborhood);
+  nextGeneration[y][x] = state;
+}
+</code></pre>
+
+<p>  }</p>
+
+<p>  setTimeout(draw, 500, context2d, nextGeneration, totalGeneration &ndash; 1);
+}</p>
+
+<p>(function() {
+  var generation = createGeneration(100, 100);
+  var c = document.getElementById(&lsquo;canvas&rsquo;);
+  var context2d = c.getContext(&lsquo;2d&rsquo;);
+  var totalGeneration = 100;</p>
+
+<p>  draw(context2d, generation, totalGeneration);
+})()
+```</p>
+
+<p>Maintenant que j'ai une meilleure connaissance du problème à résoudre, j'efface
+toutes les modifications que je viens de faire et je recommence en TDD.</p>
+
+<p>Enfin c'est ce que je ferais normalement sur un projet réèl. Là, j'ai la flemme.</p>
+
+<h2>Un meilleur affichage</h2>
+
+<p>Je vais simplement faire un zoom 4x. Repérez <code>scale</code> dans le code suivant pour
+savoir ce que j'ai modifié.</p>
+
+<p>``` javascript app/application.js
+function draw(context2d, generation, totalGeneration) {
+  var height = generation.length;
+  var width = generation[0].length;
+  var scale = 4;</p>
+
+<p>  clearBackground(context2d, width, height, scale);
+  drawCells(context2d, generation, width, height, scale);</p>
+
+<p>  if(totalGeneration > 0)</p>
+
+<pre><code>setTimeout(update, 500, context2d, generation, totalGeneration);
+</code></pre>
+
+<p>}</p>
+
+<p>function clearBackground(context2d, width, height, scale) {
+  context2d.fillStyle = &lsquo;black&rsquo;;
+  context2d.fillRect(0, 0, width * scale, height * scale);
+}</p>
+
+<p>function drawCells(context2d, generation, width, height, scale) {
+  context2d.fillStyle = &lsquo;white&rsquo;;
+  for(var y = 0; y &lt; height; y++) {</p>
+
+<pre><code>for(var x = 0; x &lt; width; x++) {
+  if(generation[x][y] === 1) {
+    context2d.fillRect(x * scale, y * scale, scale, scale);
+  }
+}
+</code></pre>
+
+<p>  }
+}
+```</p>
+
+<h2>Une surface de jeu «sans bord»</h2>
+
+<p>Autre amélioration, mais non des moindres, on va connecter les bords du
+haut et du bas, ainsi que les bords de gauche et de droite. On aura ainsi un
+<a href="http://fr.wikipedia.org/wiki/Tore">tore</a>.</p>
+
+<p>Cette nouvelle fonctionnalité simule assez bien ce qu'il se passe dans le
+boulot du monde réèl. Je pourrais modifier le code, le regarder fonctionner,
+puis modifier les tests en conséquence. Je vois ça souvent. Seulement cette
+façon de faire revient à écrire les tests <strong>après</strong> le code. Et ça, ça n'est
+pas du TDD. Je vais d'abord modifier les test, quitte à en désactiver certains
+temporairement, <strong>puis</strong> modifier le code pour faire passer les nouveaux tests.</p>
+
+<p>C'est la fonction <code>extractNeighborhood</code> qui doit être modifée. Je vais donc
+réécrire les <em>expect</em>s de:</p>
+
+<pre><code>describe("returns the neighborhood of a border's cell", function() {
+</code></pre>
+
+<p>et de</p>
+
+<pre><code>describe("returns the neighborhood of a corner's cell", function() {
+</code></pre>
+
+<p>Cela fait 8 tests à réécrire. Je les ai tous désactivés, sauf le premier.</p>
+
+<p>``` javascript
+  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
+
+<pre><code>it("x=2, y=0", function() {
+  var x = 2,
+      y = 0,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([1, 1, 0, 1, 0, 1, 0, 1, 0]);
+});
+
+xit("x=2, y=2", function() {
+  var x = 2,
+      y = 2,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([0, 1, 0, 1, 1, 0, 1, 0, 1]);
+});
+
+xit("x=0, y=1", function() {
+  var x = 0,
+      y = 1,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([1, 0, 1, 0, 1, 0, 0, 0, 1]);
+});
+
+xit("x=3, y=1", function() {
+  var x = 3,
+      y = 1,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([0, 1, 0, 1, 0, 1, 1, 0, 0]);
+});
+</code></pre>
+
+<p>  });</p>
+
+<p>  xdescribe(&ldquo;returns the neighborhood of a corner&rsquo;s cell&rdquo;, function() {</p>
+
+<pre><code>it("x=0, y=0", function() {
+  var x = 0,
+      y = 0,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([0, 0, 1, 1, 0, 1, 0, 1, 0]);
+});
+
+it("x=3, y=0", function() {
+  var x = 3,
+      y = 0,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([1, 0, 0, 0, 1, 0, 1, 0, 1]);
+});
+
+it("x=0, y=2", function() {
+  var x = 0,
+      y = 2,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([0, 1, 0, 0, 0, 1, 1, 0, 1]);
+});
+
+it("x=3, y=2", function() {
+  var x = 3,
+      y = 2,
+      result = extractNeighborhood(this.generation, x, y);
+  expect(result).toEqual([1, 0, 1, 1, 0, 0, 0, 1, 0]);
+});
+</code></pre>
+
+<p>  });
+```</p>
+
+<p>Je vais donc les refaire passer un par un. Pour mémoire, voici l'ancien code:</p>
+
+<p>``` javascript app/application.js
+function extractNeighborhood(generation, x, y) {
+  var cells = extractLine(generation[y-1], x).concat(</p>
+
+<pre><code>          extractLine(generation[y], x),
+          extractLine(generation[y+1], x));
+</code></pre>
+
+<p>  return cells.map(function(cell) {</p>
+
+<pre><code>return cell === undefined ? 0 : cell;
+</code></pre>
+
+<p>  });
+}</p>
+
+<p>function extractLine(line, x) {
+  if(line === void 0)</p>
+
+<pre><code>return [0, 0, 0];
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>return [line[x-1], line[x], line[x+1]];
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Et voici le code réécrit pour faire passer ce premier test:</p>
+
+<p>``` javascript app/application.js
+function extractNeighborhood(generation, x, y) {
+  var cells,</p>
+
+<pre><code>  line1,
+  line2,
+  line3;
+</code></pre>
+
+<p>  if(y > 0)</p>
+
+<pre><code>line1 = extractLine(generation[y-1], x);
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>line1 = extractLine(generation[generation.length-1], x);
+</code></pre>
+
+<p>  line2 = extractLine(generation[y], x);
+  line3 = extractLine(generation[y+1], x);</p>
+
+<p>  cells = line1.concat(line2, line3);</p>
+
+<p>  return cells.map(function(cell) {</p>
+
+<pre><code>return cell === undefined ? 0 : cell;
+</code></pre>
+
+<p>  });
+}</p>
+
+<p>function extractLine(line, x) {
+  return [line[x-1], line[x], line[x+1]];
+}
+```</p>
+
+<p>Je réactive le second test, lance la suite de test pour confirmer qu'il
+échoue, et voici le nouveau code:</p>
+
+<p>``` javascript app/application.js
+function extractNeighborhood(generation, x, y) {</p>
+
+<p>  &hellip;</p>
+
+<p>  if(y > 0)</p>
+
+<pre><code>line1 = extractLine(generation[y-1], x);
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>line1 = extractLine(generation[generation.length-1], x);
+</code></pre>
+
+<p>  line2 = extractLine(generation[y], x);</p>
+
+<p>  if(y === generation.length &ndash; 1)</p>
+
+<pre><code>line3 = extractLine(generation[0], x);
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>line3 = extractLine(generation[y+1], x);
+</code></pre>
+
+<p>  &hellip;
+}
+```</p>
+
+<p>Au tour du 3ème test. Pour le faire passer c'est <code>extractLine</code> que je dois
+modifier.</p>
+
+<p>``` javascript app/application.js
+function extractLine(line, x) {
+  if(x === 0)</p>
+
+<pre><code>return [line[line.length-1], line[x], line[x+1]];
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>return [line[x-1], line[x], line[x+1]];
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Et enfin je réactive le 4ème test.</p>
+
+<p>``` javascript app/application.js
+function extractLine(line, x) {
+  if(x === 0)</p>
+
+<pre><code>return [line[line.length-1], line[x], line[x+1]];
+</code></pre>
+
+<p>  else if(x === line.length-1)</p>
+
+<pre><code>return [line[x-1], line[x], line[0]];
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>return [line[x-1], line[x], line[x+1]];
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Puis je réactive les 4 tests restants (ceux des coins) et je vérifie que tout
+passe. C'est un bon moment pour lancer le programme et vérifier visuellement
+que des objets <em>traversent</em> bien les bords.</p>
+
+<p>J'ai ensuite fait un peu de refactoring:</p>
+
+<p>``` javascript app/application.js
+function extractNeighborhood(generation, x, y) {
+  var cells = line1(generation, x, y)</p>
+
+<pre><code>          .concat(line2(generation, x, y), line3(generation, x, y));
+</code></pre>
+
+<p>  return cells.map(function(cell) {</p>
+
+<pre><code>return cell === undefined ? 0 : cell;
+</code></pre>
+
+<p>  });
+}</p>
+
+<p>function line1(generation, x, y) {
+  if(y > 0)</p>
+
+<pre><code>return extractLine(generation[y-1], x);
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>return extractLine(generation[generation.length - 1], x);
+</code></pre>
+
+<p>}</p>
+
+<p>function line2(generation, x, y) {
+  return extractLine(generation[y], x);
+}</p>
+
+<p>function line3(generation, x, y) {
+  if(y === generation.length &ndash; 1)</p>
+
+<pre><code>return extractLine(generation[0], x);
+</code></pre>
+
+<p>  else</p>
+
+<pre><code>return extractLine(generation[y+1], x);
+</code></pre>
+
+<p>}</p>
+
+<p>function extractLine(line, x) {
+  var left = x &ndash; 1,</p>
+
+<pre><code>  right = x + 1;
+</code></pre>
+
+<p>  if(x === 0)</p>
+
+<pre><code>left = line.length - 1;
+</code></pre>
+
+<p>  else if(x === line.length-1)</p>
+
+<pre><code>right = 0;
+</code></pre>
+
+<p>  return [line[left], line[x], line[right]];
+}
+```</p>
+
+<p>J'avoue que je ne sais pas si c'est mieux. Quoiqu'il en soit, vous pouvez
+trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code complet sur Github</a>.</p>
+
+<p>La prochaine fois je m'attaquerais à la version Ruby/Opal.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en javascript - partie 2]]></title>
