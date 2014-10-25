@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-10-18T12:53:02+02:00</updated>
+  <updated>2014-10-25T18:37:48+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,344 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en ruby (opal) - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/"/>
+    <updated>2014-10-25T18:13:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Après la <a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">version Javascript</a> du jeu de la vie, je débute la version
+Ruby/Opal.</p>
+
+<!-- more -->
+
+
+<h2>Obtenir une première génération au hasard</h2>
+
+<pre><code>$ touch app/generation.rb
+$ touch spec/generation_spec.rb
+$ tree
+.
+├── app
+│   └── generation.rb
+└── spec
+    └── generation_spec.rb
+</code></pre>
+
+<p>Mon premier test consiste à spécifier l'interface publique.</p>
+
+<p>``` ruby generation_spec.rb
+require &lsquo;./app/generation.rb&rsquo;</p>
+
+<p>describe Generation do</p>
+
+<p>  before do</p>
+
+<pre><code>@width = 4
+@height = 3
+</code></pre>
+
+<p>  end</p>
+
+<p>  specify { expect(Generation.new(@width, @height)).to respond_to :create }</p>
+
+<p>end
+```</p>
+
+<p>Et on le fait passer facilement.</p>
+
+<p>``` ruby generation.rb
+class Generation</p>
+
+<p>  def initialize(width, height)
+  end</p>
+
+<p>  def create
+  end</p>
+
+<p>end
+```</p>
+
+<p>Un test en plus pour s'assurer que le tableau possède le bon nombre de lignes.</p>
+
+<p>``` ruby generation_spec.rb
+  describe &lsquo;#create&rsquo; do</p>
+
+<pre><code>it 'returns an array with the right height' do
+  generation = Generation.new(@width, @height).create
+  expect(generation.size).to eq @height
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Encore une fois, le code vient facilement.</p>
+
+<p>``` ruby generation.rb
+class Generation</p>
+
+<p>  def initialize(width, height)</p>
+
+<pre><code>@height = height
+</code></pre>
+
+<p>  end</p>
+
+<p>  def create</p>
+
+<pre><code>Array.new(@height)
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Même chose maintenant avec le nombre de colonnes.</p>
+
+<p>``` ruby generation_spec.rb
+  describe &lsquo;#create&rsquo; do</p>
+
+<pre><code>...
+it 'returns an array with the right width' do
+  generation = Generation.new(@width, @height).create
+  expect(generation.first.size).to eq @width
+end
+</code></pre>
+
+<p>  end
+```</p>
+
+<p>Pour faire passer ce test, on crée un tableau à deux dimensions.</p>
+
+<p>``` ruby generation.rb
+class Generation</p>
+
+<p>  def initialize(width, height)</p>
+
+<pre><code>@height = height
+@width = width
+</code></pre>
+
+<p>  end</p>
+
+<p>  def create</p>
+
+<pre><code>Array.new(@height) { Array.new(@width) }
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>On remarque l'expression <code>Generation.new(@width, @height)</code>, en commun dans
+chaque test. C'est notre premier refactoring.</p>
+
+<p>``` ruby generation_spec.rb
+require &lsquo;./app/generation.rb&rsquo;</p>
+
+<p>describe Generation do</p>
+
+<p>  before do</p>
+
+<pre><code>@width = 4
+@height = 3
+@generation = Generation.new(@width, @height)
+</code></pre>
+
+<p>  end</p>
+
+<p>  specify { expect(@generation).to respond_to :create }</p>
+
+<p>  describe &lsquo;#create&rsquo; do</p>
+
+<pre><code>it 'returns an array with the right height' do
+  expect(@generation.create.size).to eq @height
+end
+
+it 'returns an array with the right width' do
+  expect(@generation.create.first.size).to eq @width
+end
+</code></pre>
+
+<p>  end</p>
+
+<p>end
+```</p>
+
+<h3>Du hasard maitrisé</h3>
+
+<p>Je veux être sûr que la méthode <code>create</code> remplit bien le tableau avec soit des
+<code>0</code>, soit des <code>1</code>. Pour tester ça facilement, je vais <em>figer</em> le générateur de
+nombre aléatoire à l'aide de <code>srand</code>.</p>
+
+<p>``` ruby generation_spec.rb</p>
+
+<pre><code>it 'creates random cells' do
+  srand(0)
+  expect(@generation.create.first).to eq [0, 1, 1, 0]
+end
+</code></pre>
+
+<p>```</p>
+
+<p>``` ruby app/generation.rb
+  def create</p>
+
+<pre><code>Array.new(@height) { Array.new(@width) { rand(2) } }
+</code></pre>
+
+<p>  end
+```</p>
+
+<h2>Afficher une génération</h2>
+
+<p>C'est la partie que je crains le plus avec certains langages. Avec Javascript
+par exemple, pas de problème, mais avec Haskell, Rust ou Julia je n'ai aucune
+idée des bibliothèques/frameworks/wrappers à employer.</p>
+
+<p>Avec Ruby le souci est ailleurs. Je considère que l'écosystème Ruby est
+horrible dès qu'on touche de près ou de loin au GUI. Je vais donc tricher
+quelque peu et utiliser <a href="http://opalrb.org/">opal.rb</a>.</p>
+
+<p>La structure de l'application va bien changer :</p>
+
+<pre><code>$ tree
+.
+├── app
+│   ├── application.rb
+│   ├── canvas.rb
+│   └── generation.rb
+├── build.js
+├── Gemfile
+├── index.html
+├── Rakefile
+└── spec
+    └── generation_spec.rb
+</code></pre>
+
+<p><code>ruby Gemfile
+gem "opal", "&gt;= 0.6.2"
+</code></p>
+
+<p>``` ruby Rakefile
+require &lsquo;opal&rsquo;</p>
+
+<p>desc &ldquo;Build our app to build.js&rdquo;
+task :build do
+  Opal::Processor.source_map_enabled = false
+  env = Opal::Environment.new
+  env.append_path &ldquo;app&rdquo;</p>
+
+<p>  File.open(&ldquo;build.js&rdquo;, &ldquo;w+&rdquo;) do |out|</p>
+
+<pre><code>out &lt;&lt; env["application"].to_s
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>``` html index.html
+&lt;!DOCTYPE html>
+<html>
+  <head></p>
+
+<pre><code>&lt;meta charset="utf-8" /&gt;
+&lt;title&gt;Game of Life&lt;/title&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;canvas width="100" height="100" id="canvas"&gt;&lt;/canvas&gt;
+&lt;script src="build.js"&gt;&lt;/script&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<p>Dans <code>Canvas</code> j'écris une sorte d'adaptateur pour utiliser un <code>canvas</code>
+Javascript.</p>
+
+<p>``` ruby app/canvas.rb
+class Canvas</p>
+
+<p>  attr_reader :width, :height</p>
+
+<p>  def initialize</p>
+
+<pre><code>@canvas  = `document.getElementById('canvas')`
+@context = `#@canvas.getContext('2d')`
+@height  = `#@canvas.height`
+@width   = `#@canvas.width`
+</code></pre>
+
+<p>  end</p>
+
+<p>  def clear</p>
+
+<pre><code>draw_rect(0, 0, @width, @height, 'black')
+</code></pre>
+
+<p>  end</p>
+
+<p>  def pixel(x, y)</p>
+
+<pre><code>draw_rect(x, y, 1, 1, 'white')
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def draw_rect(x, y, w, h, color)</p>
+
+<pre><code>`#@context.fillStyle = #{color}`
+`#@context.fillRect(#{x}, #{y}, #{w}, #{h})`
+</code></pre>
+
+<p>  end</p>
+
+<p>end
+```</p>
+
+<p>Dans <code>app/application.rb</code> je peux maintenant afficher une génération.</p>
+
+<p>``` ruby app/application.rb
+require &lsquo;opal&rsquo;
+require &lsquo;canvas&rsquo;
+require &lsquo;generation&rsquo;</p>
+
+<p>canvas = Canvas.new
+canvas.clear</p>
+
+<p>generation = Generation.new(canvas.width, canvas.height)
+cells = generation.create</p>
+
+<p>cells.each_with_index do |line, y|
+  line.each_with_index do |cell, x|</p>
+
+<pre><code>canvas.pixel(x, y) if cell == 1
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Après un <code>rake build</code>, on peut lancer l'application avec <code>see index.html</code>.</p>
+
+<p>La suite la prochaine fois.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en javascript - partie 3]]></title>
