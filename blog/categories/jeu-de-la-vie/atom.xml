@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-10-29T07:28:31+01:00</updated>
+  <updated>2014-11-01T12:36:00+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,164 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/"/>
+    <updated>2014-11-01T12:22:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Le troisième volet de cette série <a href="http://lkdjiin.github.io/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">le jeu de la vie en 7 langages</a>
+sera consacré à <a href="http://racket-lang.org/">Racket</a>, un dialecte de Lisp.
+Télécharger le ici: <a href="http://download.racket-lang.org/">http://download.racket-lang.org/</a>
+et installez avec <code>bash ./nom-du-fichier.sh</code></p>
+
+<!-- more -->
+
+
+<p>On commence par un <em>smoke test</em> pour être sûr que Racket est bien installé et
+accessible. Dans un fichier <code>game-of-life-test.rkt</code>, chargez le framework de
+test et le futur fichier d'implémentation.</p>
+
+<p>``` racket game-of-life-test.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(require rackunit</p>
+
+<pre><code>     "game-of-life.rkt")
+</code></pre>
+
+<p>```</p>
+
+<p>Puis executez le :</p>
+
+<pre><code>$ racket game-of-life-test.rkt
+game-of-life-test.rkt:4:9: cannot open module file
+</code></pre>
+
+<p>Cool, Racket est là et nous dit qu'il ne peut pas ouvrir le fichier
+<code>game-of-life.rkt</code>. Créons le :</p>
+
+<pre><code>touch game-of-life.rkt
+</code></pre>
+
+<p>``` racket game-of-life.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>```</p>
+
+<p>Premier test maintenant, la fonction <code>create-generation</code> doit renvoyer une
+liste.</p>
+
+<p>``` racket game-of-life-test.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(require rackunit</p>
+
+<pre><code>     "game-of-life.rkt")
+</code></pre>
+
+<p>(check-pred list? (create-generation 3 4))
+```</p>
+
+<pre><code>$ racket game-of-life-test.rkt 
+game-of-life-test.rkt:6:19: create-generation: unbound identifier in module
+</code></pre>
+
+<p>Ok, on renvoie donc une liste vide <code>'()</code>. Notez aussi <code>provide</code>, qui permet de
+définir en quelque sorte les fonctions publiques du fichier.</p>
+
+<p>``` racket game-of-life.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(define (create-generation width height)
+  &lsquo;())</p>
+
+<p>(provide create-generation)
+```</p>
+
+<p><code>rackunit</code>, le framework de test <em>shippé</em> avec Racket peut aussi documenter
+les tests:</p>
+
+<p>``` racket game-of-life-test.rkt
+(check-equal? (length (create-generation 3 4)) 4</p>
+
+<pre><code>          "It builds a list with the right height")
+</code></pre>
+
+<p>```</p>
+
+<p>On crée une liste de la bonne taille, et comme on se fiche pour l'instant de ce
+qu'elle contient, on peut l'initialiser avec des zéros.</p>
+
+<p><code>racket game-of-life.rkt
+(define (create-generation width height)
+  (make-list height 0))
+</code></p>
+
+<p>Chaque élément de la liste doit aussi être une liste (la dimension <code>x</code>).</p>
+
+<p>``` racket game-of-life-test.rkt
+(check-equal? (length (first (create-generation 3 4))) 3</p>
+
+<pre><code>          "It builds a list with the right width")
+</code></pre>
+
+<p>```</p>
+
+<pre><code>$ racket game-of-life-test.rkt 
+length: contract violation
+  expected: list?
+  given: 0
+</code></pre>
+
+<p>J'utilise <code>for/list</code> pour construire cette fameuse liste à deux dimensions. Les
+différentes variantes de <code>for</code> me semble très utilisées en Racket.</p>
+
+<p>``` racket game-of-life.rkt
+(define (create-generation width height)
+  (for/list ([i (make-list height 0)])</p>
+
+<pre><code>        (make-list width 0)))
+</code></pre>
+
+<p>```</p>
+
+<p>Finalement, je veux que ma liste contiennent des <code>0</code> (cellule morte) et des
+<code>1</code> (cellule vivante).</p>
+
+<p>``` racket game-of-life-test.rkt
+(let ([cell (first (first (create-generation 3 4)))])
+  (check-true (or (= cell 0) (= cell 1))</p>
+
+<pre><code>          "It populates generation with 0s or 1s"))
+</code></pre>
+
+<p>```</p>
+
+<p>``` racket game-of-life.rkt
+(define (create-generation width height)
+  (for/list ([i (make-list height 0)])</p>
+
+<pre><code>        (make-list width (random 2))))
+</code></pre>
+
+<p>```</p>
+
+<p>Ce dernier bout de code contient un bug qui n'est pas attrapé par les
+tests (vous l'avez vu ?). Je <em>fixerais</em> ça dans le prochain article.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en ruby (opal) - partie 3]]></title>
@@ -1690,440 +1848,6 @@ function extractNeighborhood(generation, x, y) {
 trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code complet sur Github</a>.</p>
 
 <p>La prochaine fois je m'attaquerais à la version Ruby/Opal.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en javascript - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/"/>
-    <updated>2014-10-17T21:12:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p><a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Précédement</a> nous avons écrit une fonction pour produire une génération de
-cellules au hasard. Nous allons aujourd'hui afficher une telle génération.
-Je veux maintenant calculer le prochain état d'une cellule, en fonction de son
-voisinage. Pour rappel:</p>
-
-<ul>
-<li>Si la somme des 9 cellules du voisinage est 3, le nouvel état est «vivant».</li>
-<li>Si la somme des 9 cellules du voisinage est 4, le nouvel état est le même
-que l'ancien.</li>
-<li>Dans tous les autres cas, le nouvel état est «mort».</li>
-</ul>
-
-
-<!-- more -->
-
-
-<h2>Calculer le prochain état d'une cellule</h2>
-
-<p>Voici les différents tests qui m'ont conduits à l'écriture de la fonction
-<code>nextCellState</code>. Notez bien que, selon les principes du TDD, je ne les ai pas
-écrit tous d'un coup, mais bien un par un, en implémentant la fonction
-minimale à chaque nouveau test.</p>
-
-<p>``` javascript
-describe(&ldquo;nextCellState&rdquo;, function() {</p>
-
-<p>  it(&ldquo;returns an integer&rdquo;, function() {</p>
-
-<pre><code>var cells = [1, 1, 1, 0, 0, 0, 0, 0, 0];
-var result = nextCellState(cells);
-expect(Number.isInteger(result)).toBe(true);
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns 1 when it&rsquo;ll be alive&rdquo;, function() {</p>
-
-<pre><code>var cells = [
-  [1, 1, 1, 0, 0, 0, 0, 0, 0],
-  [0, 1, 1, 0, 0, 1, 0, 0, 0],
-  [0, 1, 0, 0, 0, 1, 0, 1, 0]
-];
-for(var i = 0; i &lt; cells.length; i++) {
-  expect(nextCellState(cells[i])).toBe(1);
-}
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns 0 when it&rsquo;ll be dead&rdquo;, function() {</p>
-
-<pre><code>var cells = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0, 0, 0]
-];
-for(var i = 0; i &lt; cells.length; i++) {
-  expect(nextCellState(cells[i])).toBe(0);
-}
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns current state as next state&rdquo;, function() {</p>
-
-<pre><code>var cells = [
-  [1, 1, 1, 1, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 1, 1, 1, 0, 0]
-];
-expect(nextCellState(cells[0])).toBe(0);
-expect(nextCellState(cells[1])).toBe(1);
-</code></pre>
-
-<p>  });</p>
-
-<p>});
-```</p>
-
-<p>Et voici cette fonction.</p>
-
-<p>``` javascript app/application.js
-function nextCellState(neighborhood) {
-  var result = neighborhood.reduce(function(a, b) {</p>
-
-<pre><code>return a + b
-</code></pre>
-
-<p>  }, 0);</p>
-
-<p>  if(result === 3)</p>
-
-<pre><code>return 1;
-</code></pre>
-
-<p>  else if(result === 4)</p>
-
-<pre><code>return neighborhood[4];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return 0;
-</code></pre>
-
-<p>}
-```</p>
-
-<p>Maintenant il me faut une fonction qui extrait un <em>voisinage</em> à partir d'une
-position dans une génération. C'est la partie la plus complexe. Comme toujours,
-je commence doucement avec un test très simple et son code d'implémentation.</p>
-
-<p>``` javascript
-describe(&ldquo;extractNeighborhood&rdquo;, function() {</p>
-
-<p>  it(&ldquo;returns an array&rdquo;, function() {</p>
-
-<pre><code>var result = extractNeighborhood();
-expect(Array.isArray(result)).toBe(true);
-</code></pre>
-
-<p>  });</p>
-
-<p>});
-```</p>
-
-<p><code>javascript app/application.js
-function extractNeighborhood() {
-  return [];
-}
-</code></p>
-
-<p>Je peux commencer à <em>specer</em> les choses sérieuses.</p>
-
-<p>``` javascript
-describe(&ldquo;extractNeighborhood&rdquo;, function() {</p>
-
-<p>  beforeEach(function() {</p>
-
-<pre><code>this.generation = [
-  [0, 1, 0, 1],
-  [1, 0, 1, 0],
-  [0, 1, 1, 0]];
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns an array&rdquo;, function() {</p>
-
-<pre><code>var result = extractNeighborhood(this.generation, 1, 1);
-expect(Array.isArray(result)).toBe(true);
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns the neighborhood of a cell at x, y&rdquo;, function() {</p>
-
-<pre><code>var x = 1,
-    y = 1,
-    result = extractNeighborhood(this.generation, x, y);
-
-expect(result).toEqual([0, 1, 0, 1, 0, 1, 0, 1, 1]);
-</code></pre>
-
-<p>  });</p>
-
-<p>});
-```</p>
-
-<p>On note l'utilisation de <code>toEqual</code> pour tester l'égalité de deux tableaux,
-<code>toBe()</code> testant l'identité d'après ce que j'ai compris.
-Et voici le code qui fait passer tout ça, moche mais pragmatique.</p>
-
-<p>``` javascript app/application.js
-function extractNeighborhood(generation, x, y) {
-  return [</p>
-
-<pre><code>generation[y-1][x-1], generation[y-1][x], generation[y-1][x+1],
-generation[y][x-1], generation[y][x], generation[y][x+1],
-generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ];
-</code></pre>
-
-<p>}
-```</p>
-
-<p>C'est au tour des cellules du bord, d'abord en haut.</p>
-
-<p>``` javascript
-describe(&ldquo;extractNeighborhood&rdquo;, function() {</p>
-
-<p>  &hellip;</p>
-
-<p>  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
-
-<pre><code>it("x=2, y=0", function() {
-  var x = 2,
-      y = 0,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 0, 0, 0, 0, 1, 0, 1, 0]);
-});
-</code></pre>
-
-<p>  });</p>
-
-<p>});
-```</p>
-
-<p>Le code devient de plus en plus moche.</p>
-
-<p>``` javascript app/application.js
-function extractNeighborhood(generation, x, y) {
-  return firstLine(generation, x, y-1).concat(</p>
-
-<pre><code>[generation[y][x-1], generation[y][x], generation[y][x+1],
-generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ]);
-</code></pre>
-
-<p>}</p>
-
-<p>function firstLine(generation, x, y) {
-  if(y &lt; 0)</p>
-
-<pre><code>return [0, 0, 0];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [generation[y][x-1], generation[y][x], generation[y][x+1]];
-</code></pre>
-
-<p>}
-```</p>
-
-<p>Puisqu'il passe les tests, je cherche à l'améliorer un peu.</p>
-
-<p>``` javascript app/application.js
-function extractNeighborhood(generation, x, y) {
-  return firstLine(generation[y-1], x).concat(</p>
-
-<pre><code>[generation[y][x-1], generation[y][x], generation[y][x+1],
-generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ]);
-</code></pre>
-
-<p>}</p>
-
-<p>function firstLine(line, x) {
-  if(line === void 0)</p>
-
-<pre><code>return [0, 0, 0];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [line[x-1], line[x], line[x+1]];
-</code></pre>
-
-<p>}
-```</p>
-
-<p>Cellule du bord en bas, maintenant.</p>
-
-<p>``` javascript
-  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
-
-<pre><code>it("x=2, y=0", function() {
-  ...
-});
-
-it("x=2, y=2", function() {
-  var x = 2,
-      y = 2,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 1, 0, 1, 1, 0, 0, 0, 0]);
-});
-</code></pre>
-
-<p>  });
-```</p>
-
-<p>``` javascript app/application.js
-function extractNeighborhood(generation, x, y) {
-  return extractLine(generation[y-1], x).concat(</p>
-
-<pre><code>[generation[y][x-1], generation[y][x], generation[y][x+1]],
-extractLine(generation[y+1], x));
-</code></pre>
-
-<p>}</p>
-
-<p>function extractLine(line, x) {
-  if(line === void 0)</p>
-
-<pre><code>return [0, 0, 0];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [line[x-1], line[x], line[x+1]];
-</code></pre>
-
-<p>}
-```</p>
-
-<p>Puis refactoring.</p>
-
-<p>``` javascript app/application.js
-function extractNeighborhood(generation, x, y) {
-  return extractLine(generation[y-1], x).concat(</p>
-
-<pre><code>     extractLine(generation[y], x),
-     extractLine(generation[y+1], x));
-</code></pre>
-
-<p>}
-```</p>
-
-<p>On passe au bord gauche.</p>
-
-<p>``` javascript
-  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
-
-<pre><code>it("x=2, y=0", function() {
-  ...
-});
-
-it("x=2, y=2", function() {
-  ...
-});
-
-it("x=0, y=1", function() {
-  var x = 0,
-      y = 1,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 0, 1, 0, 1, 0, 0, 0, 1]);
-});
-</code></pre>
-
-<p>  });
-```</p>
-
-<p>La réponse de Jasmine à ce test est:</p>
-
-<pre><code>Expected [ undefined, 0, 1, undefined, 1, 0, undefined, 0, 1 ] to equal [ 0, 0, 1, 0, 1, 0, 0, 0, 1 ].
-</code></pre>
-
-<p>Si on suit les principes du TDD, il faut écrire le code tout juste suffisant
-pour faire passer ce test. Je me contente donc de mapper les <code>undefined</code> en <code>0</code>.</p>
-
-<p>``` javascript app/application.js
-function extractNeighborhood(generation, x, y) {
-  var cells = extractLine(generation[y-1], x).concat(</p>
-
-<pre><code>          extractLine(generation[y], x),
-          extractLine(generation[y+1], x));
-</code></pre>
-
-<p>  return cells.map(function(cell) {</p>
-
-<pre><code>return cell === undefined ? 0 : cell;
-</code></pre>
-
-<p>  });
-}
-```</p>
-
-<p>Si j'ajoute un test pour une cellule du bord droit, il passe.</p>
-
-<p>``` javascript</p>
-
-<pre><code>it("x=3, y=1", function() {
-  var x = 3,
-      y = 1,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 1, 0, 1, 0, 0, 1, 0, 0]);
-});
-</code></pre>
-
-<p>```</p>
-
-<p>Très bien, il faut maintenant s'occuper des cellules de coins. Je me rends
-compte que les quatres tests suivants passent sans que je n'ai rien à modifier
-dans le code.</p>
-
-<p>``` javascript
-  describe(&ldquo;returns the neighborhood of a corner&rsquo;s cell&rdquo;, function() {</p>
-
-<pre><code>it("x=0, y=0", function() {
-  var x = 0,
-      y = 0,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 0, 0, 0, 0, 1, 0, 1, 0]);
-});
-
-it("x=3, y=0", function() {
-  var x = 3,
-      y = 0,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 0, 0, 0, 1, 0, 1, 0, 0]);
-});
-
-it("x=0, y=2", function() {
-  var x = 0,
-      y = 2,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 1, 0, 0, 0, 1, 0, 0, 0]);
-});
-
-it("x=3, y=2", function() {
-  var x = 3,
-      y = 2,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([1, 0, 0, 1, 0, 0, 0, 0, 0]);
-});
-</code></pre>
-
-<p>  });
-```</p>
-
-<p>Je suis donc prêt à tout mettre ensemble. Ce sera pour le prochain article car
-celui-ci est déjà bien long.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
