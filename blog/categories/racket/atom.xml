@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : racket | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/racket/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-11-01T12:36:00+01:00</updated>
+  <updated>2014-11-08T14:41:31+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,219 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/"/>
+    <updated>2014-11-08T13:46:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>C'est le moment d'afficher à l'écran notre génération créée au hasard
+<a href="http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/">la dernière fois</a>.
+Je rappelle que je n'écris pas de tests pour cette partie.
+Pour obtenir un affichage, je me contente de suivre les exemples donnés dans la
+documentation
+<a href="http://mirror.racket-lang.org/releases/6.1/doc/draw/overview.html">drawing overview</a>
+et <a href="http://mirror.racket-lang.org/releases/6.1/doc/gui/windowing-overview.html">windowing overview</a>.</p>
+
+<!-- more -->
+
+
+<p>Ce qui donne la première experimentation suivante:</p>
+
+<p>``` racket game-of-life.rkt</p>
+
+<h1>lang racket/gui</h1>
+
+<p>&hellip;</p>
+
+<p>(define generation (create-generation 100 100))</p>
+
+<p>(define frame (new frame%
+  [label &ldquo;Example&rdquo;]
+  [width 100]
+  [height 100]))</p>
+
+<p>(new canvas%</p>
+
+<pre><code> [parent frame]
+ [paint-callback
+   (λ (canvas dc)
+      (send dc set-brush (new brush% [color "black"]))
+      (for ([y (length generation)])
+        (for ([x (length (first generation))])
+          (when (= 1 (list-ref (list-ref generation y) x))
+            (send dc draw-rectangle x y 1 1)))))])
+</code></pre>
+
+<p>(send frame show #t)
+```</p>
+
+<p>Le truc marrant (une façon de voir comme une autre) est que si on
+joue les tests, la fenêtre s'affiche. C'est pas très pratique.</p>
+
+<p>Mais avant tout, ce code révèle une erreur précédente:</p>
+
+<p><img src="/images/code-barre-2014-10-11.png"></p>
+
+<p>On dirait un code barre ! Pas vraiment une distribution uniforme.</p>
+
+<p>Alors le bug est simple à trouver, par contre je vais devoir écrire un ou
+plusieurs nouveaux tests et je garde ça pour la fin de l'article.</p>
+
+<p>Ensuite, je voudrais faire une boucle qui affiche une nouvelle génération au
+hasard chaque seconde. Je dois avouer que cette histoire de canvas, je la sens
+pas trop. Et le code que j'ai pondu s'en ressent. D'abord je mets ce qui a trait
+à une génération dans un module à part:</p>
+
+<p>``` racket generation.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(define (create-generation width height)
+  (for/list ([i (make-list height 0)])</p>
+
+<pre><code>        (make-list width (random 2))))
+</code></pre>
+
+<p>(provide create-generation)
+```</p>
+
+<p>Puis, tout le bazar de frame et de canvas, aussi dans un module:</p>
+
+<p>``` racket window.rkt</p>
+
+<h1>lang racket/gui</h1>
+
+<p>(define (create-window w h g)
+  (define frame (new frame%</p>
+
+<pre><code>                 [label "Game of Life"]
+                 [width w]
+                 [height h]))
+</code></pre>
+
+<p>  (define canvas (new (class canvas%</p>
+
+<pre><code>     (super-new [parent frame] [style '(no-autoclear)])
+     (define current-generation g)
+     (define dc (send this get-dc))
+     (define/public (change-generation g)
+       (set! current-generation g)
+       (send this refresh-now))
+     (define/override (on-paint)
+       (send dc set-brush (new brush% [color "black"]))
+       (send dc draw-rectangle 0 0 w h)
+       (send dc set-brush (new brush% [color "white"]))
+       (for ([y (length current-generation)])
+         (for ([x (length (first current-generation))])
+           (when (= 1 (list-ref (list-ref current-generation y) x))
+             (send dc draw-rectangle x y 1 1))))))))
+</code></pre>
+
+<p>  (send frame show #t)
+  canvas)</p>
+
+<p>(provide create-window)
+```</p>
+
+<p>Moi qui suis habitué à des méthodes de 2 ou 3 lignes, c'est pas vraiment ça.
+Et puis j'ai du mal à saisir le modèle objet de Racket.</p>
+
+<p>Enfin le programme principal avec la boucle:</p>
+
+<p>``` racket game-of-life.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(require &ldquo;generation.rkt&rdquo;</p>
+
+<pre><code>     "window.rkt")
+</code></pre>
+
+<p>(define size 100)
+(define generation (create-generation size size))
+(define canvas (create-window size size generation))</p>
+
+<p>(define (loop n)
+  (send canvas change-generation (create-generation size size))
+  (sleep 1)
+  (when (> n 0)</p>
+
+<pre><code>(loop (sub1 n))))
+</code></pre>
+
+<p>(loop 10)
+```</p>
+
+<p>Si j'ai le temps, j'essaierais d'utiliser la bibliothèque <code>2htdp/universe</code>,
+qui me semble bien plus simple.</p>
+
+<p>Maintenant le bug. Le problème est que je crée des lignes complètes de 0 ou de 1
+dans la liste qui représente une génération, plutôt que de distribuer
+uniformément ces 0 et ces 1. Je vais donc ajouter un test qui initialise le
+générateur de nombres aléatoires toujours de la même manière.</p>
+
+<p>``` racket game-of-life-test.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(require rackunit</p>
+
+<pre><code>     "generation.rkt")
+</code></pre>
+
+<p>&hellip;</p>
+
+<p>((λ ()
+   (random-seed 1)
+   (check-equal? (create-generation 2 3) &lsquo;((1 1) (0 1) (1 1))</p>
+
+<pre><code>             "It populates generation uniformly")))
+</code></pre>
+
+<p>```</p>
+
+<p>Sans surprise, le test échoue.</p>
+
+<pre><code>$ racket game-of-life-test.rkt
+--------------------
+FAILURE
+actual:     ((1 1) (1 1) (0 0))
+expected:   ((1 0) (1 0) (1 0))
+name:       check-equal?
+location:   (#&lt;path:/home/xavier/code/game-of-life-racket/game-of-life-test.rkt&gt; 21 3 537 112)
+expression: (check-equal? (create-generation 2 3) (quote ((1 0) (1 0) (1 0))))
+message:    "It populates generation uniformly"
+</code></pre>
+
+<p>Et voici le fix.</p>
+
+<p>``` racket generation.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(define (create-generation width height)
+  (define (rnd _)</p>
+
+<pre><code>(random 2))
+</code></pre>
+
+<p>  (for/list ([i (make-list height 0)])</p>
+
+<pre><code>        (map rnd (make-list width 0))))
+</code></pre>
+
+<p>(provide create-generation)
+```</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en racket - partie 1]]></title>
@@ -466,99 +679,6 @@ nombre que j'ai choisi. Si par exemple je pensais au nombre
 
 <p>La prochaine fois, on verra comment démarrer le jeu avec n'importe
 quelle étendue de nombres.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Racket: Trouves mon nombre - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/05/racket-trouves-mon-nombre-partie-2/"/>
-    <updated>2014-01-05T20:32:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/05/racket-trouves-mon-nombre-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Suite de l'article d'hier, aujourd'hui on ajoute la fonction
-<code>smaller</code> à notre petit jeu textuel.</p>
-
-<!-- more -->
-
-
-<p>Voici le fichier <code>guess.rkt</code> avec la nouvelle fonction:</p>
-
-<p>``` racket guess.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(define lower 1)
-(define upper 100)</p>
-
-<p>(define (guess)
-  (quotient (+ lower upper) 2))</p>
-
-<p>(define (smaller)
-  (set! upper (max lower (sub1 (guess))))
-  (guess))
-```</p>
-
-<p>Cette fonction change l'étendue du nombre à trouver, puis fait une nouvelle
-proposition:</p>
-
-<pre><code>[~]⇒ racket
-Welcome to Racket v5.3.6.
--&gt; (enter! "guess.rkt")
--&gt; (guess)
-50
--&gt; (smaller)
-25
-</code></pre>
-
-<p>Voyons notre nouvelle fonction en détail:</p>
-
-<p><code>racket
-(define (smaller)
-  (set! upper (max lower (sub1 (guess))))
-  (guess))
-</code></p>
-
-<p>Si le nombre à trouver est plus petit que 50, il est donc compris entre
-1 et 49. Il faut donc changer la limite haute (<code>upper</code>) pour refléter
-cette nouvelle donne.</p>
-
-<p>Le rôle de <code>set!</code> est de redéfinir une variable. Ici, on va changer le
-contenu de la variable <code>upper</code>.</p>
-
-<p>La fonction <code>sub1</code> décremente le nombre passé en argument, donc
-<code>(sub1 (guess))</code> renvoie 49. Et nous prenons, grâce à <code>max</code>, le nombre maximum entre
-celui-ci (49) et la valeur de la limite basse, ce qui permet de
-s'assurer que la valeur de <code>upper</code> ne sera jamais inférieure à
-la valeur de <code>lower</code>. Ce qu'on peut vérifier en continuant à évaluer
-<code>smaller</code>:</p>
-
-<pre><code>-&gt; (smaller)
-25
--&gt; (smaller)
-12
--&gt; (smaller)
-6
--&gt; (smaller)
-3
--&gt; (smaller)
-1
--&gt; (smaller)
-1
--&gt; (smaller)
-1
-...
-</code></pre>
-
-<p>La prochaine fois on verra la fonction inverse: <code>bigger</code> que vous
-pouvez essayer de coder par vous-même en attendant.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

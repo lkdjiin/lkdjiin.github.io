@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-11-01T12:36:00+01:00</updated>
+  <updated>2014-11-08T14:41:31+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,283 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/"/>
+    <updated>2014-11-08T13:46:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>C&#8217;est le moment d&#8217;afficher à l&#8217;écran notre génération créée au hasard
+<a href="http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/">la dernière fois</a>.
+Je rappelle que je n&#8217;écris pas de tests pour cette partie.
+Pour obtenir un affichage, je me contente de suivre les exemples donnés dans la
+documentation
+<a href="http://mirror.racket-lang.org/releases/6.1/doc/draw/overview.html">drawing overview</a>
+et <a href="http://mirror.racket-lang.org/releases/6.1/doc/gui/windowing-overview.html">windowing overview</a>.</p>
+
+<!-- more -->
+
+
+<p>Ce qui donne la première experimentation suivante:</p>
+
+<figure class='code'><figcaption><span>game-of-life.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket/gui</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">generation</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">100</span> <span class="mi">100</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">frame</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">frame%</span>
+</span><span class='line'>  <span class="p">[</span><span class="nf">label</span> <span class="s">&quot;Example&quot;</span><span class="p">]</span>
+</span><span class='line'>  <span class="p">[</span><span class="nf">width</span> <span class="mi">100</span><span class="p">]</span>
+</span><span class='line'>  <span class="p">[</span><span class="nf">height</span> <span class="mi">100</span><span class="p">]))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">new</span> <span class="nv">canvas%</span>
+</span><span class='line'>     <span class="p">[</span><span class="nf">parent</span> <span class="nv">frame</span><span class="p">]</span>
+</span><span class='line'>     <span class="p">[</span><span class="nf">paint-callback</span>
+</span><span class='line'>       <span class="p">(</span><span class="err">λ</span> <span class="p">(</span><span class="nf">canvas</span> <span class="nv">dc</span><span class="p">)</span>
+</span><span class='line'>          <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;black&quot;</span><span class="p">]))</span>
+</span><span class='line'>          <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">y</span> <span class="p">(</span><span class="nb">length </span><span class="nv">generation</span><span class="p">)])</span>
+</span><span class='line'>            <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">x</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">first</span> <span class="nv">generation</span><span class="p">))])</span>
+</span><span class='line'>              <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">= </span><span class="mi">1</span> <span class="p">(</span><span class="nb">list-ref </span><span class="p">(</span><span class="nb">list-ref </span><span class="nv">generation</span> <span class="nv">y</span><span class="p">)</span> <span class="nv">x</span><span class="p">))</span>
+</span><span class='line'>                <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="nv">x</span> <span class="nv">y</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">)))))])</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">send</span> <span class="nv">frame</span> <span class="nv">show</span> <span class="no">#t</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le truc marrant (une façon de voir comme une autre) est que si on
+joue les tests, la fenêtre s&#8217;affiche. C&#8217;est pas très pratique.</p>
+
+<p>Mais avant tout, ce code révèle une erreur précédente:</p>
+
+<p><img src="http://lkdjiin.github.io/images/code-barre-2014-10-11.png"></p>
+
+<p>On dirait un code barre ! Pas vraiment une distribution uniforme.</p>
+
+<p>Alors le bug est simple à trouver, par contre je vais devoir écrire un ou
+plusieurs nouveaux tests et je garde ça pour la fin de l&#8217;article.</p>
+
+<p>Ensuite, je voudrais faire une boucle qui affiche une nouvelle génération au
+hasard chaque seconde. Je dois avouer que cette histoire de canvas, je la sens
+pas trop. Et le code que j&#8217;ai pondu s&#8217;en ressent. D&#8217;abord je mets ce qui a trait
+à une génération dans un module à part:</p>
+
+<figure class='code'><figcaption><span>generation.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">create-generation</span> <span class="nv">width</span> <span class="nv">height</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">for/list</span> <span class="p">([</span><span class="nf">i</span> <span class="p">(</span><span class="nf">make-list</span> <span class="nv">height</span> <span class="mi">0</span><span class="p">)])</span>
+</span><span class='line'>            <span class="p">(</span><span class="nf">make-list</span> <span class="nv">width</span> <span class="p">(</span><span class="nb">random </span><span class="mi">2</span><span class="p">))))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">provide </span><span class="nv">create-generation</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Puis, tout le bazar de frame et de canvas, aussi dans un module:</p>
+
+<figure class='code'><figcaption><span>window.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket/gui</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">create-window</span> <span class="nv">w</span> <span class="nv">h</span> <span class="nv">g</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">frame</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">frame%</span>
+</span><span class='line'>                     <span class="p">[</span><span class="nf">label</span> <span class="s">&quot;Game of Life&quot;</span><span class="p">]</span>
+</span><span class='line'>                     <span class="p">[</span><span class="nf">width</span> <span class="nv">w</span><span class="p">]</span>
+</span><span class='line'>                     <span class="p">[</span><span class="nf">height</span> <span class="nv">h</span><span class="p">]))</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">canvas</span> <span class="p">(</span><span class="nf">new</span> <span class="p">(</span><span class="nf">class</span> <span class="nv">canvas%</span>
+</span><span class='line'>         <span class="p">(</span><span class="nf">super-new</span> <span class="p">[</span><span class="nf">parent</span> <span class="nv">frame</span><span class="p">]</span> <span class="p">[</span><span class="nf">style</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">no-autoclear</span><span class="p">)])</span>
+</span><span class='line'>         <span class="p">(</span><span class="k">define </span><span class="nv">current-generation</span> <span class="nv">g</span><span class="p">)</span>
+</span><span class='line'>         <span class="p">(</span><span class="k">define </span><span class="nv">dc</span> <span class="p">(</span><span class="nf">send</span> <span class="nv">this</span> <span class="nv">get-dc</span><span class="p">))</span>
+</span><span class='line'>         <span class="p">(</span><span class="nf">define/public</span> <span class="p">(</span><span class="nf">change-generation</span> <span class="nv">g</span><span class="p">)</span>
+</span><span class='line'>           <span class="p">(</span><span class="k">set! </span><span class="nv">current-generation</span> <span class="nv">g</span><span class="p">)</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">this</span> <span class="nv">refresh-now</span><span class="p">))</span>
+</span><span class='line'>         <span class="p">(</span><span class="nf">define/override</span> <span class="p">(</span><span class="nf">on-paint</span><span class="p">)</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;black&quot;</span><span class="p">]))</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="mi">0</span> <span class="mi">0</span> <span class="nv">w</span> <span class="nv">h</span><span class="p">)</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;white&quot;</span><span class="p">]))</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">y</span> <span class="p">(</span><span class="nb">length </span><span class="nv">current-generation</span><span class="p">)])</span>
+</span><span class='line'>             <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">x</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">first</span> <span class="nv">current-generation</span><span class="p">))])</span>
+</span><span class='line'>               <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">= </span><span class="mi">1</span> <span class="p">(</span><span class="nb">list-ref </span><span class="p">(</span><span class="nb">list-ref </span><span class="nv">current-generation</span> <span class="nv">y</span><span class="p">)</span> <span class="nv">x</span><span class="p">))</span>
+</span><span class='line'>                 <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="nv">x</span> <span class="nv">y</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">))))))))</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">send</span> <span class="nv">frame</span> <span class="nv">show</span> <span class="no">#t</span><span class="p">)</span>
+</span><span class='line'>  <span class="nv">canvas</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">provide </span><span class="nv">create-window</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Moi qui suis habitué à des méthodes de 2 ou 3 lignes, c&#8217;est pas vraiment ça.
+Et puis j&#8217;ai du mal à saisir le modèle objet de Racket.</p>
+
+<p>Enfin le programme principal avec la boucle:</p>
+
+<figure class='code'><figcaption><span>game-of-life.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">require </span><span class="s">&quot;generation.rkt&quot;</span>
+</span><span class='line'>         <span class="s">&quot;window.rkt&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">size</span> <span class="mi">100</span><span class="p">)</span>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">generation</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="nv">size</span> <span class="nv">size</span><span class="p">))</span>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">canvas</span> <span class="p">(</span><span class="nf">create-window</span> <span class="nv">size</span> <span class="nv">size</span> <span class="nv">generation</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">loop</span> <span class="nv">n</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">send</span> <span class="nv">canvas</span> <span class="nv">change-generation</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="nv">size</span> <span class="nv">size</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">(</span><span class="nb">sleep </span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">&gt; </span><span class="nv">n</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">loop</span> <span class="p">(</span><span class="nb">sub1 </span><span class="nv">n</span><span class="p">))))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">loop</span> <span class="mi">10</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Si j&#8217;ai le temps, j&#8217;essaierais d&#8217;utiliser la bibliothèque <code>2htdp/universe</code>,
+qui me semble bien plus simple.</p>
+
+<p>Maintenant le bug. Le problème est que je crée des lignes complètes de 0 ou de 1
+dans la liste qui représente une génération, plutôt que de distribuer
+uniformément ces 0 et ces 1. Je vais donc ajouter un test qui initialise le
+générateur de nombres aléatoires toujours de la même manière.</p>
+
+<figure class='code'><figcaption><span>game-of-life-test.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">require </span><span class="nv">rackunit</span>
+</span><span class='line'>         <span class="s">&quot;generation.rkt&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">((</span><span class="err">λ</span> <span class="p">()</span>
+</span><span class='line'>   <span class="p">(</span><span class="nb">random-seed </span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">2</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&#39;</span><span class="p">((</span><span class="mi">1</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">0</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">1</span><span class="p">))</span>
+</span><span class='line'>                 <span class="s">&quot;It populates generation uniformly&quot;</span><span class="p">)))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sans surprise, le test échoue.</p>
+
+<pre><code>$ racket game-of-life-test.rkt
+--------------------
+FAILURE
+actual:     ((1 1) (1 1) (0 0))
+expected:   ((1 0) (1 0) (1 0))
+name:       check-equal?
+location:   (#&lt;path:/home/xavier/code/game-of-life-racket/game-of-life-test.rkt&gt; 21 3 537 112)
+expression: (check-equal? (create-generation 2 3) (quote ((1 0) (1 0) (1 0))))
+message:    "It populates generation uniformly"
+</code></pre>
+
+<p>Et voici le fix.</p>
+
+<figure class='code'><figcaption><span>generation.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">create-generation</span> <span class="nv">width</span> <span class="nv">height</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">rnd</span> <span class="nv">_</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">(</span><span class="nb">random </span><span class="mi">2</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">for/list</span> <span class="p">([</span><span class="nf">i</span> <span class="p">(</span><span class="nf">make-list</span> <span class="nv">height</span> <span class="mi">0</span><span class="p">)])</span>
+</span><span class='line'>            <span class="p">(</span><span class="nb">map </span><span class="nv">rnd</span> <span class="p">(</span><span class="nf">make-list</span> <span class="nv">width</span> <span class="mi">0</span><span class="p">))))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">provide </span><span class="nv">create-generation</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en racket - partie 1]]></title>
@@ -177,7 +454,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/'>Le jeu de la vie en ruby (opal) &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2497,7 +2774,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3064,7 +3341,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3437,7 +3714,7 @@ ensemble de cellules.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4944,30 +5221,6 @@ langage que je connais bien.</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un nouveau dépot pour les plugins Vim]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/28/un-nouveau-depot-pour-les-plugins-vim/"/>
-    <updated>2014-06-28T21:13:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/28/un-nouveau-depot-pour-les-plugins-vim</id>
-    <content type="html"><![CDATA[<p>Un nouveau dépot pour plugins Vim est disponible ici : <a href="http://vimawesome.com/">vimawesome</a>.</p>
-
-<!-- more -->
-
-
-<p>L&#8217;interface tranche radicalement avec celle de vim.org, et ça fait du bien.</p>
-
-<p>Le code du site est disponible sur Github : <a href="https://github.com/divad12/vim-awesome">wim-awesome</a>
-et nous sommes tous invités à contribuer ;)</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/06/08/trois-bibliotheques-de-fonctions-pour-ecrire-vos-plugins-vim/'>Trois bibliothèques de fonctions pour écrire vos plugins Vim</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/15/plugin-vim-refactor-pour-ruby/'>Plugin vim-refactor pour Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/04/vim-un-plugin-pour-markdown-partie-9/'>Vim &ndash; Un plugin pour markdown &ndash; partie 9</a></li></ul></section></p>
 ]]></content>
   </entry>
   
