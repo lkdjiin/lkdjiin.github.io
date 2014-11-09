@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : racket | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/racket/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-11-08T14:41:31+01:00</updated>
+  <updated>2014-11-09T17:51:02+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,321 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/"/>
+    <updated>2014-11-09T15:01:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>C'est la troisième et dernière partie du jeu de la vie en Racket.</p>
+
+<p><img src="/images/screenshot-game-of-life-racket.png"></p>
+
+<!-- more -->
+
+
+<h2>Trouver le prochain état d'une cellule</h2>
+
+<p>Vous avez l'habitude maintenant, je commence par un test très simple.</p>
+
+<p><code>racket game-of-life-test.rkt
+(check-equal? (next-cell-state '(1 1 1 0 0 0 0 0 0)) 1)
+</code></p>
+
+<p>Et une implémentation minimale.</p>
+
+<p>``` racket generation.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>&hellip;</p>
+
+<p>(define (next-cell-state neighborhood)
+  1)</p>
+
+<p>(provide create-generation</p>
+
+<pre><code>     next-cell-state)
+</code></pre>
+
+<p>```</p>
+
+<p>Puis je teste d'autres cas.</p>
+
+<p>``` racket game-of-life-test.rkt
+(check-equal? (next-cell-state &lsquo;(1 1 1 0 0 0 0 0 0)) 1)
+(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 0)) 1)</p>
+
+<p>(check-equal? (next-cell-state &lsquo;(1 0 0 1 1 0 1 0 0)) 1)
+(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 1)) 0)
+```</p>
+
+<p>La fonction <code>for/sum</code> réduit une liste à la somme de ses éléments.</p>
+
+<p>``` racket
+(define (next-cell-state neighborhood)
+  (define sum (for/sum ([i neighborhood]) i))
+  (if (= 3 sum)</p>
+
+<pre><code>1
+(list-ref neighborhood 4)))
+</code></pre>
+
+<p>```</p>
+
+<p>Je teste les derniers cas.</p>
+
+<p>``` racket game-of-life-test.rkt
+(check-equal? (next-cell-state &lsquo;(1 1 1 0 0 0 0 0 0)) 1)
+(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 0)) 1)</p>
+
+<p>(check-equal? (next-cell-state &lsquo;(1 0 0 1 1 0 1 0 0)) 1)
+(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 1)) 0)</p>
+
+<p>(check-equal? (next-cell-state &lsquo;(1 1 1 1 1 1 1 1 1)) 0)
+(check-equal? (next-cell-state &rsquo;(0 0 0 0 0 0 0 0 0)) 0)
+```</p>
+
+<p>Comme il y a maintenant trois cas, j'utilise <code>cond</code> au lieu de <code>if</code>.</p>
+
+<p>``` racket
+(define (next-cell-state neighborhood)
+  (define sum (for/sum ([i neighborhood]) i))
+  (cond [(= 3 sum) 1]</p>
+
+<pre><code>    [(= 4 sum) (list-ref neighborhood 4)]
+    [else 0]))
+</code></pre>
+
+<p>```</p>
+
+<p>On pourrait aussi utiliser <code>match</code> plutôt que <code>cond</code>:</p>
+
+<p>``` racket
+(define (next-cell-state neighborhood)
+  (match (for/sum ([i neighborhood]) i)</p>
+
+<pre><code>     [3 1]
+     [4 (list-ref neighborhood 4)]
+     [_ 0]))
+</code></pre>
+
+<p>```</p>
+
+<p>Je n'ai aucune idée de laquelle est la plus performante, même si je peux
+imaginer à priori que dans ce cas là c'est <code>cond</code>.</p>
+
+<h2>test-case</h2>
+
+<p>Je pense qu'il est temps de regrouper les tests en <code>test-case</code>. Rackunit, le
+framework de test de Racket est assez évolutif.</p>
+
+<p>``` racket game-of-life-test.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(require rackunit</p>
+
+<pre><code>     "generation.rkt")
+</code></pre>
+
+<p>(test-case &ldquo;create-generation&rdquo;
+  (check-pred list? (create-generation 3 4)</p>
+
+<pre><code>        "It returns a list")
+</code></pre>
+
+<p>  (check-equal? (length (create-generation 3 4)) 4</p>
+
+<pre><code>          "It builds a list with the right height")
+</code></pre>
+
+<p>  (check-equal? (length (first (create-generation 3 4))) 3</p>
+
+<pre><code>          "It builds a list with the right width")
+</code></pre>
+
+<p>  (let ([cell (first (first (create-generation 3 4)))])
+  (check-true (or (= cell 0) (= cell 1))</p>
+
+<pre><code>          "It populates generation with 0s or 1s"))
+</code></pre>
+
+<p>  ((λ ()
+   (random-seed 1)
+   (check-equal? (create-generation 2 3) &lsquo;((1 1) (0 1) (1 1))</p>
+
+<pre><code>             "It populates generation uniformly"))))
+</code></pre>
+
+<p>(test-case &ldquo;next-cell-state&rdquo;
+  (check-equal? (next-cell-state &lsquo;(1 1 1 0 0 0 0 0 0)) 1)
+  (check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 0)) 1)</p>
+
+<p>  (check-equal? (next-cell-state &lsquo;(1 0 0 1 1 0 1 0 0)) 1)
+  (check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 1)) 0)</p>
+
+<p>  (check-equal? (next-cell-state &lsquo;(1 1 1 1 1 1 1 1 1)) 0)
+  (check-equal? (next-cell-state &rsquo;(0 0 0 0 0 0 0 0 0)) 0))
+```</p>
+
+<h2>Extraire un voisinage de cellule</h2>
+
+<p>Comme toujours je commence par un test simple. On peut noter les arguments
+nommés de Racket (<code>#:</code>).</p>
+
+<p>``` racket
+(test-case &ldquo;extract-neighborhood&rdquo;
+  (let ([game &lsquo;((1 0 1 0)</p>
+
+<pre><code>            (0 1 0 1)
+            (1 0 0 1))])
+(check-equal? (extract-neighborhood game #:x 1 #:y 1) '(1 0 1 0 1 0 1 0 0))))
+</code></pre>
+
+<p>```</p>
+
+<p>Et une implémentation encore plus simple.</p>
+
+<p><code>racket
+(define (extract-neighborhood generation #:x [x 0] #:y [y 0])
+  '(1 0 1 0 1 0 1 0 0))
+</code></p>
+
+<p>La suite est classique, j'ajoute un nouveau test.</p>
+
+<p>``` racket
+(test-case &ldquo;extract-neighborhood&rdquo;
+  (let ([game &lsquo;((1 0 1 0)</p>
+
+<pre><code>            (0 1 0 1)
+            (1 0 0 1))])
+(check-equal? (extract-neighborhood game #:x 1 #:y 1) '(1 0 1 0 1 0 1 0 0))
+(check-equal? (extract-neighborhood game #:x 2 #:y 1) '(0 1 0 1 0 1 0 0 1))))
+</code></pre>
+
+<p>```</p>
+
+<p>Je regarde ce test échouer.</p>
+
+<pre><code>$ racket game-of-life-test.rkt 
+--------------------
+extract-neighborhood
+FAILURE
+actual:     (1 0 1 0 1 0 1 0 0)
+expected:   (0 1 0 1 0 1 0 0 1)
+</code></pre>
+
+<p>Et j'implémente le minimum de code pour faire passer ce nouveau test.
+Je vous épargne ça dans l'article, si vous êtes curieux vous pouvez trouver
+<a href="https://github.com/lkdjiin/game-of-life-racket">le code sur Github</a>.</p>
+
+<h2>Une nouvelle génération</h2>
+
+<p>J'écris un test pour la production d'une nouvelle génération.</p>
+
+<p>``` racket
+(test-case &ldquo;next-generation&rdquo;
+  (let ([game &lsquo;((1 0 1 0)</p>
+
+<pre><code>            (0 1 0 1)
+            (1 0 0 1))])
+
+(check-equal? (next-generation game) '((0 1 1 0) (1 1 0 1) (0 0 1 0)))))
+</code></pre>
+
+<p>```</p>
+
+<p>Et voici le code qui fait passer ce test.</p>
+
+<p>``` racket generation.rkt
+(define (next-generation current)
+  (for/list ([y (length current)])</p>
+
+<pre><code>(for/list ([x (length (first current))])
+  (define neighborhood (extract-neighborhood current #:x x #:y y))
+  (next-cell-state neighborhood))))
+</code></pre>
+
+<p>```</p>
+
+<p>On peut maintenant lancer le jeu de la vie.</p>
+
+<p>``` racket game-of-life.rkt</p>
+
+<h1>lang racket</h1>
+
+<p>(require &ldquo;generation.rkt&rdquo;</p>
+
+<pre><code>     "window.rkt")
+</code></pre>
+
+<p>(define size 100)
+(define generation (create-generation size size))
+(define canvas (create-window size size generation))</p>
+
+<p>(define (loop n g)
+  (send canvas change-generation g)
+  (sleep 0.2)
+  (when (> n 0)</p>
+
+<pre><code>(loop (sub1 n) (next-generation g))))
+</code></pre>
+
+<p>(loop 30 generation)
+```</p>
+
+<h2>Mise à l'échelle</h2>
+
+<p>Pour rendre les choses un peu plus intéressantes visuellement, on va faire un
+zoom x4.</p>
+
+<p>``` racket window.rkt</p>
+
+<h1>lang racket/gui</h1>
+
+<p>(define (create-window w h g)
+  (define scale 4)</p>
+
+<p>  (define frame (new frame%</p>
+
+<pre><code>                 [label "Game of Life"]
+                 [width (* w scale)]
+                 [height (* h scale)]))
+</code></pre>
+
+<p>  (define canvas (new (class canvas%</p>
+
+<pre><code>...
+
+     (define/override (on-paint)
+       (send dc set-brush (new brush% [color "black"]))
+       (send dc draw-rectangle 0 0 (* w scale) (* h scale))
+       (send dc set-brush (new brush% [color "white"]))
+       (for ([y (length current-generation)])
+         (for ([x (length (first current-generation))])
+           (when (= 1 (list-ref (list-ref current-generation y) x))
+             (send dc draw-rectangle (* x scale) (* y scale) scale scale))))))))
+</code></pre>
+
+<p>  &hellip;
+```</p>
+
+<h2>Une surface de jeu sans bordures</h2>
+
+<p>Il reste à <em>retirer</em> les bordures du jeu. Le processus est exactement le même
+que pour les versions <a href="http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/">Javascript</a> et <a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Ruby</a> et je n'ai pas envie de
+réécrire les mêmes phrases. Au besoin, je vous rappelle que le
+<a href="https://github.com/lkdjiin/game-of-life-racket">code complet du jeu de la vie en Racket</a> se trouve sur Github.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en racket - partie 2]]></title>
@@ -606,79 +921,6 @@ d'importance:</p>
 </code></pre>
 
 <p>Voilà qui conclue cette petite introduction au langage Racket.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Trouves mon nombre - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/01/09/trouves-mon-nombre-partie-3/"/>
-    <updated>2014-01-09T21:00:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/01/09/trouves-mon-nombre-partie-3</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Aujourd'hui on regarde la fonction <code>bigger</code>, qui est l'inverse de la
-fonction <code>smaller</code> <a href="http://lkdjiin.github.io/blog/2014/01/05/racket-trouves-mon-nombre-partie-2/">vue la dernière fois</a>.</p>
-
-<!-- more -->
-
-
-<p>Voici donc notre nouveau fichier <code>guess.rkt</code> avec sa nouvelle fonction:</p>
-
-<p>``` racket guess.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(define lower 1)
-(define upper 100)</p>
-
-<p>(define (guess)
-  (quotient (+ lower upper) 2))</p>
-
-<p>(define (smaller)
-  (set! upper (max lower (sub1 (guess))))
-  (guess))</p>
-
-<p>(define (bigger)
-  (set! lower (min upper (add1 (guess))))
-  (guess))
-```</p>
-
-<p>La fonction <code>bigger</code> fait exactement l'inverse de <code>smaller</code>:</p>
-
-<pre><code>[~]⇒ racket
-Welcome to Racket v5.3.6.
--&gt; (enter! "guess.rkt")
--&gt; (guess)
-50
--&gt; (bigger)
-75
-</code></pre>
-
-<p>Et c'est tout ce qu'il nous faut pour que la machine trouve le
-nombre que j'ai choisi. Si par exemple je pensais au nombre
-77, on continuerait ainsi:</p>
-
-<pre><code>-&gt; (bigger)
-88
--&gt; (smaller)
-81
--&gt; (smaller)
-78
--&gt; (smaller)
-76
--&gt; (bigger)
-77
-</code></pre>
-
-<p>La prochaine fois, on verra comment démarrer le jeu avec n'importe
-quelle étendue de nombres.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

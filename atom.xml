@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-11-08T14:41:31+01:00</updated>
+  <updated>2014-11-09T17:51:02+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,408 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/"/>
+    <updated>2014-11-09T15:01:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>C&#8217;est la troisième et dernière partie du jeu de la vie en Racket.</p>
+
+<p><img src="http://lkdjiin.github.io/images/screenshot-game-of-life-racket.png"></p>
+
+<!-- more -->
+
+
+<h2>Trouver le prochain état d&#8217;une cellule</h2>
+
+<p>Vous avez l&#8217;habitude maintenant, je commence par un test très simple.</p>
+
+<figure class='code'><figcaption><span>game-of-life-test.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et une implémentation minimale.</p>
+
+<figure class='code'><figcaption><span>generation.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">next-cell-state</span> <span class="nv">neighborhood</span><span class="p">)</span>
+</span><span class='line'>  <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">provide </span><span class="nv">create-generation</span>
+</span><span class='line'>         <span class="nv">next-cell-state</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Puis je teste d&#8217;autres cas.</p>
+
+<figure class='code'><figcaption><span>game-of-life-test.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">))</span> <span class="mi">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La fonction <code>for/sum</code> réduit une liste à la somme de ses éléments.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">next-cell-state</span> <span class="nv">neighborhood</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">sum</span> <span class="p">(</span><span class="nf">for/sum</span> <span class="p">([</span><span class="nf">i</span> <span class="nv">neighborhood</span><span class="p">])</span> <span class="nv">i</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">if </span><span class="p">(</span><span class="nb">= </span><span class="mi">3</span> <span class="nv">sum</span><span class="p">)</span>
+</span><span class='line'>    <span class="mi">1</span>
+</span><span class='line'>    <span class="p">(</span><span class="nb">list-ref </span><span class="nv">neighborhood</span> <span class="mi">4</span><span class="p">)))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je teste les derniers cas.</p>
+
+<figure class='code'><figcaption><span>game-of-life-test.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">))</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">))</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'><span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">0</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Comme il y a maintenant trois cas, j&#8217;utilise <code>cond</code> au lieu de <code>if</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">next-cell-state</span> <span class="nv">neighborhood</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">sum</span> <span class="p">(</span><span class="nf">for/sum</span> <span class="p">([</span><span class="nf">i</span> <span class="nv">neighborhood</span><span class="p">])</span> <span class="nv">i</span><span class="p">))</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">cond </span><span class="p">[(</span><span class="nb">= </span><span class="mi">3</span> <span class="nv">sum</span><span class="p">)</span> <span class="mi">1</span><span class="p">]</span>
+</span><span class='line'>        <span class="p">[(</span><span class="nb">= </span><span class="mi">4</span> <span class="nv">sum</span><span class="p">)</span> <span class="p">(</span><span class="nb">list-ref </span><span class="nv">neighborhood</span> <span class="mi">4</span><span class="p">)]</span>
+</span><span class='line'>        <span class="p">[</span><span class="nf">else</span> <span class="mi">0</span><span class="p">]))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On pourrait aussi utiliser <code>match</code> plutôt que <code>cond</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">next-cell-state</span> <span class="nv">neighborhood</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">match</span> <span class="p">(</span><span class="nf">for/sum</span> <span class="p">([</span><span class="nf">i</span> <span class="nv">neighborhood</span><span class="p">])</span> <span class="nv">i</span><span class="p">)</span>
+</span><span class='line'>         <span class="p">[</span><span class="mi">3</span> <span class="mi">1</span><span class="p">]</span>
+</span><span class='line'>         <span class="p">[</span><span class="mi">4</span> <span class="p">(</span><span class="nb">list-ref </span><span class="nv">neighborhood</span> <span class="mi">4</span><span class="p">)]</span>
+</span><span class='line'>         <span class="p">[</span><span class="nf">_</span> <span class="mi">0</span><span class="p">]))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je n&#8217;ai aucune idée de laquelle est la plus performante, même si je peux
+imaginer à priori que dans ce cas là c&#8217;est <code>cond</code>.</p>
+
+<h2>test-case</h2>
+
+<p>Je pense qu&#8217;il est temps de regrouper les tests en <code>test-case</code>. Rackunit, le
+framework de test de Racket est assez évolutif.</p>
+
+<figure class='code'><figcaption><span>game-of-life-test.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">require </span><span class="nv">rackunit</span>
+</span><span class='line'>         <span class="s">&quot;generation.rkt&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">test-case</span> <span class="s">&quot;create-generation&quot;</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-pred</span> <span class="nv">list?</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>            <span class="s">&quot;It returns a list&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">create-generation</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">))</span> <span class="mi">4</span>
+</span><span class='line'>              <span class="s">&quot;It builds a list with the right height&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">first</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)))</span> <span class="mi">3</span>
+</span><span class='line'>              <span class="s">&quot;It builds a list with the right width&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">(</span><span class="k">let </span><span class="p">([</span><span class="nf">cell</span> <span class="p">(</span><span class="nf">first</span> <span class="p">(</span><span class="nf">first</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">)))])</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-true</span> <span class="p">(</span><span class="k">or </span><span class="p">(</span><span class="nb">= </span><span class="nv">cell</span> <span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="nb">= </span><span class="nv">cell</span> <span class="mi">1</span><span class="p">))</span>
+</span><span class='line'>              <span class="s">&quot;It populates generation with 0s or 1s&quot;</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">((</span><span class="err">λ</span> <span class="p">()</span>
+</span><span class='line'>   <span class="p">(</span><span class="nb">random-seed </span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>   <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">2</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&#39;</span><span class="p">((</span><span class="mi">1</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">0</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">1</span><span class="p">))</span>
+</span><span class='line'>                 <span class="s">&quot;It populates generation uniformly&quot;</span><span class="p">))))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">test-case</span> <span class="s">&quot;next-cell-state&quot;</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">))</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">))</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-cell-state</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span> <span class="mi">0</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Extraire un voisinage de cellule</h2>
+
+<p>Comme toujours je commence par un test simple. On peut noter les arguments
+nommés de Racket (<code>#:</code>).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nf">test-case</span> <span class="s">&quot;extract-neighborhood&quot;</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">let </span><span class="p">([</span><span class="nf">game</span> <span class="o">&#39;</span><span class="p">((</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">(</span><span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">))])</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">extract-neighborhood</span> <span class="nv">game</span> <span class="kd">#:x</span> <span class="mi">1</span> <span class="kd">#:y</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et une implémentation encore plus simple.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">extract-neighborhood</span> <span class="nv">generation</span> <span class="kd">#:x</span> <span class="p">[</span><span class="nf">x</span> <span class="mi">0</span><span class="p">]</span> <span class="kd">#:y</span> <span class="p">[</span><span class="nf">y</span> <span class="mi">0</span><span class="p">])</span>
+</span><span class='line'>  <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La suite est classique, j&#8217;ajoute un nouveau test.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nf">test-case</span> <span class="s">&quot;extract-neighborhood&quot;</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">let </span><span class="p">([</span><span class="nf">game</span> <span class="o">&#39;</span><span class="p">((</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">(</span><span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">))])</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">extract-neighborhood</span> <span class="nv">game</span> <span class="kd">#:x</span> <span class="mi">1</span> <span class="kd">#:y</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span><span class="p">))</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">extract-neighborhood</span> <span class="nv">game</span> <span class="kd">#:x</span> <span class="mi">2</span> <span class="kd">#:y</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&#39;</span><span class="p">(</span><span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">))))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je regarde ce test échouer.</p>
+
+<pre><code>$ racket game-of-life-test.rkt 
+--------------------
+extract-neighborhood
+FAILURE
+actual:     (1 0 1 0 1 0 1 0 0)
+expected:   (0 1 0 1 0 1 0 0 1)
+</code></pre>
+
+<p>Et j&#8217;implémente le minimum de code pour faire passer ce nouveau test.
+Je vous épargne ça dans l&#8217;article, si vous êtes curieux vous pouvez trouver
+<a href="https://github.com/lkdjiin/game-of-life-racket">le code sur Github</a>.</p>
+
+<h2>Une nouvelle génération</h2>
+
+<p>J&#8217;écris un test pour la production d&#8217;une nouvelle génération.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="nf">test-case</span> <span class="s">&quot;next-generation&quot;</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">let </span><span class="p">([</span><span class="nf">game</span> <span class="o">&#39;</span><span class="p">((</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">(</span><span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">(</span><span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">))])</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">next-generation</span> <span class="nv">game</span><span class="p">)</span> <span class="o">&#39;</span><span class="p">((</span><span class="mi">0</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span><span class="p">)))))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici le code qui fait passer ce test.</p>
+
+<figure class='code'><figcaption><span>generation.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">next-generation</span> <span class="nv">current</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">for/list</span> <span class="p">([</span><span class="nf">y</span> <span class="p">(</span><span class="nb">length </span><span class="nv">current</span><span class="p">)])</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">for/list</span> <span class="p">([</span><span class="nf">x</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">first</span> <span class="nv">current</span><span class="p">))])</span>
+</span><span class='line'>      <span class="p">(</span><span class="k">define </span><span class="nv">neighborhood</span> <span class="p">(</span><span class="nf">extract-neighborhood</span> <span class="nv">current</span> <span class="kd">#:x</span> <span class="nv">x</span> <span class="kd">#:y</span> <span class="nv">y</span><span class="p">))</span>
+</span><span class='line'>      <span class="p">(</span><span class="nf">next-cell-state</span> <span class="nv">neighborhood</span><span class="p">))))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut maintenant lancer le jeu de la vie.</p>
+
+<figure class='code'><figcaption><span>game-of-life.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">require </span><span class="s">&quot;generation.rkt&quot;</span>
+</span><span class='line'>         <span class="s">&quot;window.rkt&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">size</span> <span class="mi">100</span><span class="p">)</span>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">generation</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="nv">size</span> <span class="nv">size</span><span class="p">))</span>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">canvas</span> <span class="p">(</span><span class="nf">create-window</span> <span class="nv">size</span> <span class="nv">size</span> <span class="nv">generation</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">loop</span> <span class="nv">n</span> <span class="nv">g</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nf">send</span> <span class="nv">canvas</span> <span class="nv">change-generation</span> <span class="nv">g</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="nb">sleep </span><span class="mf">0.2</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">&gt; </span><span class="nv">n</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">(</span><span class="nf">loop</span> <span class="p">(</span><span class="nb">sub1 </span><span class="nv">n</span><span class="p">)</span> <span class="p">(</span><span class="nf">next-generation</span> <span class="nv">g</span><span class="p">))))</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="nf">loop</span> <span class="mi">30</span> <span class="nv">generation</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Mise à l&#8217;échelle</h2>
+
+<p>Pour rendre les choses un peu plus intéressantes visuellement, on va faire un
+zoom x4.</p>
+
+<figure class='code'><figcaption><span>window.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket/gui</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">create-window</span> <span class="nv">w</span> <span class="nv">h</span> <span class="nv">g</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">scale</span> <span class="mi">4</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">frame</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">frame%</span>
+</span><span class='line'>                     <span class="p">[</span><span class="nf">label</span> <span class="s">&quot;Game of Life&quot;</span><span class="p">]</span>
+</span><span class='line'>                     <span class="p">[</span><span class="nf">width</span> <span class="p">(</span><span class="nb">* </span><span class="nv">w</span> <span class="nv">scale</span><span class="p">)]</span>
+</span><span class='line'>                     <span class="p">[</span><span class="nf">height</span> <span class="p">(</span><span class="nb">* </span><span class="nv">h</span> <span class="nv">scale</span><span class="p">)]))</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">canvas</span> <span class="p">(</span><span class="nf">new</span> <span class="p">(</span><span class="nf">class</span> <span class="nv">canvas%</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'>         <span class="p">(</span><span class="nf">define/override</span> <span class="p">(</span><span class="nf">on-paint</span><span class="p">)</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;black&quot;</span><span class="p">]))</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="mi">0</span> <span class="mi">0</span> <span class="p">(</span><span class="nb">* </span><span class="nv">w</span> <span class="nv">scale</span><span class="p">)</span> <span class="p">(</span><span class="nb">* </span><span class="nv">h</span> <span class="nv">scale</span><span class="p">))</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;white&quot;</span><span class="p">]))</span>
+</span><span class='line'>           <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">y</span> <span class="p">(</span><span class="nb">length </span><span class="nv">current-generation</span><span class="p">)])</span>
+</span><span class='line'>             <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">x</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">first</span> <span class="nv">current-generation</span><span class="p">))])</span>
+</span><span class='line'>               <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">= </span><span class="mi">1</span> <span class="p">(</span><span class="nb">list-ref </span><span class="p">(</span><span class="nb">list-ref </span><span class="nv">current-generation</span> <span class="nv">y</span><span class="p">)</span> <span class="nv">x</span><span class="p">))</span>
+</span><span class='line'>                 <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="p">(</span><span class="nb">* </span><span class="nv">x</span> <span class="nv">scale</span><span class="p">)</span> <span class="p">(</span><span class="nb">* </span><span class="nv">y</span> <span class="nv">scale</span><span class="p">)</span> <span class="nv">scale</span> <span class="nv">scale</span><span class="p">))))))))</span>
+</span><span class='line'>  <span class="o">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Une surface de jeu sans bordures</h2>
+
+<p>Il reste à <em>retirer</em> les bordures du jeu. Le processus est exactement le même
+que pour les versions <a href="http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/">Javascript</a> et <a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Ruby</a> et je n&#8217;ai pas envie de
+réécrire les mêmes phrases. Au besoin, je vous rappelle que le
+<a href="https://github.com/lkdjiin/game-of-life-racket">code complet du jeu de la vie en Racket</a> se trouve sur Github.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en racket - partie 2]]></title>
@@ -286,7 +688,7 @@ message:    "It populates generation uniformly"
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -454,7 +856,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2774,7 +3176,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3341,7 +3743,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3714,7 +4116,7 @@ ensemble de cellules.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5184,36 +5586,6 @@ l&#8217;exercice intéressant.</p>
 
 <p>Demain je vous proposerais ma solution. Si vous voulez jouer, ne regardez pas
 le code de la gem et proposez moi le votre ici, où dans l&#8217;article de demain.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique avec Opal.rb ?]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/29/un-algorithme-genetique-avec-opal-dot-rb/"/>
-    <updated>2014-06-29T20:59:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/29/un-algorithme-genetique-avec-opal-dot-rb</id>
-    <content type="html"><![CDATA[<p>Aujourd&#8217;hui c&#8217;est dimanche, pas d&#8217;article technique. Par contre une idée
-pour la suite. Un algorithme génétique pour résoudre le jeu des tours de
-Hanoi.</p>
-
-<!-- more -->
-
-
-<p>Ça fait longtemps que j&#8217;ai envie de faire un algorithme génétique en rapport
-avec un jeu, où on pourrait visualiser de manière graphique et ludique
-l&#8217;avancée de l&#8217;algorithme. J&#8217;ai déjà fait une tentative <em>graphique</em> en
-utilisant javascript, mais le résultat n&#8217;a pas été à la hauteur de mes
-espérances, même si ça fonctionnait. Avec Opal, je pourrais utiliser un
-langage que je connais bien.</p>
-
-<p>Je suis pressé de commencer ;)</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
