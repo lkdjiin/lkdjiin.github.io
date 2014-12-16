@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : logo | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/logo/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-11-09T17:51:02+01:00</updated>
+  <updated>2014-12-16T18:12:41+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,249 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en logo - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/"/>
+    <updated>2014-12-16T18:01:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>C'est parti pour la version Logo du jeu de la vie. J'utiliserais
+<a href="http://www.cs.berkeley.edu/~bh/logo.html">ucblogo</a> en version 5.5, qui est celle qu'on trouve dans les paquets Debian.
+Sur leur site vous trouverez la version 6, si vous souhaitez la compiler.</p>
+
+<pre><code>$ logo
+Welcome to Berkeley Logo version 5.5
+</code></pre>
+
+<h2>Introduction</h2>
+
+<p>Attention ! Le monde de Logo est autre. Je n'ai pas d'autres formules qui me
+viennent à l'esprit.  Si vous utilisez Vim, j'ai écrit un fichier de
+<a href="https://github.com/lkdjiin/logo.vim">coloration syntaxique pour Logo</a>,
+minimal, mais toujours utile pour ne pas se sentir coincé dans les années 80.
+Et comme il n'existe pas de frameworks de test (ou alors ils sont bien cachés),
+j'en ai écrit un rudimentaire : <a href="https://github.com/lkdjiin/logo-unit">Logo unit test</a>.</p>
+
+<p>Bref, vous aurez compris que l'éco-système Logo open source est assez pauvre,
+voir inexistant.  Je crois qu'il n'y a même pas de tag <code>logo</code> sur
+stackoverflow.</p>
+
+<!-- more -->
+
+
+<h2>Création d'une génération</h2>
+
+<p>Créons un fichier pour les tests, et un fichier pour l'implémentation.</p>
+
+<pre><code>$ tree
+.
+├── generation.lg
+└── test.generation.lg
+</code></pre>
+
+<p>En avant pour le premier test, je veux m'assurer que la procédure
+<code>create.generation</code> renvoie une liste.</p>
+
+<p>``` raw test.generation.lg
+load &ldquo;generation.lg</p>
+
+<p>to t.create.generation.returns.a.list
+assert.list create.generation
+end
+```</p>
+
+<h3>Premières remarques sur Logo</h3>
+
+<p>Tout d'abord, les points n'ont rien à voir avec des appels de
+méthode/fonction/procédure.  C'est juste une manière de nommer les choses. En
+Ruby on aurait <code>assert_list</code>, en Java <code>assertList</code>, en Racket <code>assert-list</code>, en
+Logo c'est plutôt <code>assert.list</code>.</p>
+
+<p>Ensuite, la première ligne <code>load "generation.lg</code>, qui charge le fichier
+<code>generation.lg</code>, ne contient pas de faute de frappe ! Il y a bien un seul
+guillement double (<code>"</code>). C'est la façon de dire que <code>generation.lg</code> doit être
+pris dans son sens littéral, pas en tant que variable ou procédure, mais bien en
+tant que nom.</p>
+
+<h3>Lancer les tests</h3>
+
+<p>On lance les tests en chargeant la procédure <code>tt</code>. Logo nous dit <em>je ne sais
+pas comment faire pour create.generation</em>. Normal puisque cette procédure
+n'existe pas encore.</p>
+
+<pre><code>$ logo
+Welcome to Berkeley Logo version 5.5
+? tt "test.generation.lg
+I don't know how  to create.generation  in t.create.generation.returns.a.list
+[assert.list create.generation]
+</code></pre>
+
+<h3>Notre première procédure</h3>
+
+<p>Il suffit de renvoyer une liste vide pour faire passer le test. Notez que
+<code>output</code> est l'équivalent du plus commun <code>return</code>.</p>
+
+<p><code>raw generation.lg
+to create.generation
+output []
+end
+</code></p>
+
+<pre><code>? tt "test.generation.lg
+.
+
+1 tests. 0 fail.
+</code></pre>
+
+<h3>Une liste à plusieurs dimensions</h3>
+
+<p>Notre liste devra avoir une largeur (x) et une hauteur (y), commençons par
+tester la hauteur.</p>
+
+<p>``` raw test.generation.lg
+load &ldquo;generation.lg</p>
+
+<p>to t.create.generation.returns.a.list
+assert.list create.generation 3
+end</p>
+
+<p>to t.create.generation.have.a.height
+assert.equal 3 count create.generation 3
+end
+```</p>
+
+<p>Voici le code permettant de faire passer nos nouveaux tests.</p>
+
+<p><code>raw generation.lg
+to create.generation :height
+output cascade :height [lput # ?] []
+end
+</code></p>
+
+<p><code>cascade</code> prend un nombre d'itération, un template et une valeur de départ.
+<code>lput</code> (pour <em>last put</em>) ajoute une valeur à la fin d'une liste. <code>#</code> dans le
+template est remplacé par l'itération.</p>
+
+<p>Ensuite, nouveaux tests pour s'assurer qu'on a aussi une largeur.</p>
+
+<p>``` raw test.generation.lg
+load &ldquo;generation.lg</p>
+
+<p>to t.create.generation.returns.a.list
+assert.list create.generation 4 3
+end</p>
+
+<p>to t.create.generation.have.a.height
+assert.equal 3 count create.generation 4 3
+end</p>
+
+<p>to t.create.generation.have.a.width
+assert.equal 4 count first create.generation 4 3
+end
+```</p>
+
+<p>On implémente notre liste à 2 dimensions.</p>
+
+<p>``` raw generation.lg
+to create.generation :width :height
+output cascade :height [lput (p.create.line :width) ?] []
+end</p>
+
+<p>to p.create.line :width
+output cascade :width [lput 0 ?] []
+end
+```</p>
+
+<p>Le <code>p.</code> en tête d'un nom de procédure est une convention que j'ai utilié pour
+signifier que la procédure est privée.</p>
+
+<p>Les tests passent.</p>
+
+<pre><code>? tt "test.generation.lg
+...
+
+3 tests. 0 fail.
+</code></pre>
+
+<p>On peut regarder à quoi ressemble la sortie de notre procédure.</p>
+
+<pre><code>? print create.generation 4 3
+[0 0 0 0] [0 0 0 0] [0 0 0 0]
+</code></pre>
+
+<h3>Un peu de hasard</h3>
+
+<p>Les cellules du jeu de la vie sont représentées soit par un 0 (cellule
+morte), soit par un 1 (cellule vivante). Je teste que <code>create.generation</code>
+produit bien une suite de 0 et de 1.</p>
+
+<p><code>raw test.generation.lg
+to t.create.generation.produces.0s.or.1s
+rerandom
+localmake "result create.generation 3 2
+assert.equal :result [[1 0 1] [1 1 1]]
+end
+</code></p>
+
+<p><code>rerandom</code> place le générateur de nombre aléatoire dans un état reproductible,
+pour pouvoir tester facilement. <code>localmake</code> déclare une variable locale, ici
+<code>result</code> qui va contenir la sortie de <code>create.generation 3 2</code>.</p>
+
+<p>Et j'implémente avec la procédure <code>random</code> qui renvoie un nombre aléatoire.</p>
+
+<p><code>raw generation.lg
+to p.create.line :width
+output cascade :width [lput (random 2) ?] []
+end
+</code></p>
+
+<p>Et voilà, les tests passent.</p>
+
+<pre><code>? tt "test.generation.lg
+....
+
+4 tests. 0 fail.
+? print create.generation 9 3
+[0 0 1 0 1 1 0 0 0] [1 1 1 1 0 0 0 1 1] [1 0 1 0 1 1 1 1 0]
+</code></pre>
+
+<h2>La portée des variables en Logo</h2>
+
+<p>Le code précédent fonctionne très bien, par contre on peut faire un refactoring
+intéressant qui va me permettre de parler d'un phénomène étrange en Logo.</p>
+
+<p>``` raw generation.lg
+to create.generation :width :height
+output cascade :height [lput p.create.line ?] []
+end</p>
+
+<p>to p.create.line
+output cascade :width [lput (random 2) ?] []
+end
+```</p>
+
+<p>Vous remarquerez que j'ai enlevé le paramêtre <code>width</code> de la procédure
+<code>p.create.line</code> et que ce <code>width</code> n'est plus passé par <code>create.generation</code>.
+Pourtant le code continue de fonctionner comme un charme.</p>
+
+<p>C'est que Logo a une notion toute particulière de la <em>localité</em> des variables.
+Une variable locale à une procédure est connue dans cette même procédure
+<strong>et aussi</strong> dans les sous-procédures appelées par cette même procédure.
+Autrement dit, <code>p.create.line</code> connait les variables <code>width</code> et <code>height</code>
+puisqu'elle est appelée par <code>create.generation</code>.</p>
+
+<p>Ce n'est pas le seul langage à fonctionner comme ça (les premiers Lisp et
+Perl, il me semble). Par contre je me demande toujours si c'est génial, ou
+irresponsable.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie dans sept langages différents]]></title>
