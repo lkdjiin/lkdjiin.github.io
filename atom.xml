@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-16T18:12:41+01:00</updated>
+  <updated>2014-12-17T16:45:47+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,149 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en logo - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/"/>
+    <updated>2014-12-17T16:35:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Cette fois, on affiche la génération de cellules crée la dernière fois.
+J&#8217;ai déjà eu l&#8217;occasion de dire que Logo était spécial, on va voir avec
+son système graphique que c&#8217;est bien le cas. Je ne vais pas parler de la
+métaphore de la <em>tortue</em>, vous trouverez sûrement des ressources là-dessus.
+Je voudrais plutôt parler du système de coordonnée. Alors que dans la plupart des
+langages (tous ?) les systèmes graphiques proposent de placer le point d&#8217;origine (0, 0) en haut à
+gauche, Logo le place au centre. En général, l&#8217;axe des y croit vers le bas,
+en Logo il croit vers le haut.</p>
+
+<p>Selon le manuel d&#8217;UCBLogo, voici à quoi s&#8217;attendre:</p>
+
+<pre><code>(-100, 100)            (100, 100)
+
+              (0, 0)
+
+(-100, -100)           (100, -100)
+</code></pre>
+
+<!-- more -->
+
+
+<p>Mais en fait, non. J&#8217;ai plutôt ça sur la machine où j&#8217;utilise Logo:</p>
+
+<pre><code>(-250, 250)            (250, 250)
+
+              (0, 0)
+
+(-250, -250)           (250, -250)
+</code></pre>
+
+<p>Quoiqu&#8217;il en soit, voici comment ça marche.</p>
+
+<figure class='code'><figcaption><span>drawing.lg</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">hideturtle</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">to draw.generation :generation :size</span>
+</span><span class='line'><span class="err">for [y 1 :size] [p.draw.line :y]</span>
+</span><span class='line'><span class="err">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">to p.draw.line :y</span>
+</span><span class='line'><span class="err">for [x 1 :size] [if (cell.alive? :generation :x :y) [p.draw.cell :x :y ] ]</span>
+</span><span class='line'><span class="err">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">to p.draw.cell :x :y</span>
+</span><span class='line'><span class="err">penup</span>
+</span><span class='line'><span class="err">setxy :x :y</span>
+</span><span class='line'><span class="err">setheading 90</span>
+</span><span class='line'><span class="err">pendown</span>
+</span><span class='line'><span class="err">forward 1</span>
+</span><span class='line'><span class="err">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>hideturtle</code> cache la tortue, comme son nom l&#8217;indique. Parce que, en plus
+d&#8217;être moche, ça ralenti le dessin, qui n&#8217;est déjà pas très rapide.</p>
+
+<p>La procédure <code>draw.generation</code> itère sur chaque ligne de <code>generation</code> et
+appelle la procédure <em>privée</em> <code>p.draw.line</code>.</p>
+
+<p><code>p.draw.line</code> itère sur chaque cellule de la ligne. On détermine, avec
+<code>cell.alive?</code>, si la cellule est vivante. Si c&#8217;est le cas, on appelle
+<code>p.draw.cell</code>.</p>
+
+<p><code>p.draw.cell</code> affiche un pixel en (x, y).</p>
+
+<p>Dans le fichier <code>generation.lg</code>, j&#8217;ajoute la procédure <code>cell.alive?</code>.</p>
+
+<figure class='code'><figcaption><span>generation.lg</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">to cell.alive? :generation :x :y</span>
+</span><span class='line'><span class="err">localmake &quot;line item :y :generation</span>
+</span><span class='line'><span class="err">ifelse (item :x :line) = 1 [output &quot;true] [output &quot;false]</span>
+</span><span class='line'><span class="err">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Puis on assemble le tout dans un fichier <code>application.lg</code>.</p>
+
+<figure class='code'><figcaption><span>application.lg</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">load &quot;generation.lg</span>
+</span><span class='line'><span class="err">load &quot;drawing.lg</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">make &quot;size 100</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">draw.generation create.generation :size :size :size</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voici le résultat:</p>
+
+<pre><code>$ tree
+.
+├── application.lg
+├── drawing.lg
+├── generation.lg
+└── test.generation.lg
+
+$ logo application.lg
+</code></pre>
+
+<p><img src="http://lkdjiin.github.io/images/game-of-life-logo.png"></p>
+
+<p>Mouais, un peu moche, non ? J&#8217;avoue que je commence déjà à en avoir marre de
+Logo.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en logo - partie 1]]></title>
@@ -308,7 +451,7 @@ irresponsable.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -710,7 +853,7 @@ réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -987,7 +1130,7 @@ message:    "It populates generation uniformly"
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1155,7 +1298,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3475,7 +3618,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4042,7 +4185,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4415,7 +4558,7 @@ ensemble de cellules.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5716,136 +5859,6 @@ Calyhre          0.352022   0.000000   0.352022 (  0.349252)
 </code></pre>
 
 <p>Ma méthode bien moche fonctionne plutôt bien ici :)</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Exercise Ruby : Reduce ranges - une solution]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/07/01/exercise-ruby-reduce-ranges-une-solution/"/>
-    <updated>2014-07-01T21:07:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/07/01/exercise-ruby-reduce-ranges-une-solution</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Je rappelle le sujet/énoncé : en partant de ce tableau:</p>
-
-<pre><code>[1, 2, 3, 7, 9, 17, 18, 19, 20]
-</code></pre>
-
-<p>on doit obtenir celui-ci:</p>
-
-<pre><code>[1..3, 7, 9, 17..20]
-</code></pre>
-
-<p>En y réflechissant un peu, je me suis demandé si le module <code>Enumerable</code>
-offrait une méthode qui nous aiderait. Bingo ! J&#8217;ai trouvé la méthode
-<code>slice_before</code>, que je n&#8217;avais jamais utilisé jusqu&#8217;ici. Voici donc ma
-solution:</p>
-
-<!-- more -->
-
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">range_reduce</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">previous</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">first</span>
-</span><span class='line'>  <span class="n">array</span><span class="o">.</span><span class="n">slice_before</span> <span class="k">do</span> <span class="o">|</span><span class="n">element</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">previous</span><span class="p">,</span> <span class="n">previous2</span> <span class="o">=</span> <span class="n">element</span><span class="p">,</span> <span class="n">previous</span>
-</span><span class='line'>    <span class="n">previous2</span><span class="o">.</span><span class="n">succ</span> <span class="o">!=</span> <span class="n">element</span>
-</span><span class='line'>  <span class="k">end</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">element</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">element</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">?</span> <span class="n">element</span><span class="o">.</span><span class="n">first</span> <span class="p">:</span> <span class="n">element</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">.element</span><span class="o">.</span><span class="n">last</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Quand je la compare à la solution originale de l&#8217;auteur de la gem:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">arr</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">dup</span>
-</span><span class='line'>  <span class="n">arr</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">el</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">range_index</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="n">prev</span> <span class="o">=</span> <span class="n">el</span>
-</span><span class='line'>    <span class="k">while</span> <span class="n">arr</span><span class="o">[</span><span class="n">range_index</span><span class="o">]</span> <span class="o">==</span> <span class="n">prev</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">prev</span> <span class="o">=</span> <span class="n">arr</span><span class="o">[</span><span class="n">range_index</span><span class="o">]</span>
-</span><span class='line'>      <span class="n">range_index</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>    <span class="n">arr</span><span class="o">[</span><span class="n">index</span><span class="o">.</span><span class="n">.range_index</span><span class="o">-</span><span class="mi">1</span><span class="o">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span><span class="o">[</span><span class="n">index</span><span class="o">].</span><span class="n">.arr</span><span class="o">[</span><span class="n">range_index</span><span class="o">-</span><span class="mi">1</span><span class="o">]</span><span class="p">)</span> <span class="k">unless</span> <span class="n">index</span> <span class="o">==</span> <span class="n">range_index</span> <span class="o">-</span> <span class="mi">1</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je me dis que je préfère la mienne, que je la trouve plus claire. Et j&#8217;étais
-à deux doigts de balancer ma belle solution dans une <em>Pull Request</em> à l&#8217;auteur,
-quand je me suis dis que je ferais bien de faire un benchmark quand même.
-Et là, <em>patatra</em>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;benchmark&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">array1</span> <span class="o">=</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">18</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">20</span><span class="o">]</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">Benchmark</span><span class="o">.</span><span class="n">bmbm</span> <span class="k">do</span> <span class="o">|</span><span class="n">x</span><span class="o">|</span>
-</span><span class='line'>  <span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">&quot;mine&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="mi">100_000</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">range_reduce</span><span class="p">(</span><span class="n">array1</span><span class="p">)</span> <span class="p">}</span> <span class="p">}</span>
-</span><span class='line'>  <span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">&quot;original&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="mi">100_000</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="n">original</span><span class="p">(</span><span class="n">array1</span><span class="p">)</span> <span class="p">}</span> <span class="p">}</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<pre><code>Rehearsal --------------------------------------------
-mine       2.270000   0.000000   2.270000 (  2.270935)
-original   0.710000   0.000000   0.710000 (  0.709436)
------------------------------------ total: 2.980000sec
-
-               user     system      total        real
-mine       2.320000   0.000000   2.320000 (  2.321878)
-original   0.690000   0.000000   0.690000 (  0.692148)
-</code></pre>
-
-<p>Le score est sans appel ! Ma belle méthode sucre les fraises :(</p>
-
-<p>Du coup j&#8217;ai bien envie de voir si je peux faire mieux que la méthode
-originale ;) Soit en tentant d&#8217;améliorer ma méthode, soit en déroulant
-un algorithme «à la C». On verra peut-être demain.</p>
-
-<p>En attendant, vos solutions m&#8217;intéresse, n&#8217;hésitez pas à les envoyer dans
-un commentaire.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
