@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-20T18:30:31+01:00</updated>
+  <updated>2014-12-23T15:17:12+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,345 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/"/>
+    <updated>2014-12-23T14:50:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>Voici la première partie du jeu de la vie en Julia.
+Pour installer la dernière version stable (0.3.3), rendez-vous sur le
+<a href="https://github.com/JuliaLang/julia">Github de Julia</a>.</p>
+
+<p>Julia est un langage jeune et en pleine effervescence et plusieurs frameworks
+de tests sont en cours de création. J&#8217;ai notamment remarqué:</p>
+
+<ul>
+<li><a href="https://github.com/JuliaLang/FactCheck.jl">FactCheck.jl</a></li>
+<li><a href="https://github.com/arypurnomoz/JulieTest.jl">JulieTest.jl</a></li>
+<li><a href="https://github.com/Veraticus/testfast.jl">testfast.jl</a></li>
+</ul>
+
+
+<h2>Création d&#8217;une génération</h2>
+
+<p>Mais pour ce que je compte faire ici, Julia possède une macro très simple,
+<a href="http://julia.readthedocs.org/en/latest/stdlib/test/">@test</a>. Même si <code>@test</code>
+est très minimal, ça sera suffisant pour ce programme. Voici donc les
+tests de la fonction <code>create</code> du module <code>Generation</code>:</p>
+
+<figure class='code'><figcaption><span>test.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;generation.jl&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">using</span> <span class="n">Base</span><span class="o">.</span><span class="n">Test</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">HEIGHT</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span class='line'><span class="n">WIDTH</span> <span class="o">=</span> <span class="mi">4</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">created_generation</span> <span class="o">=</span> <span class="n">Generation</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">HEIGHT</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">)</span>
+</span><span class='line'><span class="p">@</span><span class="n">test</span> <span class="nb">typeof</span><span class="p">(</span><span class="n">created_generation</span><span class="p">)</span> <span class="o">==</span> <span class="n">Array</span><span class="p">{</span><span class="kt">Int</span><span class="p">,</span><span class="mi">2</span><span class="p">}</span>
+</span><span class='line'><span class="p">@</span><span class="n">test</span> <span class="n">size</span><span class="p">(</span><span class="n">created_generation</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">HEIGHT</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">)</span>
+</span><span class='line'><span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">length</span><span class="p">(</span><span class="n">created_generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">@</span><span class="n">test</span> <span class="n">created_generation</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">in</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!-- more -->
+
+
+<p>Et voici les explications ligne par ligne. D&#8217;abord je rends disponible le code du futur fichier <code>generation.jl</code>:</p>
+
+<pre><code>include("generation.jl")
+</code></pre>
+
+<p>Ensuite je demande à utiliser le module <code>Test</code>, pour avoir accès à la macro <code>@test</code>:</p>
+
+<pre><code>using Base.Test
+</code></pre>
+
+<p>Définition des <em>constantes</em> pour la hauteur et la largeur de la génération:</p>
+
+<pre><code>HEIGHT = 3
+WIDTH = 4
+</code></pre>
+
+<p>Création d&#8217;une génération, c&#8217;est cette fonction qu&#8217;il m&#8217;intéresse de tester:</p>
+
+<pre><code>created_generation = Generation.create(HEIGHT, WIDTH)
+</code></pre>
+
+<p>Je m&#8217;assure que <code>create</code> renvoie un tableau d&#8217;entiers à 2 dimensions:</p>
+
+<pre><code>@test typeof(created_generation) == Array{Int,2}
+</code></pre>
+
+<p>Je m&#8217;assure que le tableau renvoyé par <code>create</code> possède bien les dimensions
+voulues:</p>
+
+<pre><code>@test size(created_generation) == (HEIGHT, WIDTH)
+</code></pre>
+
+<p>Je m&#8217;assure enfin que chaque cellule du tableau est un 1 ou un 0:</p>
+
+<pre><code>for i in 1:length(created_generation)
+    @test created_generation[i] in 0:1
+end
+</code></pre>
+
+<p>Pour lancer ces tests : <code>julia test.jl</code>.</p>
+
+<p>Voici maintenant la fonction <code>create</code> qui fera passer les tests ci-dessus:</p>
+
+<figure class='code'><figcaption><span>generation.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="kr">module</span> <span class="n">Generation</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">create</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notez l&#8217;efficacité de la fonction <code>rand</code>. Sans argument, elle produit
+classiquement un nombre aléatoire entre 0 et 1:</p>
+
+<pre><code>julia&gt; rand()
+0.7084513868758786
+</code></pre>
+
+<p>Avec un <em>range</em>, elle sort un nombre compris dans ce <em>range</em>:</p>
+
+<pre><code>julia&gt; rand(0:1)
+1
+</code></pre>
+
+<p>Si j&#8217;ajoute en plus une dimension, elle renvoie un tableau:</p>
+
+<pre><code>julia&gt; rand(0:1, 3)
+3-element Array{Int32,1}:
+ 0
+ 0
+ 1
+</code></pre>
+
+<p>Avec deux dimensions:</p>
+
+<pre><code>julia&gt; rand(0:1, 3, 4)
+3x4 Array{Int32,2}:
+ 0  0  0  1
+ 1  1  1  1
+ 1  1  0  0
+</code></pre>
+
+<p>Et même pour le fun, avec 3 dimensions:</p>
+
+<pre><code>julia&gt; rand(0:1, 3, 4, 3)
+3x4x3 Array{Int32,3}:
+[:, :, 1] =
+ 1  1  1  1
+ 0  1  0  0
+ 0  0  1  0
+
+[:, :, 2] =
+ 1  1  0  1
+ 0  0  0  0
+ 1  1  1  1
+
+[:, :, 3] =
+ 0  0  0  1
+ 1  0  0  1
+ 1  1  0  0
+</code></pre>
+
+<p>Vous pouvez aussi tester avec encore plus de dimensions, ça fonctionnera.</p>
+
+<h2>Affichage d&#8217;une génération</h2>
+
+<p>Bon, Julia est jeune, je l&#8217;ai déjà dit. Je n&#8217;ai rien trouvé de simple pour faire
+un peu de graphisme, donc je vais faire les sorties dans la console.</p>
+
+<figure class='code'><figcaption><span>display.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="kr">module</span> <span class="n">Display</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> draw</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">run</span><span class="p">(</span><span class="sb">`clear`</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">println</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">repr</span><span class="p">(</span><span class="n">generation</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="k">end</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot; &quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">))</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La première ligne de la fonction, <code>run</code>, appelle la commande système
+<code>clear</code>, qui efface l&#8217;écran du terminal.</p>
+
+<p>La seconde demande à être décomposée. Soit la génération suivante:</p>
+
+<pre><code>julia&gt; generation = rand(0:1, 2, 3)
+2x3 Array{Int32,2}:
+ 0  0  1
+ 0  1  0
+</code></pre>
+
+<p><code>repr</code> nous donne la représentation en chaîne de caractères:</p>
+
+<pre><code>julia&gt; repr(generation)
+"[0 0 1\n 0 1 0]"
+</code></pre>
+
+<p>On peut accéder à une chaîne comme un tableau, ici je conserve ce qui se trouve
+entre le second et l&#8217;avant-dernier élément:</p>
+
+<pre><code>julia&gt; repr(generation)[2:end-1]
+"0 0 1\n 0 1 0"
+</code></pre>
+
+<p><strong>Je m&#8217;aperçois que j&#8217;ai oublié de parler d&#8217;un truc important: l&#8217;indexation les
+tableaux en Julia commence à 1.</strong></p>
+
+<p>Pour finir je supprime les espaces avec <code>replace</code>:</p>
+
+<pre><code>julia&gt; replace(repr(generation)[2:end-1], " ", "")
+"001\n010"
+</code></pre>
+
+<p>Et quand on combine tout ça dans un fichier <code>main.jl</code>, voici le résultat:</p>
+
+<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;generation.jl&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;display.jl&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">height</span> <span class="o">=</span> <span class="mi">20</span>
+</span><span class='line'><span class="n">width</span> <span class="o">=</span> <span class="mi">80</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">generation</span> <span class="o">=</span> <span class="n">Generation</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+</span><span class='line'><span class="n">Display</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ julia main.jl
+00010111100111000011100111001010001101000010110111000111101101110101000011100000
+00001101010010101111001010110101100101001000001011010001010110010100011011011011
+01001000011101000001101110010010110000100101011110001001110110101111010001001001
+11111110011101100001111010110101110000101011011000000011110000010011011100111111
+11100100000011100001111111101010011000110011010101011100011110101110111111001111
+11110011000101101010110010110011101101000111000111111111001110010100011101010101
+10011101010110011110100101110110111101111101100110011011011001011100000110110000
+01001110010101111101110001000110110100001101100100000010011101111000001010111100
+00011001011000000000000111010000100001100000001110101110000010100010101111011111
+00101011011010000001111001001011111101101110111000101100000100001101110110101100
+10000010100100011111111101010101001010001010111111001111100001010001011010000001
+11000011000001001101011001111101111111111111011111100101100101010000101111101001
+11010111011111101001111110100000001011100100010100100100000010001011000010101110
+10011000100111111100011010010100110001101110001001100100100000010100111001111011
+11110001001011000101100001001110010100010011100101001101010111111100011100111101
+11001111000101101111001110010010101001110010101100010100101011101011000101000000
+01001111111101010010001100010011000001110110001110110101010101010000111010111000
+01101001011011011001110010010010000101000111111111010101001011101011111001101010
+00101111001100011111110110000110011100001011011100101101011001111111111100011110
+01110001110010001001011100100000100000010110001100011011101001010011111011110100
+</code></pre>
+
+<p>Pour rendre la sortie écran un peu plus présentable, <em>effaçons</em> les 0, en les
+remplaçant par des espaces, et remplaçons les 1 par des @:</p>
+
+<figure class='code'><figcaption><span>display.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="kr">module</span> <span class="n">Display</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> draw</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">run</span><span class="p">(</span><span class="sb">`clear`</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">output</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">repr</span><span class="p">(</span><span class="n">generation</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="k">end</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot; &quot;</span><span class="p">,</span> <span class="s">&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">output</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="s">&quot;1&quot;</span><span class="p">,</span> <span class="s">&quot;@&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">output</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="s">&quot;0&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">println</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour terminer, voici une petite boucle pour afficher une dizaine de générations:</p>
+
+<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;generation.jl&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;display.jl&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">height</span> <span class="o">=</span> <span class="mi">20</span>
+</span><span class='line'><span class="n">width</span> <span class="o">=</span> <span class="mi">80</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="mi">10</span>
+</span><span class='line'>    <span class="n">generation</span> <span class="o">=</span> <span class="n">Generation</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.8</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">Display</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en logo - partie 3]]></title>
@@ -35,7 +374,7 @@ aucun moment.</p>
 <p>Bref, j&#8217;oublie définitivement Logo. La prochaine version sera en Julia, ça
 promet d&#8217;être bien plus intéressant.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -178,7 +517,7 @@ Logo.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -477,7 +816,7 @@ irresponsable.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -879,7 +1218,7 @@ réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1156,7 +1495,7 @@ message:    "It populates generation uniformly"
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1324,7 +1663,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3644,7 +3983,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4211,7 +4550,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4584,7 +4923,7 @@ ensemble de cellules.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5568,56 +5907,6 @@ prend trop de temps de faire les petits dessins ;)</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby CSV tests et quelques questions]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/07/03/ruby-csv-tests-et-quelques-questions/"/>
-    <updated>2014-07-03T21:31:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/07/03/ruby-csv-tests-et-quelques-questions</id>
-    <content type="html"><![CDATA[<p>Ça fait une semaine que je travaille sur des exports de statisques au format
-CSV en Ruby. Ce n&#8217;est pas la première fois que je bosse sur ce genre de
-fonctionnalité, que ce soit en Ruby ou dans un autre langage, et j&#8217;ai
-toujours et encore le même problême: les tests.</p>
-
-<!-- more -->
-
-
-<p>Je m&#8217;explique. J&#8217;aime avoir des tests d&#8217;intégration qui s&#8217;assurent que les
-bons fichiers soient produits. Par exemple:</p>
-
-<pre><code>A, B, C, D ...
-1, 2, 3, 4 ...
-.
-.
-.
-</code></pre>
-
-<p>J&#8217;aime pouvoir contrôler la production de plusieurs fichiers, un pour chaque
-scénario. Le gros soucis avec ce genre de test, c&#8217;est leur fragilité,
-quand, par exemple, les utilisateurs s&#8217;aperçoivent que l&#8217;ordre des champs serait mieux
-ainsi:</p>
-
-<pre><code>A, C, D, B ...
-1, 3, 4, 2 ...
-.
-.
-.
-</code></pre>
-
-<p>Et là, il faut réécrire tous les fichiers de contrôle. Certains pouvant
-contenir des dizaines de champs…</p>
-
-<p>J&#8217;ai donc une question pour vous: comment faites vous pour faciliter ce
-genre de tests ?</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/'>Ruby Timecop &ndash; Comment ça marche ?</a></li><li><a href='http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/'>Tester facilement vos dates avec Timecop</a></li><li><a href='http://lkdjiin.github.io/blog/2014/03/20/quelques-trucs-pour-lancer-rspec/'>Quelques trucs pour lancer Rspec</a></li></ul></section></p>
 ]]></content>
   </entry>
   

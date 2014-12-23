@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-20T18:30:31+01:00</updated>
+  <updated>2014-12-23T15:17:12+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,295 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/"/>
+    <updated>2014-12-23T14:50:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Voici la première partie du jeu de la vie en Julia.
+Pour installer la dernière version stable (0.3.3), rendez-vous sur le
+<a href="https://github.com/JuliaLang/julia">Github de Julia</a>.</p>
+
+<p>Julia est un langage jeune et en pleine effervescence et plusieurs frameworks
+de tests sont en cours de création. J'ai notamment remarqué:</p>
+
+<ul>
+<li><a href="https://github.com/JuliaLang/FactCheck.jl">FactCheck.jl</a></li>
+<li><a href="https://github.com/arypurnomoz/JulieTest.jl">JulieTest.jl</a></li>
+<li><a href="https://github.com/Veraticus/testfast.jl">testfast.jl</a></li>
+</ul>
+
+
+<h2>Création d'une génération</h2>
+
+<p>Mais pour ce que je compte faire ici, Julia possède une macro très simple,
+<a href="http://julia.readthedocs.org/en/latest/stdlib/test/">@test</a>. Même si <code>@test</code>
+est très minimal, ça sera suffisant pour ce programme. Voici donc les
+tests de la fonction <code>create</code> du module <code>Generation</code>:</p>
+
+<p>``` julia test.jl
+include(&ldquo;generation.jl&rdquo;)</p>
+
+<p>using Base.Test</p>
+
+<p>HEIGHT = 3
+WIDTH = 4</p>
+
+<p>created_generation = Generation.create(HEIGHT, WIDTH)
+@test typeof(created_generation) == Array{Int,2}
+@test size(created_generation) == (HEIGHT, WIDTH)
+for i in 1:length(created_generation)</p>
+
+<pre><code>@test created_generation[i] in 0:1
+</code></pre>
+
+<p>end
+```</p>
+
+<!-- more -->
+
+
+<p>Et voici les explications ligne par ligne. D'abord je rends disponible le code du futur fichier <code>generation.jl</code>:</p>
+
+<pre><code>include("generation.jl")
+</code></pre>
+
+<p>Ensuite je demande à utiliser le module <code>Test</code>, pour avoir accès à la macro <code>@test</code>:</p>
+
+<pre><code>using Base.Test
+</code></pre>
+
+<p>Définition des <em>constantes</em> pour la hauteur et la largeur de la génération:</p>
+
+<pre><code>HEIGHT = 3
+WIDTH = 4
+</code></pre>
+
+<p>Création d'une génération, c'est cette fonction qu'il m'intéresse de tester:</p>
+
+<pre><code>created_generation = Generation.create(HEIGHT, WIDTH)
+</code></pre>
+
+<p>Je m'assure que <code>create</code> renvoie un tableau d'entiers à 2 dimensions:</p>
+
+<pre><code>@test typeof(created_generation) == Array{Int,2}
+</code></pre>
+
+<p>Je m'assure que le tableau renvoyé par <code>create</code> possède bien les dimensions
+voulues:</p>
+
+<pre><code>@test size(created_generation) == (HEIGHT, WIDTH)
+</code></pre>
+
+<p>Je m'assure enfin que chaque cellule du tableau est un 1 ou un 0:</p>
+
+<pre><code>for i in 1:length(created_generation)
+    @test created_generation[i] in 0:1
+end
+</code></pre>
+
+<p>Pour lancer ces tests : <code>julia test.jl</code>.</p>
+
+<p>Voici maintenant la fonction <code>create</code> qui fera passer les tests ci-dessus:</p>
+
+<p>``` julia generation.jl
+module Generation</p>
+
+<p>create(height, width) = rand(0:1, height, width)</p>
+
+<p>end
+```</p>
+
+<p>Notez l'efficacité de la fonction <code>rand</code>. Sans argument, elle produit
+classiquement un nombre aléatoire entre 0 et 1:</p>
+
+<pre><code>julia&gt; rand()
+0.7084513868758786
+</code></pre>
+
+<p>Avec un <em>range</em>, elle sort un nombre compris dans ce <em>range</em>:</p>
+
+<pre><code>julia&gt; rand(0:1)
+1
+</code></pre>
+
+<p>Si j'ajoute en plus une dimension, elle renvoie un tableau:</p>
+
+<pre><code>julia&gt; rand(0:1, 3)
+3-element Array{Int32,1}:
+ 0
+ 0
+ 1
+</code></pre>
+
+<p>Avec deux dimensions:</p>
+
+<pre><code>julia&gt; rand(0:1, 3, 4)
+3x4 Array{Int32,2}:
+ 0  0  0  1
+ 1  1  1  1
+ 1  1  0  0
+</code></pre>
+
+<p>Et même pour le fun, avec 3 dimensions:</p>
+
+<pre><code>julia&gt; rand(0:1, 3, 4, 3)
+3x4x3 Array{Int32,3}:
+[:, :, 1] =
+ 1  1  1  1
+ 0  1  0  0
+ 0  0  1  0
+
+[:, :, 2] =
+ 1  1  0  1
+ 0  0  0  0
+ 1  1  1  1
+
+[:, :, 3] =
+ 0  0  0  1
+ 1  0  0  1
+ 1  1  0  0
+</code></pre>
+
+<p>Vous pouvez aussi tester avec encore plus de dimensions, ça fonctionnera.</p>
+
+<h2>Affichage d'une génération</h2>
+
+<p>Bon, Julia est jeune, je l'ai déjà dit. Je n'ai rien trouvé de simple pour faire
+un peu de graphisme, donc je vais faire les sorties dans la console.</p>
+
+<p>``` julia display.jl
+module Display</p>
+
+<p>function draw(generation)</p>
+
+<pre><code>run(`clear`)
+println(replace(repr(generation)[2:end-1], " ", ""))
+</code></pre>
+
+<p>end</p>
+
+<p>end
+```</p>
+
+<p>La première ligne de la fonction, <code>run</code>, appelle la commande système
+<code>clear</code>, qui efface l'écran du terminal.</p>
+
+<p>La seconde demande à être décomposée. Soit la génération suivante:</p>
+
+<pre><code>julia&gt; generation = rand(0:1, 2, 3)
+2x3 Array{Int32,2}:
+ 0  0  1
+ 0  1  0
+</code></pre>
+
+<p><code>repr</code> nous donne la représentation en chaîne de caractères:</p>
+
+<pre><code>julia&gt; repr(generation)
+"[0 0 1\n 0 1 0]"
+</code></pre>
+
+<p>On peut accéder à une chaîne comme un tableau, ici je conserve ce qui se trouve
+entre le second et l'avant-dernier élément:</p>
+
+<pre><code>julia&gt; repr(generation)[2:end-1]
+"0 0 1\n 0 1 0"
+</code></pre>
+
+<p><strong>Je m'aperçois que j'ai oublié de parler d'un truc important: l'indexation les
+tableaux en Julia commence à 1.</strong></p>
+
+<p>Pour finir je supprime les espaces avec <code>replace</code>:</p>
+
+<pre><code>julia&gt; replace(repr(generation)[2:end-1], " ", "")
+"001\n010"
+</code></pre>
+
+<p>Et quand on combine tout ça dans un fichier <code>main.jl</code>, voici le résultat:</p>
+
+<p>``` julia main.jl
+include(&ldquo;generation.jl&rdquo;)
+include(&ldquo;display.jl&rdquo;)</p>
+
+<p>height = 20
+width = 80</p>
+
+<p>generation = Generation.create(height, width)
+Display.draw(generation)
+```</p>
+
+<pre><code>$ julia main.jl
+00010111100111000011100111001010001101000010110111000111101101110101000011100000
+00001101010010101111001010110101100101001000001011010001010110010100011011011011
+01001000011101000001101110010010110000100101011110001001110110101111010001001001
+11111110011101100001111010110101110000101011011000000011110000010011011100111111
+11100100000011100001111111101010011000110011010101011100011110101110111111001111
+11110011000101101010110010110011101101000111000111111111001110010100011101010101
+10011101010110011110100101110110111101111101100110011011011001011100000110110000
+01001110010101111101110001000110110100001101100100000010011101111000001010111100
+00011001011000000000000111010000100001100000001110101110000010100010101111011111
+00101011011010000001111001001011111101101110111000101100000100001101110110101100
+10000010100100011111111101010101001010001010111111001111100001010001011010000001
+11000011000001001101011001111101111111111111011111100101100101010000101111101001
+11010111011111101001111110100000001011100100010100100100000010001011000010101110
+10011000100111111100011010010100110001101110001001100100100000010100111001111011
+11110001001011000101100001001110010100010011100101001101010111111100011100111101
+11001111000101101111001110010010101001110010101100010100101011101011000101000000
+01001111111101010010001100010011000001110110001110110101010101010000111010111000
+01101001011011011001110010010010000101000111111111010101001011101011111001101010
+00101111001100011111110110000110011100001011011100101101011001111111111100011110
+01110001110010001001011100100000100000010110001100011011101001010011111011110100
+</code></pre>
+
+<p>Pour rendre la sortie écran un peu plus présentable, <em>effaçons</em> les 0, en les
+remplaçant par des espaces, et remplaçons les 1 par des @:</p>
+
+<p>``` julia display.jl
+module Display</p>
+
+<p>function draw(generation)</p>
+
+<pre><code>run(`clear`)
+output = replace(repr(generation)[2:end-1], " ", "")
+output = replace(output, "1", "@")
+output = replace(output, "0", " ")
+
+println(output)
+</code></pre>
+
+<p>end</p>
+
+<p>end
+```</p>
+
+<p>Pour terminer, voici une petite boucle pour afficher une dizaine de générations:</p>
+
+<p>``` julia main.jl
+include(&ldquo;generation.jl&rdquo;)
+include(&ldquo;display.jl&rdquo;)</p>
+
+<p>height = 20
+width = 80</p>
+
+<p>for _ in 1:10</p>
+
+<pre><code>generation = Generation.create(height, width)
+sleep(0.8)
+Display.draw(generation)
+</code></pre>
+
+<p>end
+```</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en logo - partie 3]]></title>
@@ -704,219 +993,6 @@ zoom x4.</p>
 que pour les versions <a href="http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/">Javascript</a> et <a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Ruby</a> et je n'ai pas envie de
 réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 <a href="https://github.com/lkdjiin/game-of-life-racket">code complet du jeu de la vie en Racket</a> se trouve sur Github.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/"/>
-    <updated>2014-11-08T13:46:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>C'est le moment d'afficher à l'écran notre génération créée au hasard
-<a href="http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/">la dernière fois</a>.
-Je rappelle que je n'écris pas de tests pour cette partie.
-Pour obtenir un affichage, je me contente de suivre les exemples donnés dans la
-documentation
-<a href="http://mirror.racket-lang.org/releases/6.1/doc/draw/overview.html">drawing overview</a>
-et <a href="http://mirror.racket-lang.org/releases/6.1/doc/gui/windowing-overview.html">windowing overview</a>.</p>
-
-<!-- more -->
-
-
-<p>Ce qui donne la première experimentation suivante:</p>
-
-<p>``` racket game-of-life.rkt</p>
-
-<h1>lang racket/gui</h1>
-
-<p>&hellip;</p>
-
-<p>(define generation (create-generation 100 100))</p>
-
-<p>(define frame (new frame%
-  [label &ldquo;Example&rdquo;]
-  [width 100]
-  [height 100]))</p>
-
-<p>(new canvas%</p>
-
-<pre><code> [parent frame]
- [paint-callback
-   (λ (canvas dc)
-      (send dc set-brush (new brush% [color "black"]))
-      (for ([y (length generation)])
-        (for ([x (length (first generation))])
-          (when (= 1 (list-ref (list-ref generation y) x))
-            (send dc draw-rectangle x y 1 1)))))])
-</code></pre>
-
-<p>(send frame show #t)
-```</p>
-
-<p>Le truc marrant (une façon de voir comme une autre) est que si on
-joue les tests, la fenêtre s'affiche. C'est pas très pratique.</p>
-
-<p>Mais avant tout, ce code révèle une erreur précédente:</p>
-
-<p><img src="/images/code-barre-2014-10-11.png"></p>
-
-<p>On dirait un code barre ! Pas vraiment une distribution uniforme.</p>
-
-<p>Alors le bug est simple à trouver, par contre je vais devoir écrire un ou
-plusieurs nouveaux tests et je garde ça pour la fin de l'article.</p>
-
-<p>Ensuite, je voudrais faire une boucle qui affiche une nouvelle génération au
-hasard chaque seconde. Je dois avouer que cette histoire de canvas, je la sens
-pas trop. Et le code que j'ai pondu s'en ressent. D'abord je mets ce qui a trait
-à une génération dans un module à part:</p>
-
-<p>``` racket generation.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(define (create-generation width height)
-  (for/list ([i (make-list height 0)])</p>
-
-<pre><code>        (make-list width (random 2))))
-</code></pre>
-
-<p>(provide create-generation)
-```</p>
-
-<p>Puis, tout le bazar de frame et de canvas, aussi dans un module:</p>
-
-<p>``` racket window.rkt</p>
-
-<h1>lang racket/gui</h1>
-
-<p>(define (create-window w h g)
-  (define frame (new frame%</p>
-
-<pre><code>                 [label "Game of Life"]
-                 [width w]
-                 [height h]))
-</code></pre>
-
-<p>  (define canvas (new (class canvas%</p>
-
-<pre><code>     (super-new [parent frame] [style '(no-autoclear)])
-     (define current-generation g)
-     (define dc (send this get-dc))
-     (define/public (change-generation g)
-       (set! current-generation g)
-       (send this refresh-now))
-     (define/override (on-paint)
-       (send dc set-brush (new brush% [color "black"]))
-       (send dc draw-rectangle 0 0 w h)
-       (send dc set-brush (new brush% [color "white"]))
-       (for ([y (length current-generation)])
-         (for ([x (length (first current-generation))])
-           (when (= 1 (list-ref (list-ref current-generation y) x))
-             (send dc draw-rectangle x y 1 1))))))))
-</code></pre>
-
-<p>  (send frame show #t)
-  canvas)</p>
-
-<p>(provide create-window)
-```</p>
-
-<p>Moi qui suis habitué à des méthodes de 2 ou 3 lignes, c'est pas vraiment ça.
-Et puis j'ai du mal à saisir le modèle objet de Racket.</p>
-
-<p>Enfin le programme principal avec la boucle:</p>
-
-<p>``` racket game-of-life.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(require &ldquo;generation.rkt&rdquo;</p>
-
-<pre><code>     "window.rkt")
-</code></pre>
-
-<p>(define size 100)
-(define generation (create-generation size size))
-(define canvas (create-window size size generation))</p>
-
-<p>(define (loop n)
-  (send canvas change-generation (create-generation size size))
-  (sleep 1)
-  (when (> n 0)</p>
-
-<pre><code>(loop (sub1 n))))
-</code></pre>
-
-<p>(loop 10)
-```</p>
-
-<p>Si j'ai le temps, j'essaierais d'utiliser la bibliothèque <code>2htdp/universe</code>,
-qui me semble bien plus simple.</p>
-
-<p>Maintenant le bug. Le problème est que je crée des lignes complètes de 0 ou de 1
-dans la liste qui représente une génération, plutôt que de distribuer
-uniformément ces 0 et ces 1. Je vais donc ajouter un test qui initialise le
-générateur de nombres aléatoires toujours de la même manière.</p>
-
-<p>``` racket game-of-life-test.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(require rackunit</p>
-
-<pre><code>     "generation.rkt")
-</code></pre>
-
-<p>&hellip;</p>
-
-<p>((λ ()
-   (random-seed 1)
-   (check-equal? (create-generation 2 3) &lsquo;((1 1) (0 1) (1 1))</p>
-
-<pre><code>             "It populates generation uniformly")))
-</code></pre>
-
-<p>```</p>
-
-<p>Sans surprise, le test échoue.</p>
-
-<pre><code>$ racket game-of-life-test.rkt
---------------------
-FAILURE
-actual:     ((1 1) (1 1) (0 0))
-expected:   ((1 0) (1 0) (1 0))
-name:       check-equal?
-location:   (#&lt;path:/home/xavier/code/game-of-life-racket/game-of-life-test.rkt&gt; 21 3 537 112)
-expression: (check-equal? (create-generation 2 3) (quote ((1 0) (1 0) (1 0))))
-message:    "It populates generation uniformly"
-</code></pre>
-
-<p>Et voici le fix.</p>
-
-<p>``` racket generation.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(define (create-generation width height)
-  (define (rnd _)</p>
-
-<pre><code>(random 2))
-</code></pre>
-
-<p>  (for/list ([i (make-list height 0)])</p>
-
-<pre><code>        (map rnd (make-list width 0))))
-</code></pre>
-
-<p>(provide create-generation)
-```</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
