@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : julia | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/julia/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-23T15:17:12+01:00</updated>
+  <updated>2014-12-24T10:16:34+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,191 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/"/>
+    <updated>2014-12-24T10:03:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<h2>Calcul du prochain état d'un cellule</h2>
+
+<p>Au départ je voulais écrire une fonction <code>nextcellstate</code>. C'est la convention
+en Julia: séparer les mots par des underscores seulement si c'est
+incompréhensible.  Je ne sais pas pour vous, mais moi je trouve <code>nextcellstate</code>
+incompréhensible.  Donc ça devient <code>next_cell_state</code>. C'est mieux. Mais on te
+dis aussi que si tu ressens le besoin de mettre des underscores, c'est
+peut-être parce que ta fonction en fait trop. Bon conseil.</p>
+
+<p>Alors, cette fonction pourrait appartenir à un module <code>Cell</code>. Elle devient donc
+<code>Cell.nextstate</code>. Pardon, <code>Cell.next_state</code>, c'est mieux. Mais j'ai encore <code>next</code> et
+<code>state</code>, qui font deux choses différentes.</p>
+
+<p><code>state</code> calcule l'état d'un voisinage (<em>neighborhood</em>) de cellules, c'est à dire le
+nombre de <code>1</code> (cellule vivante) parmi 9 cellules: celle qui nous intéresse et ses
+8 voisines.</p>
+
+<p><code>next</code> calcule le prochain état d'une cellule (1 ou 0, vivante ou morte) selon son
+état actuel et l'état de son voisinage.</p>
+
+<p>J'ai donc décidé d'avoir une fonction <code>Neighborhood.state</code> plus une fonction
+<code>Cell.next</code>.  Voici le test pour <code>Neighborhood.state</code>, c'est loin d'être
+exhaustif, mais j'ai envie d'avancer:</p>
+
+<p>``` julia test.jl
+include(&ldquo;generation.jl&rdquo;)
+include(&ldquo;neighborhood.jl&rdquo;)</p>
+
+<h1>&hellip;</h1>
+
+<p>@test Neighborhood.state([ 0 1 1 0 0 0 1 1 1]) == 5
+```</p>
+
+<p>Et la fonction:</p>
+
+<p>``` julia neighborhood.jl
+module Neighborhood</p>
+
+<p>state(cells) = countnz(cells)</p>
+
+<p>end
+```</p>
+
+<!-- more -->
+
+
+<p><code>countnz</code> compte tout simplement le nombre d'éléments différents de zéro.</p>
+
+<p>Passons à <code>Cell.next</code>:</p>
+
+<p>``` julia test.jl
+include(&ldquo;generation.jl&rdquo;)
+include(&ldquo;neighborhood.jl&rdquo;)
+include(&ldquo;cell.jl&rdquo;)</p>
+
+<h1>&hellip;</h1>
+
+<p>ALIVE = 1
+DEAD  = 0</p>
+
+<p>@test Cell.next(ALIVE, 5) == 0
+@test Cell.next(DEAD, 3) == 1
+@test Cell.next(DEAD, 4) == 0
+@test Cell.next(ALIVE, 4) == 1
+```</p>
+
+<p>``` julia cell.jl
+module Cell</p>
+
+<p>function next(cell, neighborhood)</p>
+
+<pre><code>if neighborhood == 3
+    1
+elseif neighborhood == 4
+    cell
+else
+    0
+end
+</code></pre>
+
+<p>end</p>
+
+<p>end
+```</p>
+
+<p>Il semble que Julia n'ai pas de switch/case, dommage.</p>
+
+<p>Maintenant je passe à l'extraction d'une génération, c'est à dire les 9 cellules
+composées de notre cellule cible et de ses 8 voisines.</p>
+
+<p>``` julia test.jl</p>
+
+<h1>&hellip;</h1>
+
+<p>generation = [ 0 1 0 1 ;</p>
+
+<pre><code>           1 1 1 1 ;
+           0 0 0 0 ;
+           1 0 1 0 ]
+</code></pre>
+
+<p>@test Neighborhood.extract(generation, 2, 3) == [ 1 0 1 ; 1 1 1 ; 0 0 0 ]
+@test Neighborhood.extract(generation, 3, 2) == [ 1 1 1 ; 0 0 0 ; 1 0 1 ]
+```</p>
+
+<p><code>julia neighborhood.jl
+extract(generation, y, x) = generation[y-1:y+1, x-1:x+1]
+</code></p>
+
+<p>C'est tellement simple à implémenter&hellip; J'aime de plus en plus Julia.</p>
+
+<p>Ensuite viennent les tests des cas exceptionnels. Je ne vous en montre que 3:</p>
+
+<p>``` julia test.jl
+generation = [ 0 1 0 1 ;</p>
+
+<pre><code>           1 1 1 1 ;
+           0 0 0 0 ;
+           1 0 1 0 ]
+</code></pre>
+
+<h1>&hellip;</h1>
+
+<p>@test Neighborhood.extract(generation, 1, 2) == [ 0 1 0 ; 1 1 1 ]</p>
+
+<p>@test Neighborhood.extract(generation, 3, 1) == [ 1 1 ; 0 0 ; 1 0 ]</p>
+
+<p>@test Neighborhood.extract(generation, 1, 1) == [ 0 1 ; 1 1 ]
+```</p>
+
+<p>Là encore, l'implémentation est simple:</p>
+
+<p>``` julia neighborhood.jl
+function extract(generation, y, x)</p>
+
+<pre><code>height, width = size(generation)
+y_low = y == 1 ? 1 : y - 1
+y_up  = y == height ? height : y + 1
+x_low = x == 1 ? 1 : x - 1
+x_up  = x == width ? width : x + 1
+generation[y_low:y_up, x_low:x_up]
+</code></pre>
+
+<p>end
+```</p>
+
+<p>Ce qu'on peut ré-arrenger un peu, par exemple ainsi:</p>
+
+<p>``` julia neighborhood.jl
+function extract(generation, y, x)</p>
+
+<pre><code>height, width = size(generation)
+yrange = range_for(y, height)
+xrange = range_for(x, width)
+generation[yrange, xrange]
+</code></pre>
+
+<p>end</p>
+
+<p>function range_for(coordinate, dimension)</p>
+
+<pre><code>low = coordinate == 1 ? 1 : coordinate - 1
+up  = coordinate == dimension ? dimension : coordinate + 1
+low:up
+</code></pre>
+
+<p>end
+```</p>
+
+<p>Rendez-vous dans le prochain article pour la fin du jeu de la vie en Julia.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 1]]></title>
@@ -650,52 +835,6 @@ current = reproduction([], current, selection, population_size)
 <p>  end
 end
 ```</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un algorithme génétique en Julia - partie 15]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/"/>
-    <updated>2014-06-02T21:02:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Après avoir pondu <a href="blog/2014/06/01/un-algorithme-genetique-en-julia-partie-14/">une première version</a>
-de l'algorithme hier, je me demande ce que je pourrais améliorer. C'était
-un programme sympa pour découvrir Julia, mais je n'ai fait que gratter la
-surface de ce langage.</p>
-
-<!-- more -->
-
-
-<p>Donc, voici ce que je compte/espère faire encore avec ce programme pour
-comprendre un peu mieux Julia:</p>
-
-<ul>
-<li>Retirer les nombres magiques restants.</li>
-<li>Retirer les abbreviations restantes.</li>
-<li>Documenter les fonctions, sinon dans un mois, j'aurais tout oublié !</li>
-<li>Essayer une version récursive de la fonction <code>run</code>.</li>
-<li>Lire quelques tutos pour voir ce que je peux en tirer.</li>
-<li>Lire du code julia pour mieux <em>sentir</em> (le code source de Julia <em>itself</em>
-serait un bon début).</li>
-<li>Mettre le code sur github et le donner à lire/critiquer à des développeurs qui
-connaissent le langage.</li>
-<li>Comprendre pourquoi avec 10.000 individus de 100 gènes, l'empreinte
-mémoire est de 800 Mo ! Ça me semble beaucoup…</li>
-<li>Écrire le même en Ruby et comparer le temps d'exécution.</li>
-</ul>
-
-
-<p>Voilà, il devrait donc y avoir encore pas mal d'articles sur le langage
-Julia ;)</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

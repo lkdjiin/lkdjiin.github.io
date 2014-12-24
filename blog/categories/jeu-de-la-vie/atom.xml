@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-23T15:17:12+01:00</updated>
+  <updated>2014-12-24T10:16:34+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,191 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/"/>
+    <updated>2014-12-24T10:03:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<h2>Calcul du prochain état d'un cellule</h2>
+
+<p>Au départ je voulais écrire une fonction <code>nextcellstate</code>. C'est la convention
+en Julia: séparer les mots par des underscores seulement si c'est
+incompréhensible.  Je ne sais pas pour vous, mais moi je trouve <code>nextcellstate</code>
+incompréhensible.  Donc ça devient <code>next_cell_state</code>. C'est mieux. Mais on te
+dis aussi que si tu ressens le besoin de mettre des underscores, c'est
+peut-être parce que ta fonction en fait trop. Bon conseil.</p>
+
+<p>Alors, cette fonction pourrait appartenir à un module <code>Cell</code>. Elle devient donc
+<code>Cell.nextstate</code>. Pardon, <code>Cell.next_state</code>, c'est mieux. Mais j'ai encore <code>next</code> et
+<code>state</code>, qui font deux choses différentes.</p>
+
+<p><code>state</code> calcule l'état d'un voisinage (<em>neighborhood</em>) de cellules, c'est à dire le
+nombre de <code>1</code> (cellule vivante) parmi 9 cellules: celle qui nous intéresse et ses
+8 voisines.</p>
+
+<p><code>next</code> calcule le prochain état d'une cellule (1 ou 0, vivante ou morte) selon son
+état actuel et l'état de son voisinage.</p>
+
+<p>J'ai donc décidé d'avoir une fonction <code>Neighborhood.state</code> plus une fonction
+<code>Cell.next</code>.  Voici le test pour <code>Neighborhood.state</code>, c'est loin d'être
+exhaustif, mais j'ai envie d'avancer:</p>
+
+<p>``` julia test.jl
+include(&ldquo;generation.jl&rdquo;)
+include(&ldquo;neighborhood.jl&rdquo;)</p>
+
+<h1>&hellip;</h1>
+
+<p>@test Neighborhood.state([ 0 1 1 0 0 0 1 1 1]) == 5
+```</p>
+
+<p>Et la fonction:</p>
+
+<p>``` julia neighborhood.jl
+module Neighborhood</p>
+
+<p>state(cells) = countnz(cells)</p>
+
+<p>end
+```</p>
+
+<!-- more -->
+
+
+<p><code>countnz</code> compte tout simplement le nombre d'éléments différents de zéro.</p>
+
+<p>Passons à <code>Cell.next</code>:</p>
+
+<p>``` julia test.jl
+include(&ldquo;generation.jl&rdquo;)
+include(&ldquo;neighborhood.jl&rdquo;)
+include(&ldquo;cell.jl&rdquo;)</p>
+
+<h1>&hellip;</h1>
+
+<p>ALIVE = 1
+DEAD  = 0</p>
+
+<p>@test Cell.next(ALIVE, 5) == 0
+@test Cell.next(DEAD, 3) == 1
+@test Cell.next(DEAD, 4) == 0
+@test Cell.next(ALIVE, 4) == 1
+```</p>
+
+<p>``` julia cell.jl
+module Cell</p>
+
+<p>function next(cell, neighborhood)</p>
+
+<pre><code>if neighborhood == 3
+    1
+elseif neighborhood == 4
+    cell
+else
+    0
+end
+</code></pre>
+
+<p>end</p>
+
+<p>end
+```</p>
+
+<p>Il semble que Julia n'ai pas de switch/case, dommage.</p>
+
+<p>Maintenant je passe à l'extraction d'une génération, c'est à dire les 9 cellules
+composées de notre cellule cible et de ses 8 voisines.</p>
+
+<p>``` julia test.jl</p>
+
+<h1>&hellip;</h1>
+
+<p>generation = [ 0 1 0 1 ;</p>
+
+<pre><code>           1 1 1 1 ;
+           0 0 0 0 ;
+           1 0 1 0 ]
+</code></pre>
+
+<p>@test Neighborhood.extract(generation, 2, 3) == [ 1 0 1 ; 1 1 1 ; 0 0 0 ]
+@test Neighborhood.extract(generation, 3, 2) == [ 1 1 1 ; 0 0 0 ; 1 0 1 ]
+```</p>
+
+<p><code>julia neighborhood.jl
+extract(generation, y, x) = generation[y-1:y+1, x-1:x+1]
+</code></p>
+
+<p>C'est tellement simple à implémenter&hellip; J'aime de plus en plus Julia.</p>
+
+<p>Ensuite viennent les tests des cas exceptionnels. Je ne vous en montre que 3:</p>
+
+<p>``` julia test.jl
+generation = [ 0 1 0 1 ;</p>
+
+<pre><code>           1 1 1 1 ;
+           0 0 0 0 ;
+           1 0 1 0 ]
+</code></pre>
+
+<h1>&hellip;</h1>
+
+<p>@test Neighborhood.extract(generation, 1, 2) == [ 0 1 0 ; 1 1 1 ]</p>
+
+<p>@test Neighborhood.extract(generation, 3, 1) == [ 1 1 ; 0 0 ; 1 0 ]</p>
+
+<p>@test Neighborhood.extract(generation, 1, 1) == [ 0 1 ; 1 1 ]
+```</p>
+
+<p>Là encore, l'implémentation est simple:</p>
+
+<p>``` julia neighborhood.jl
+function extract(generation, y, x)</p>
+
+<pre><code>height, width = size(generation)
+y_low = y == 1 ? 1 : y - 1
+y_up  = y == height ? height : y + 1
+x_low = x == 1 ? 1 : x - 1
+x_up  = x == width ? width : x + 1
+generation[y_low:y_up, x_low:x_up]
+</code></pre>
+
+<p>end
+```</p>
+
+<p>Ce qu'on peut ré-arrenger un peu, par exemple ainsi:</p>
+
+<p>``` julia neighborhood.jl
+function extract(generation, y, x)</p>
+
+<pre><code>height, width = size(generation)
+yrange = range_for(y, height)
+xrange = range_for(x, width)
+generation[yrange, xrange]
+</code></pre>
+
+<p>end</p>
+
+<p>function range_for(coordinate, dimension)</p>
+
+<pre><code>low = coordinate == 1 ? 1 : coordinate - 1
+up  = coordinate == dimension ? dimension : coordinate + 1
+low:up
+</code></pre>
+
+<p>end
+```</p>
+
+<p>Rendez-vous dans le prochain article pour la fin du jeu de la vie en Julia.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 1]]></title>
@@ -678,321 +863,6 @@ puisqu'elle est appelée par <code>create.generation</code>.</p>
 <p>Ce n'est pas le seul langage à fonctionner comme ça (les premiers Lisp et
 Perl, il me semble). Par contre je me demande toujours si c'est génial, ou
 irresponsable.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/"/>
-    <updated>2014-11-09T15:01:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>C'est la troisième et dernière partie du jeu de la vie en Racket.</p>
-
-<p><img src="/images/screenshot-game-of-life-racket.png"></p>
-
-<!-- more -->
-
-
-<h2>Trouver le prochain état d'une cellule</h2>
-
-<p>Vous avez l'habitude maintenant, je commence par un test très simple.</p>
-
-<p><code>racket game-of-life-test.rkt
-(check-equal? (next-cell-state '(1 1 1 0 0 0 0 0 0)) 1)
-</code></p>
-
-<p>Et une implémentation minimale.</p>
-
-<p>``` racket generation.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>&hellip;</p>
-
-<p>(define (next-cell-state neighborhood)
-  1)</p>
-
-<p>(provide create-generation</p>
-
-<pre><code>     next-cell-state)
-</code></pre>
-
-<p>```</p>
-
-<p>Puis je teste d'autres cas.</p>
-
-<p>``` racket game-of-life-test.rkt
-(check-equal? (next-cell-state &lsquo;(1 1 1 0 0 0 0 0 0)) 1)
-(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 0)) 1)</p>
-
-<p>(check-equal? (next-cell-state &lsquo;(1 0 0 1 1 0 1 0 0)) 1)
-(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 1)) 0)
-```</p>
-
-<p>La fonction <code>for/sum</code> réduit une liste à la somme de ses éléments.</p>
-
-<p>``` racket
-(define (next-cell-state neighborhood)
-  (define sum (for/sum ([i neighborhood]) i))
-  (if (= 3 sum)</p>
-
-<pre><code>1
-(list-ref neighborhood 4)))
-</code></pre>
-
-<p>```</p>
-
-<p>Je teste les derniers cas.</p>
-
-<p>``` racket game-of-life-test.rkt
-(check-equal? (next-cell-state &lsquo;(1 1 1 0 0 0 0 0 0)) 1)
-(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 0)) 1)</p>
-
-<p>(check-equal? (next-cell-state &lsquo;(1 0 0 1 1 0 1 0 0)) 1)
-(check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 1)) 0)</p>
-
-<p>(check-equal? (next-cell-state &lsquo;(1 1 1 1 1 1 1 1 1)) 0)
-(check-equal? (next-cell-state &rsquo;(0 0 0 0 0 0 0 0 0)) 0)
-```</p>
-
-<p>Comme il y a maintenant trois cas, j'utilise <code>cond</code> au lieu de <code>if</code>.</p>
-
-<p>``` racket
-(define (next-cell-state neighborhood)
-  (define sum (for/sum ([i neighborhood]) i))
-  (cond [(= 3 sum) 1]</p>
-
-<pre><code>    [(= 4 sum) (list-ref neighborhood 4)]
-    [else 0]))
-</code></pre>
-
-<p>```</p>
-
-<p>On pourrait aussi utiliser <code>match</code> plutôt que <code>cond</code>:</p>
-
-<p>``` racket
-(define (next-cell-state neighborhood)
-  (match (for/sum ([i neighborhood]) i)</p>
-
-<pre><code>     [3 1]
-     [4 (list-ref neighborhood 4)]
-     [_ 0]))
-</code></pre>
-
-<p>```</p>
-
-<p>Je n'ai aucune idée de laquelle est la plus performante, même si je peux
-imaginer à priori que dans ce cas là c'est <code>cond</code>.</p>
-
-<h2>test-case</h2>
-
-<p>Je pense qu'il est temps de regrouper les tests en <code>test-case</code>. Rackunit, le
-framework de test de Racket est assez évolutif.</p>
-
-<p>``` racket game-of-life-test.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(require rackunit</p>
-
-<pre><code>     "generation.rkt")
-</code></pre>
-
-<p>(test-case &ldquo;create-generation&rdquo;
-  (check-pred list? (create-generation 3 4)</p>
-
-<pre><code>        "It returns a list")
-</code></pre>
-
-<p>  (check-equal? (length (create-generation 3 4)) 4</p>
-
-<pre><code>          "It builds a list with the right height")
-</code></pre>
-
-<p>  (check-equal? (length (first (create-generation 3 4))) 3</p>
-
-<pre><code>          "It builds a list with the right width")
-</code></pre>
-
-<p>  (let ([cell (first (first (create-generation 3 4)))])
-  (check-true (or (= cell 0) (= cell 1))</p>
-
-<pre><code>          "It populates generation with 0s or 1s"))
-</code></pre>
-
-<p>  ((λ ()
-   (random-seed 1)
-   (check-equal? (create-generation 2 3) &lsquo;((1 1) (0 1) (1 1))</p>
-
-<pre><code>             "It populates generation uniformly"))))
-</code></pre>
-
-<p>(test-case &ldquo;next-cell-state&rdquo;
-  (check-equal? (next-cell-state &lsquo;(1 1 1 0 0 0 0 0 0)) 1)
-  (check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 0)) 1)</p>
-
-<p>  (check-equal? (next-cell-state &lsquo;(1 0 0 1 1 0 1 0 0)) 1)
-  (check-equal? (next-cell-state &rsquo;(1 0 0 1 0 0 1 0 1)) 0)</p>
-
-<p>  (check-equal? (next-cell-state &lsquo;(1 1 1 1 1 1 1 1 1)) 0)
-  (check-equal? (next-cell-state &rsquo;(0 0 0 0 0 0 0 0 0)) 0))
-```</p>
-
-<h2>Extraire un voisinage de cellule</h2>
-
-<p>Comme toujours je commence par un test simple. On peut noter les arguments
-nommés de Racket (<code>#:</code>).</p>
-
-<p>``` racket
-(test-case &ldquo;extract-neighborhood&rdquo;
-  (let ([game &lsquo;((1 0 1 0)</p>
-
-<pre><code>            (0 1 0 1)
-            (1 0 0 1))])
-(check-equal? (extract-neighborhood game #:x 1 #:y 1) '(1 0 1 0 1 0 1 0 0))))
-</code></pre>
-
-<p>```</p>
-
-<p>Et une implémentation encore plus simple.</p>
-
-<p><code>racket
-(define (extract-neighborhood generation #:x [x 0] #:y [y 0])
-  '(1 0 1 0 1 0 1 0 0))
-</code></p>
-
-<p>La suite est classique, j'ajoute un nouveau test.</p>
-
-<p>``` racket
-(test-case &ldquo;extract-neighborhood&rdquo;
-  (let ([game &lsquo;((1 0 1 0)</p>
-
-<pre><code>            (0 1 0 1)
-            (1 0 0 1))])
-(check-equal? (extract-neighborhood game #:x 1 #:y 1) '(1 0 1 0 1 0 1 0 0))
-(check-equal? (extract-neighborhood game #:x 2 #:y 1) '(0 1 0 1 0 1 0 0 1))))
-</code></pre>
-
-<p>```</p>
-
-<p>Je regarde ce test échouer.</p>
-
-<pre><code>$ racket game-of-life-test.rkt 
---------------------
-extract-neighborhood
-FAILURE
-actual:     (1 0 1 0 1 0 1 0 0)
-expected:   (0 1 0 1 0 1 0 0 1)
-</code></pre>
-
-<p>Et j'implémente le minimum de code pour faire passer ce nouveau test.
-Je vous épargne ça dans l'article, si vous êtes curieux vous pouvez trouver
-<a href="https://github.com/lkdjiin/game-of-life-racket">le code sur Github</a>.</p>
-
-<h2>Une nouvelle génération</h2>
-
-<p>J'écris un test pour la production d'une nouvelle génération.</p>
-
-<p>``` racket
-(test-case &ldquo;next-generation&rdquo;
-  (let ([game &lsquo;((1 0 1 0)</p>
-
-<pre><code>            (0 1 0 1)
-            (1 0 0 1))])
-
-(check-equal? (next-generation game) '((0 1 1 0) (1 1 0 1) (0 0 1 0)))))
-</code></pre>
-
-<p>```</p>
-
-<p>Et voici le code qui fait passer ce test.</p>
-
-<p>``` racket generation.rkt
-(define (next-generation current)
-  (for/list ([y (length current)])</p>
-
-<pre><code>(for/list ([x (length (first current))])
-  (define neighborhood (extract-neighborhood current #:x x #:y y))
-  (next-cell-state neighborhood))))
-</code></pre>
-
-<p>```</p>
-
-<p>On peut maintenant lancer le jeu de la vie.</p>
-
-<p>``` racket game-of-life.rkt</p>
-
-<h1>lang racket</h1>
-
-<p>(require &ldquo;generation.rkt&rdquo;</p>
-
-<pre><code>     "window.rkt")
-</code></pre>
-
-<p>(define size 100)
-(define generation (create-generation size size))
-(define canvas (create-window size size generation))</p>
-
-<p>(define (loop n g)
-  (send canvas change-generation g)
-  (sleep 0.2)
-  (when (> n 0)</p>
-
-<pre><code>(loop (sub1 n) (next-generation g))))
-</code></pre>
-
-<p>(loop 30 generation)
-```</p>
-
-<h2>Mise à l'échelle</h2>
-
-<p>Pour rendre les choses un peu plus intéressantes visuellement, on va faire un
-zoom x4.</p>
-
-<p>``` racket window.rkt</p>
-
-<h1>lang racket/gui</h1>
-
-<p>(define (create-window w h g)
-  (define scale 4)</p>
-
-<p>  (define frame (new frame%</p>
-
-<pre><code>                 [label "Game of Life"]
-                 [width (* w scale)]
-                 [height (* h scale)]))
-</code></pre>
-
-<p>  (define canvas (new (class canvas%</p>
-
-<pre><code>...
-
-     (define/override (on-paint)
-       (send dc set-brush (new brush% [color "black"]))
-       (send dc draw-rectangle 0 0 (* w scale) (* h scale))
-       (send dc set-brush (new brush% [color "white"]))
-       (for ([y (length current-generation)])
-         (for ([x (length (first current-generation))])
-           (when (= 1 (list-ref (list-ref current-generation y) x))
-             (send dc draw-rectangle (* x scale) (* y scale) scale scale))))))))
-</code></pre>
-
-<p>  &hellip;
-```</p>
-
-<h2>Une surface de jeu sans bordures</h2>
-
-<p>Il reste à <em>retirer</em> les bordures du jeu. Le processus est exactement le même
-que pour les versions <a href="http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/">Javascript</a> et <a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Ruby</a> et je n'ai pas envie de
-réécrire les mêmes phrases. Au besoin, je vous rappelle que le
-<a href="https://github.com/lkdjiin/game-of-life-racket">code complet du jeu de la vie en Racket</a> se trouve sur Github.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
