@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-24T10:16:34+01:00</updated>
+  <updated>2014-12-26T15:23:10+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,296 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/"/>
+    <updated>2014-12-26T15:06:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+
+
+<p>C&#8217;est la troisième et dernière partie du jeu de la vie en Julia. Déjà.
+J&#8217;aime tellement découvrir et utiliser ce langage que ça me rend triste.</p>
+
+<p>Tout d&#8217;abord, le code du <a href="https://github.com/lkdjiin/game-of-life-julia">jeu de la vie en Julia</a>
+est disponible sur Github, pour celles et ceux qui veulent y jeter un oeil.</p>
+
+<h2>Calculer la génération suivante</h2>
+
+<p>Maintenant, en avant pour la suite. Encore une fonction, et ça sera terminé. Il faut calculer la génération
+suivante à partir de la génération courante:</p>
+
+<figure class='code'><figcaption><span>test.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">generation</span> <span class="o">=</span> <span class="p">[</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>               <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>               <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="p">;</span>
+</span><span class='line'>               <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="mi">0</span> <span class="p">]</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># ...</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">@</span><span class="n">test</span> <span class="n">Generation</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span> <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>                                       <span class="mi">1</span> <span class="mi">1</span> <span class="mi">0</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>                                       <span class="mi">1</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1</span> <span class="p">;</span>
+</span><span class='line'>                                       <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span>generation.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="kr">module</span> <span class="n">Generation</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">using</span> <span class="o">..</span><span class="n">Neighborhood</span><span class="p">:</span> <span class="n">extract</span><span class="p">,</span> <span class="n">state</span>
+</span><span class='line'><span class="n">using</span> <span class="o">..</span><span class="n">Cell</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># ...</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> next</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">duplicate</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">x</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">width</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">y</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">height</span>
+</span><span class='line'>            <span class="n">neighborhood</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">newstate</span> <span class="o">=</span> <span class="n">Cell</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">generation</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">state</span><span class="p">(</span><span class="n">neighborhood</span><span class="p">))</span>
+</span><span class='line'>            <span class="n">duplicate</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">newstate</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">duplicate</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># ...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Le code est un peu plus complexe que dans les 2 premiers articles, et il m&#8217;a
+fallu un peu de temps avant de réussir à utiliser les modules.</p>
+
+<p>Je vais utiliser les fonctions <code>extract</code> et <code>state</code> du module <code>Neighborhood</code>,
+module qui est défini dans le module parent, d&#8217;où les <code>..</code>.</p>
+
+<pre><code>using ..Neighborhood: extract, state
+</code></pre>
+
+<p>Je crée un nouveau tableau, aux mêmes dimensions que <code>generation</code>, et remplis
+de zéros.</p>
+
+<pre><code>duplicate = zeros(generation)
+</code></pre>
+
+<p>Ensuite, c&#8217;est une boucle dans une boucle qui se sert du code des articles
+précédents, avant de renvoyer le tableau <code>duplicate</code>. C&#8217;est pas très beau, mais
+comme le test passe, ça me va pour l&#8217;instant.</p>
+
+<p>Il reste à se servir de ce code dans le fichier principal:</p>
+
+<figure class='code'><figcaption><span>main.jl</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;neighborhood.jl&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;cell.jl&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;generation.jl&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">include</span><span class="p">(</span><span class="s">&quot;display.jl&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> main</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">number_of_generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">generation</span> <span class="o">=</span> <span class="n">Generation</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">i</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">number_of_generation</span>
+</span><span class='line'>        <span class="n">Display</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mf">0.8</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">generation</span> <span class="o">=</span> <span class="n">Generation</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">main</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et voilà, c&#8217;est terminé ! Le reste de l&#8217;article se consacre à l&#8217;amélioration
+de la fonction <code>Generation.next</code>.</p>
+
+<h2>Un peu de refactoring</h2>
+
+<p>Pour améliorer <code>Generation.next</code>, il y a la fonction
+<a href="http://julia.readthedocs.org/en/latest/stdlib/base/#Base.eachindex">eachindex</a>,
+malheureusement elle n&#8217;est pas encore disponible dans la dernière version stable.
+J&#8217;ai donc cherché autre chose.</p>
+
+<p>Ma première tentative : utiliser une compréhension de liste avec <code>reshape</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">function</span><span class="nf"> next</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">duplicate</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">indexes</span> <span class="o">=</span> <span class="n">reshape</span><span class="p">([(</span><span class="n">h</span><span class="p">,</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">height</span><span class="p">,</span> <span class="n">w</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">width</span><span class="p">],</span> <span class="n">length</span><span class="p">(</span><span class="n">generation</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">in</span> <span class="n">indexes</span>
+</span><span class='line'>        <span class="n">neighborhood</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">newstate</span> <span class="o">=</span> <span class="n">Cell</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">generation</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">state</span><span class="p">(</span><span class="n">neighborhood</span><span class="p">))</span>
+</span><span class='line'>        <span class="n">duplicate</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">newstate</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">duplicate</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La compréhension de liste génère la liste des indexs:</p>
+
+<pre><code>julia&gt; [(h,w) for h in 1:3, w in 1:4]
+3x4 Array{(Int32,Int32),2}:
+ (1,1)  (1,2)  (1,3)  (1,4)
+ (2,1)  (2,2)  (2,3)  (2,4)
+ (3,1)  (3,2)  (3,3)  (3,4)
+</code></pre>
+
+<p>Et <code>reshape</code> change les dimensions du tableau, ici pour une seule dimension de la bonne longueur:</p>
+
+<pre><code>julia&gt; reshape([(h,w) for h in 1:3, w in 1:4], 3 * 4)
+12-element Array{(Int32,Int32),1}:
+ (1,1)
+ (2,1)
+ (3,1)
+ (1,2)
+ (2,2)
+ (3,2)
+ (1,3)
+ (2,3)
+ (3,3)
+ (1,4)
+ (2,4)
+ (3,4)
+</code></pre>
+
+<p>Vous avez peut-être remarqué le pattern (a-t-il un nom ?):</p>
+
+<ol>
+<li>Création d&#8217;une variable</li>
+<li>Transformation de cette variable</li>
+<li>Renvoi de la variable</li>
+</ol>
+
+
+<p>En général, on peut se passer de la création et du retour explicite en utilisant
+un <code>map</code>. Ici, j&#8217;ai créé une fonction <code>newstate</code> à l&#8217;intérieur de <code>next</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">function</span><span class="nf"> next</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">indexes</span> <span class="o">=</span> <span class="p">[(</span><span class="n">h</span><span class="p">,</span><span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">height</span><span class="p">,</span> <span class="n">w</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">width</span><span class="p">]</span>
+</span><span class='line'>    <span class="k">function</span><span class="nf"> newstate</span><span class="p">(</span><span class="n">y</span><span class="p">,</span><span class="n">x</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">neighborhood</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">Cell</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">generation</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">state</span><span class="p">(</span><span class="n">neighborhood</span><span class="p">))</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">map</span><span class="p">((</span><span class="n">yx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">newstate</span><span class="p">(</span><span class="n">first</span><span class="p">(</span><span class="n">yx</span><span class="p">),</span> <span class="n">last</span><span class="p">(</span><span class="n">yx</span><span class="p">)),</span> <span class="n">indexes</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On peut simplifier la fonction anonyme à l&#8217;aide du <em>splat</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'>  <span class="n">map</span><span class="p">((</span><span class="n">yx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">newstate</span><span class="p">(</span><span class="n">yx</span><span class="o">...</span><span class="p">),</span> <span class="n">indexes</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Finalement, deux fonctions séparées me semble bien plus lisibles:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">function</span><span class="nf"> next</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">indexes</span> <span class="o">=</span> <span class="p">[(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">height</span><span class="p">,</span> <span class="n">x</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">width</span><span class="p">]</span>
+</span><span class='line'>    <span class="n">map</span><span class="p">((</span><span class="n">yx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">newstate</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">yx</span><span class="o">...</span><span class="p">),</span> <span class="n">indexes</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span><span class="nf"> newstate</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">neighborhood</span> <span class="o">=</span> <span class="n">extract</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">Cell</span><span class="o">.</span><span class="n">next</span><span class="p">(</span><span class="n">generation</span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">state</span><span class="p">(</span><span class="n">neighborhood</span><span class="p">))</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voilà. Le code est disponible sur Gitub : <a href="https://github.com/lkdjiin/game-of-life-julia">le jeu de la vie en Julia</a>.</p>
+
+<p>La prochaine fois, ce sera du Haskell.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 2]]></title>
@@ -261,7 +551,7 @@ composées de notre cellule cible et de ses 8 voisines.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -600,7 +890,7 @@ remplaçant par des espaces, et remplaçons les 1 par des @:</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -626,7 +916,7 @@ aucun moment.</p>
 <p>Bref, j&#8217;oublie définitivement Logo. La prochaine version sera en Julia, ça
 promet d&#8217;être bien plus intéressant.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -769,7 +1059,7 @@ Logo.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1068,7 +1358,7 @@ irresponsable.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1470,7 +1760,7 @@ réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1747,7 +2037,7 @@ message:    "It populates generation uniformly"
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1915,7 +2205,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4235,7 +4525,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4802,7 +5092,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5175,7 +5465,7 @@ ensemble de cellules.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5903,190 +6193,6 @@ une suite de mouvements, reste plus qu&#8217;à le coder ;)</p>
 <p>À demain.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les tours de Hanoi - partie 1]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/"/>
-    <updated>2014-07-05T15:25:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>Je vais commencer par implémenter une classe <code>Board</code>, dont la tâche est
-de retenir l&#8217;état du plateau de jeu, c&#8217;est à dire la position des pièces.
-J&#8217;ai envie de faire des tests avec Rspec, donc voici les premiers fichiers:</p>
-
-<pre><code>$ tree
-.
-├── board.rb
-└── spec
-    └── board_spec.rb
-</code></pre>
-
-<!-- more -->
-
-
-<p>Voici les tests de <code>Board</code>, qui décrivent ce que j&#8217;attend de cette classe:</p>
-
-<figure class='code'><figcaption><span>spec/board_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./board&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">describe</span> <span class="no">Board</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">before</span> <span class="p">{</span> <span class="vi">@board</span> <span class="o">=</span> <span class="no">Board</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">it</span> <span class="s1">&#39;has a position&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">expect</span><span class="p">(</span><span class="vi">@board</span><span class="o">.</span><span class="n">position</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span> <span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span> <span class="o">[]</span><span class="p">,</span> <span class="o">[]</span> <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">it</span> <span class="s1">&#39;accepts a position&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="vi">@board</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="o">[</span> <span class="o">[]</span><span class="p">,</span> <span class="o">[</span><span class="mi">3</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
-</span><span class='line'>    <span class="n">expect</span><span class="p">(</span><span class="vi">@board</span><span class="o">.</span><span class="n">position</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span> <span class="o">[]</span><span class="p">,</span> <span class="o">[</span><span class="mi">3</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;position evalution&#39;</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">specify</span> <span class="p">{</span> <span class="n">expect</span><span class="p">(</span><span class="vi">@board</span><span class="o">.</span><span class="n">eval</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">0</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">specify</span> <span class="k">do</span>
-</span><span class='line'>      <span class="vi">@board</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="o">[</span> <span class="o">[]</span><span class="p">,</span> <span class="o">[</span><span class="mi">3</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="vi">@board</span><span class="o">.</span><span class="n">eval</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">9</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">specify</span> <span class="k">do</span>
-</span><span class='line'>      <span class="vi">@board</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="o">[</span> <span class="o">[]</span><span class="p">,</span> <span class="o">[]</span><span class="p">,</span> <span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="vi">@board</span><span class="o">.</span><span class="n">eval</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">12</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On doit pouvoir l&#8217;initialiser avec un nombre de pièces:</p>
-
-<pre><code>before { @board = Board.new(3) }
-</code></pre>
-
-<p>À l&#8217;initialisation, les pièces sont en position de départ:</p>
-
-<pre><code>it 'has a position' do
-  expect(@board.position).to eq [ [3, 2, 1], [], [] ]
-end
-</code></pre>
-
-<p>On peut modifier la position à volonté:</p>
-
-<pre><code>it 'accepts a position' do
-  @board.position = [ [], [3], [2, 1] ]
-  expect(@board.position).to eq [ [], [3], [2, 1] ]
-end
-</code></pre>
-
-<p>Enfin, la position actuelle peut être évaluée:</p>
-
-<pre><code>describe 'position evalution' do
-
-  specify { expect(@board.eval).to eq 0 }
-
-  specify do
-    @board.position = [ [], [3], [2, 1] ]
-    expect(@board.eval).to eq 9
-  end
-
-  specify do
-    @board.position = [ [], [], [3, 2, 1] ]
-    expect(@board.eval).to eq 12
-  end
-
-end
-</code></pre>
-
-<p>Pour finir, l&#8217;implémentation minimum:</p>
-
-<figure class='code'><figcaption><span>board.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Board</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">number_of_pieces</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@pegs</span> <span class="o">=</span> <span class="o">[</span> <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="n">.number_of_pieces</span><span class="p">)</span><span class="o">.</span><span class="n">to_a</span><span class="o">.</span><span class="n">reverse</span><span class="p">,</span> <span class="o">[]</span><span class="p">,</span> <span class="o">[]</span> <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">position</span>
-</span><span class='line'>    <span class="vi">@pegs</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">position</span><span class="o">=</span><span class="p">(</span><span class="n">pegs</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@pegs</span> <span class="o">=</span> <span class="n">pegs</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">eval</span>
-</span><span class='line'>    <span class="vi">@pegs</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="ss">:+</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="vi">@pegs</span><span class="o">[</span><span class="mi">2</span><span class="o">].</span><span class="n">reduce</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="ss">:+</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
 ]]></content>
   </entry>
   
