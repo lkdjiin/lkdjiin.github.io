@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-27T15:54:21+01:00</updated>
+  <updated>2014-12-28T18:36:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,167 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/"/>
+    <updated>2014-12-28T18:05:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<h2>Première rencontre avec Haskell</h2>
+
+<p>L&#8217;histoire qui suit a du arriver à de nombreux développeurs rencontrant Haskell
+pour la première fois.</p>
+
+<p>— Bon, comment produire un nombre aléatoire ?<br/>
+— Ah OK, je vois.<br/>
+— Euh, attends, tu veux dire que je dois passer un générateur avec une <em>seed</em> à
+chaque fois ?<br/>
+— Ah OK, c&#8217;est l&#8217;histoire des fonctions <em>pures</em>, quand tu as le même argument en
+entrée, tu produis <strong>toujours</strong> la même valeur en sortie. Du coup, tu ne peux
+pas avoir une fonction <code>random</code> qui te sortirait une valeur différente à chaque
+appel. Oui, d&#8217;accord, c&#8217;est logique.<br/>
+— Ah mais non, attends, je fais comment pour lui donner une <em>seed</em> différente à
+chaque lancement du programme ? Ah, bin oui, j&#8217;ai qu&#8217;a prendre l&#8217;heure système,
+ou un truc comme ça.<br/>
+— Comment ça le générateur n&#8217;accepte pas mon heure système comme <em>seed</em> !?
+— Comment ça c&#8217;est pas le bon type ?! Qu&#8217;est-ce que c&#8217;est que cette histoire de
+monade IO ? Qu&#8217;est-ce que c&#8217;est que ce langage où je ne peux pas convertir
+l&#8217;heure système en un entier qui me servirait à quelque chose ???!!!</p>
+
+<p>Bref, bonjour Haskell…</p>
+
+<!-- more -->
+
+
+<h2>Création d&#8217;une génération</h2>
+
+<p>Toute cette histoire n&#8217;est peut-être pas si importante. Une fois
+accepté que Haskell a certainement une bonne raison de ne pas nous laisser faire
+une chose particulière, on peut avancer. Finalement, si je produis toujours les
+mêmes nombres, ça devrait être plus simple pour tester.</p>
+
+<p>Le code suivant produit une liste de <code>0</code> et de <code>1</code>. En entrée, la fonction
+prend la taille de la liste et un générateur de nombre aléatoire.</p>
+
+<figure class='code'><figcaption><span>gol.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">import</span> <span class="nn">System.Random</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">randomCells</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="kt">StdGen</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span>
+</span><span class='line'><span class="nf">randomCells</span> <span class="n">size</span> <span class="n">gen</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">size</span> <span class="o">$</span> <span class="n">randomRs</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="n">gen</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour essayer ce code, j&#8217;utilise <code>ghci</code>, le REPL Haskell. C&#8217;est une vieille
+version qui était déjà installée sur ma machine.</p>
+
+<pre><code>$ ghci
+GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
+</code></pre>
+
+<p>Dans <code>ghci</code>, on charge notre fichier avec <code>:l gol.hs</code>. (<code>:l</code> est l&#8217;abbréviation
+de <code>:load</code>).</p>
+
+<pre><code>Prelude&gt; :l gol.hs 
+[1 of 1] Compiling Main             ( gol.hs, interpreted )
+Ok, modules loaded: Main.
+</code></pre>
+
+<p>On va produire une liste de 12 nombres. Pour obtenir un générateur de nombre
+aléatoire, on utilise <code>mkStdGen</code>, que j&#8217;initialise ici avec le nombre <code>4567</code>.</p>
+
+<pre><code>*Main&gt; randomCells 12 (mkStdGen 4567)
+[1,0,1,0,1,1,1,1,1,0,1,0]
+</code></pre>
+
+<p>Alors, on pourrait s&#8217;arrêter là pour la création des cellules. On pourrait très
+bien se débrouiller avec une liste simple. Mais je préfère quand même avoir une
+liste de listes (une liste de rangées).</p>
+
+<p>Voilà donc une jolie fonction récursive <code>createGeneration</code> qui prend en entrée
+la liste de cellules aléatoires, la largeur d&#8217;une rangée, et la génération en
+cours de production (l&#8217;accumulateur).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="nf">createGeneration</span> <span class="ow">::</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="kt">[]</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span> <span class="n">generation</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="n">cells</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span>
+</span><span class='line'>    <span class="kr">let</span> <span class="n">line</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">width</span> <span class="n">cells</span>
+</span><span class='line'>     <span class="kr">in</span> <span class="n">createGeneration</span> <span class="p">(</span><span class="n">drop</span> <span class="n">width</span> <span class="n">cells</span><span class="p">)</span> <span class="n">width</span> <span class="p">(</span><span class="n">line</span><span class="kt">:</span><span class="n">generation</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>*Main&gt; let cells = randomCells 12 (mkStdGen 4567)
+*Main&gt; createGeneration cells 4 []
+[[1,0,1,0],[1,1,1,1],[1,0,1,0]]
+</code></pre>
+
+<p>Pour finir, voici le listing complet du fichier <code>gol.hs</code>.</p>
+
+<figure class='code'><figcaption><span>gol.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">import</span> <span class="nn">System.Random</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">randomCells</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="kt">StdGen</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span>
+</span><span class='line'><span class="nf">randomCells</span> <span class="n">size</span> <span class="n">gen</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">size</span> <span class="o">$</span> <span class="n">randomRs</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="n">gen</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="ow">::</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="kt">[]</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span> <span class="n">generation</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="n">cells</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span>
+</span><span class='line'>    <span class="kr">let</span> <span class="n">line</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">width</span> <span class="n">cells</span>
+</span><span class='line'>     <span class="kr">in</span> <span class="n">createGeneration</span> <span class="p">(</span><span class="n">drop</span> <span class="n">width</span> <span class="n">cells</span><span class="p">)</span> <span class="n">width</span> <span class="p">(</span><span class="n">line</span><span class="kt">:</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">main</span> <span class="ow">=</span>
+</span><span class='line'>    <span class="kr">let</span> <span class="n">cells</span> <span class="ow">=</span> <span class="n">randomCells</span> <span class="mi">12</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">123</span><span class="p">)</span>
+</span><span class='line'>     <span class="kr">in</span> <span class="n">print</span> <span class="p">(</span><span class="n">createGeneration</span> <span class="n">cells</span> <span class="mi">4</span> <span class="kt">[]</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ runhaskell gol.hs 
+[[0,0,1,0],[0,0,0,1],[1,1,1,0]]
+</code></pre>
+
+<p>Comme il s&#8217;agit de mon tout premier code en Haskell, n&#8217;hésitez surtout pas à me
+remonter mes erreurs, ou bien des trucs pour améliorer le code.</p>
+
+<p><strong>P.S.</strong></p>
+
+<p>Vous avez peut-être remarqué que je n&#8217;ai pas écrit de tests ?
+J&#8217;avais remarqué <a href="http://hspec.github.io/">Hspec</a>, que j&#8217;aurais aimé utilisé.
+Mais <code>cabal</code> refuse de l&#8217;installer. Je pense que ma version d&#8217;Haskell est trop
+datée et qu&#8217;il me faudrait refaire une installation sans passer par les paquets
+de mon OS. Je sais qu&#8217;il y a <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>
+de base, mais ça m&#8217;a l&#8217;air bien compliqué à mettre en place pour mon niveau de
+débutant. Si je continue Haskell après avoir écrit le jeu de la vie, il est sûr
+que je m&#8217;y mettrais.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ruby 2.2 - Une sélection des nouvelles méthodes]]></title>
@@ -455,7 +616,7 @@ un <code>map</code>. Ici, j&#8217;ai créé une fonction <code>newstate</code> �
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -707,7 +868,7 @@ composées de notre cellule cible et de ses 8 voisines.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1046,7 +1207,7 @@ remplaçant par des espaces, et remplaçons les 1 par des @:</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1072,7 +1233,7 @@ aucun moment.</p>
 <p>Bref, j&#8217;oublie définitivement Logo. La prochaine version sera en Julia, ça
 promet d&#8217;être bien plus intéressant.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1215,7 +1376,7 @@ Logo.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1514,7 +1675,7 @@ irresponsable.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1916,7 +2077,7 @@ réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2193,7 +2354,7 @@ message:    "It populates generation uniformly"
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2361,7 +2522,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4681,7 +4842,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5248,7 +5409,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5621,7 +5782,7 @@ ensemble de cellules.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5973,181 +6134,6 @@ twitter et dans la vie réelle.</p>
 <p>Pour la première fois, je ne vous dis pas à demain, plutôt à bientôt.</p>
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/01/08/6-mois-darticles-non-stop/'>6 mois d&#8217;articles non-stop</a></li><li><a href='http://lkdjiin.github.io/blog/2013/10/15/un-article-par-jour-pendant-un-an-bilan-des-100-jours/'>Un article par jour pendant un an: Bilan des 100 jours</a></li><li><a href='http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/'>Nouveau défi: un article par jour pendant un an</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les tours de Hanoi - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/"/>
-    <updated>2014-07-07T21:13:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>On commence à coder l&#8217;algorithme génétique pour solutionner les tours de
-Hanoi.</p>
-
-<pre><code>$ tree
-.
-├── ga.rb
-├── lib
-│   ├── hanoi
-│   │   ├── board.rb
-│   │   ├── game.rb
-│   │   └── rules.rb
-│   └── hanoi.rb
-└── spec
-    ├── board_spec.rb
-    ├── game_spec.rb
-    ├── integration
-    │   └── game_spec.rb
-    └── spec_helper.rb
-</code></pre>
-
-<!-- more -->
-
-
-
-
-<figure class='code'><figcaption><span>ga.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./lib/hanoi/board&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./lib/hanoi/game&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./lib/hanoi/rules&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Chromosome</span>
-</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:genes</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">number_of_pieces</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@genes</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">number_of_pieces</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Population</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">number_of_pieces</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@population</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="p">{</span> <span class="no">Chromosome</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">number_of_pieces</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">GA</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class='line'>    <span class="vi">@population</span> <span class="o">=</span> <span class="no">Population</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">evaluate</span>
-</span><span class='line'>    <span class="vi">@population</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">chromosome</span><span class="o">|</span>
-</span><span class='line'>      <span class="n">board</span> <span class="o">=</span> <span class="o">::</span><span class="ss">Hanoi</span><span class="p">:</span><span class="ss">:Board</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">game</span> <span class="o">=</span> <span class="o">::</span><span class="ss">Hanoi</span><span class="p">:</span><span class="ss">:Game</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">board</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">chromosome</span><span class="o">.</span><span class="n">genes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">gene</span><span class="o">|</span>
-</span><span class='line'>        <span class="k">case</span> <span class="n">gene</span>
-</span><span class='line'>        <span class="k">when</span> <span class="mi">0</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>        <span class="k">when</span> <span class="mi">1</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">3</span>
-</span><span class='line'>        <span class="k">when</span> <span class="mi">2</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>        <span class="k">when</span> <span class="mi">3</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">3</span>
-</span><span class='line'>        <span class="k">when</span> <span class="mi">4</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">1</span>
-</span><span class='line'>        <span class="k">when</span> <span class="mi">5</span> <span class="k">then</span> <span class="n">game</span><span class="o">.</span><span class="n">move</span> <span class="ss">from</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="mi">2</span>
-</span><span class='line'>        <span class="k">end</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>      <span class="nb">p</span> <span class="n">board</span><span class="o">.</span><span class="n">eval</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">ga</span> <span class="o">=</span> <span class="no">GA</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'><span class="n">ga</span><span class="o">.</span><span class="n">evaluate</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voilà de quoi commencer, des chromosomes, une population et l&#8217;évaluation
-de chaque chromosome.</p>
-
-<p>Ça fonctionne:</p>
-
-<pre><code>$ ruby ga.rb 
-0
-5
-4
-2
-2
-4
-5
-5
-4
-4
-4
-1
-5
-4
-1
-0
-0
-2
-0
-4
-</code></pre>
-
-<p>Mais la fonction <code>GA#evaluate</code> me dérange. D&#8217;abord elle est trop longue, mais
-rien qui ne puisse s&#8217;arranger avec un refactoring. Ce qui me dérange surtout
-c&#8217;est qu&#8217;elle délègue la <em>vraie</em> évaluation à <code>Board</code>. Or, l&#8217;évaluation
-dévrait faire partie intégrante de l&#8217;algorithme génétique, et pas de la
-mécanique du jeu. C&#8217;est donc un point à améliorer avant d&#8217;aller plus loin.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p>À demain.</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb/'>Un algorithme génétique pour les tours de Hanoi avec Opal.rb</a></li></ul></section></p>
 ]]></content>
   </entry>
   

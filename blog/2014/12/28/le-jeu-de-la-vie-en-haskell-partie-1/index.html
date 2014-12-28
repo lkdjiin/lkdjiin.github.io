@@ -1,0 +1,444 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Le jeu de la vie en Haskell - partie 1 - lkdjiin's blog</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile Première rencontre avec Haskell L&#8217;histoire qui suit a du arriver à de nombreux développeurs rencontrant Haskell
+pour la &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin's blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin's blog</a></h1>
+  
+    <h2>Confessions d'un développeur.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/articles-par-genre">Articles par genre</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Le jeu de la vie en Haskell - partie 1</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-28T18:05:00+01:00" pubdate data-updated="true">28 décembre 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<h2>Première rencontre avec Haskell</h2>
+
+<p>L&#8217;histoire qui suit a du arriver à de nombreux développeurs rencontrant Haskell
+pour la première fois.</p>
+
+<p>— Bon, comment produire un nombre aléatoire ?<br/>
+— Ah OK, je vois.<br/>
+— Euh, attends, tu veux dire que je dois passer un générateur avec une <em>seed</em> à
+chaque fois ?<br/>
+— Ah OK, c&#8217;est l&#8217;histoire des fonctions <em>pures</em>, quand tu as le même argument en
+entrée, tu produis <strong>toujours</strong> la même valeur en sortie. Du coup, tu ne peux
+pas avoir une fonction <code>random</code> qui te sortirait une valeur différente à chaque
+appel. Oui, d&#8217;accord, c&#8217;est logique.<br/>
+— Ah mais non, attends, je fais comment pour lui donner une <em>seed</em> différente à
+chaque lancement du programme ? Ah, bin oui, j&#8217;ai qu&#8217;a prendre l&#8217;heure système,
+ou un truc comme ça.<br/>
+— Comment ça le générateur n&#8217;accepte pas mon heure système comme <em>seed</em> !?
+— Comment ça c&#8217;est pas le bon type ?! Qu&#8217;est-ce que c&#8217;est que cette histoire de
+monade IO ? Qu&#8217;est-ce que c&#8217;est que ce langage où je ne peux pas convertir
+l&#8217;heure système en un entier qui me servirait à quelque chose ???!!!</p>
+
+<p>Bref, bonjour Haskell…</p>
+
+<!-- more -->
+
+
+<h2>Création d&#8217;une génération</h2>
+
+<p>Toute cette histoire n&#8217;est peut-être pas si importante. Une fois
+accepté que Haskell a certainement une bonne raison de ne pas nous laisser faire
+une chose particulière, on peut avancer. Finalement, si je produis toujours les
+mêmes nombres, ça devrait être plus simple pour tester.</p>
+
+<p>Le code suivant produit une liste de <code>0</code> et de <code>1</code>. En entrée, la fonction
+prend la taille de la liste et un générateur de nombre aléatoire.</p>
+
+<figure class='code'><figcaption><span>gol.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">import</span> <span class="nn">System.Random</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">randomCells</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="kt">StdGen</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span>
+</span><span class='line'><span class="nf">randomCells</span> <span class="n">size</span> <span class="n">gen</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">size</span> <span class="o">$</span> <span class="n">randomRs</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="n">gen</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour essayer ce code, j&#8217;utilise <code>ghci</code>, le REPL Haskell. C&#8217;est une vieille
+version qui était déjà installée sur ma machine.</p>
+
+<pre><code>$ ghci
+GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
+</code></pre>
+
+<p>Dans <code>ghci</code>, on charge notre fichier avec <code>:l gol.hs</code>. (<code>:l</code> est l&#8217;abbréviation
+de <code>:load</code>).</p>
+
+<pre><code>Prelude&gt; :l gol.hs 
+[1 of 1] Compiling Main             ( gol.hs, interpreted )
+Ok, modules loaded: Main.
+</code></pre>
+
+<p>On va produire une liste de 12 nombres. Pour obtenir un générateur de nombre
+aléatoire, on utilise <code>mkStdGen</code>, que j&#8217;initialise ici avec le nombre <code>4567</code>.</p>
+
+<pre><code>*Main&gt; randomCells 12 (mkStdGen 4567)
+[1,0,1,0,1,1,1,1,1,0,1,0]
+</code></pre>
+
+<p>Alors, on pourrait s&#8217;arrêter là pour la création des cellules. On pourrait très
+bien se débrouiller avec une liste simple. Mais je préfère quand même avoir une
+liste de listes (une liste de rangées).</p>
+
+<p>Voilà donc une jolie fonction récursive <code>createGeneration</code> qui prend en entrée
+la liste de cellules aléatoires, la largeur d&#8217;une rangée, et la génération en
+cours de production (l&#8217;accumulateur).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="nf">createGeneration</span> <span class="ow">::</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="kt">[]</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span> <span class="n">generation</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="n">cells</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span>
+</span><span class='line'>    <span class="kr">let</span> <span class="n">line</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">width</span> <span class="n">cells</span>
+</span><span class='line'>     <span class="kr">in</span> <span class="n">createGeneration</span> <span class="p">(</span><span class="n">drop</span> <span class="n">width</span> <span class="n">cells</span><span class="p">)</span> <span class="n">width</span> <span class="p">(</span><span class="n">line</span><span class="kt">:</span><span class="n">generation</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>*Main&gt; let cells = randomCells 12 (mkStdGen 4567)
+*Main&gt; createGeneration cells 4 []
+[[1,0,1,0],[1,1,1,1],[1,0,1,0]]
+</code></pre>
+
+<p>Pour finir, voici le listing complet du fichier <code>gol.hs</code>.</p>
+
+<figure class='code'><figcaption><span>gol.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">import</span> <span class="nn">System.Random</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">randomCells</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="kt">StdGen</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span>
+</span><span class='line'><span class="nf">randomCells</span> <span class="n">size</span> <span class="n">gen</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">size</span> <span class="o">$</span> <span class="n">randomRs</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="n">gen</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="ow">::</span> <span class="p">[</span><span class="kt">Int</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span> <span class="ow">-&gt;</span> <span class="p">[[</span><span class="kt">Int</span><span class="p">]]</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="kt">[]</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span> <span class="n">generation</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="n">cells</span> <span class="n">width</span> <span class="n">generation</span> <span class="ow">=</span>
+</span><span class='line'>    <span class="kr">let</span> <span class="n">line</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">width</span> <span class="n">cells</span>
+</span><span class='line'>     <span class="kr">in</span> <span class="n">createGeneration</span> <span class="p">(</span><span class="n">drop</span> <span class="n">width</span> <span class="n">cells</span><span class="p">)</span> <span class="n">width</span> <span class="p">(</span><span class="n">line</span><span class="kt">:</span><span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">main</span> <span class="ow">=</span>
+</span><span class='line'>    <span class="kr">let</span> <span class="n">cells</span> <span class="ow">=</span> <span class="n">randomCells</span> <span class="mi">12</span> <span class="p">(</span><span class="n">mkStdGen</span> <span class="mi">123</span><span class="p">)</span>
+</span><span class='line'>     <span class="kr">in</span> <span class="n">print</span> <span class="p">(</span><span class="n">createGeneration</span> <span class="n">cells</span> <span class="mi">4</span> <span class="kt">[]</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ runhaskell gol.hs 
+[[0,0,1,0],[0,0,0,1],[1,1,1,0]]
+</code></pre>
+
+<p>Comme il s&#8217;agit de mon tout premier code en Haskell, n&#8217;hésitez surtout pas à me
+remonter mes erreurs, ou bien des trucs pour améliorer le code.</p>
+
+<p><strong>P.S.</strong></p>
+
+<p>Vous avez peut-être remarqué que je n&#8217;ai pas écrit de tests ?
+J&#8217;avais remarqué <a href="http://hspec.github.io/">Hspec</a>, que j&#8217;aurais aimé utilisé.
+Mais <code>cabal</code> refuse de l&#8217;installer. Je pense que ma version d&#8217;Haskell est trop
+datée et qu&#8217;il me faudrait refaire une installation sans passer par les paquets
+de mon OS. Je sais qu&#8217;il y a <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>
+de base, mais ça m&#8217;a l&#8217;air bien compliqué à mettre en place pour mon niveau de
+débutant. Si je continue Haskell après avoir écrit le jeu de la vie, il est sûr
+que je m&#8217;y mettrais.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-28T18:05:00+01:00" pubdate data-updated="true">28 décembre 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/haskell/'>haskell</a>, <a class='category' href='/blog/categories/jeu-de-la-vie/'>jeu de la vie</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/" title="Previous Post: Ruby 2.2 - Une sélection des nouvelles méthodes">&laquo; Ruby 2.2 - Une sélection des nouvelles méthodes</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos</h1>
+  <p>J'ai écrit sept jours sur sept pendant un an
+  <a href="http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/">(défi : un article par jour)</a>
+  , sur divers sujets, notamment Vim, Ruby et les algorithmes génétiques.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/">Le jeu de la vie en Haskell - partie 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/">Ruby 2.2 - Une sélection des nouvelles méthodes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/">Le jeu de la vie en Julia - partie 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/">Le jeu de la vie en Julia - partie 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/">Le jeu de la vie en Julia - partie 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/">Le jeu de la vie en logo - partie 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/">Le jeu de la vie en logo - partie 2</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

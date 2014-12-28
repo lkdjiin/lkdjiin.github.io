@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-27T15:54:21+01:00</updated>
+  <updated>2014-12-28T18:36:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,151 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/"/>
+    <updated>2014-12-28T18:05:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<h2>Première rencontre avec Haskell</h2>
+
+<p>L'histoire qui suit a du arriver à de nombreux développeurs rencontrant Haskell
+pour la première fois.</p>
+
+<p>— Bon, comment produire un nombre aléatoire ?<br/>
+— Ah OK, je vois.<br/>
+— Euh, attends, tu veux dire que je dois passer un générateur avec une <em>seed</em> à
+chaque fois ?<br/>
+— Ah OK, c'est l'histoire des fonctions <em>pures</em>, quand tu as le même argument en
+entrée, tu produis <strong>toujours</strong> la même valeur en sortie. Du coup, tu ne peux
+pas avoir une fonction <code>random</code> qui te sortirait une valeur différente à chaque
+appel. Oui, d'accord, c'est logique.<br/>
+— Ah mais non, attends, je fais comment pour lui donner une <em>seed</em> différente à
+chaque lancement du programme ? Ah, bin oui, j'ai qu'a prendre l'heure système,
+ou un truc comme ça.<br/>
+— Comment ça le générateur n'accepte pas mon heure système comme <em>seed</em> !?
+— Comment ça c'est pas le bon type ?! Qu'est-ce que c'est que cette histoire de
+monade IO ? Qu'est-ce que c'est que ce langage où je ne peux pas convertir
+l'heure système en un entier qui me servirait à quelque chose ???!!!</p>
+
+<p>Bref, bonjour Haskell…</p>
+
+<!-- more -->
+
+
+<h2>Création d'une génération</h2>
+
+<p>Toute cette histoire n'est peut-être pas si importante. Une fois
+accepté que Haskell a certainement une bonne raison de ne pas nous laisser faire
+une chose particulière, on peut avancer. Finalement, si je produis toujours les
+mêmes nombres, ça devrait être plus simple pour tester.</p>
+
+<p>Le code suivant produit une liste de <code>0</code> et de <code>1</code>. En entrée, la fonction
+prend la taille de la liste et un générateur de nombre aléatoire.</p>
+
+<p>``` haskell gol.hs
+import System.Random</p>
+
+<p>randomCells :: Int &ndash;> StdGen &ndash;> [Int]
+randomCells size gen = take size $ randomRs (0, 1) gen
+```</p>
+
+<p>Pour essayer ce code, j'utilise <code>ghci</code>, le REPL Haskell. C'est une vieille
+version qui était déjà installée sur ma machine.</p>
+
+<pre><code>$ ghci
+GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
+</code></pre>
+
+<p>Dans <code>ghci</code>, on charge notre fichier avec <code>:l gol.hs</code>. (<code>:l</code> est l'abbréviation
+de <code>:load</code>).</p>
+
+<pre><code>Prelude&gt; :l gol.hs 
+[1 of 1] Compiling Main             ( gol.hs, interpreted )
+Ok, modules loaded: Main.
+</code></pre>
+
+<p>On va produire une liste de 12 nombres. Pour obtenir un générateur de nombre
+aléatoire, on utilise <code>mkStdGen</code>, que j'initialise ici avec le nombre <code>4567</code>.</p>
+
+<pre><code>*Main&gt; randomCells 12 (mkStdGen 4567)
+[1,0,1,0,1,1,1,1,1,0,1,0]
+</code></pre>
+
+<p>Alors, on pourrait s'arrêter là pour la création des cellules. On pourrait très
+bien se débrouiller avec une liste simple. Mais je préfère quand même avoir une
+liste de listes (une liste de rangées).</p>
+
+<p>Voilà donc une jolie fonction récursive <code>createGeneration</code> qui prend en entrée
+la liste de cellules aléatoires, la largeur d'une rangée, et la génération en
+cours de production (l'accumulateur).</p>
+
+<p>``` haskell
+createGeneration :: [Int] &ndash;> Int &ndash;> [[Int]] &ndash;> [[Int]]
+createGeneration [] width generation = generation
+createGeneration cells width generation =</p>
+
+<pre><code>let line = take width cells
+ in createGeneration (drop width cells) width (line:generation)
+</code></pre>
+
+<p>```</p>
+
+<pre><code>*Main&gt; let cells = randomCells 12 (mkStdGen 4567)
+*Main&gt; createGeneration cells 4 []
+[[1,0,1,0],[1,1,1,1],[1,0,1,0]]
+</code></pre>
+
+<p>Pour finir, voici le listing complet du fichier <code>gol.hs</code>.</p>
+
+<p>``` haskell gol.hs
+import System.Random</p>
+
+<p>randomCells :: Int &ndash;> StdGen &ndash;> [Int]
+randomCells size gen = take size $ randomRs (0, 1) gen</p>
+
+<p>createGeneration :: [Int] &ndash;> Int &ndash;> [[Int]] &ndash;> [[Int]]
+createGeneration [] width generation = generation
+createGeneration cells width generation =</p>
+
+<pre><code>let line = take width cells
+ in createGeneration (drop width cells) width (line:generation)
+</code></pre>
+
+<p>main =</p>
+
+<pre><code>let cells = randomCells 12 (mkStdGen 123)
+ in print (createGeneration cells 4 [])
+</code></pre>
+
+<p>```</p>
+
+<pre><code>$ runhaskell gol.hs 
+[[0,0,1,0],[0,0,0,1],[1,1,1,0]]
+</code></pre>
+
+<p>Comme il s'agit de mon tout premier code en Haskell, n'hésitez surtout pas à me
+remonter mes erreurs, ou bien des trucs pour améliorer le code.</p>
+
+<p><strong>P.S.</strong></p>
+
+<p>Vous avez peut-être remarqué que je n'ai pas écrit de tests ?
+J'avais remarqué <a href="http://hspec.github.io/">Hspec</a>, que j'aurais aimé utilisé.
+Mais <code>cabal</code> refuse de l'installer. Je pense que ma version d'Haskell est trop
+datée et qu'il me faudrait refaire une installation sans passer par les paquets
+de mon OS. Je sais qu'il y a <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>
+de base, mais ça m'a l'air bien compliqué à mettre en place pour mon niveau de
+débutant. Si je continue Haskell après avoir écrit le jeu de la vie, il est sûr
+que je m'y mettrais.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 3]]></title>
@@ -739,121 +884,6 @@ aucun moment.</p>
 
 <p>Bref, j'oublie définitivement Logo. La prochaine version sera en Julia, ça
 promet d'être bien plus intéressant.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en logo - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/"/>
-    <updated>2014-12-17T16:35:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Cette fois, on affiche la génération de cellules crée la dernière fois.
-J'ai déjà eu l'occasion de dire que Logo était spécial, on va voir avec
-son système graphique que c'est bien le cas. Je ne vais pas parler de la
-métaphore de la <em>tortue</em>, vous trouverez sûrement des ressources là-dessus.
-Je voudrais plutôt parler du système de coordonnée. Alors que dans la plupart des
-langages (tous ?) les systèmes graphiques proposent de placer le point d'origine (0, 0) en haut à
-gauche, Logo le place au centre. En général, l'axe des y croit vers le bas,
-en Logo il croit vers le haut.</p>
-
-<p>Selon le manuel d'UCBLogo, voici à quoi s'attendre:</p>
-
-<pre><code>(-100, 100)            (100, 100)
-
-              (0, 0)
-
-(-100, -100)           (100, -100)
-</code></pre>
-
-<!-- more -->
-
-
-<p>Mais en fait, non. J'ai plutôt ça sur la machine où j'utilise Logo:</p>
-
-<pre><code>(-250, 250)            (250, 250)
-
-              (0, 0)
-
-(-250, -250)           (250, -250)
-</code></pre>
-
-<p>Quoiqu'il en soit, voici comment ça marche.</p>
-
-<p>``` raw drawing.lg
-hideturtle</p>
-
-<p>to draw.generation :generation :size
-for [y 1 :size] [p.draw.line :y]
-end</p>
-
-<p>to p.draw.line :y
-for [x 1 :size] [if (cell.alive? :generation :x :y) [p.draw.cell :x :y ] ]
-end</p>
-
-<p>to p.draw.cell :x :y
-penup
-setxy :x :y
-setheading 90
-pendown
-forward 1
-end
-```</p>
-
-<p><code>hideturtle</code> cache la tortue, comme son nom l'indique. Parce que, en plus
-d'être moche, ça ralenti le dessin, qui n'est déjà pas très rapide.</p>
-
-<p>La procédure <code>draw.generation</code> itère sur chaque ligne de <code>generation</code> et
-appelle la procédure <em>privée</em> <code>p.draw.line</code>.</p>
-
-<p><code>p.draw.line</code> itère sur chaque cellule de la ligne. On détermine, avec
-<code>cell.alive?</code>, si la cellule est vivante. Si c'est le cas, on appelle
-<code>p.draw.cell</code>.</p>
-
-<p><code>p.draw.cell</code> affiche un pixel en (x, y).</p>
-
-<p>Dans le fichier <code>generation.lg</code>, j'ajoute la procédure <code>cell.alive?</code>.</p>
-
-<p><code>raw generation.lg
-to cell.alive? :generation :x :y
-localmake "line item :y :generation
-ifelse (item :x :line) = 1 [output "true] [output "false]
-end
-</code></p>
-
-<p>Puis on assemble le tout dans un fichier <code>application.lg</code>.</p>
-
-<p>``` raw application.lg
-load &ldquo;generation.lg
-load "drawing.lg</p>
-
-<p>make &ldquo;size 100</p>
-
-<p>draw.generation create.generation :size :size :size
-```</p>
-
-<p>Et voici le résultat:</p>
-
-<pre><code>$ tree
-.
-├── application.lg
-├── drawing.lg
-├── generation.lg
-└── test.generation.lg
-
-$ logo application.lg
-</code></pre>
-
-<p><img src="/images/game-of-life-logo.png"></p>
-
-<p>Mouais, un peu moche, non ? J'avoue que je commence déjà à en avoir marre de
-Logo.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
 
 <p></p>
 ]]></content>
