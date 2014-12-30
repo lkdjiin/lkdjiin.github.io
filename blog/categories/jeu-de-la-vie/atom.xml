@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-30T09:02:13+01:00</updated>
+  <updated>2014-12-30T21:22:20+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,156 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 4]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/"/>
+    <updated>2014-12-30T21:09:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Je dois maintenant pouvoir extraire 9 cellules d'une génération (la cellule
+cible et ses 8 voisines). Pour cela, je vais avoir besoin de la fonction
+suivante:</p>
+
+<p><code>haskell
+extractNeighborhood :: Generation -&gt; Int -&gt; Int -&gt; [Cell]
+</code></p>
+
+<p>Elle prendra en entrée la génération, l'index de la rangée et l'index de la
+colonne. Mais pour simplifier l'implémentation de <code>extractNeighborhood</code> j'ai
+ressenti le besoin d'une fonction utilitaire <code>sliceAround</code> qui ferait ça:</p>
+
+<pre><code>$ ghci
+&gt; :load Slice.hs 
+&gt; let list = [0,1,2,3,4,5]
+&gt; sliceAround 1 list
+[0,1,2]
+&gt; sliceAround 4 list
+[3,4,5]
+&gt; sliceAround 0 list
+[0,1]
+&gt; sliceAround 5 list
+[4,5]
+</code></pre>
+
+<!-- more -->
+
+
+<p>J'ai donc écrit les tests (que vous pouvez trouvez sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>) et le module
+<code>Slice</code> qui en découle:</p>
+
+<p>``` haskell Slice.hs
+module Slice (sliceAround) where</p>
+
+<p>sliceAround :: Int &ndash;> [a] &ndash;> [a]
+sliceAround 0 list = take 2 list
+sliceAround n list = take 3 $ drop (n-1) list
+```</p>
+
+<p>C'était facile. J'ai quand même été étonné de ne pas trouver une fonction
+<code>slice</code> de base (ou j'ai mal cherché, c'est toujours possible ;) ). Même s'il
+est vrai qu'avec <code>take</code> et <code>drop</code> c'est très simple à obtenir.
+Ensuite j'utilise <code>sliceAround</code> pour écrire <code>extractNeighborhood</code>:</p>
+
+<p>``` haskell GameOfLife.hs
+extractNeighborhood :: Generation &ndash;> Int &ndash;> Int &ndash;> [Cell]
+extractNeighborhood generation row column
+  | row == 0 = row1 ++ row2
+  | row == (length generation) &ndash; 1 = row0 ++ row1
+  | otherwise = row0 ++ row1 ++ row2</p>
+
+<pre><code>where row0 = getRow $ row - 1
+      row1 = getRow row
+      row2 = getRow $ row + 1
+      getRow r = sliceAround column $ generation !! r
+</code></pre>
+
+<p>```</p>
+
+<p>Je n'arrive pas à simplifier plus cette fonction, mais il doit y avoir moyen.
+Si vous connaissez Haskell, j'aimerais beaucoup avoir votre avis.</p>
+
+<p>Avant de pouvoir en terminé avec ce jeu de la vie en Haskell, il me faut une
+fonction <code>nextGeneration</code>, et j'ai eu bien peur que celle-ci me fasse mal à la
+tête.</p>
+
+<p>En fait ça n'a pas été si violent que ça. En décomposant, j'y suis arrivé
+rapidement:</p>
+
+<p>``` haskell
+nextGeneration :: Generation &ndash;> Generation
+nextGeneration generation = [(nextRow y generation) | y &lt;&ndash; [0..height]]
+  where height = (length generation) &ndash; 1</p>
+
+<p>nextRow :: Int &ndash;> Generation &ndash;> [Cell]
+nextRow y generation = [(nextCell y x generation) | x &lt;&ndash; [0..width]]
+  where row = generation !! y</p>
+
+<pre><code>    width = (length row) - 1
+</code></pre>
+
+<p>nextCell :: Int &ndash;> Int &ndash;> Generation &ndash;> Cell
+nextCell y x generation = cellNextState cell neighborhood
+  where neighborhood = extractNeighborhood generation y x</p>
+
+<pre><code>    cell = (generation !! y) !! x
+</code></pre>
+
+<p>```</p>
+
+<p>Mais là encore, j'ai l'impression qu'il y a moyen de simplifier…</p>
+
+<p>Il ne me reste plus qu'à faire une boucle:</p>
+
+<p>``` haskell gol.hs
+import System.Random
+import GameOfLife
+import Control.Concurrent</p>
+
+<p>loop 0 _ = return ()
+loop n g =
+ do
+   displayGeneration g
+   threadDelay 1000000
+   loop (n-1) (nextGeneration g)</p>
+
+<p>main :: IO()
+main =
+  let width = 80</p>
+
+<pre><code>  height = 23
+  cells = randomCells (width * height) (mkStdGen 1234)
+  generation = createGeneration width cells
+</code></pre>
+
+<p>   in loop 40 generation
+```</p>
+
+<p>Notez <code>threadDelay</code>, pour faire une pause, qui prend un
+nombre de micro-secondes ! Je ne sais pas si ça fonctionne à ce niveau de
+granularité, mais ça m'impressionne.</p>
+
+<p>Finalement, on peut compiler et lancer le programme \o/</p>
+
+<pre><code>$ ghc -o gol Slice.hs GameOfLife.hs gol.hs
+$ ./gol
+</code></pre>
+
+<p>Je vous rappelle que le code se trouve sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a> et que tous vos
+commentaires sur ce code seront les bienvenus.</p>
+
+<p>Voilà, j'en ai terminé avec Haskell. Je suis à la fois content, parce que
+impatient de commencer la version Rust, et à la fois un peu triste parce que
+je commence à peine à entrevoir les possibilités de Haskell. J'espère être en
+mesure de me dégager un peu de temps pour continuer à étudier ce langage.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 3]]></title>
@@ -730,191 +880,6 @@ Cell.next(generation[y, x], state(neighborhood))
 <p>Voilà. Le code est disponible sur Gitub : <a href="https://github.com/lkdjiin/game-of-life-julia">le jeu de la vie en Julia</a>.</p>
 
 <p>La prochaine fois, ce sera du Haskell.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/"/>
-    <updated>2014-12-24T10:03:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<h2>Calcul du prochain état d'un cellule</h2>
-
-<p>Au départ je voulais écrire une fonction <code>nextcellstate</code>. C'est la convention
-en Julia: séparer les mots par des underscores seulement si c'est
-incompréhensible.  Je ne sais pas pour vous, mais moi je trouve <code>nextcellstate</code>
-incompréhensible.  Donc ça devient <code>next_cell_state</code>. C'est mieux. Mais on te
-dis aussi que si tu ressens le besoin de mettre des underscores, c'est
-peut-être parce que ta fonction en fait trop. Bon conseil.</p>
-
-<p>Alors, cette fonction pourrait appartenir à un module <code>Cell</code>. Elle devient donc
-<code>Cell.nextstate</code>. Pardon, <code>Cell.next_state</code>, c'est mieux. Mais j'ai encore <code>next</code> et
-<code>state</code>, qui font deux choses différentes.</p>
-
-<p><code>state</code> calcule l'état d'un voisinage (<em>neighborhood</em>) de cellules, c'est à dire le
-nombre de <code>1</code> (cellule vivante) parmi 9 cellules: celle qui nous intéresse et ses
-8 voisines.</p>
-
-<p><code>next</code> calcule le prochain état d'une cellule (1 ou 0, vivante ou morte) selon son
-état actuel et l'état de son voisinage.</p>
-
-<p>J'ai donc décidé d'avoir une fonction <code>Neighborhood.state</code> plus une fonction
-<code>Cell.next</code>.  Voici le test pour <code>Neighborhood.state</code>, c'est loin d'être
-exhaustif, mais j'ai envie d'avancer:</p>
-
-<p>``` julia test.jl
-include(&ldquo;generation.jl&rdquo;)
-include(&ldquo;neighborhood.jl&rdquo;)</p>
-
-<h1>&hellip;</h1>
-
-<p>@test Neighborhood.state([ 0 1 1 0 0 0 1 1 1]) == 5
-```</p>
-
-<p>Et la fonction:</p>
-
-<p>``` julia neighborhood.jl
-module Neighborhood</p>
-
-<p>state(cells) = countnz(cells)</p>
-
-<p>end
-```</p>
-
-<!-- more -->
-
-
-<p><code>countnz</code> compte tout simplement le nombre d'éléments différents de zéro.</p>
-
-<p>Passons à <code>Cell.next</code>:</p>
-
-<p>``` julia test.jl
-include(&ldquo;generation.jl&rdquo;)
-include(&ldquo;neighborhood.jl&rdquo;)
-include(&ldquo;cell.jl&rdquo;)</p>
-
-<h1>&hellip;</h1>
-
-<p>ALIVE = 1
-DEAD  = 0</p>
-
-<p>@test Cell.next(ALIVE, 5) == 0
-@test Cell.next(DEAD, 3) == 1
-@test Cell.next(DEAD, 4) == 0
-@test Cell.next(ALIVE, 4) == 1
-```</p>
-
-<p>``` julia cell.jl
-module Cell</p>
-
-<p>function next(cell, neighborhood)</p>
-
-<pre><code>if neighborhood == 3
-    1
-elseif neighborhood == 4
-    cell
-else
-    0
-end
-</code></pre>
-
-<p>end</p>
-
-<p>end
-```</p>
-
-<p>Il semble que Julia n'ai pas de switch/case, dommage.</p>
-
-<p>Maintenant je passe à l'extraction d'une génération, c'est à dire les 9 cellules
-composées de notre cellule cible et de ses 8 voisines.</p>
-
-<p>``` julia test.jl</p>
-
-<h1>&hellip;</h1>
-
-<p>generation = [ 0 1 0 1 ;</p>
-
-<pre><code>           1 1 1 1 ;
-           0 0 0 0 ;
-           1 0 1 0 ]
-</code></pre>
-
-<p>@test Neighborhood.extract(generation, 2, 3) == [ 1 0 1 ; 1 1 1 ; 0 0 0 ]
-@test Neighborhood.extract(generation, 3, 2) == [ 1 1 1 ; 0 0 0 ; 1 0 1 ]
-```</p>
-
-<p><code>julia neighborhood.jl
-extract(generation, y, x) = generation[y-1:y+1, x-1:x+1]
-</code></p>
-
-<p>C'est tellement simple à implémenter&hellip; J'aime de plus en plus Julia.</p>
-
-<p>Ensuite viennent les tests des cas exceptionnels. Je ne vous en montre que 3:</p>
-
-<p>``` julia test.jl
-generation = [ 0 1 0 1 ;</p>
-
-<pre><code>           1 1 1 1 ;
-           0 0 0 0 ;
-           1 0 1 0 ]
-</code></pre>
-
-<h1>&hellip;</h1>
-
-<p>@test Neighborhood.extract(generation, 1, 2) == [ 0 1 0 ; 1 1 1 ]</p>
-
-<p>@test Neighborhood.extract(generation, 3, 1) == [ 1 1 ; 0 0 ; 1 0 ]</p>
-
-<p>@test Neighborhood.extract(generation, 1, 1) == [ 0 1 ; 1 1 ]
-```</p>
-
-<p>Là encore, l'implémentation est simple:</p>
-
-<p>``` julia neighborhood.jl
-function extract(generation, y, x)</p>
-
-<pre><code>height, width = size(generation)
-y_low = y == 1 ? 1 : y - 1
-y_up  = y == height ? height : y + 1
-x_low = x == 1 ? 1 : x - 1
-x_up  = x == width ? width : x + 1
-generation[y_low:y_up, x_low:x_up]
-</code></pre>
-
-<p>end
-```</p>
-
-<p>Ce qu'on peut ré-arrenger un peu, par exemple ainsi:</p>
-
-<p>``` julia neighborhood.jl
-function extract(generation, y, x)</p>
-
-<pre><code>height, width = size(generation)
-yrange = range_for(y, height)
-xrange = range_for(x, width)
-generation[yrange, xrange]
-</code></pre>
-
-<p>end</p>
-
-<p>function range_for(coordinate, dimension)</p>
-
-<pre><code>low = coordinate == 1 ? 1 : coordinate - 1
-up  = coordinate == dimension ? dimension : coordinate + 1
-low:up
-</code></pre>
-
-<p>end
-```</p>
-
-<p>Rendez-vous dans le prochain article pour la fin du jeu de la vie en Julia.</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

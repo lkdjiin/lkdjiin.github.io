@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : haskell | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/haskell/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-30T09:02:13+01:00</updated>
+  <updated>2014-12-30T21:22:20+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,156 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 4]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/"/>
+    <updated>2014-12-30T21:09:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Je dois maintenant pouvoir extraire 9 cellules d'une génération (la cellule
+cible et ses 8 voisines). Pour cela, je vais avoir besoin de la fonction
+suivante:</p>
+
+<p><code>haskell
+extractNeighborhood :: Generation -&gt; Int -&gt; Int -&gt; [Cell]
+</code></p>
+
+<p>Elle prendra en entrée la génération, l'index de la rangée et l'index de la
+colonne. Mais pour simplifier l'implémentation de <code>extractNeighborhood</code> j'ai
+ressenti le besoin d'une fonction utilitaire <code>sliceAround</code> qui ferait ça:</p>
+
+<pre><code>$ ghci
+&gt; :load Slice.hs 
+&gt; let list = [0,1,2,3,4,5]
+&gt; sliceAround 1 list
+[0,1,2]
+&gt; sliceAround 4 list
+[3,4,5]
+&gt; sliceAround 0 list
+[0,1]
+&gt; sliceAround 5 list
+[4,5]
+</code></pre>
+
+<!-- more -->
+
+
+<p>J'ai donc écrit les tests (que vous pouvez trouvez sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>) et le module
+<code>Slice</code> qui en découle:</p>
+
+<p>``` haskell Slice.hs
+module Slice (sliceAround) where</p>
+
+<p>sliceAround :: Int &ndash;> [a] &ndash;> [a]
+sliceAround 0 list = take 2 list
+sliceAround n list = take 3 $ drop (n-1) list
+```</p>
+
+<p>C'était facile. J'ai quand même été étonné de ne pas trouver une fonction
+<code>slice</code> de base (ou j'ai mal cherché, c'est toujours possible ;) ). Même s'il
+est vrai qu'avec <code>take</code> et <code>drop</code> c'est très simple à obtenir.
+Ensuite j'utilise <code>sliceAround</code> pour écrire <code>extractNeighborhood</code>:</p>
+
+<p>``` haskell GameOfLife.hs
+extractNeighborhood :: Generation &ndash;> Int &ndash;> Int &ndash;> [Cell]
+extractNeighborhood generation row column
+  | row == 0 = row1 ++ row2
+  | row == (length generation) &ndash; 1 = row0 ++ row1
+  | otherwise = row0 ++ row1 ++ row2</p>
+
+<pre><code>where row0 = getRow $ row - 1
+      row1 = getRow row
+      row2 = getRow $ row + 1
+      getRow r = sliceAround column $ generation !! r
+</code></pre>
+
+<p>```</p>
+
+<p>Je n'arrive pas à simplifier plus cette fonction, mais il doit y avoir moyen.
+Si vous connaissez Haskell, j'aimerais beaucoup avoir votre avis.</p>
+
+<p>Avant de pouvoir en terminé avec ce jeu de la vie en Haskell, il me faut une
+fonction <code>nextGeneration</code>, et j'ai eu bien peur que celle-ci me fasse mal à la
+tête.</p>
+
+<p>En fait ça n'a pas été si violent que ça. En décomposant, j'y suis arrivé
+rapidement:</p>
+
+<p>``` haskell
+nextGeneration :: Generation &ndash;> Generation
+nextGeneration generation = [(nextRow y generation) | y &lt;&ndash; [0..height]]
+  where height = (length generation) &ndash; 1</p>
+
+<p>nextRow :: Int &ndash;> Generation &ndash;> [Cell]
+nextRow y generation = [(nextCell y x generation) | x &lt;&ndash; [0..width]]
+  where row = generation !! y</p>
+
+<pre><code>    width = (length row) - 1
+</code></pre>
+
+<p>nextCell :: Int &ndash;> Int &ndash;> Generation &ndash;> Cell
+nextCell y x generation = cellNextState cell neighborhood
+  where neighborhood = extractNeighborhood generation y x</p>
+
+<pre><code>    cell = (generation !! y) !! x
+</code></pre>
+
+<p>```</p>
+
+<p>Mais là encore, j'ai l'impression qu'il y a moyen de simplifier…</p>
+
+<p>Il ne me reste plus qu'à faire une boucle:</p>
+
+<p>``` haskell gol.hs
+import System.Random
+import GameOfLife
+import Control.Concurrent</p>
+
+<p>loop 0 _ = return ()
+loop n g =
+ do
+   displayGeneration g
+   threadDelay 1000000
+   loop (n-1) (nextGeneration g)</p>
+
+<p>main :: IO()
+main =
+  let width = 80</p>
+
+<pre><code>  height = 23
+  cells = randomCells (width * height) (mkStdGen 1234)
+  generation = createGeneration width cells
+</code></pre>
+
+<p>   in loop 40 generation
+```</p>
+
+<p>Notez <code>threadDelay</code>, pour faire une pause, qui prend un
+nombre de micro-secondes ! Je ne sais pas si ça fonctionne à ce niveau de
+granularité, mais ça m'impressionne.</p>
+
+<p>Finalement, on peut compiler et lancer le programme \o/</p>
+
+<pre><code>$ ghc -o gol Slice.hs GameOfLife.hs gol.hs
+$ ./gol
+</code></pre>
+
+<p>Je vous rappelle que le code se trouve sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a> et que tous vos
+commentaires sur ce code seront les bienvenus.</p>
+
+<p>Voilà, j'en ai terminé avec Haskell. Je suis à la fois content, parce que
+impatient de commencer la version Rust, et à la fois un peu triste parce que
+je commence à peine à entrevoir les possibilités de Haskell. J'espère être en
+mesure de me dégager un peu de temps pour continuer à étudier ce langage.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 3]]></title>
