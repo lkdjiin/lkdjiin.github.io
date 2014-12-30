@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-29T15:15:39+01:00</updated>
+  <updated>2014-12-30T09:02:13+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,275 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/"/>
+    <updated>2014-12-30T08:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Cette fois je met des tests en place avec <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>.
+Pour cela, je dois d&#8217;abord <em>modulariser</em> mon code. J&#8217;ai donc déplacé le code
+de la dernière fois, sans la fonction <code>main</code>, dans un fichier <code>GameOfLife</code>.
+Puis j&#8217;ai ajouté la déclaration du module.</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span>GameOfLife.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">module</span> <span class="nn">GameOfLife</span>
+</span><span class='line'><span class="p">(</span> <span class="nf">randomCells</span>
+</span><span class='line'><span class="p">,</span> <span class="nf">createGeneration</span>
+</span><span class='line'><span class="p">,</span> <span class="nf">formatGeneration</span>
+</span><span class='line'><span class="p">)</span> <span class="kr">where</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">import</span> <span class="nn">System.Random</span>
+</span><span class='line'><span class="kr">import</span> <span class="nn">Data.List</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">type</span> <span class="kt">Cell</span> <span class="ow">=</span> <span class="kt">Int</span>
+</span><span class='line'><span class="kr">type</span> <span class="kt">Generation</span> <span class="ow">=</span> <span class="p">[[</span><span class="kt">Cell</span><span class="p">]]</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">randomCells</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="kt">StdGen</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span>
+</span><span class='line'><span class="nf">randomCells</span> <span class="n">size</span> <span class="n">gen</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">size</span> <span class="o">$</span> <span class="n">randomRs</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="n">gen</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Generation</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="kr">_</span> <span class="kt">[]</span> <span class="ow">=</span> <span class="kt">[]</span>
+</span><span class='line'><span class="nf">createGeneration</span> <span class="n">width</span> <span class="n">cells</span> <span class="ow">=</span> <span class="n">line</span><span class="kt">:</span><span class="p">(</span><span class="n">createGeneration</span> <span class="n">width</span> <span class="n">rest</span><span class="p">)</span>
+</span><span class='line'>  <span class="kr">where</span> <span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">rest</span><span class="p">)</span> <span class="ow">=</span> <span class="n">splitAt</span> <span class="n">width</span> <span class="n">cells</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">formatGeneration</span> <span class="ow">::</span> <span class="kt">Generation</span> <span class="ow">-&gt;</span> <span class="kt">String</span>
+</span><span class='line'><span class="nf">formatGeneration</span> <span class="n">generation</span> <span class="ow">=</span>
+</span><span class='line'>  <span class="kr">let</span> <span class="n">rows</span> <span class="ow">=</span> <span class="n">intercalate</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="p">(</span><span class="n">map</span> <span class="p">(</span><span class="n">concatMap</span> <span class="n">show</span><span class="p">)</span> <span class="n">generation</span><span class="p">)</span>
+</span><span class='line'>   <span class="kr">in</span> <span class="n">map</span> <span class="n">replaceChar</span> <span class="n">rows</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">replaceChar</span> <span class="ow">::</span> <span class="kt">Char</span> <span class="ow">-&gt;</span> <span class="kt">Char</span>
+</span><span class='line'><span class="nf">replaceChar</span> <span class="sc">&#39;1&#39;</span> <span class="ow">=</span> <span class="sc">&#39;@&#39;</span>
+</span><span class='line'><span class="nf">replaceChar</span> <span class="sc">&#39;0&#39;</span> <span class="ow">=</span> <span class="sc">&#39; &#39;</span>
+</span><span class='line'><span class="nf">replaceChar</span> <span class="n">c</span>   <span class="ow">=</span> <span class="n">c</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Une déclaration de module, c&#8217;est ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">module</span> <span class="nn">GameOfLife</span>
+</span><span class='line'><span class="p">(</span> <span class="nf">randomCells</span>
+</span><span class='line'><span class="p">,</span> <span class="nf">createGeneration</span>
+</span><span class='line'><span class="p">,</span> <span class="nf">formatGeneration</span>
+</span><span class='line'><span class="p">)</span> <span class="kr">where</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>J&#8217;ai donc un module <code>GameOfLife</code> qui exporte, pour l&#8217;instant, trois fonctions.
+Au fait, le code est sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>.</p>
+
+<p>Je vais créer la fonction <code>cellNextState</code>, je la rajoute donc dans les exports
+du module:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">module</span> <span class="nn">GameOfLife</span>
+</span><span class='line'><span class="p">(</span> <span class="nf">randomCells</span>
+</span><span class='line'><span class="p">,</span> <span class="nf">createGeneration</span>
+</span><span class='line'><span class="p">,</span> <span class="nf">formatGeneration</span>
+</span><span class='line'><span class="p">,</span> <span class="nf">cellNextState</span>
+</span><span class='line'><span class="p">)</span> <span class="kr">where</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Et j&#8217;en crée une version qui ne fonctionne pas ;)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="nf">cellNextState</span> <span class="ow">::</span> <span class="kt">Cell</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Cell</span>
+</span><span class='line'><span class="nf">cellNextState</span> <span class="n">cell</span> <span class="n">neighborhood</span> <span class="ow">=</span> <span class="n">undefined</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C&#8217;est parti pour mon premier test en Haskell. Je crée un fichier
+<code>GameOfLife_Test.hs</code>:</p>
+
+<figure class='code'><figcaption><span>GameOfLife_Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">module</span> <span class="nn">GameOfLife_Test</span> <span class="kr">where</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">import</span> <span class="nn">GameOfLife</span><span class="p">(</span><span class="n">cellNextState</span><span class="p">)</span>
+</span><span class='line'><span class="kr">import</span> <span class="nn">Test.HUnit</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">testCellNextState3</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
+</span><span class='line'>  <span class="s">&quot;Gets live cell when neighborhood&#39;sum is 3&quot;</span> <span class="mi">1</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">0</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">main</span> <span class="ow">=</span> <span class="n">runTestTT</span> <span class="n">testCellNextState3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C&#8217;est du bon vieux test unitaire à l&#8217;ancienne. Je mentirais en disant que
+je trouve la syntaxe sexy.</p>
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+### Error:                                
+Prelude.undefined
+Cases: 1  Tried: 1  Errors: 1  Failures: 0
+Counts {cases = 1, tried = 1, errors = 1, failures = 0}
+</code></pre>
+
+<p>Bon, si maintenant ma fonction renvoie 1, le test devrait passer.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="nf">cellNextState</span> <span class="n">cell</span> <span class="n">neighborhood</span> <span class="ow">=</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+Cases: 1  Tried: 1  Errors: 0  Failures: 0
+Counts {cases = 1, tried = 1, errors = 0, failures = 0}
+</code></pre>
+
+<p>J&#8217;aimerais bien avoir une sortie en couleur. Si il y a moyen, je n&#8217;ai pas
+encore trouvé…</p>
+
+<p>Quoiqu&#8217;il en soit, je peux tester mon code Haskell, et ça c&#8217;est cool. Je vais
+donc en finir avec <code>cellNextState</code> en faisant quelques tests de plus:</p>
+
+<figure class='code'><figcaption><span>GameOfLife_Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="kr">module</span> <span class="nn">GameOfLife_Test</span> <span class="kr">where</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">import</span> <span class="nn">GameOfLife</span><span class="p">(</span><span class="n">cellNextState</span><span class="p">)</span>
+</span><span class='line'><span class="kr">import</span> <span class="nn">Test.HUnit</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">testCellNextState3</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
+</span><span class='line'>  <span class="s">&quot;Gets 1 when neighborhood&#39;s sum is 3&quot;</span>
+</span><span class='line'>  <span class="mi">1</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">0</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">testCellNextState4AndAlive</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
+</span><span class='line'>  <span class="s">&quot;Gets 1 when neighborhood&#39;s sum is 4 and cell is alive&quot;</span>
+</span><span class='line'>  <span class="mi">1</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">1</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">testCellNextState4AndDead</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
+</span><span class='line'>  <span class="s">&quot;Gets 0 when neighborhood&#39;s sum is 4 and cell is dead&quot;</span>
+</span><span class='line'>  <span class="mi">0</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">0</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">testCellNextState6</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
+</span><span class='line'>  <span class="s">&quot;Gets 0 when neighborhood&#39;s sum is 6&quot;</span>
+</span><span class='line'>  <span class="mi">0</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">1</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+</span><span class='line'>
+</span><span class='line'><span class="nf">main</span> <span class="ow">=</span> <span class="n">runTestTT</span> <span class="o">$</span> <span class="kt">TestList</span> <span class="p">[</span><span class="n">testCellNextState3</span><span class="p">,</span>
+</span><span class='line'>                            <span class="n">testCellNextState4AndAlive</span><span class="p">,</span>
+</span><span class='line'>                            <span class="n">testCellNextState4AndDead</span><span class="p">,</span>
+</span><span class='line'>                            <span class="n">testCellNextState6</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+### Failure in: 2                         
+Gets 0 when neighborhood's sum is 4 and cell is dead
+expected: 0
+ but got: 1
+### Failure in: 3                         
+Gets 0 when neighborhood's sum is 6
+expected: 0
+ but got: 1
+Cases: 4  Tried: 4  Errors: 0  Failures: 2
+Counts {cases = 4, tried = 4, errors = 0, failures = 2}
+</code></pre>
+
+<figure class='code'><figcaption><span>GameOfLife.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='haskell'><span class='line'><span class="nf">cellNextState</span> <span class="ow">::</span> <span class="kt">Cell</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Cell</span>
+</span><span class='line'><span class="nf">cellNextState</span> <span class="n">cell</span> <span class="n">neighborhood</span>
+</span><span class='line'>  <span class="o">|</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">=</span> <span class="n">cell</span>
+</span><span class='line'>  <span class="o">|</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">=</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="o">|</span> <span class="n">otherwise</span> <span class="ow">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="kr">where</span> <span class="n">total</span> <span class="ow">=</span> <span class="n">sum</span> <span class="n">neighborhood</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+Cases: 4  Tried: 4  Errors: 0  Failures: 0
+Counts {cases = 4, tried = 4, errors = 0, failures = 0}
+</code></pre>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 2]]></title>
@@ -218,7 +487,7 @@ terminal. Voici ma solution:</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/'>Le jeu de la vie en Haskell &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -379,7 +648,7 @@ que je m&#8217;y mettrais.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -825,7 +1094,7 @@ un <code>map</code>. Ici, j&#8217;ai créé une fonction <code>newstate</code> �
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1077,7 +1346,7 @@ composées de notre cellule cible et de ses 8 voisines.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1416,7 +1685,7 @@ remplaçant par des espaces, et remplaçons les 1 par des @:</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1442,7 +1711,7 @@ aucun moment.</p>
 <p>Bref, j&#8217;oublie définitivement Logo. La prochaine version sera en Julia, ça
 promet d&#8217;être bien plus intéressant.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1585,7 +1854,7 @@ Logo.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1884,7 +2153,7 @@ irresponsable.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2286,7 +2555,7 @@ réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2563,7 +2832,7 @@ message:    "It populates generation uniformly"
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2731,7 +3000,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5051,7 +5320,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5618,7 +5887,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5991,7 +6260,7 @@ ensemble de cellules.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -6138,178 +6407,6 @@ pourrat-être aussi bien un article par mois ou trois articles par semaine.</p>
 
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/'>Le jeu de la vie en ruby (opal) &ndash; partie 1</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Retour sur un an d'article quotidien]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/08/24/retour-sur-un-an-darticle-quotidien/"/>
-    <updated>2014-08-24T14:02:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/08/24/retour-sur-un-an-darticle-quotidien</id>
-    <content type="html"><![CDATA[<p>Voici plus d&#8217;un mois que mon défi «un article par jour pendant un an» sur ce
-blog est terminé. C&#8217;est l&#8217;occasion de réfléchir sur ce que m&#8217;a
-apporté cette expérience.</p>
-
-<!-- more -->
-
-
-<h2>La genèse</h2>
-
-<p>D&#8217;abord, comment tout ceci a démarré ? Par un sentiment de stagnation dans mon
-métier, une envie de nouveauté et une volonté de sortir de ma zone de confort.
-Quelques années auparavant, j&#8217;avais déjà eu une expérience de blog et écris
-quelques articles techniques. Mais je n&#8217;avais jamais réussi à faire «vivre» ce
-blog, ni à vraiment me «l&#8217;approprier». Je n&#8217;avais aussi jamais eu la discipline
-pour me conformer à une fréquence de publication régulière. J&#8217;avais tenté
-d&#8217;écrire toutes les semaines, tout les 15 jours, une fois par mois, etc. Ça
-fonctionnait deux ou trois de suite, puis je finissais immanquablement par
-oublier, ou bien je considérais qu&#8217;un article n&#8217;était pas encore prêt à être
-publier, que je pouvais mieux faire.</p>
-
-<p>Publier chaque jour me semblait être la solution idéale pour voir <em>de
-quoi j&#8217;étais capable</em>. Après y avoir réfléchit le temps d&#8217;un week-end, j&#8217;ai
-donc décidé de me lancer. Si j&#8217;y avais réfléchit plus longuement, j&#8217;aurais
-sans doute reculé, attendu… et oublié.</p>
-
-<h2>Écrire ou être lu</h2>
-
-<p>J&#8217;avais décidé dès le début, que l&#8217;important était «d&#8217;écrire», pas «d&#8217;être lu».
-Malgré tout, et parce que l&#8217;orgueil n&#8217;est jamais bien loin, j&#8217;ai tout de même
-ajouté un script de statistique de fréquentation dès le premier article. Juste
-pour voir.  Cette année d&#8217;article quotidien a été divisé en deux. Les 6
-premiers mois, je suis devenu accro aux statistiques. Malgré ce que j&#8217;avais
-décidé, j&#8217;apportais une grande importance à la fréquentation, sans toutefois
-rien mettre en place pour l&#8217;augmenter.</p>
-
-<p>Et puis, quasiment du jour au lendemain, j&#8217;en ai eu marre. Je n&#8217;ai pas regardé
-une seule fois les statistiques pendant les 6 derniers mois. J&#8217;écrivais un
-article technique tout les jours et c&#8217;était suffisant. C&#8217;était devenu un réflexe.
-Ça faisait réellement partie intégrante de moi.  Les statistiques de
-fréquentation ne m&#8217;intéressaient plus du tout.</p>
-
-<p>Phénomène intéressant, malgré l&#8217;écriture d&#8217;articles très courts, je vivais
-«blog», je mangeais «blog», je pensais «blog» toute la journée. Tant qu&#8217;il
-n&#8217;était pas écrit et envoyé, il y avait toujours un coin de mon esprit qui se
-focalisait sur l&#8217;article à venir. Le dernier mois, j&#8217;avais vraiment hâte que ça
-se termine.</p>
-
-<h2>L&#8217;expérience</h2>
-
-<p>Qu&#8217;est-ce que cette expérience m&#8217;a apportée ? Si c&#8217;était à refaire, est-ce que
-je replongerais ? Y a-t-il eu des problèmes ? Est-ce que je conseillerais de le
-faire ? Autant de questions auxquelles je vais tenter de répondre.</p>
-
-<h3>aller à l&#8217;essentiel</h3>
-
-<p>Quand j&#8217;explique quelque chose oralement, j&#8217;ai une tendance naturelle à
-digresser, combinée à une tendance à chercher le mot juste pendant longtemps
-(10, 20 ou même 30 secondes, enfin bref, longtemps). Autant dire que ça n&#8217;est
-pas toujours bien perçu, que ça ne fait pas pro, toussa, toussa.</p>
-
-<p>Et bien l&#8217;écriture d&#8217;un article par jour pendant un an m&#8217;a servi pour mieux
-gérer ce défaut. Quand tu dois écrire tout de suite, maintenant, sans attendre,
-tu dois aller à l&#8217;essentiel. Tu ne peux pas te permettre de te perdre en
-détails futiles ou de prendre un quart d&#8217;heure à trouver une métaphore subtile.
-Juste, tu écris sur ton sujet.</p>
-
-<h3>expliquer c&#8217;est comprendre</h3>
-
-<p>Comme disais l&#8217;autre «on énonce bien que ce qu&#8217;on comprend bien».  J&#8217;ai parfois
-du faire des recherches en profondeur pour pouvoir expliquer un sujet en
-apparence simple. Pour que l&#8217;explication soit claire, il me fallait avoir une
-vision encore plus claire du sujet.</p>
-
-<p>Ça n&#8217;a pas fonctionné à chaque fois. Forcément, sur 365 jours il y a eu des
-ratés, en grande partie dues au manque de temps. Mais dans l&#8217;ensemble, j&#8217;ai
-approfondi des sujets, des concepts, des idées et des programmes que je
-manipulais au quotidien sans toujours bien les comprendre.</p>
-
-<h3>auto documentation</h3>
-
-<p>Quand on apprend une nouvelle astuce, quand un concept s&#8217;éclaircit soudain dans
-notre esprit, qu&#8217;est-ce qu&#8217;on en fait ? Comment retenir cela ?  On a chacun nos
-trucs pour ça. Le mien, pendant un an, a été d&#8217;écrire un article dessus.
-Bloguer sur un sujet aide grandement à s&#8217;en souvenir. Et si on oublie malgré
-tout, une recherche sur le blog est très rapide.</p>
-
-<h3>essayer de nouvelle chose</h3>
-
-<p>Avant même d&#8217;écrire le premier article, j&#8217;avais déjà peur de manquer de sujet.
-Je ne voyais pas comment il me serait possible de pondre 365 articles différents.</p>
-
-<p>En fait ça a été très simple, et les idées semblaient comme pleuvoir toutes
-seules. Un article en appelait un autre, qui appelait une suite, qui me faisait
-rebondir sur un autre sujet, qui piquait ma curiosité sur tel autre concept, etc…
-Ça donnait une sorte de mouvement perpétuel.</p>
-
-<p>Je suis donc loin d&#8217;avoir manqué d&#8217;idées pour mes articles, c&#8217;est même carrément
-le contraire qui s&#8217;est produit. J&#8217;ai eu trop d&#8217;idées ! Un de mes regret
-concernant le blog est d&#8217;avoir laissé inachevées plusieurs séries d&#8217;articles.</p>
-
-<h3>une notoriété</h3>
-
-<p>Sans conteste, écrire un article par jour pendant un an m&#8217;a apporté plus de
-notoriété. Rien d&#8217;extraordinaire quand même, mon compte twitter <a href="https://twitter.com/lkdjiin">@lkdjiin</a> est
-passé en un an d&#8217;une trentaine d&#8217;abonnés à quelque chose comme 185.  À noter
-que je n&#8217;ai rien fait pour entretenir/améliorer cet apport de notoriété.  Je me
-suis contenté de poster chaque jour le lien de mes articles sur twitter,
-google+ et <a href="http://news.humancoders.com/">Human Coders</a> <em>(quand j&#8217;y pensais !)</em>.</p>
-
-<p>Je suis certain qu&#8217;une personne plus versée que moi dans la communication
-aurait pu en tirer un parti très intéressant.</p>
-
-<h3>un nouveau boulot</h3>
-
-<p>Autre fait et non des moindres, lié au point précédent, est que cette
-visibilité m&#8217;a permis de recevoir des propositions de travail. J&#8217;en ai même
-accepté une, chez <a href="http://www.tigerlilyapps.com/">Tigerlily</a> !  Bien que je n&#8217;étais pas du tout en recherche
-active d&#8217;emploi, quand on te dit «Viens travailler pour nous.» ça fait beaucoup
-de bien à l&#8217;égo.  Je suis aujourd&#8217;hui un développeur Ruby heureux, qui se tape
-3 heures de transport en commun quotidien. Mais heureux, etc…</p>
-
-<h2>En conclusion</h2>
-
-<p><em>Alors, si c&#8217;était à refaire ?</em></p>
-
-<p>Bien sûr, je le referais sans hésiter. Comment je pourrais dire non avec tout
-ce que je viens de vous raconter ? Par contre, je préparerais mieux le projet.
-Octopress, par exemple, ne m&#8217;a pas convaincu techniquement sur le long terme.
-J&#8217;essaierais aussi de «communiquer» plus et plus sérieusement, pour voir si
-j&#8217;en suis capable. En fait, j&#8217;essaierais de <em>tirer</em> encore plus de cette
-aventure.</p>
-
-<p><em>Des problèmes ?</em></p>
-
-<p>Pas vraiment. À part des petits soucis techniques avec Octopress, mais rien
-qui ne se solutionne après quelques arrachage de cheveux.</p>
-
-<p><em>Le conseillerais-je à d&#8217;autres ?</em></p>
-
-<p>Oui et non. Un an, c&#8217;est long. Je ne crois pas qu&#8217;on puisse faire ça n&#8217;importe
-quand dans sa vie. Je pense qu&#8217;une certaine stabilité financière et/ou
-familiale aide énormément. Est-ce que j&#8217;aurais réussi sans le soutien de ma
-femme qui, chaque jour pendant un an, me fichait une paix royale quand je
-<em>devais écrire</em> ? Pas sûr du tout. Est-ce que j&#8217;aurais eu la
-tête à écrire tout les jours si dès le réveil ma première pensée avait été
-«comment je nourris ma famille aujourd&#8217;hui ?». Pas certain là non plus.  Bref,
-je reconnais que j&#8217;ai disposé de certains privilèges qui m&#8217;ont permis de mener
-ce projet à son terme.</p>
-
-<p>Quoiqu&#8217;il en soit, je conseille vraiment à chacun de tenir un blog et de se
-faire des «<em>runs</em>». Écrire un article par jour, au choix :</p>
-
-<ul>
-<li>pendant une semaine</li>
-<li>pendant une quinzaine</li>
-<li>pendant 3 jours</li>
-<li>jusqu&#8217;aux prochaines vacances</li>
-<li>etc</li>
-</ul>
-
-
-<p>Vous en tirerez toujours quelque chose…</p>
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/'>Le jeu de la vie dans sept langages différents</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/08/un-article-par-jour-pendant-un-an-cest-termine-dot-dot-dot/'>Un article par jour pendant un an ! C&#8217;est terminé&hellip;</a></li><li><a href='http://lkdjiin.github.io/blog/2014/01/08/6-mois-darticles-non-stop/'>6 mois d&#8217;articles non-stop</a></li></ul></section></p>
 ]]></content>
   </entry>
   

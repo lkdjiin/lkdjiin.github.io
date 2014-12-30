@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : jeu de la vie | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/jeu-de-la-vie/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-29T15:15:39+01:00</updated>
+  <updated>2014-12-30T09:02:13+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,195 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/"/>
+    <updated>2014-12-30T08:53:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Cette fois je met des tests en place avec <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>.
+Pour cela, je dois d'abord <em>modulariser</em> mon code. J'ai donc déplacé le code
+de la dernière fois, sans la fonction <code>main</code>, dans un fichier <code>GameOfLife</code>.
+Puis j'ai ajouté la déclaration du module.</p>
+
+<!-- more -->
+
+
+<p>``` haskell GameOfLife.hs
+module GameOfLife
+( randomCells
+, createGeneration
+, formatGeneration
+) where</p>
+
+<p>import System.Random
+import Data.List</p>
+
+<p>type Cell = Int
+type Generation = [[Cell]]</p>
+
+<p>randomCells :: Int &ndash;> StdGen &ndash;> [Cell]
+randomCells size gen = take size $ randomRs (0, 1) gen</p>
+
+<p>createGeneration :: Int &ndash;> [Cell] &ndash;> Generation
+createGeneration _ [] = []
+createGeneration width cells = line:(createGeneration width rest)
+  where (line, rest) = splitAt width cells</p>
+
+<p>formatGeneration :: Generation &ndash;> String
+formatGeneration generation =
+  let rows = intercalate &ldquo;\n&rdquo; (map (concatMap show) generation)
+   in map replaceChar rows</p>
+
+<p>replaceChar :: Char &ndash;> Char
+replaceChar &lsquo;1&rsquo; = &lsquo;@&rsquo;
+replaceChar &lsquo;0&rsquo; = &lsquo; &rsquo;
+replaceChar c   = c
+```</p>
+
+<p>Une déclaration de module, c'est ça:</p>
+
+<p><code>haskell
+module GameOfLife
+( randomCells
+, createGeneration
+, formatGeneration
+) where
+</code></p>
+
+<p>J'ai donc un module <code>GameOfLife</code> qui exporte, pour l'instant, trois fonctions.
+Au fait, le code est sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>.</p>
+
+<p>Je vais créer la fonction <code>cellNextState</code>, je la rajoute donc dans les exports
+du module:</p>
+
+<p><code>haskell
+module GameOfLife
+( randomCells
+, createGeneration
+, formatGeneration
+, cellNextState
+) where
+</code></p>
+
+<p>Et j'en crée une version qui ne fonctionne pas ;)</p>
+
+<p><code>haskell
+cellNextState :: Cell -&gt; [Cell] -&gt; Cell
+cellNextState cell neighborhood = undefined
+</code></p>
+
+<p>C'est parti pour mon premier test en Haskell. Je crée un fichier
+<code>GameOfLife_Test.hs</code>:</p>
+
+<p>``` haskell GameOfLife_Test.hs
+module GameOfLife_Test where</p>
+
+<p>import GameOfLife(cellNextState)
+import Test.HUnit</p>
+
+<p>testCellNextState3 = TestCase $ assertEqual
+  &ldquo;Gets live cell when neighborhood'sum is 3&rdquo; 1 (cellNextState 0 [1,1,1,0])</p>
+
+<p>main = runTestTT testCellNextState3
+```</p>
+
+<p>C'est du bon vieux test unitaire à l'ancienne. Je mentirais en disant que
+je trouve la syntaxe sexy.</p>
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+### Error:                                
+Prelude.undefined
+Cases: 1  Tried: 1  Errors: 1  Failures: 0
+Counts {cases = 1, tried = 1, errors = 1, failures = 0}
+</code></pre>
+
+<p>Bon, si maintenant ma fonction renvoie 1, le test devrait passer.</p>
+
+<p><code>haskell
+cellNextState cell neighborhood = 1
+</code></p>
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+Cases: 1  Tried: 1  Errors: 0  Failures: 0
+Counts {cases = 1, tried = 1, errors = 0, failures = 0}
+</code></pre>
+
+<p>J'aimerais bien avoir une sortie en couleur. Si il y a moyen, je n'ai pas
+encore trouvé…</p>
+
+<p>Quoiqu'il en soit, je peux tester mon code Haskell, et ça c'est cool. Je vais
+donc en finir avec <code>cellNextState</code> en faisant quelques tests de plus:</p>
+
+<p>``` haskell GameOfLife_Test.hs
+module GameOfLife_Test where</p>
+
+<p>import GameOfLife(cellNextState)
+import Test.HUnit</p>
+
+<p>testCellNextState3 = TestCase $ assertEqual
+  &ldquo;Gets 1 when neighborhood&rsquo;s sum is 3&rdquo;
+  1 (cellNextState 0 [1,1,1,0])</p>
+
+<p>testCellNextState4AndAlive = TestCase $ assertEqual
+  &ldquo;Gets 1 when neighborhood&rsquo;s sum is 4 and cell is alive&rdquo;
+  1 (cellNextState 1 [1,1,1,0,1])</p>
+
+<p>testCellNextState4AndDead = TestCase $ assertEqual
+  &ldquo;Gets 0 when neighborhood&rsquo;s sum is 4 and cell is dead&rdquo;
+  0 (cellNextState 0 [1,1,1,0,1])</p>
+
+<p>testCellNextState6 = TestCase $ assertEqual
+  &ldquo;Gets 0 when neighborhood&rsquo;s sum is 6&rdquo;
+  0 (cellNextState 1 [1,1,1,0,1,1,1])</p>
+
+<p>main = runTestTT $ TestList [testCellNextState3,</p>
+
+<pre><code>                        testCellNextState4AndAlive,
+                        testCellNextState4AndDead,
+                        testCellNextState6]
+</code></pre>
+
+<p>```</p>
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+### Failure in: 2                         
+Gets 0 when neighborhood's sum is 4 and cell is dead
+expected: 0
+ but got: 1
+### Failure in: 3                         
+Gets 0 when neighborhood's sum is 6
+expected: 0
+ but got: 1
+Cases: 4  Tried: 4  Errors: 0  Failures: 2
+Counts {cases = 4, tried = 4, errors = 0, failures = 2}
+</code></pre>
+
+<p>``` haskell GameOfLife.hs
+cellNextState :: Cell &ndash;> [Cell] &ndash;> Cell
+cellNextState cell neighborhood
+  | total == 4 = cell
+  | total == 3 = 1
+  | otherwise = 0</p>
+
+<pre><code>where total = sum neighborhood
+</code></pre>
+
+<p>```</p>
+
+<pre><code>$ runhaskell GameOfLife_Test.hs 
+Cases: 4  Tried: 4  Errors: 0  Failures: 0
+Counts {cases = 4, tried = 4, errors = 0, failures = 0}
+</code></pre>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 2]]></title>
@@ -726,295 +915,6 @@ low:up
 ```</p>
 
 <p>Rendez-vous dans le prochain article pour la fin du jeu de la vie en Julia.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en Julia - partie 1]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/"/>
-    <updated>2014-12-23T14:50:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Voici la première partie du jeu de la vie en Julia.
-Pour installer la dernière version stable (0.3.3), rendez-vous sur le
-<a href="https://github.com/JuliaLang/julia">Github de Julia</a>.</p>
-
-<p>Julia est un langage jeune et en pleine effervescence et plusieurs frameworks
-de tests sont en cours de création. J'ai notamment remarqué:</p>
-
-<ul>
-<li><a href="https://github.com/JuliaLang/FactCheck.jl">FactCheck.jl</a></li>
-<li><a href="https://github.com/arypurnomoz/JulieTest.jl">JulieTest.jl</a></li>
-<li><a href="https://github.com/Veraticus/testfast.jl">testfast.jl</a></li>
-</ul>
-
-
-<h2>Création d'une génération</h2>
-
-<p>Mais pour ce que je compte faire ici, Julia possède une macro très simple,
-<a href="http://julia.readthedocs.org/en/latest/stdlib/test/">@test</a>. Même si <code>@test</code>
-est très minimal, ça sera suffisant pour ce programme. Voici donc les
-tests de la fonction <code>create</code> du module <code>Generation</code>:</p>
-
-<p>``` julia test.jl
-include(&ldquo;generation.jl&rdquo;)</p>
-
-<p>using Base.Test</p>
-
-<p>HEIGHT = 3
-WIDTH = 4</p>
-
-<p>created_generation = Generation.create(HEIGHT, WIDTH)
-@test typeof(created_generation) == Array{Int,2}
-@test size(created_generation) == (HEIGHT, WIDTH)
-for i in 1:length(created_generation)</p>
-
-<pre><code>@test created_generation[i] in 0:1
-</code></pre>
-
-<p>end
-```</p>
-
-<!-- more -->
-
-
-<p>Et voici les explications ligne par ligne. D'abord je rends disponible le code du futur fichier <code>generation.jl</code>:</p>
-
-<pre><code>include("generation.jl")
-</code></pre>
-
-<p>Ensuite je demande à utiliser le module <code>Test</code>, pour avoir accès à la macro <code>@test</code>:</p>
-
-<pre><code>using Base.Test
-</code></pre>
-
-<p>Définition des <em>constantes</em> pour la hauteur et la largeur de la génération:</p>
-
-<pre><code>HEIGHT = 3
-WIDTH = 4
-</code></pre>
-
-<p>Création d'une génération, c'est cette fonction qu'il m'intéresse de tester:</p>
-
-<pre><code>created_generation = Generation.create(HEIGHT, WIDTH)
-</code></pre>
-
-<p>Je m'assure que <code>create</code> renvoie un tableau d'entiers à 2 dimensions:</p>
-
-<pre><code>@test typeof(created_generation) == Array{Int,2}
-</code></pre>
-
-<p>Je m'assure que le tableau renvoyé par <code>create</code> possède bien les dimensions
-voulues:</p>
-
-<pre><code>@test size(created_generation) == (HEIGHT, WIDTH)
-</code></pre>
-
-<p>Je m'assure enfin que chaque cellule du tableau est un 1 ou un 0:</p>
-
-<pre><code>for i in 1:length(created_generation)
-    @test created_generation[i] in 0:1
-end
-</code></pre>
-
-<p>Pour lancer ces tests : <code>julia test.jl</code>.</p>
-
-<p>Voici maintenant la fonction <code>create</code> qui fera passer les tests ci-dessus:</p>
-
-<p>``` julia generation.jl
-module Generation</p>
-
-<p>create(height, width) = rand(0:1, height, width)</p>
-
-<p>end
-```</p>
-
-<p>Notez l'efficacité de la fonction <code>rand</code>. Sans argument, elle produit
-classiquement un nombre aléatoire entre 0 et 1:</p>
-
-<pre><code>julia&gt; rand()
-0.7084513868758786
-</code></pre>
-
-<p>Avec un <em>range</em>, elle sort un nombre compris dans ce <em>range</em>:</p>
-
-<pre><code>julia&gt; rand(0:1)
-1
-</code></pre>
-
-<p>Si j'ajoute en plus une dimension, elle renvoie un tableau:</p>
-
-<pre><code>julia&gt; rand(0:1, 3)
-3-element Array{Int32,1}:
- 0
- 0
- 1
-</code></pre>
-
-<p>Avec deux dimensions:</p>
-
-<pre><code>julia&gt; rand(0:1, 3, 4)
-3x4 Array{Int32,2}:
- 0  0  0  1
- 1  1  1  1
- 1  1  0  0
-</code></pre>
-
-<p>Et même pour le fun, avec 3 dimensions:</p>
-
-<pre><code>julia&gt; rand(0:1, 3, 4, 3)
-3x4x3 Array{Int32,3}:
-[:, :, 1] =
- 1  1  1  1
- 0  1  0  0
- 0  0  1  0
-
-[:, :, 2] =
- 1  1  0  1
- 0  0  0  0
- 1  1  1  1
-
-[:, :, 3] =
- 0  0  0  1
- 1  0  0  1
- 1  1  0  0
-</code></pre>
-
-<p>Vous pouvez aussi tester avec encore plus de dimensions, ça fonctionnera.</p>
-
-<h2>Affichage d'une génération</h2>
-
-<p>Bon, Julia est jeune, je l'ai déjà dit. Je n'ai rien trouvé de simple pour faire
-un peu de graphisme, donc je vais faire les sorties dans la console.</p>
-
-<p>``` julia display.jl
-module Display</p>
-
-<p>function draw(generation)</p>
-
-<pre><code>run(`clear`)
-println(replace(repr(generation)[2:end-1], " ", ""))
-</code></pre>
-
-<p>end</p>
-
-<p>end
-```</p>
-
-<p>La première ligne de la fonction, <code>run</code>, appelle la commande système
-<code>clear</code>, qui efface l'écran du terminal.</p>
-
-<p>La seconde demande à être décomposée. Soit la génération suivante:</p>
-
-<pre><code>julia&gt; generation = rand(0:1, 2, 3)
-2x3 Array{Int32,2}:
- 0  0  1
- 0  1  0
-</code></pre>
-
-<p><code>repr</code> nous donne la représentation en chaîne de caractères:</p>
-
-<pre><code>julia&gt; repr(generation)
-"[0 0 1\n 0 1 0]"
-</code></pre>
-
-<p>On peut accéder à une chaîne comme un tableau, ici je conserve ce qui se trouve
-entre le second et l'avant-dernier élément:</p>
-
-<pre><code>julia&gt; repr(generation)[2:end-1]
-"0 0 1\n 0 1 0"
-</code></pre>
-
-<p><strong>Je m'aperçois que j'ai oublié de parler d'un truc important: l'indexation les
-tableaux en Julia commence à 1.</strong></p>
-
-<p>Pour finir je supprime les espaces avec <code>replace</code>:</p>
-
-<pre><code>julia&gt; replace(repr(generation)[2:end-1], " ", "")
-"001\n010"
-</code></pre>
-
-<p>Et quand on combine tout ça dans un fichier <code>main.jl</code>, voici le résultat:</p>
-
-<p>``` julia main.jl
-include(&ldquo;generation.jl&rdquo;)
-include(&ldquo;display.jl&rdquo;)</p>
-
-<p>height = 20
-width = 80</p>
-
-<p>generation = Generation.create(height, width)
-Display.draw(generation)
-```</p>
-
-<pre><code>$ julia main.jl
-00010111100111000011100111001010001101000010110111000111101101110101000011100000
-00001101010010101111001010110101100101001000001011010001010110010100011011011011
-01001000011101000001101110010010110000100101011110001001110110101111010001001001
-11111110011101100001111010110101110000101011011000000011110000010011011100111111
-11100100000011100001111111101010011000110011010101011100011110101110111111001111
-11110011000101101010110010110011101101000111000111111111001110010100011101010101
-10011101010110011110100101110110111101111101100110011011011001011100000110110000
-01001110010101111101110001000110110100001101100100000010011101111000001010111100
-00011001011000000000000111010000100001100000001110101110000010100010101111011111
-00101011011010000001111001001011111101101110111000101100000100001101110110101100
-10000010100100011111111101010101001010001010111111001111100001010001011010000001
-11000011000001001101011001111101111111111111011111100101100101010000101111101001
-11010111011111101001111110100000001011100100010100100100000010001011000010101110
-10011000100111111100011010010100110001101110001001100100100000010100111001111011
-11110001001011000101100001001110010100010011100101001101010111111100011100111101
-11001111000101101111001110010010101001110010101100010100101011101011000101000000
-01001111111101010010001100010011000001110110001110110101010101010000111010111000
-01101001011011011001110010010010000101000111111111010101001011101011111001101010
-00101111001100011111110110000110011100001011011100101101011001111111111100011110
-01110001110010001001011100100000100000010110001100011011101001010011111011110100
-</code></pre>
-
-<p>Pour rendre la sortie écran un peu plus présentable, <em>effaçons</em> les 0, en les
-remplaçant par des espaces, et remplaçons les 1 par des @:</p>
-
-<p>``` julia display.jl
-module Display</p>
-
-<p>function draw(generation)</p>
-
-<pre><code>run(`clear`)
-output = replace(repr(generation)[2:end-1], " ", "")
-output = replace(output, "1", "@")
-output = replace(output, "0", " ")
-
-println(output)
-</code></pre>
-
-<p>end</p>
-
-<p>end
-```</p>
-
-<p>Pour terminer, voici une petite boucle pour afficher une dizaine de générations:</p>
-
-<p>``` julia main.jl
-include(&ldquo;generation.jl&rdquo;)
-include(&ldquo;display.jl&rdquo;)</p>
-
-<p>height = 20
-width = 80</p>
-
-<p>for _ in 1:10</p>
-
-<pre><code>generation = Generation.create(height, width)
-sleep(0.8)
-Display.draw(generation)
-</code></pre>
-
-<p>end
-```</p>
 
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
