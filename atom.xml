@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-30T21:22:20+01:00</updated>
+  <updated>2015-01-04T18:18:44+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,166 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Rust - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/"/>
+    <updated>2015-01-04T18:04:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<h2>Premiers pas avec Rust</h2>
+
+<p>On va écrire une version simple du jeu de la vie en Rust.</p>
+
+<h3>Installer Rust</h3>
+
+<p>Rendez-vous <a href="http://www.rust-lang.org/install.html">sur cette page</a> pour trouver
+le type d&#8217;installation qui vous convient. Même si on peut trouver que cela pose
+des problèmes, j&#8217;ai opté pour la méthode la plus simple:</p>
+
+<pre><code>$ curl -s https://static.rust-lang.org/rustup.sh | sudo sh
+</code></pre>
+
+<p>Cela installe la version <em>nightly</em> et le gestionnaire de paquet <code>Cargo</code>.
+L&#8217;installation est très rapide.</p>
+
+<p>Pour information, voici la version que j&#8217;ai installé:</p>
+
+<pre><code>$ rustc --version
+rustc 0.13.0-nightly (636663172 2014-12-28 16:21:58 +0000)
+</code></pre>
+
+<!-- more -->
+
+
+<h3>Cargo</h3>
+
+<p>Rust fournit un outil très proche du Bundler des rubyistes, il s&#8217;agit
+de Cargo. On s&#8217;en sert pour la création d&#8217;un projet, faire les builds,
+lancer les tests, gérer les dépendances, etc…</p>
+
+<p>Je crée le projet <code>game_of_life</code>:</p>
+
+<pre><code>$ cargo new game_of_life --bin
+$ cd game_of_life
+</code></pre>
+
+<p>Ça donne ceci:</p>
+
+<pre><code>$ tree
+.
+├── Cargo.toml
+└── src
+    └── main.rs
+</code></pre>
+
+<p>Le fichier <code>Cargo.toml</code> est un manifeste et ne nous intéresse pas trop pour
+l&#8217;instant.</p>
+
+<h3>Création d&#8217;une génération de cellules</h3>
+
+<p>Je ne vais pas parler de test aujourd&#8217;hui, ça sera pour plus tard. Je vais seulement écrire une
+fonction <code>create_generation</code> (ma toute première fonction Rust !) qui va produire un tableau de
+cellules, c&#8217;est à dire un tableau de 0 et de 1.</p>
+
+<p>Pour représenter une génération, j&#8217;ai déjà utilisé dans les articles précédents des tableaux de
+tableaux et des tableaux à 2 dimensions. C&#8217;est ma dernière chance d&#8217;utiliser des tableaux plats.
+Voici le code complet du fichier <code>main.rs</code>.</p>
+
+<figure class='code'><figcaption><span>src/main.rs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">Rng</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">let</span> <span class="n">gen</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">3</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;{}&quot;</span><span class="p">,</span> <span class="n">gen</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">fn</span> <span class="n">create_generation</span><span class="p">(</span><span class="n">width</span><span class="o">:</span> <span class="k">uint</span><span class="p">,</span> <span class="n">height</span><span class="o">:</span> <span class="k">uint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">uint</span><span class="o">&gt;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">let</span> <span class="n">size</span> <span class="o">=</span> <span class="n">width</span> <span class="o">*</span> <span class="n">height</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">let</span> <span class="k">mut</span> <span class="n">result</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">let</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">task_rng</span><span class="p">().</span><span class="n">gen_range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="m">2</span><span class="k">u</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">result</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Pour le compiler et le lancer, on peut utiliser Cargo:</p>
+
+<pre><code>$ cargo run
+     Running `target/game_of_life`
+[1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0]
+</code></pre>
+
+<p>Je ne suis pas très content de cette fonction <code>create_generation</code>, j&#8217;ai bien
+conscience qu&#8217;elle est maladroite, mais elle a
+au moins un mérite: elle fonctionne ! Alors, place aux explications.</p>
+
+<pre><code>fn create_generation(width: uint, height: uint) -&gt; Vec&lt;uint&gt; {
+</code></pre>
+
+<p>Rust est statiquement typé, le compilateur doit connaître la signature d&#8217;une
+fonction. Donc on déclare le type des paramêtres (ici <code>uint</code> pour <em>unsigned int</em>)
+et le type de la valeur de retour (ici un <code>Vec</code>teur).</p>
+
+<pre><code>let size = width * height;
+</code></pre>
+
+<p>On déclare une variable avec <code>let</code>. Pas besoin de préciser le type de <code>size</code>
+puisque le compilateur peut l&#8217;inférer.</p>
+
+<pre><code>let mut result = Vec::new();
+</code></pre>
+
+<p>Par défaut, une variable ne peut pas être modifiée, comme je désire ajouter des
+éléments à <code>result</code>, je dois spécifier <code>mut</code> (pour <em>mutable</em>).</p>
+
+<pre><code>for _ in range(0u, size) {
+    let cell = std::rand::task_rng().gen_range(0u, 2u);
+    result.push(cell);
+}
+</code></pre>
+
+<p><code>0u</code> est une autre manière de préciser le type. Ici c&#8217;est <code>0</code> de type <code>uint</code>.
+Dans la boucle on génère un nombre aléatoire et on l&#8217;ajoute dans <code>result</code>.</p>
+
+<pre><code>result
+</code></pre>
+
+<p>Finalement on renvoie <code>result</code>. Notez qu&#8217;il n&#8217;y a pas de point-virgule après
+<code>result</code>, c&#8217;est voulu, ça ne fonctionnerait pas avec. Par contre j&#8217;aurais pu
+écrire <code>return result;</code>, et là il faudrait le point-virgule. Je n&#8217;ai pas encore
+très bien compris le pourquoi du comment, donc je ne vais pas me risquer à vous
+fournir une explication foireuse.</p>
+
+<p>Voilà, c&#8217;est tout pour ma première approche de Rust. La prochaine fois je
+parlerais des tests unitaires.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/'>Le jeu de la vie en Haskell &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/'>Le jeu de la vie en Haskell &ndash; partie 2</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 4]]></title>
@@ -1280,7 +1440,7 @@ un <code>map</code>. Ici, j&#8217;ai créé une fonction <code>newstate</code> �
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1532,7 +1692,7 @@ composées de notre cellule cible et de ses 8 voisines.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/23/le-jeu-de-la-vie-en-julia-partie-1/'>Le jeu de la vie en Julia &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1871,7 +2031,7 @@ remplaçant par des espaces, et remplaçons les 1 par des @:</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/'>Le jeu de la vie en Julia &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/24/le-jeu-de-la-vie-en-julia-partie-2/'>Le jeu de la vie en Julia &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1897,7 +2057,7 @@ aucun moment.</p>
 <p>Bref, j&#8217;oublie définitivement Logo. La prochaine version sera en Julia, ça
 promet d&#8217;être bien plus intéressant.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2040,7 +2200,7 @@ Logo.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/16/le-jeu-de-la-vie-en-logo-partie-1/'>Le jeu de la vie en logo &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2339,7 +2499,7 @@ irresponsable.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/'>Le jeu de la vie en logo &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/17/le-jeu-de-la-vie-en-logo-partie-2/'>Le jeu de la vie en logo &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2741,7 +2901,7 @@ réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3018,7 +3178,7 @@ message:    "It populates generation uniformly"
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -3186,7 +3346,7 @@ tests (vous l&#8217;avez vu ?). Je <em>fixerais</em> ça dans le prochain articl
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -5506,7 +5666,7 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -6073,380 +6233,7 @@ celui-ci est déjà bien long.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en javascript - partie 1]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/"/>
-    <updated>2014-10-16T22:27:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>C&#8217;est parti pour le jeu de la vie version Javascript. Dans ce premier article
-nous allons créer une génération de cellules au hasard et l&#8217;afficher.</p>
-
-<p><em>J&#8217;avais annoncé dans <a href="blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">l&#8217;article précédent</a> que je commencerais par la
-version Ruby/Opal. Je l&#8217;ai écrite mais je n&#8217;en suis pas satisfait. Les
-performances sont très pauvres et j&#8217;ai écrit plus de code que nécessaire.
-Je prendrais donc le temps de la nettoyer un peu avant de la publier.</em></p>
-
-<!-- more -->
-
-
-<p>Pour les tests, j&#8217;utiliserais <a href="http://jasmine.github.io/">Jasmine</a> et la structure du projet sera la
-suivante:</p>
-
-<pre><code>$ tree
-.
-├── app
-│   └── application.js
-├── index.html
-├── jasmine
-│   └── lib
-│       └── jasmine-2.0.3
-│           ├── boot.js
-│           ├── console.js
-│           ├── jasmine.css
-│           ├── jasmine_favicon.png
-│           ├── jasmine-html.js
-│           └── jasmine.js
-├── spec
-│   └── test.js
-└── test.html
-</code></pre>
-
-<p>Dans le fichier <code>test.html</code> on charge les dépendances de Jasmine, puis notre
-application (<code>app/application.js</code>) et enfin nos tests (<code>spec/test.js</code>).</p>
-
-<figure class='code'><figcaption><span>test.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
-</span><span class='line'><span class="nt">&lt;html&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;title&gt;</span>Test Game of Life<span class="nt">&lt;/title&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;shortcut icon&quot;</span> <span class="na">type=</span><span class="s">&quot;image/png&quot;</span> <span class="na">href=</span><span class="s">&quot;jasmine/lib/jasmine-2.0.3/jasmine_favicon.png&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">href=</span><span class="s">&quot;jasmine/lib/jasmine-2.0.3/jasmine.css&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;jasmine/lib/jasmine-2.0.3/jasmine.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;jasmine/lib/jasmine-2.0.3/jasmine-html.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;jasmine/lib/jasmine-2.0.3/boot.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;app/application.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;spec/test.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
-</span><span class='line'><span class="nt">&lt;/html&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Créer une génération de cellules au hasard</h2>
-
-<p>Nous allons écrire la fonction <code>createGeneration</code> qui
-devra <em>fabriquer</em> un ensemble de cellules, mortes (<code>0</code>) ou vivantes (<code>1</code>), au
-hasard. Mon premier test avec Jasmine est de m&#8217;assurer que cette fonction
-renvoie un tableau (<code>Array</code>).</p>
-
-<figure class='code'><figcaption><span>spec/test.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;createGeneration&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;returns an array&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">createGeneration</span><span class="p">();</span>
-</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nb">Array</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">result</span><span class="p">)).</span><span class="nx">toBe</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Lorsqu&#8217;on lance <code>test.html</code> Jasmine nous dit que <code>createGeneration</code> n&#8217;existe
-pas. Le code javascript permettant de faire passer ce test consiste donc à
-renvoyer un tableau vide.</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">return</span> <span class="p">[];</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Maintenant il nous faut un tableau à 2 dimensions:</p>
-
-<figure class='code'><figcaption><span>spec/test.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;createGeneration&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;creates a 2D array&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">.</span><span class="nx">length</span><span class="p">).</span><span class="nx">toBe</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">length</span><span class="p">).</span><span class="nx">toBe</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>La fonction suivante est suffisante pour faire passer le test.</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">generation</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">y</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">generation</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et maintenant on rempli notre tableau 2D avec des <code>1</code> ou des <code>0</code>. D&#8217;abord un
-test pour vérifier que chaque cellule du tableau contient <code>1</code> ou <code>0</code>.</p>
-
-<figure class='code'><figcaption><span>spec/test.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;createGeneration&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;fills each room with 1 or 0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">generation</span> <span class="o">=</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">y</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">;</span> <span class="nx">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">x</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">;</span> <span class="nx">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="kd">var</span> <span class="nx">cell</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">];</span>
-</span><span class='line'>        <span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">cell</span> <span class="o">===</span> <span class="mi">0</span> <span class="o">||</span> <span class="nx">cell</span> <span class="o">===</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>        <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toBe</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Puis l&#8217;implémentation.</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">generation</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">y</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[];</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">j</span> <span class="o">&lt;</span> <span class="nx">x</span><span class="p">;</span> <span class="nx">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">generation</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="nx">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">generation</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Voilà, cette première partie du jeu de la vie en Javascript était simple et
-rapide à coder. Je vais maintenant mettre les tests de coté pour me
-concentrer sur l&#8217;affichage d&#8217;une génération.</p>
-
-<h2>Afficher une génération</h2>
-
-<p>Voyons pour commencer le contenu du fichier <code>index.html</code>.</p>
-
-<figure class='code'><figcaption><span>index.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
-</span><span class='line'><span class="nt">&lt;html&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;head&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;title&gt;</span>Game of Life<span class="nt">&lt;/title&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;/head&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;body&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;canvas</span> <span class="na">width=</span><span class="s">&quot;100&quot;</span> <span class="na">height=</span><span class="s">&quot;100&quot;</span> <span class="na">id=</span><span class="s">&quot;canvas&quot;</span><span class="nt">&gt;&lt;/canvas&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">src=</span><span class="s">&quot;app/application.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;/body&gt;</span>
-</span><span class='line'><span class="nt">&lt;/html&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Nous référençons bien entendu notre <code>application.js</code> et nous créons un
-<code>canvas</code> de (petite) dimension 100x100. C&#8217;est dans ce <code>canvas</code> que nous allons
-<em>dessiner</em> nos cellules.</p>
-
-<p>Sans plus attendre, voici le contenu de <code>application.js</code>.</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">generation</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">height</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">y</span> <span class="o">&lt;</span> <span class="nx">height</span><span class="p">;</span> <span class="nx">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">]</span> <span class="o">=</span> <span class="p">[];</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">x</span> <span class="o">&lt;</span> <span class="nx">width</span><span class="p">;</span> <span class="nx">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">]</span> <span class="o">=</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">floor</span><span class="p">(</span><span class="nb">Math</span><span class="p">.</span><span class="nx">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">2</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">generation</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">draw</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">clearBackground</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">drawCells</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">clearBackground</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillStyle</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">;</span>
-</span><span class='line'>  <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillRect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">drawCells</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillStyle</span> <span class="o">=</span> <span class="s1">&#39;white&#39;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">y</span> <span class="o">&lt;</span> <span class="nx">height</span><span class="p">;</span> <span class="nx">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">x</span> <span class="o">&lt;</span> <span class="nx">width</span><span class="p">;</span> <span class="nx">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">x</span><span class="p">][</span><span class="nx">y</span><span class="p">]</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillRect</span><span class="p">(</span><span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">generation</span> <span class="o">=</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">c</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;canvas&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">ctx</span> <span class="o">=</span> <span class="nx">c</span><span class="p">.</span><span class="nx">getContext</span><span class="p">(</span><span class="s1">&#39;2d&#39;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">draw</span><span class="p">(</span><span class="nx">ctx</span><span class="p">,</span> <span class="nx">generation</span><span class="p">);</span>
-</span><span class='line'><span class="p">})()</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Ces quelques petites fonctions sont bien suffisantes pour afficher un
-ensemble de cellules.</p>
-
-<p>Dans le prochain article nous calculerons l&#8217;état des générations suivantes.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/'>Le jeu de la vie en javascript &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li></ul></section></p>
 ]]></content>
   </entry>
   

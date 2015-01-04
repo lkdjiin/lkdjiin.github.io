@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : rust | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/rust/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2014-12-30T21:22:20+01:00</updated>
+  <updated>2015-01-04T18:18:44+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,155 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Rust - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/"/>
+    <updated>2015-01-04T18:04:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<h2>Premiers pas avec Rust</h2>
+
+<p>On va écrire une version simple du jeu de la vie en Rust.</p>
+
+<h3>Installer Rust</h3>
+
+<p>Rendez-vous <a href="http://www.rust-lang.org/install.html">sur cette page</a> pour trouver
+le type d'installation qui vous convient. Même si on peut trouver que cela pose
+des problèmes, j'ai opté pour la méthode la plus simple:</p>
+
+<pre><code>$ curl -s https://static.rust-lang.org/rustup.sh | sudo sh
+</code></pre>
+
+<p>Cela installe la version <em>nightly</em> et le gestionnaire de paquet <code>Cargo</code>.
+L'installation est très rapide.</p>
+
+<p>Pour information, voici la version que j'ai installé:</p>
+
+<pre><code>$ rustc --version
+rustc 0.13.0-nightly (636663172 2014-12-28 16:21:58 +0000)
+</code></pre>
+
+<!-- more -->
+
+
+<h3>Cargo</h3>
+
+<p>Rust fournit un outil très proche du Bundler des rubyistes, il s'agit
+de Cargo. On s'en sert pour la création d'un projet, faire les builds,
+lancer les tests, gérer les dépendances, etc…</p>
+
+<p>Je crée le projet <code>game_of_life</code>:</p>
+
+<pre><code>$ cargo new game_of_life --bin
+$ cd game_of_life
+</code></pre>
+
+<p>Ça donne ceci:</p>
+
+<pre><code>$ tree
+.
+├── Cargo.toml
+└── src
+    └── main.rs
+</code></pre>
+
+<p>Le fichier <code>Cargo.toml</code> est un manifeste et ne nous intéresse pas trop pour
+l'instant.</p>
+
+<h3>Création d'une génération de cellules</h3>
+
+<p>Je ne vais pas parler de test aujourd'hui, ça sera pour plus tard. Je vais seulement écrire une
+fonction <code>create_generation</code> (ma toute première fonction Rust !) qui va produire un tableau de
+cellules, c'est à dire un tableau de 0 et de 1.</p>
+
+<p>Pour représenter une génération, j'ai déjà utilisé dans les articles précédents des tableaux de
+tableaux et des tableaux à 2 dimensions. C'est ma dernière chance d'utiliser des tableaux plats.
+Voici le code complet du fichier <code>main.rs</code>.</p>
+
+<p>``` rust src/main.rs
+use std::rand::Rng;</p>
+
+<p>fn main() {</p>
+
+<pre><code>let gen = create_generation(3, 4);
+println!("{}", gen);
+</code></pre>
+
+<p>}</p>
+
+<p>fn create_generation(width: uint, height: uint) &ndash;> Vec<uint> {</p>
+
+<pre><code>let size = width * height;
+let mut result = Vec::new();
+for _ in range(0u, size) {
+    let cell = std::rand::task_rng().gen_range(0u, 2u);
+    result.push(cell);
+}
+result
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Pour le compiler et le lancer, on peut utiliser Cargo:</p>
+
+<pre><code>$ cargo run
+     Running `target/game_of_life`
+[1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0]
+</code></pre>
+
+<p>Je ne suis pas très content de cette fonction <code>create_generation</code>, j'ai bien
+conscience qu'elle est maladroite, mais elle a
+au moins un mérite: elle fonctionne ! Alors, place aux explications.</p>
+
+<pre><code>fn create_generation(width: uint, height: uint) -&gt; Vec&lt;uint&gt; {
+</code></pre>
+
+<p>Rust est statiquement typé, le compilateur doit connaître la signature d'une
+fonction. Donc on déclare le type des paramêtres (ici <code>uint</code> pour <em>unsigned int</em>)
+et le type de la valeur de retour (ici un <code>Vec</code>teur).</p>
+
+<pre><code>let size = width * height;
+</code></pre>
+
+<p>On déclare une variable avec <code>let</code>. Pas besoin de préciser le type de <code>size</code>
+puisque le compilateur peut l'inférer.</p>
+
+<pre><code>let mut result = Vec::new();
+</code></pre>
+
+<p>Par défaut, une variable ne peut pas être modifiée, comme je désire ajouter des
+éléments à <code>result</code>, je dois spécifier <code>mut</code> (pour <em>mutable</em>).</p>
+
+<pre><code>for _ in range(0u, size) {
+    let cell = std::rand::task_rng().gen_range(0u, 2u);
+    result.push(cell);
+}
+</code></pre>
+
+<p><code>0u</code> est une autre manière de préciser le type. Ici c'est <code>0</code> de type <code>uint</code>.
+Dans la boucle on génère un nombre aléatoire et on l'ajoute dans <code>result</code>.</p>
+
+<pre><code>result
+</code></pre>
+
+<p>Finalement on renvoie <code>result</code>. Notez qu'il n'y a pas de point-virgule après
+<code>result</code>, c'est voulu, ça ne fonctionnerait pas avec. Par contre j'aurais pu
+écrire <code>return result;</code>, et là il faudrait le point-virgule. Je n'ai pas encore
+très bien compris le pourquoi du comment, donc je ne vais pas me risquer à vous
+fournir une explication foireuse.</p>
+
+<p>Voilà, c'est tout pour ma première approche de Rust. La prochaine fois je
+parlerais des tests unitaires.</p>
+
+<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie dans sept langages différents]]></title>
