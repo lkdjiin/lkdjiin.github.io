@@ -9,7 +9,8 @@
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : facile Premiers pas avec Rust On va écrire une version simple du jeu de la vie en Rust. Installer Rust Rendez-vous sur cette page pour &hellip;">
+  <meta name="description" content="Niveau : facile Tests unitaires avec Rust Je vais ajouter des tests unitaires au code du dernier article. Il s&#8217;agissait
+simplement d&#8217;une &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -80,6 +81,133 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/">Le jeu de la vie en Rust - partie 2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-13T10:14:00+01:00" pubdate data-updated="true">13 janvier 2015</time>
+        
+         | <a href="/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<h2>Tests unitaires avec Rust</h2>
+
+<p>Je vais ajouter des tests unitaires au code du dernier article. Il s&#8217;agissait
+simplement d&#8217;une seule fonction pour créer une génération aléatoire de cellule.
+Voici tout le code, l&#8217;implémentation et les tests dans le même fichier <code>src/main.rs</code>.</p>
+
+<figure class='code'><figcaption><span>src/main.rs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">Rng</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#[cfg(not(test))]</span>
+</span><span class='line'><span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">let</span> <span class="n">gen</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">3</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;{}&quot;</span><span class="p">,</span> <span class="n">gen</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">fn</span> <span class="n">create_generation</span><span class="p">(</span><span class="n">width</span><span class="o">:</span> <span class="k">uint</span><span class="p">,</span> <span class="n">height</span><span class="o">:</span> <span class="k">uint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">uint</span><span class="o">&gt;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">let</span> <span class="n">size</span> <span class="o">=</span> <span class="n">width</span> <span class="o">*</span> <span class="n">height</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">let</span> <span class="k">mut</span> <span class="n">result</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">let</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">task_rng</span><span class="p">().</span><span class="n">gen_range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="m">2</span><span class="k">u</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">result</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#[cfg(test)]</span>
+</span><span class='line'><span class="k">mod</span> <span class="n">tests</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">use</span> <span class="n">super</span><span class="o">::</span><span class="n">create_generation</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cp">#[test]</span>
+</span><span class='line'>    <span class="k">fn</span> <span class="n">test_create_generation_length</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">let</span> <span class="n">result</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">4</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="m">12</span><span class="p">,</span> <span class="n">result</span><span class="p">.</span><span class="n">len</span><span class="p">());</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cp">#[test]</span>
+</span><span class='line'>    <span class="k">fn</span> <span class="n">test_create_generation_has_1_and_0</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>        <span class="k">let</span> <span class="n">gen</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">i</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="n">gen</span><span class="p">.</span><span class="n">len</span><span class="p">())</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">assert</span><span class="o">!</span><span class="p">(</span><span class="n">gen</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="m">2</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/">Lire l&#8217;article &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -744,58 +872,6 @@ tests de la fonction <code>create</code> du module <code>Generation</code>:</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/">Le jeu de la vie en logo - partie 3</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-12-20T17:46:00+01:00" pubdate data-updated="true">20 décembre 2014</time>
-        
-         | <a href="/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Suite et fin du jeu de la vie en Logo.</p>
-
-<p>Je ne montrerais pas d&#8217;extraits de code, pour la simple raison que
-je n&#8217;en peux plus du langage Logo.  Ceci dit, pour les curieux, le code complet
-se trouve sur <a href="https://github.com/lkdjiin/game-of-life-logo">Github</a>.</p>
-
-<p> Je ne sais pas ce qui m&#8217;a pris de
-ressortir Logo du placard. Les madeleines de Proust sont faites pour rester à
-l&#8217;état de souvenirs. Écrire le jeu de la vie en Logo n&#8217;a jamais été fun. À
-aucun moment.</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/12/20/le-jeu-de-la-vie-en-logo-partie-3/">Lire l&#8217;article &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -820,6 +896,10 @@ aucun moment.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/">Le jeu de la vie en Rust - partie 2</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/">Le jeu de la vie en Rust - partie 1</a>
       </li>
     
@@ -841,10 +921,6 @@ aucun moment.</p>
     
       <li class="post">
         <a href="/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/">Ruby 2.2 - Une sélection des nouvelles méthodes</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/26/le-jeu-de-la-vie-en-julia-partie-3/">Le jeu de la vie en Julia - partie 3</a>
       </li>
     
   </ul>

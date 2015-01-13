@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : rust | lkdjiin's blog]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/rust/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-01-04T18:18:44+01:00</updated>
+  <updated>2015-01-13T10:35:03+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,191 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le jeu de la vie en Rust - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/"/>
+    <updated>2015-01-13T10:14:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<h2>Tests unitaires avec Rust</h2>
+
+<p>Je vais ajouter des tests unitaires au code du dernier article. Il s'agissait
+simplement d'une seule fonction pour créer une génération aléatoire de cellule.
+Voici tout le code, l'implémentation et les tests dans le même fichier <code>src/main.rs</code>.</p>
+
+<p>``` rust src/main.rs
+use std::rand::Rng;</p>
+
+<h1>[cfg(not(test))]</h1>
+
+<p>fn main() {</p>
+
+<pre><code>let gen = create_generation(3, 4);
+println!("{}", gen);
+</code></pre>
+
+<p>}</p>
+
+<p>fn create_generation(width: uint, height: uint) &ndash;> Vec<uint> {</p>
+
+<pre><code>let size = width * height;
+let mut result = Vec::new();
+for _ in range(0u, size) {
+    let cell = std::rand::task_rng().gen_range(0u, 2u);
+    result.push(cell);
+}
+result
+</code></pre>
+
+<p>}</p>
+
+<h1>[cfg(test)]</h1>
+
+<p>mod tests {</p>
+
+<pre><code>use super::create_generation;
+
+#[test]
+fn test_create_generation_length() {
+    let result = create_generation(4, 3);
+    assert_eq!(12, result.len());
+}
+
+#[test]
+fn test_create_generation_has_1_and_0() {
+    let gen = create_generation(2, 3);
+    for i in range(0u, gen.len()) {
+        assert!(gen[i] &lt; 2);
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<!-- more -->
+
+
+<p>On lance les tests grâce à l'outil à tout faire, Cargo:</p>
+
+<pre><code>$ cargo test
+   Compiling game_of_life v0.0.1 (file:///home/xavier/code/rust/game_of_life)
+     Running target/game_of_life-f45ebd9dc330e3e4
+
+running 2 tests
+test test::test_create_generation_has_1_and_0 ... ok
+test test::test_create_generation_length ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
+</code></pre>
+
+<p>Concernant le code, il se comprend assez facilement de lui-même, voici tout de même quelques
+éclaircissements:</p>
+
+<p>``` rust</p>
+
+<h1>[cfg(not(test))]</h1>
+
+<p>fn main() {
+```</p>
+
+<p>Sans cette annotation (pardon, attribut en langage Rust) <code>cargo test</code> produirait
+un avertissement assez ennuyeux, car la fonction <code>main</code> n'est pas utilisé par
+les tests:</p>
+
+<pre><code>$ cargo test
+   Compiling game_of_life v0.0.1 (file:///home/xavier/code/rust/game_of_life)
+/home/.../main.rs:3:1: 6:2 warning: function is never used: `main`, #[warn(dead_code)] on by default
+/home/.../main.rs:3 fn main() {
+/home/.../main.rs:4     let gen = create_generation(3, 4);
+/home/.../main.rs:5     println!("{}", gen);
+/home/.../main.rs:6 }
+</code></pre>
+
+<p>``` rust</p>
+
+<h1>[cfg(test)]</h1>
+
+<p>mod tests
+```</p>
+
+<p>C'est la déclaration d'un <strong>mod</strong>ule nommé <code>tests</code>, avec un attribut permettant
+à Rust de savoir que ce qui suit concerne des tests et ne devra pas être compilé
+dans le programme final.</p>
+
+<p><code>rust
+use super::create_generation;
+</code></p>
+
+<p>On va utiliser la fonction <code>create_generation</code>, définie dans le parent du
+module courant. <code>tests</code> est le module courant, le parent est créé automatiquement.</p>
+
+<p>``` rust</p>
+
+<h1>[test]</h1>
+
+<p>```</p>
+
+<p>Ceci n'est pas un commentaire, vous l'avez compris, on appelle ça un attribut. C'est une sorte d'annotation.
+Ça dit à Rust que la prochaine fonction est un test et ça nous permet d'écrire des fonctions utilitaires
+dans le module <code>tests</code>.</p>
+
+<h2>Tests unitaires et implémentation dans le même fichier</h2>
+
+<p>C'est la recommendation de Rust : placer les tests unitaires dans le même fichier
+que l'implémentation. Bien sûr, les tests d'intégration ont un dossier et des
+fichiers bien à eux.
+L'idée est originale même si elle ne doit pas être nouvelle. Je dis que
+l'idée n'est pas nouvelle parce que je l'ai environ deux ou trois fois par an.
+Par contre je n'y ai jamais cru suffisamment pour tenter de l'implémenter. Rust
+l'a fait et je suis très curieux de voir ce que cela va donner.</p>
+
+<p>Cette façon de faire a des avantages, comme ne pas perdre de temps à
+trouver les tests unitaires ou aider à rester <em>focus</em> sur ce qui doit être
+testé. Mais je m'interroge quand même sur ce que cela peut poser comme problèmes à l'usage.</p>
+
+<p>Ma première interrogation concerne la taille des fichiers.
+Le code Rust, sans être le plus verbeux qui soit, est quand même loin de la concision.
+Un exemple simple, en Rust:</p>
+
+<p><code>rust
+let cell = std::rand::task_rng().gen_range(0u, 2u);
+result.push(cell);
+</code></p>
+
+<p>Le même en Ruby:</p>
+
+<p><code>ruby
+result &lt;&lt; rand(2)
+</code></p>
+
+<p>Je ne serais pas étonné de trouver des fichiers Rust avec 200 lignes de code
+d'implémentation (je vois ça régulièrement en Ruby).
+Et si on respecte la <a href="http://martinfowler.com/bliki/TestPyramid.html">pyramide des tests</a> on se retrouve
+vite avec 3 ou 4 tests par fonction, d'où des fichiers assez imposants,
+d'un bon millier de lignes.
+En fouillant un peu dans le code de Rust, par exemple le fichier <a href="https://github.com/rust-lang/rust/blob/master/src/libserialize/json.rs">json.rs</a>,
+on peut voir que je suis encore loin de la réalité (presque 4000 lignes).</p>
+
+<p>Une autre interrogation concerne le refactoring. Il faut pouvoir facilement casser
+un fichier en plusieurs autres, plus petits. Dans quelle mesure ce type de
+«couplage» entre test et implémentation va faciliter, ou au contraire compliquer,
+cette tâche ?</p>
+
+<p>Bref, je trouve l'idée très séduisante en théorie, et j'attend de voir si sa mise
+en pratique fonctionne. Il y a encore d'autres choses à dire sur les tests avec
+Rust, et j'y reviendrais certainement dans un prochain article.</p>
+
+<p>N'oubliez pas que votre opinion m'intéresse, alors si vous pensez quelque chose
+de ces tests unitaires à même le code, laissez donc un commentaire.</p>
+
+<p>À bientôt.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Rust - partie 1]]></title>
