@@ -1,0 +1,472 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>To tap or not to tap en Ruby ? C'est la question - lkdjiin</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile Le monde des Rubyistes est divisé en deux: ceux qui utilisent Object#tap à tout
+propos, et ceux qui ne connaissent pas cette méthode &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="lkdjiin" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c"/>
+<hgroup>
+  <h1><a href="/">lkdjiin</a></h1>
+  
+    <h2>Xavier Nayrac</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:lkdjiin.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">To tap or not to tap en Ruby ? C'est la question</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-14T20:59:00+01:00" pubdate data-updated="true">14 janvier 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Le monde des Rubyistes est divisé en deux: ceux qui utilisent <code>Object#tap</code> à tout
+propos, et ceux qui ne connaissent pas cette méthode.
+Dans l&#8217;article <a href="https://blog.engineyard.com/2015/five-ruby-methods-you-should-be-using">Five Ruby Methods You Should Be Using</a>
+sur le blog d&#8217;Engine Yard, Ben Lewis nous parle justement, entre autre, de <code>Object#tap</code>
+en expliquant très bien son mécanisme.</p>
+
+<p>Mon article d&#8217;aujourd&#8217;hui sera lui aussi divisé en deux, d&#8217;abord une traduction en
+français de l&#8217;article original de Ben Lewis sur <code>Object#tap</code>, puis une critique
+(que j&#8217;espère constructive)
+à la fois de l&#8217;article et de la méthode <code>tap</code></p>
+
+<!-- more -->
+
+
+<h3>Traduction de l&#8217;article original Object#tap</h3>
+
+<p>Vous êtes vous déjà trouvé dans la situation d&#8217;appeler une méthode sur un
+objet, et que la valeur de retour ne soit pas ce que vous vouliez ? Vous
+espériez recevoir l&#8217;objet en question, mais à la place vous avez reçu une autre
+valeur. Peut-être que vous vouliez ajouter une valeur arbitraire à un ensemble
+de paramètres enregistrés dans un hash. Vous mettez à jour cette valeur avec
+<code>Hash.[]</code>, mais vous recevez <code>'bar'</code> au lieu de l&#8217;objet hash <code>params</code>, donc vous
+devez le renvoyer explicitement.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+</span><span class='line'>  <span class="n">params</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La ligne qui contient <code>params</code> à la fin de cette méthode semble être de trop.</p>
+
+<p>On peut arranger ça avec <code>Object#tap</code>.</p>
+
+<p>C&#8217;est facile à utiliser. Appeler simplement <code>tap</code> sur l&#8217;objet, puis passer à
+<code>tap</code> un bloc avec le code que vous voulez lancer sur cet objet. L&#8217;objet sera
+donné au bloc, puis retourné. Voici comment nous pouvons l&#8217;utiliser pour
+améliorer <code>update_params</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">.</span><span class="n">tap</span> <span class="p">{</span><span class="o">|</span><span class="nb">p</span><span class="o">|</span> <span class="nb">p</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Il y a des douzaines d&#8217;excellents endroits où utiliser <code>Object#tap</code>. Cherchez
+simplement les méthodes appelées sur un objet qui ne renvoient pas l&#8217;objet
+lui-même, alors que c&#8217;est ce que vous voudriez.</p>
+
+<h3>Fin de la traduction et début de la critique</h3>
+
+<p>L&#8217;article explique très bien la mécanique de <code>Object#tap</code>, sur ce point pas de souci.
+Mais j&#8217;ai un problème avec l&#8217;exemple choisi, que je trouve peu adapté.
+— <em>Pour être tout à fait honnête, j&#8217;ai plutôt un problème avec <code>tap</code>.</em> —
+Si on rapproche les deux versions,
+je trouve que la première est beaucoup plus facile à lire. Même si celle-ci
+comporte une ligne de plus. Même si cette ligne supplémentaire ne fait <em>pas
+très pro</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+</span><span class='line'>  <span class="n">params</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">.</span><span class="n">tap</span> <span class="p">{</span><span class="o">|</span><span class="nb">p</span><span class="o">|</span> <span class="nb">p</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Dans la première version, voici comment se passe la lecture dans ma tête:</p>
+
+<p><em>«Dans l&#8217;objet <code>params</code> on enregistre la clé <code>:foo</code> avec la valeur <code>'bar'</code> puis on
+renvoie <code>params</code>»</em></p>
+
+<p>C&#8217;est cristallin, précis, simple, rapide.</p>
+
+<p>Dans la seconde version, ça donne ceci (toujours dans ma tête, hein):</p>
+
+<p><em>«On se branche sur l&#8217;objet <code>params</code>, donc il sera renvoyé à la fin de la méthode.
+Dans le bloc on utilise <code>p</code>, qui est… ? … qui est <code>params</code>, ok, donc on enregistre
+la clé <code>:foo</code> avec la valeur <code>'bar'</code> dans <code>params</code>.»</em></p>
+
+<p>C&#8217;est loin d&#8217;être aussi fluide. Y a plein de parasites. Ce qui fait que dans ce
+cas précis, je préfere très nettement la première version.</p>
+
+<p>Au passage, je trouve que <code>p</code> est très mal choisi, ça me donne la fausse sensation que le
+bloc va itérer sur chaque paramètre. Selon moi il n&#8217;y a aucune raison pour ne pas
+réutiliser <code>params</code>, bien au contraire:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">.</span><span class="n">tap</span> <span class="p">{</span><span class="o">|</span><span class="n">params</span><span class="o">|</span> <span class="n">params</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Là où <code>tap</code> peut améliorer légèrement la lecture, c&#8217;est lorsqu&#8217;il y a beaucoup
+d&#8217;opérations sur un objet:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_an_item</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">item</span> <span class="o">=</span> <span class="no">Item</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">do_something</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">do_another_thing</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">send_email_confirmation_to_admin</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">do_something_else</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">important_stuff</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">less_important_stuff_to_do</span>
+</span><span class='line'>  <span class="n">item</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On n&#8217;y comprend rien, hein ?  Avec <code>tap</code>, ça permet de voir rapidement que ce
+code ne comporte rien d&#8217;autre que des opérations sur un <em>item</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_an_item</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">Item</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">tap</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">do_something</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">do_another_thing</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">send_email_confirmation_to_admin</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">do_something_else</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">important_stuff</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">less_important_stuff_to_do</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Mais encore une fois, l&#8217;amélioration apportée est légère. Et elle est
+seulement visuelle. Je vois régulièrement ce genre de code et je ne l&#8217;aime pas.
+<code>Item.new.tap</code>, par exemple, c&#8217;est la <a href="http://en.wikipedia.org/wiki/Law_of_Demeter">loi de Démeter</a> qu&#8217;on foule du pied.
+Et le code à l&#8217;intérieur du bloc reste une bouillie qu&#8217;on ferait mieux
+de refactorer.</p>
+
+<p>Bref, la méthode <code>Object#tap</code> me semble poser plus de problèmes qu&#8217;elle n&#8217;en
+résout. Vous avez un avis sur le sujet ?</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/'>Ruby 2.2 &ndash; Une sélection des nouvelles méthodes</a></li><li><a href='/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li></ul></section></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-14T20:59:00+01:00" pubdate data-updated="true">14 janvier 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/" title="Previous Post: Le jeu de la vie en Rust - partie 2">&laquo; Le jeu de la vie en Rust - partie 2</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>À propos de moi</h1>
+  <p>
+  Rubyiste patenté, accro au TDD, serial blogger, heureux utilisateur de Vim,
+  accordéonniste, curieux de tout et émerveillé par les algorithmes génétiques.
+  </p>
+  <p>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+  </p>
+</section>
+<section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question/">To tap or not to tap en Ruby ? C'est la question</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/">Le jeu de la vie en Rust - partie 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/">Le jeu de la vie en Rust - partie 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/">Le jeu de la vie en Haskell - partie 4</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/">Le jeu de la vie en Haskell - partie 3</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>On Twitter</h1>
+  <a class="twitter-timeline"  href="https://twitter.com/lkdjiin" data-widget-id="554992534532136960">Tweets de @lkdjiin</a>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+          
+</section>
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

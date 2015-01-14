@@ -4,7 +4,7 @@
   <title><![CDATA[lkdjiin]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-01-13T14:49:47+01:00</updated>
+  <updated>2015-01-14T21:21:26+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,197 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[To tap or not to tap en Ruby ? C'est la question]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question/"/>
+    <updated>2015-01-14T20:59:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/01/14/to-tap-or-not-to-tap-en-ruby-cest-la-question</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>Le monde des Rubyistes est divisé en deux: ceux qui utilisent <code>Object#tap</code> à tout
+propos, et ceux qui ne connaissent pas cette méthode.
+Dans l&#8217;article <a href="https://blog.engineyard.com/2015/five-ruby-methods-you-should-be-using">Five Ruby Methods You Should Be Using</a>
+sur le blog d&#8217;Engine Yard, Ben Lewis nous parle justement, entre autre, de <code>Object#tap</code>
+en expliquant très bien son mécanisme.</p>
+
+<p>Mon article d&#8217;aujourd&#8217;hui sera lui aussi divisé en deux, d&#8217;abord une traduction en
+français de l&#8217;article original de Ben Lewis sur <code>Object#tap</code>, puis une critique
+(que j&#8217;espère constructive)
+à la fois de l&#8217;article et de la méthode <code>tap</code></p>
+
+<!-- more -->
+
+
+<h3>Traduction de l&#8217;article original Object#tap</h3>
+
+<p>Vous êtes vous déjà trouvé dans la situation d&#8217;appeler une méthode sur un
+objet, et que la valeur de retour ne soit pas ce que vous vouliez ? Vous
+espériez recevoir l&#8217;objet en question, mais à la place vous avez reçu une autre
+valeur. Peut-être que vous vouliez ajouter une valeur arbitraire à un ensemble
+de paramètres enregistrés dans un hash. Vous mettez à jour cette valeur avec
+<code>Hash.[]</code>, mais vous recevez <code>'bar'</code> au lieu de l&#8217;objet hash <code>params</code>, donc vous
+devez le renvoyer explicitement.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+</span><span class='line'>  <span class="n">params</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>La ligne qui contient <code>params</code> à la fin de cette méthode semble être de trop.</p>
+
+<p>On peut arranger ça avec <code>Object#tap</code>.</p>
+
+<p>C&#8217;est facile à utiliser. Appeler simplement <code>tap</code> sur l&#8217;objet, puis passer à
+<code>tap</code> un bloc avec le code que vous voulez lancer sur cet objet. L&#8217;objet sera
+donné au bloc, puis retourné. Voici comment nous pouvons l&#8217;utiliser pour
+améliorer <code>update_params</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">.</span><span class="n">tap</span> <span class="p">{</span><span class="o">|</span><span class="nb">p</span><span class="o">|</span> <span class="nb">p</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Il y a des douzaines d&#8217;excellents endroits où utiliser <code>Object#tap</code>. Cherchez
+simplement les méthodes appelées sur un objet qui ne renvoient pas l&#8217;objet
+lui-même, alors que c&#8217;est ce que vous voudriez.</p>
+
+<h3>Fin de la traduction et début de la critique</h3>
+
+<p>L&#8217;article explique très bien la mécanique de <code>Object#tap</code>, sur ce point pas de souci.
+Mais j&#8217;ai un problème avec l&#8217;exemple choisi, que je trouve peu adapté.
+— <em>Pour être tout à fait honnête, j&#8217;ai plutôt un problème avec <code>tap</code>.</em> —
+Si on rapproche les deux versions,
+je trouve que la première est beaucoup plus facile à lire. Même si celle-ci
+comporte une ligne de plus. Même si cette ligne supplémentaire ne fait <em>pas
+très pro</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+</span><span class='line'>  <span class="n">params</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">.</span><span class="n">tap</span> <span class="p">{</span><span class="o">|</span><span class="nb">p</span><span class="o">|</span> <span class="nb">p</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Dans la première version, voici comment se passe la lecture dans ma tête:</p>
+
+<p><em>«Dans l&#8217;objet <code>params</code> on enregistre la clé <code>:foo</code> avec la valeur <code>'bar'</code> puis on
+renvoie <code>params</code>»</em></p>
+
+<p>C&#8217;est cristallin, précis, simple, rapide.</p>
+
+<p>Dans la seconde version, ça donne ceci (toujours dans ma tête, hein):</p>
+
+<p><em>«On se branche sur l&#8217;objet <code>params</code>, donc il sera renvoyé à la fin de la méthode.
+Dans le bloc on utilise <code>p</code>, qui est… ? … qui est <code>params</code>, ok, donc on enregistre
+la clé <code>:foo</code> avec la valeur <code>'bar'</code> dans <code>params</code>.»</em></p>
+
+<p>C&#8217;est loin d&#8217;être aussi fluide. Y a plein de parasites. Ce qui fait que dans ce
+cas précis, je préfere très nettement la première version.</p>
+
+<p>Au passage, je trouve que <code>p</code> est très mal choisi, ça me donne la fausse sensation que le
+bloc va itérer sur chaque paramètre. Selon moi il n&#8217;y a aucune raison pour ne pas
+réutiliser <code>params</code>, bien au contraire:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">update_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">params</span><span class="o">.</span><span class="n">tap</span> <span class="p">{</span><span class="o">|</span><span class="n">params</span><span class="o">|</span> <span class="n">params</span><span class="o">[</span><span class="ss">:foo</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Là où <code>tap</code> peut améliorer légèrement la lecture, c&#8217;est lorsqu&#8217;il y a beaucoup
+d&#8217;opérations sur un objet:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_an_item</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">item</span> <span class="o">=</span> <span class="no">Item</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">do_something</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">do_another_thing</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">send_email_confirmation_to_admin</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">do_something_else</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">important_stuff</span>
+</span><span class='line'>  <span class="n">item</span><span class="o">.</span><span class="n">less_important_stuff_to_do</span>
+</span><span class='line'>  <span class="n">item</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On n&#8217;y comprend rien, hein ?  Avec <code>tap</code>, ça permet de voir rapidement que ce
+code ne comporte rien d&#8217;autre que des opérations sur un <em>item</em>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">create_an_item</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">Item</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">params</span><span class="p">)</span><span class="o">.</span><span class="n">tap</span> <span class="k">do</span> <span class="o">|</span><span class="n">item</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">do_something</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">do_another_thing</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">send_email_confirmation_to_admin</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">do_something_else</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">important_stuff</span>
+</span><span class='line'>    <span class="n">item</span><span class="o">.</span><span class="n">less_important_stuff_to_do</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Mais encore une fois, l&#8217;amélioration apportée est légère. Et elle est
+seulement visuelle. Je vois régulièrement ce genre de code et je ne l&#8217;aime pas.
+<code>Item.new.tap</code>, par exemple, c&#8217;est la <a href="http://en.wikipedia.org/wiki/Law_of_Demeter">loi de Démeter</a> qu&#8217;on foule du pied.
+Et le code à l&#8217;intérieur du bloc reste une bouillie qu&#8217;on ferait mieux
+de refactorer.</p>
+
+<p>Bref, la méthode <code>Object#tap</code> me semble poser plus de problèmes qu&#8217;elle n&#8217;en
+résout. Vous avez un avis sur le sujet ?</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/'>Ruby 2.2 &ndash; Une sélection des nouvelles méthodes</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Le jeu de la vie en Rust - partie 2]]></title>
@@ -5286,603 +5477,6 @@ Javascript.</p>
 
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/27/le-jeu-de-la-vie-en-ruby-opal-partie-2/'>Le jeu de la vie en ruby (opal) &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/'>Le jeu de la vie dans sept langages différents</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en javascript - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3/"/>
-    <updated>2014-10-18T12:29:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>C&#8217;est le moment de mettre ensemble tous les éléments codés jusqu&#8217;ici pour
-contempler le jeu de la vie s&#8217;épanouir devant nos yeux.
-Seulement je n&#8217;ai pas d&#8217;idée claire sur la manière dont ça peut-être fait
-en javascript, et même sur les problèmes que ça pourrait poser, et encore
-moins sur la manière de tester ça avec Jasmine.</p>
-
-<p>Le TDD n&#8217;est pas une religion ! Ce n&#8217;est pas un précepte qu&#8217;on suit
-aveuglement. On peut, et on doit, le questionner. Comment écrire un test quand
-on n&#8217;a pas la moindre idée du problème à résoudre ?</p>
-
-<!-- more -->
-
-
-<p>Quand cette situation m&#8217;arrive, j&#8217;expérimente. Et voilà le résultat de mon
-expérimentation:</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">draw</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">totalGeneration</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">clearBackground</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">drawCells</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">totalGeneration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">update</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">totalGeneration</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">update</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">totalGeneration</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">.</span><span class="nx">length</span><span class="p">,</span>
-</span><span class='line'>      <span class="nx">width</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Create an empty generation.</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">nextGeneration</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">height</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">y</span> <span class="o">&lt;</span> <span class="nx">height</span><span class="p">;</span> <span class="nx">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">nextGeneration</span><span class="p">[</span><span class="nx">y</span><span class="p">]</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">width</span><span class="p">);</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1">// Fill the next generation.</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">y</span> <span class="o">&lt;</span> <span class="nx">height</span><span class="p">;</span> <span class="nx">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">x</span> <span class="o">&lt;</span> <span class="nx">width</span><span class="p">;</span> <span class="nx">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">neighborhood</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">state</span> <span class="o">=</span> <span class="nx">nextCellState</span><span class="p">(</span><span class="nx">neighborhood</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">nextGeneration</span><span class="p">[</span><span class="nx">y</span><span class="p">][</span><span class="nx">x</span><span class="p">]</span> <span class="o">=</span> <span class="nx">state</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">draw</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="nx">context2d</span><span class="p">,</span> <span class="nx">nextGeneration</span><span class="p">,</span> <span class="nx">totalGeneration</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">generation</span> <span class="o">=</span> <span class="nx">createGeneration</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">c</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;canvas&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">context2d</span> <span class="o">=</span> <span class="nx">c</span><span class="p">.</span><span class="nx">getContext</span><span class="p">(</span><span class="s1">&#39;2d&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">totalGeneration</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">draw</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">totalGeneration</span><span class="p">);</span>
-</span><span class='line'><span class="p">})()</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Maintenant que j&#8217;ai une meilleure connaissance du problème à résoudre, j&#8217;efface
-toutes les modifications que je viens de faire et je recommence en TDD.</p>
-
-<p>Enfin c&#8217;est ce que je ferais normalement sur un projet réèl. Là, j&#8217;ai la flemme.</p>
-
-<h2>Un meilleur affichage</h2>
-
-<p>Je vais simplement faire un zoom 4x. Repérez <code>scale</code> dans le code suivant pour
-savoir ce que j&#8217;ai modifié.</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">draw</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">totalGeneration</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="nx">generation</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">length</span><span class="p">;</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">scale</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">clearBackground</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">,</span> <span class="nx">scale</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">drawCells</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">,</span> <span class="nx">scale</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">totalGeneration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">update</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">totalGeneration</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">clearBackground</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">,</span> <span class="nx">scale</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillStyle</span> <span class="o">=</span> <span class="s1">&#39;black&#39;</span><span class="p">;</span>
-</span><span class='line'>  <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillRect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nx">width</span> <span class="o">*</span> <span class="nx">scale</span><span class="p">,</span> <span class="nx">height</span> <span class="o">*</span> <span class="nx">scale</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">drawCells</span><span class="p">(</span><span class="nx">context2d</span><span class="p">,</span> <span class="nx">generation</span><span class="p">,</span> <span class="nx">width</span><span class="p">,</span> <span class="nx">height</span><span class="p">,</span> <span class="nx">scale</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillStyle</span> <span class="o">=</span> <span class="s1">&#39;white&#39;</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">y</span> <span class="o">&lt;</span> <span class="nx">height</span><span class="p">;</span> <span class="nx">y</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">x</span> <span class="o">&lt;</span> <span class="nx">width</span><span class="p">;</span> <span class="nx">x</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="k">if</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">x</span><span class="p">][</span><span class="nx">y</span><span class="p">]</span> <span class="o">===</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">context2d</span><span class="p">.</span><span class="nx">fillRect</span><span class="p">(</span><span class="nx">x</span> <span class="o">*</span> <span class="nx">scale</span><span class="p">,</span> <span class="nx">y</span> <span class="o">*</span> <span class="nx">scale</span><span class="p">,</span> <span class="nx">scale</span><span class="p">,</span> <span class="nx">scale</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Une surface de jeu «sans bord»</h2>
-
-<p>Autre amélioration, mais non des moindres, on va connecter les bords du
-haut et du bas, ainsi que les bords de gauche et de droite. On aura ainsi un
-<a href="http://fr.wikipedia.org/wiki/Tore">tore</a>.</p>
-
-<p>Cette nouvelle fonctionnalité simule assez bien ce qu&#8217;il se passe dans le
-boulot du monde réèl. Je pourrais modifier le code, le regarder fonctionner,
-puis modifier les tests en conséquence. Je vois ça souvent. Seulement cette
-façon de faire revient à écrire les tests <strong>après</strong> le code. Et ça, ça n&#8217;est
-pas du TDD. Je vais d&#8217;abord modifier les test, quitte à en désactiver certains
-temporairement, <strong>puis</strong> modifier le code pour faire passer les nouveaux tests.</p>
-
-<p>C&#8217;est la fonction <code>extractNeighborhood</code> qui doit être modifée. Je vais donc
-réécrire les <em>expect</em>s de:</p>
-
-<pre><code>describe("returns the neighborhood of a border's cell", function() {
-</code></pre>
-
-<p>et de</p>
-
-<pre><code>describe("returns the neighborhood of a corner's cell", function() {
-</code></pre>
-
-<p>Cela fait 8 tests à réécrire. Je les ai tous désactivés, sauf le premier.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'>  <span class="nx">describe</span><span class="p">(</span><span class="s2">&quot;returns the neighborhood of a border&#39;s cell&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=2, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">xit</span><span class="p">(</span><span class="s2">&quot;x=2, y=2&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">xit</span><span class="p">(</span><span class="s2">&quot;x=0, y=1&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">xit</span><span class="p">(</span><span class="s2">&quot;x=3, y=1&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">xdescribe</span><span class="p">(</span><span class="s2">&quot;returns the neighborhood of a corner&#39;s cell&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=0, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=3, y=0&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=0, y=2&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nx">it</span><span class="p">(</span><span class="s2">&quot;x=3, y=2&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">y</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>          <span class="nx">result</span> <span class="o">=</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">);</span>
-</span><span class='line'>      <span class="nx">expect</span><span class="p">(</span><span class="nx">result</span><span class="p">).</span><span class="nx">toEqual</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]);</span>
-</span><span class='line'>    <span class="p">});</span>
-</span><span class='line'>  <span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je vais donc les refaire passer un par un. Pour mémoire, voici l&#8217;ancien code:</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">cells</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">).</span><span class="nx">concat</span><span class="p">(</span>
-</span><span class='line'>              <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">],</span> <span class="nx">x</span><span class="p">),</span>
-</span><span class='line'>              <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">));</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">cells</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">cell</span> <span class="o">===</span> <span class="kc">undefined</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="nx">cell</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">line</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">line</span> <span class="o">===</span> <span class="k">void</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">];</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et voici le code réécrit pour faire passer ce premier test:</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">cells</span><span class="p">,</span>
-</span><span class='line'>      <span class="nx">line1</span><span class="p">,</span>
-</span><span class='line'>      <span class="nx">line2</span><span class="p">,</span>
-</span><span class='line'>      <span class="nx">line3</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">line1</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="nx">line1</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">generation</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">line2</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">line3</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">cells</span> <span class="o">=</span> <span class="nx">line1</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">line2</span><span class="p">,</span> <span class="nx">line3</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">cells</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">cell</span> <span class="o">===</span> <span class="kc">undefined</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="nx">cell</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">line</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je réactive le second test, lance la suite de test pour confirmer qu&#8217;il
-échoue, et voici le nouveau code:</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">line1</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="nx">line1</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">generation</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">line2</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">y</span> <span class="o">===</span> <span class="nx">generation</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">line3</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="nx">line3</span> <span class="o">=</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">...</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Au tour du 3ème test. Pour le faire passer c&#8217;est <code>extractLine</code> que je dois
-modifier.</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">line</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">x</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">line</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Et enfin je réactive le 4ème test.</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">line</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">x</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">line</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
-</span><span class='line'>  <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="nx">x</span> <span class="o">===</span> <span class="nx">line</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]];</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="o">+</span><span class="mi">1</span><span class="p">]];</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Puis je réactive les 4 tests restants (ceux des coins) et je vérifie que tout
-passe. C&#8217;est un bon moment pour lancer le programme et vérifier visuellement
-que des objets <em>traversent</em> bien les bords.</p>
-
-<p>J&#8217;ai ensuite fait un peu de refactoring:</p>
-
-<figure class='code'><figcaption><span>app/application.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">extractNeighborhood</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">cells</span> <span class="o">=</span> <span class="nx">line1</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span>
-</span><span class='line'>              <span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">line2</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">),</span> <span class="nx">line3</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">cells</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">cell</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">cell</span> <span class="o">===</span> <span class="kc">undefined</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="nx">cell</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">line1</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">generation</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">line2</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">return</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">line3</span><span class="p">(</span><span class="nx">generation</span><span class="p">,</span> <span class="nx">x</span><span class="p">,</span> <span class="nx">y</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">y</span> <span class="o">===</span> <span class="nx">generation</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">generation</span><span class="p">[</span><span class="nx">y</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="nx">x</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">function</span> <span class="nx">extractLine</span><span class="p">(</span><span class="nx">line</span><span class="p">,</span> <span class="nx">x</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">left</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-</span><span class='line'>      <span class="nx">right</span> <span class="o">=</span> <span class="nx">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="nx">x</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">left</span> <span class="o">=</span> <span class="nx">line</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="nx">x</span> <span class="o">===</span> <span class="nx">line</span><span class="p">.</span><span class="nx">length</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>    <span class="nx">right</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">return</span> <span class="p">[</span><span class="nx">line</span><span class="p">[</span><span class="nx">left</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">x</span><span class="p">],</span> <span class="nx">line</span><span class="p">[</span><span class="nx">right</span><span class="p">]];</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>J&#8217;avoue que je ne sais pas si c&#8217;est mieux. Quoiqu&#8217;il en soit, vous pouvez
-trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code complet sur Github</a>.</p>
-
-<p>La prochaine fois je m&#8217;attaquerais à la version Ruby/Opal.</p>
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/10/17/le-jeu-de-la-vie-en-javascript-partie-2/'>Le jeu de la vie en javascript &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/'>Le jeu de la vie en javascript &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/13/le-jeu-de-la-vie-en-rust-partie-2/'>Le jeu de la vie en Rust &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
