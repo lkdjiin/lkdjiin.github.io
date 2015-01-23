@@ -186,7 +186,7 @@ gems:
 Je n'ai pas fini de la lire, cette documentation. Elle semble prometteuse, et
 je sens que je vais apprendre encore pas mal de choses.
 
-J'espère vous avoir donner envie de regarder certaines commandes plus en détails.
+J'espère vous avoir donné envie de regarder certaines commandes plus en détails.
 Dans un monde idéal, il faudrait que je regarde les 33…
 
 À bientôt.
