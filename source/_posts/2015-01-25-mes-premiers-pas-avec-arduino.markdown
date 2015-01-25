@@ -25,10 +25,11 @@ Tu révises aussi la [loi d'Ohm](http://fr.wikipedia.org/wiki/Loi_d%27Ohm):
 
 **_V = R x I_**
 
-Avec **V** pour volt (mesuré en volts), **R** pour résistance (mesuré en ohms)
+Avec **V** pour voltage (mesuré en volts), **R** pour résistance (mesuré en ohms)
 et **I** pour intensité (mesuré en ampères). J'avais appris cette loi au lycée
 sous la forme U = RxI,
-en français le **V** devient donc **U**, je ne sais plus pourquoi ?
+en français le **V** devient donc **U**, pour des raisons de normalisation de
+l'AFNOR.
 
 Dans le second projet, tu allumes plusieurs LEDs, avec un peu de code pour les
 faire clignoter. Pour le troisième projet, toujours des LEDs à allumer mais
