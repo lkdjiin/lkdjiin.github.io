@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : turing | Xavier Nayrac]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/turing/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2015-02-01T10:39:34+01:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Une machine de Turing en Ruby]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/"/>
+    <updated>2015-02-01T10:11:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Avec le film <em>Imitation Game</em> sorti récemment, Alan Turing, qu'on peut considérer
+comme un père fondateur de l'informatique, fait l'actualité.
+Je vous propose, dans cet article, de réaliser une machine de Turing en Ruby.</p>
+
+<p><img class="center" src="/images/alan-turing2.jpg"></p>
+
+<!-- more -->
+
+
+<h2>Définition de la machine de Turing</h2>
+
+<p>Ma définition personnelle sera la suivante:</p>
+
+<p><strong>Une machine de Turing est une machine imaginaire et hyper-minimale, pouvant
+faire tourner un algorithme.</strong></p>
+
+<p>Si vous ressentez le besoin d'une définition plus formelle, les articles de
+Wikipédia, en <a href="http://en.wikipedia.org/wiki/Turing_machine">anglais</a>
+et en <a href="http://fr.wikipedia.org/wiki/Machine_de_Turing">français</a>
+sont très bien fourni. Il y a aussi une présentation sympathique de la machine de
+Turing dans une petite <a href="http://videotheque.cnrs.fr/doc=3001">vidéo en français</a>
+de 7 minutes, par le CNRS.</p>
+
+<p>Dans la suite de l'article, je prends comme hypothèse que vous savez ce qu'est
+une machine de Turing. Si ça n'est pas le cas, ou si vous avez besoin de vous
+rafraichir la mémoire, n'hésitez pas à visiter les liens précédents.</p>
+
+<h2>On fait une gem ?</h2>
+
+<p>À terme, j'aimerais un programme qui puisse faire tourner n'importe quel jeu
+d'instructions. Mais pour un premier jet, concret, rapidement réalisable, et
+malgré tout intéressant,
+on va faire tourner un <a href="http://en.wikipedia.org/wiki/Busy_beaver">busy beaver</a>
+à 3 états.</p>
+
+<p>Deux trucs à noter:</p>
+
+<ol>
+<li><em>Busy beaver à 3 états</em> ça peut faire peur. Je vous assure qu'il n'y a pas
+de quoi. C'est un algorithme relativement simple.</li>
+<li><em>Busy beaver</em> se traduit par <em>castor affairé</em>, c'est bien la preuve qu'il n'y
+a pas de quoi avoir peur.</li>
+</ol>
+
+
+<p>Comme je veux une structure bien claire dès le départ, et pas un script vite
+fait qu'on aura toutes les peines du monde à étendre, je vais faire une gem:</p>
+
+<pre><code>$ bundle gem turing_machine -btV
+      create  turing_machine/Gemfile
+      create  turing_machine/Rakefile
+      create  turing_machine/LICENSE.txt
+      create  turing_machine/README.md
+      create  turing_machine/.gitignore
+      create  turing_machine/turing_machine.gemspec
+      create  turing_machine/lib/turing_machine.rb
+      create  turing_machine/lib/turing_machine/version.rb
+      create  turing_machine/bin/turing_machine
+      create  turing_machine/.rspec
+      create  turing_machine/spec/spec_helper.rb
+      create  turing_machine/spec/turing_machine_spec.rb
+      create  turing_machine/.travis.yml
+Initializing git repo in /home/xavier/devel/ruby/turing_machine
+</code></pre>
+
+<p>Vous pouvez trouver le code sur Github : <a href="https://github.com/lkdjiin/turing_machine">lkdjiin/turing_machine</a>.</p>
+
+<h2>Objectif de la première version</h2>
+
+<p>Mon objectif est d'obtenir cette sortie quand je lance le programme
+<code>turing_machine</code>:</p>
+
+<pre><code>$ turing_machine 
+  1 0000000000 A -&gt; 1RB
+        ^
+  2 0000100000 B -&gt; 1LA
+         ^
+  3 0000110000 A -&gt; 1LC
+        ^
+  4 0000110000 C -&gt; 1LB
+       ^
+  5 0001110000 B -&gt; 1LA
+      ^
+  6 0011110000 A -&gt; 1RB
+     ^
+  7 0111110000 B -&gt; 1RB
+      ^
+  8 0111110000 B -&gt; 1RB
+       ^
+  9 0111110000 B -&gt; 1RB
+        ^
+ 10 0111110000 B -&gt; 1RB
+         ^
+ 11 0111110000 B -&gt; 1LA
+          ^
+ 12 0111111000 A -&gt; 1LC
+         ^
+ 13 0111111000 C -&gt; 1RHALT
+        ^
+ 14 0111111000 HALT
+         ^
+</code></pre>
+
+<p>Explication d'une ligne de la sortie:</p>
+
+<pre><code>  5 0001110000 B -&gt; 1LA
+      ^
+</code></pre>
+
+<ul>
+<li>Le <code>5</code> est le numéro de la séquence.</li>
+<li>La suite de <code>0</code> et de <code>1</code> est le ruban.</li>
+<li>Le <code>^</code> est la position de la tête de lecture.</li>
+<li>Le <code>B</code> est l'état courant.</li>
+<li>La fin, ici <code>1LA</code>, est la prochaine instruction à exécuter.</li>
+</ul>
+
+
+<p>Une instruction est composé a) du symbole à écrire, b) du mouvement de la
+tête de lecture et, c) du nouvel état. Par exemple <code>1LA</code> signifie: écrire <code>1</code>,
+bouger la tête de lecture à gauche (<code>L</code>) et passer dans l'état <code>A</code>.</p>
+
+<h2>Une classe pour le ruban et la tête de lecture</h2>
+
+<p>On commence par une classe <code>Tape</code> (ruban), que je combine avec <code>head</code> (tête de
+lecture) pour aller plus vite.</p>
+
+<p>``` ruby
+class Tape</p>
+
+<p>  def initialize</p>
+
+<pre><code>@symbols = Array.new(10) { '0' }
+@index = 4
+</code></pre>
+
+<p>  end</p>
+
+<p>  attr_reader :index</p>
+
+<p>  def head</p>
+
+<pre><code>@symbols[@index]
+</code></pre>
+
+<p>  end</p>
+
+<p>  def head=(symbol)</p>
+
+<pre><code>@symbols[@index] = symbol
+</code></pre>
+
+<p>  end</p>
+
+<p>  def shift_left</p>
+
+<pre><code>@index -= 1
+</code></pre>
+
+<p>  end</p>
+
+<p>  def shift_right</p>
+
+<pre><code>@index += 1
+</code></pre>
+
+<p>  end</p>
+
+<p>  def to_s</p>
+
+<pre><code>@symbols.join
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<p>Il faut noter qu'une machine de Turing possède un ruban avec un nombre infini
+de cellules. Ici ça n'est pas le cas puisqu'il n'y en a que 10. C'est un
+raccourci qui permet d'aller plus vite, de garder le code simple, et 10 cellules
+sont largement suffisantes pour le <em>busy beaver à 3 états</em>.</p>
+
+<p><img class="center" src="/images/castor2.png"></p>
+
+<h2>Une classe pour le registre d'état</h2>
+
+<p>Avoir une classe dédiée à conserver l'état peut sembler
+<a href="http://fr.wikipedia.org/wiki/Overkill">overkill</a>. Et pour être honnête, je dois
+dire que ça l'est certainement. Une simple variable aurait été suffisante pour
+cette première version. Mais bon, je suis sûr que cette classe sera bientôt
+utile ;)</p>
+
+<p>``` ruby
+class StateRegister</p>
+
+<p>  def initialize(state)</p>
+
+<pre><code>@state = state
+</code></pre>
+
+<p>  end</p>
+
+<p>  def current</p>
+
+<pre><code>@state
+</code></pre>
+
+<p>  end</p>
+
+<p>  def change(new_state)</p>
+
+<pre><code>@state = new_state
+</code></pre>
+
+<p>  end</p>
+
+<p>  def to_s</p>
+
+<pre><code>@state.to_s
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<h2>Une classe pour la table d'instructions</h2>
+
+<p>Ici aussi, j'aurais pu (du ?) faire appel au
+<a href="http://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it">YAGNI</a>.
+Un simple hash pourrait faire l'affaire pour l'instant.</p>
+
+<p>``` ruby
+class Instruction</p>
+
+<p>  def initialize(table)</p>
+
+<pre><code>@table = table
+</code></pre>
+
+<p>  end</p>
+
+<p>  def for(symbol, state)</p>
+
+<pre><code>@table[[symbol, state]]
+</code></pre>
+
+<p>  end</p>
+
+<p>end
+```</p>
+
+<h2>Une instance d'une machine de Turing</h2>
+
+<p>Les trois petites classes ci-dessus vont se combiner à l'intérieur de la
+classe <code>Instance</code> suivante, pour simuler une machine de Turing. Même si elle
+est un peu plus complexe que les précédentes, cette classe reste malgré tout
+très simple.</p>
+
+<p>``` ruby
+class Instance</p>
+
+<p>  def initialize(instructions, initial_state)</p>
+
+<pre><code>@instruction = Instruction.new(instructions)
+@state = StateRegister.new(initial_state)
+@tape = Tape.new
+@sequence = 1
+</code></pre>
+
+<p>  end</p>
+
+<p>  def to_s</p>
+
+<pre><code>"#{'%3d' % @sequence} #{@tape} #{@state}#{instr_to_s}\n    " +
+' ' * @tape.index + '^'
+</code></pre>
+
+<p>  end</p>
+
+<p>  def proceed</p>
+
+<pre><code>current = action
+update_sequence
+update_tape(current)
+update_state(current)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def halted?</p>
+
+<pre><code>@state.current == 'HALT'
+</code></pre>
+
+<p>  end</p>
+
+<p>  private</p>
+
+<p>  def update_sequence</p>
+
+<pre><code>@sequence += 1
+</code></pre>
+
+<p>  end</p>
+
+<p>  def update_tape(current_action)</p>
+
+<pre><code>@tape.head = current_action[:write]
+current_action[:move] == 'L' ? @tape.shift_left : @tape.shift_right
+</code></pre>
+
+<p>  end</p>
+
+<p>  def update_state(current_action)</p>
+
+<pre><code>@state.change(current_action[:next_state])
+</code></pre>
+
+<p>  end</p>
+
+<p>  def action</p>
+
+<pre><code>@instruction.for(@tape.head, @state.current)
+</code></pre>
+
+<p>  end</p>
+
+<p>  def instr_to_s</p>
+
+<pre><code>if halted?
+  ''
+else
+  " -&gt; " + action[:write] + action[:move] + action[:next_state]
+end
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<h2>Le binaire</h2>
+
+<p>Enfin quand je dis le binaire c'est un abus de langage puisque ça reste un
+fichier texte ;) Quoiqu'il en soit voici le programme <code>turing_machine</code> qui
+implémente le <em>busy beaver à 3 états</em>.</p>
+
+<p>``` ruby bin/turing_machine</p>
+
+<h1>!/usr/bin/env ruby</h1>
+
+<p>require &lsquo;turing_machine&rsquo;</p>
+
+<p>include TuringMachine</p>
+
+<p>instructions = {
+  [&lsquo;0&rsquo;, &lsquo;A&rsquo;] => {write: &lsquo;1&rsquo;, move: &lsquo;R&rsquo;, next_state: &lsquo;B&rsquo;},
+  [&lsquo;1&rsquo;, &lsquo;A&rsquo;] => {write: &lsquo;1&rsquo;, move: &lsquo;L&rsquo;, next_state: &lsquo;C&rsquo;},
+  [&lsquo;0&rsquo;, &lsquo;B&rsquo;] => {write: &lsquo;1&rsquo;, move: &lsquo;L&rsquo;, next_state: &lsquo;A&rsquo;},
+  [&lsquo;1&rsquo;, &lsquo;B&rsquo;] => {write: &lsquo;1&rsquo;, move: &lsquo;R&rsquo;, next_state: &lsquo;B&rsquo;},
+  [&lsquo;0&rsquo;, &lsquo;C&rsquo;] => {write: &lsquo;1&rsquo;, move: &lsquo;L&rsquo;, next_state: &lsquo;B&rsquo;},
+  [&lsquo;1&rsquo;, &lsquo;C&rsquo;] => {write: &lsquo;1&rsquo;, move: &lsquo;R&rsquo;, next_state: &lsquo;HALT&rsquo;},
+}</p>
+
+<p>initial_state = &lsquo;A&rsquo;</p>
+
+<p>instance = Instance.new(instructions, initial_state)</p>
+
+<p>loop do
+  puts instance.to_s
+  break if instance.halted?
+  instance.proceed
+end
+```</p>
+
+<p>Cette version (<a href="https://github.com/lkdjiin/turing_machine">voir le code complet</a>) est juste une mise en train. Il faudrait maintenant disposer
+d'un ruban infini et pouvoir entrer n'importe quel jeu d'instructions.</p>
+
+<p>À plus tard.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>
