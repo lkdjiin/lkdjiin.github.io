@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-01T10:39:34+01:00</updated>
+  <updated>2015-02-02T18:21:51+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,216 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Une machine de Turing en Ruby - Le parser]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/"/>
+    <updated>2015-02-02T18:04:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser</id>
+    <content type="html"><![CDATA[<div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+
+
+<p>La machine de Turing réalisée dans le <a href="http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/">dernier article</a>
+était seulement un brouillon, et elle souffre de plusieurs limitations.
+J&#8217;aimerais maintenant faire évoluer le programme en permettant à l&#8217;utilisateur
+de charger un jeu d&#8217;instructions quelconque. Pour cela j&#8217;aurai besoin
+d&#8217;un <em>parser</em>, qui sera vite écrit grâce à Ruby.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/gears4.jpg"></p>
+
+<!-- more -->
+
+
+<p>Un jeu d&#8217;instruction pour la machine de Turing ressemblera à ceci (si vous avez
+besoin du code, <a href="https://github.com/lkdjiin/turing_machine">il est ici</a>):</p>
+
+<figure class='code'><figcaption><span>instruction_sets/busy_beaver_3</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">0 A =&gt; 1 R B</span>
+</span><span class='line'><span class="err">1 A =&gt; 1 L C</span>
+</span><span class='line'><span class="err">0 B =&gt; 1 L A</span>
+</span><span class='line'><span class="err">1 B =&gt; 1 R B</span>
+</span><span class='line'><span class="err">0 C =&gt; 1 L B</span>
+</span><span class='line'><span class="err">1 C =&gt; 1 R HALT</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C&#8217;est l&#8217;algorithme <em>busy beaver à 3 états</em> que j&#8217;ai utilisé pour coder la
+première version de la machine. Il faut écrire un <em>parser</em> qui va transformer
+ce <em>code source</em> en ce hash Ruby, utilisé en interne par la machine:</p>
+
+<figure class='code'><figcaption><span>instruction_sets/busy_beaver_3</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">{</span>
+</span><span class='line'><span class="err">  [&#39;0&#39;, &#39;A&#39;] =&gt; {write: &#39;1&#39;, move: &#39;R&#39;, next_state: &#39;B&#39;},</span>
+</span><span class='line'><span class="err">  [&#39;1&#39;, &#39;A&#39;] =&gt; {write: &#39;1&#39;, move: &#39;L&#39;, next_state: &#39;C&#39;},</span>
+</span><span class='line'><span class="err">  [&#39;0&#39;, &#39;B&#39;] =&gt; {write: &#39;1&#39;, move: &#39;L&#39;, next_state: &#39;A&#39;},</span>
+</span><span class='line'><span class="err">  [&#39;1&#39;, &#39;B&#39;] =&gt; {write: &#39;1&#39;, move: &#39;R&#39;, next_state: &#39;B&#39;},</span>
+</span><span class='line'><span class="err">  [&#39;0&#39;, &#39;C&#39;] =&gt; {write: &#39;1&#39;, move: &#39;L&#39;, next_state: &#39;B&#39;},</span>
+</span><span class='line'><span class="err">  [&#39;1&#39;, &#39;C&#39;] =&gt; {write: &#39;1&#39;, move: &#39;R&#39;, next_state: &#39;HALT&#39;},</span>
+</span><span class='line'><span class="err">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Voici le parser, qui est construit autour de la méthode <code>String#split</code>.</p>
+
+<figure class='code'><figcaption><span>lib/turing_machine/instructions_parser.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">TuringMachine</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">InstructionsParser</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">raw_instructions</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@lines</span> <span class="o">=</span> <span class="n">raw_instructions</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@instructions</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">parse</span>
+</span><span class='line'>      <span class="n">build_instructions</span>
+</span><span class='line'>      <span class="vi">@instructions</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">build_instructions</span>
+</span><span class='line'>      <span class="vi">@lines</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">instruction</span><span class="o">|</span>
+</span><span class='line'>        <span class="n">keys</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">instruction</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&gt;&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">key_symbol</span><span class="p">,</span> <span class="n">key_state</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">split</span>
+</span><span class='line'>        <span class="n">write</span><span class="p">,</span> <span class="n">move</span><span class="p">,</span> <span class="n">next_state</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span>
+</span><span class='line'>        <span class="vi">@instructions</span><span class="o">[[</span><span class="n">key_symbol</span><span class="p">,</span> <span class="n">key_state</span><span class="o">]]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>          <span class="ss">write</span><span class="p">:</span> <span class="n">write</span><span class="p">,</span> <span class="ss">move</span><span class="p">:</span> <span class="n">move</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="n">next_state</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On va l&#8217;utiliser comme ça:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">raw_instructions</span> <span class="o">=</span> <span class="no">IO</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'><span class="n">parser</span> <span class="o">=</span> <span class="no">InstructionsParser</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">raw_instructions</span><span class="p">)</span>
+</span><span class='line'><span class="n">instructions</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Je vais expliquer plus en détail. Tout d&#8217;abord dans le constructeur, on divise
+la grande chaîne de caractères en entrée en autant de lignes indépendantes:</p>
+
+<pre><code>@lines = raw_instructions.split("\n")
+</code></pre>
+
+<p>Puis dans la méthode privée <code>build_instructions</code>, on itère sur chacune des
+lignes pour construire le hash:</p>
+
+<pre><code>@lines.each do |instruction|
+</code></pre>
+
+<p>Chaque ligne est d&#8217;abord divisé en deux parties, de chaque coté de <code>=&gt;</code>:</p>
+
+<pre><code>keys, value = instruction.split('=&gt;')
+</code></pre>
+
+<p>La partie des clés (celle de gauche) est à son tour divisé en deux, le symbole
+sous la tête de lecture et l&#8217;état de la machine:</p>
+
+<pre><code>key_symbol, key_state = keys.split
+</code></pre>
+
+<p>Ensuite c&#8217;est au tour de la partie de droite, celle qui représente la prochaine
+instruction:</p>
+
+<pre><code>write, move, next_state = value.split
+</code></pre>
+
+<p>Enfin, on ajoute clé et valeur dans le hash:</p>
+
+<pre><code>@instructions[[key_symbol, key_state]] = {
+  write: write, move: move, next_state: next_state
+}
+</code></pre>
+
+<p>Pour finir, voici mon premier jeu d&#8217;instructions pour une machine de Turing:</p>
+
+<figure class='code'><figcaption><span>instruction_sets/write101</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='raw'><span class='line'><span class="err">0 A =&gt; 1 R B</span>
+</span><span class='line'><span class="err">0 B =&gt; 0 R C</span>
+</span><span class='line'><span class="err">0 C =&gt; 1 R HALT</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ça fait quoi ? Ça écrit 101, tout simplement :</p>
+
+<pre><code> turing_machine instruction_sets/write101 
+  1 0000000000000000000000000000000000000000 A -&gt; 1RB
+                       ^
+  2 0000000000000000000100000000000000000000 B -&gt; 0RC
+                        ^
+  3 0000000000000000000100000000000000000000 C -&gt; 1RHALT
+                         ^
+  4 0000000000000000000101000000000000000000 HALT
+</code></pre>
+
+<p>Je vous rappelle que vous pouvez consulter le code de la
+<a href="https://github.com/lkdjiin/turing_machine">machine de Turing</a>.</p>
+
+<p>Voilà, avec l&#8217;aide de <code>String#split</code> il est facile d&#8217;écrire un parser simple.
+Alors bien sûr, ce parser n&#8217;est pas vraiment complet, il manque par exemple la
+gestion des erreurs. Mais il y a des choses plus urgentes à implémenter, comme
+le mouvement nul, le ruban infini, ou la possibilité de commencer le programme
+avec un ruban qui contient des données…</p>
+
+<p>À plus tard.</p>
+
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/'>Une machine de Turing en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/23/mieux-utiliser-le-programme-gem/'>Mieux utiliser le programme gem</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/'>Ruby 2.2 &ndash; Une sélection des nouvelles méthodes</a></li></ul></section></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Une machine de Turing en Ruby]]></title>
@@ -470,7 +680,7 @@ d&#8217;un ruban infini et pouvoir entrer n&#8217;importe quel jeu d&#8217;instr
 
 <p>À plus tard.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/'>Les tours de Hanoi &ndash; partie 1</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/'>Une machine de Turing en Ruby &ndash; Le parser</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3/'>Les tours de Hanoi &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2/'>Les tours de hanoi &ndash; partie 2</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -1015,7 +1225,7 @@ de refactorer.</p>
 <p>Bref, la méthode <code>Object#tap</code> me semble poser plus de problèmes qu&#8217;elle n&#8217;en
 résout. Vous avez un avis sur le sujet ?</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/'>Une machine de Turing en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/23/mieux-utiliser-le-programme-gem/'>Mieux utiliser le programme gem</a></li><li><a href='http://lkdjiin.github.io/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/'>Ruby 2.2 &ndash; Une sélection des nouvelles méthodes</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/'>Une machine de Turing en Ruby &ndash; Le parser</a></li><li><a href='http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/'>Une machine de Turing en Ruby</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/23/mieux-utiliser-le-programme-gem/'>Mieux utiliser le programme gem</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -2372,7 +2582,7 @@ obtenir une liste.</p>
 <script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2015/01/23/mieux-utiliser-le-programme-gem/'>Mieux utiliser le programme gem</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/25/affichage-de-toutes-les-taches-rake/'>Affichage de toutes les tâches rake</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/24/description-detaillee-des-taches-rake/'>Description détaillée des tâches rake</a></li></ul></section></p>
+<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/'>Une machine de Turing en Ruby &ndash; Le parser</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/23/mieux-utiliser-le-programme-gem/'>Mieux utiliser le programme gem</a></li><li><a href='http://lkdjiin.github.io/blog/2014/06/25/affichage-de-toutes-les-taches-rake/'>Affichage de toutes les tâches rake</a></li></ul></section></p>
 ]]></content>
   </entry>
   
@@ -4124,283 +4334,6 @@ réécrire les mêmes phrases. Au besoin, je vous rappelle que le
 
 
 <p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/'>Le jeu de la vie en racket &ndash; partie 2</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/22/je-ne-vais-pas-terminer-le-jeu-de-la-vie-en-rust/'>Je ne vais pas terminer le jeu de la vie en Rust</a></li></ul></section></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en racket - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2/"/>
-    <updated>2014-11-08T13:46:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/11/08/le-jeu-de-la-vie-en-racket-partie-2</id>
-    <content type="html"><![CDATA[<div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
-
-<p>C&#8217;est le moment d&#8217;afficher à l&#8217;écran notre génération créée au hasard
-<a href="http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/">la dernière fois</a>.
-Je rappelle que je n&#8217;écris pas de tests pour cette partie.
-Pour obtenir un affichage, je me contente de suivre les exemples donnés dans la
-documentation
-<a href="http://mirror.racket-lang.org/releases/6.1/doc/draw/overview.html">drawing overview</a>
-et <a href="http://mirror.racket-lang.org/releases/6.1/doc/gui/windowing-overview.html">windowing overview</a>.</p>
-
-<!-- more -->
-
-
-<p>Ce qui donne la première experimentation suivante:</p>
-
-<figure class='code'><figcaption><span>game-of-life.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket/gui</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">generation</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">100</span> <span class="mi">100</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">frame</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">frame%</span>
-</span><span class='line'>  <span class="p">[</span><span class="nf">label</span> <span class="s">&quot;Example&quot;</span><span class="p">]</span>
-</span><span class='line'>  <span class="p">[</span><span class="nf">width</span> <span class="mi">100</span><span class="p">]</span>
-</span><span class='line'>  <span class="p">[</span><span class="nf">height</span> <span class="mi">100</span><span class="p">]))</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="nf">new</span> <span class="nv">canvas%</span>
-</span><span class='line'>     <span class="p">[</span><span class="nf">parent</span> <span class="nv">frame</span><span class="p">]</span>
-</span><span class='line'>     <span class="p">[</span><span class="nf">paint-callback</span>
-</span><span class='line'>       <span class="p">(</span><span class="err">λ</span> <span class="p">(</span><span class="nf">canvas</span> <span class="nv">dc</span><span class="p">)</span>
-</span><span class='line'>          <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;black&quot;</span><span class="p">]))</span>
-</span><span class='line'>          <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">y</span> <span class="p">(</span><span class="nb">length </span><span class="nv">generation</span><span class="p">)])</span>
-</span><span class='line'>            <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">x</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">first</span> <span class="nv">generation</span><span class="p">))])</span>
-</span><span class='line'>              <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">= </span><span class="mi">1</span> <span class="p">(</span><span class="nb">list-ref </span><span class="p">(</span><span class="nb">list-ref </span><span class="nv">generation</span> <span class="nv">y</span><span class="p">)</span> <span class="nv">x</span><span class="p">))</span>
-</span><span class='line'>                <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="nv">x</span> <span class="nv">y</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">)))))])</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="nf">send</span> <span class="nv">frame</span> <span class="nv">show</span> <span class="no">#t</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Le truc marrant (une façon de voir comme une autre) est que si on
-joue les tests, la fenêtre s&#8217;affiche. C&#8217;est pas très pratique.</p>
-
-<p>Mais avant tout, ce code révèle une erreur précédente:</p>
-
-<p><img src="http://lkdjiin.github.io/images/code-barre-2014-10-11.png"></p>
-
-<p>On dirait un code barre ! Pas vraiment une distribution uniforme.</p>
-
-<p>Alors le bug est simple à trouver, par contre je vais devoir écrire un ou
-plusieurs nouveaux tests et je garde ça pour la fin de l&#8217;article.</p>
-
-<p>Ensuite, je voudrais faire une boucle qui affiche une nouvelle génération au
-hasard chaque seconde. Je dois avouer que cette histoire de canvas, je la sens
-pas trop. Et le code que j&#8217;ai pondu s&#8217;en ressent. D&#8217;abord je mets ce qui a trait
-à une génération dans un module à part:</p>
-
-<figure class='code'><figcaption><span>generation.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">create-generation</span> <span class="nv">width</span> <span class="nv">height</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">(</span><span class="nf">for/list</span> <span class="p">([</span><span class="nf">i</span> <span class="p">(</span><span class="nf">make-list</span> <span class="nv">height</span> <span class="mi">0</span><span class="p">)])</span>
-</span><span class='line'>            <span class="p">(</span><span class="nf">make-list</span> <span class="nv">width</span> <span class="p">(</span><span class="nb">random </span><span class="mi">2</span><span class="p">))))</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">provide </span><span class="nv">create-generation</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Puis, tout le bazar de frame et de canvas, aussi dans un module:</p>
-
-<figure class='code'><figcaption><span>window.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket/gui</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">create-window</span> <span class="nv">w</span> <span class="nv">h</span> <span class="nv">g</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">frame</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">frame%</span>
-</span><span class='line'>                     <span class="p">[</span><span class="nf">label</span> <span class="s">&quot;Game of Life&quot;</span><span class="p">]</span>
-</span><span class='line'>                     <span class="p">[</span><span class="nf">width</span> <span class="nv">w</span><span class="p">]</span>
-</span><span class='line'>                     <span class="p">[</span><span class="nf">height</span> <span class="nv">h</span><span class="p">]))</span>
-</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="nv">canvas</span> <span class="p">(</span><span class="nf">new</span> <span class="p">(</span><span class="nf">class</span> <span class="nv">canvas%</span>
-</span><span class='line'>         <span class="p">(</span><span class="nf">super-new</span> <span class="p">[</span><span class="nf">parent</span> <span class="nv">frame</span><span class="p">]</span> <span class="p">[</span><span class="nf">style</span> <span class="o">&#39;</span><span class="p">(</span><span class="nv">no-autoclear</span><span class="p">)])</span>
-</span><span class='line'>         <span class="p">(</span><span class="k">define </span><span class="nv">current-generation</span> <span class="nv">g</span><span class="p">)</span>
-</span><span class='line'>         <span class="p">(</span><span class="k">define </span><span class="nv">dc</span> <span class="p">(</span><span class="nf">send</span> <span class="nv">this</span> <span class="nv">get-dc</span><span class="p">))</span>
-</span><span class='line'>         <span class="p">(</span><span class="nf">define/public</span> <span class="p">(</span><span class="nf">change-generation</span> <span class="nv">g</span><span class="p">)</span>
-</span><span class='line'>           <span class="p">(</span><span class="k">set! </span><span class="nv">current-generation</span> <span class="nv">g</span><span class="p">)</span>
-</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">this</span> <span class="nv">refresh-now</span><span class="p">))</span>
-</span><span class='line'>         <span class="p">(</span><span class="nf">define/override</span> <span class="p">(</span><span class="nf">on-paint</span><span class="p">)</span>
-</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;black&quot;</span><span class="p">]))</span>
-</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="mi">0</span> <span class="mi">0</span> <span class="nv">w</span> <span class="nv">h</span><span class="p">)</span>
-</span><span class='line'>           <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">set-brush</span> <span class="p">(</span><span class="nf">new</span> <span class="nv">brush%</span> <span class="p">[</span><span class="nf">color</span> <span class="s">&quot;white&quot;</span><span class="p">]))</span>
-</span><span class='line'>           <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">y</span> <span class="p">(</span><span class="nb">length </span><span class="nv">current-generation</span><span class="p">)])</span>
-</span><span class='line'>             <span class="p">(</span><span class="nf">for</span> <span class="p">([</span><span class="nf">x</span> <span class="p">(</span><span class="nb">length </span><span class="p">(</span><span class="nf">first</span> <span class="nv">current-generation</span><span class="p">))])</span>
-</span><span class='line'>               <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">= </span><span class="mi">1</span> <span class="p">(</span><span class="nb">list-ref </span><span class="p">(</span><span class="nb">list-ref </span><span class="nv">current-generation</span> <span class="nv">y</span><span class="p">)</span> <span class="nv">x</span><span class="p">))</span>
-</span><span class='line'>                 <span class="p">(</span><span class="nf">send</span> <span class="nv">dc</span> <span class="nv">draw-rectangle</span> <span class="nv">x</span> <span class="nv">y</span> <span class="mi">1</span> <span class="mi">1</span><span class="p">))))))))</span>
-</span><span class='line'>  <span class="p">(</span><span class="nf">send</span> <span class="nv">frame</span> <span class="nv">show</span> <span class="no">#t</span><span class="p">)</span>
-</span><span class='line'>  <span class="nv">canvas</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">provide </span><span class="nv">create-window</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Moi qui suis habitué à des méthodes de 2 ou 3 lignes, c&#8217;est pas vraiment ça.
-Et puis j&#8217;ai du mal à saisir le modèle objet de Racket.</p>
-
-<p>Enfin le programme principal avec la boucle:</p>
-
-<figure class='code'><figcaption><span>game-of-life.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">require </span><span class="s">&quot;generation.rkt&quot;</span>
-</span><span class='line'>         <span class="s">&quot;window.rkt&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">size</span> <span class="mi">100</span><span class="p">)</span>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">generation</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="nv">size</span> <span class="nv">size</span><span class="p">))</span>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="nv">canvas</span> <span class="p">(</span><span class="nf">create-window</span> <span class="nv">size</span> <span class="nv">size</span> <span class="nv">generation</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">loop</span> <span class="nv">n</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">(</span><span class="nf">send</span> <span class="nv">canvas</span> <span class="nv">change-generation</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="nv">size</span> <span class="nv">size</span><span class="p">))</span>
-</span><span class='line'>  <span class="p">(</span><span class="nb">sleep </span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">(</span><span class="k">when </span><span class="p">(</span><span class="nb">&gt; </span><span class="nv">n</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">(</span><span class="nf">loop</span> <span class="p">(</span><span class="nb">sub1 </span><span class="nv">n</span><span class="p">))))</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="nf">loop</span> <span class="mi">10</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Si j&#8217;ai le temps, j&#8217;essaierais d&#8217;utiliser la bibliothèque <code>2htdp/universe</code>,
-qui me semble bien plus simple.</p>
-
-<p>Maintenant le bug. Le problème est que je crée des lignes complètes de 0 ou de 1
-dans la liste qui représente une génération, plutôt que de distribuer
-uniformément ces 0 et ces 1. Je vais donc ajouter un test qui initialise le
-générateur de nombres aléatoires toujours de la même manière.</p>
-
-<figure class='code'><figcaption><span>game-of-life-test.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">require </span><span class="nv">rackunit</span>
-</span><span class='line'>         <span class="s">&quot;generation.rkt&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">((</span><span class="err">λ</span> <span class="p">()</span>
-</span><span class='line'>   <span class="p">(</span><span class="nb">random-seed </span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>   <span class="p">(</span><span class="nf">check-equal?</span> <span class="p">(</span><span class="nf">create-generation</span> <span class="mi">2</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&#39;</span><span class="p">((</span><span class="mi">1</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">0</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span> <span class="mi">1</span><span class="p">))</span>
-</span><span class='line'>                 <span class="s">&quot;It populates generation uniformly&quot;</span><span class="p">)))</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Sans surprise, le test échoue.</p>
-
-<pre><code>$ racket game-of-life-test.rkt
---------------------
-FAILURE
-actual:     ((1 1) (1 1) (0 0))
-expected:   ((1 0) (1 0) (1 0))
-name:       check-equal?
-location:   (#&lt;path:/home/xavier/code/game-of-life-racket/game-of-life-test.rkt&gt; 21 3 537 112)
-expression: (check-equal? (create-generation 2 3) (quote ((1 0) (1 0) (1 0))))
-message:    "It populates generation uniformly"
-</code></pre>
-
-<p>Et voici le fix.</p>
-
-<figure class='code'><figcaption><span>generation.rkt</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='racket'><span class='line'><span class="kn">#lang racket</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">create-generation</span> <span class="nv">width</span> <span class="nv">height</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">rnd</span> <span class="nv">_</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">(</span><span class="nb">random </span><span class="mi">2</span><span class="p">))</span>
-</span><span class='line'>  <span class="p">(</span><span class="nf">for/list</span> <span class="p">([</span><span class="nf">i</span> <span class="p">(</span><span class="nf">make-list</span> <span class="nv">height</span> <span class="mi">0</span><span class="p">)])</span>
-</span><span class='line'>            <span class="p">(</span><span class="nb">map </span><span class="nv">rnd</span> <span class="p">(</span><span class="nf">make-list</span> <span class="nv">width</span> <span class="mi">0</span><span class="p">))))</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">(</span><span class="k">provide </span><span class="nv">create-generation</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='http://lkdjiin.github.io/blog/2014/11/09/le-jeu-de-la-vie-en-racket-partie-3/'>Le jeu de la vie en racket &ndash; partie 3</a></li><li><a href='http://lkdjiin.github.io/blog/2014/11/01/le-jeu-de-la-vie-en-racket-partie-1/'>Le jeu de la vie en racket &ndash; partie 1</a></li><li><a href='http://lkdjiin.github.io/blog/2015/01/22/je-ne-vais-pas-terminer-le-jeu-de-la-vie-en-rust/'>Je ne vais pas terminer le jeu de la vie en Rust</a></li></ul></section></p>
 ]]></content>
   </entry>
   
