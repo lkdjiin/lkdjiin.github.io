@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : turing | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/turing/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-02T18:21:51+01:00</updated>
+  <updated>2015-02-04T10:34:03+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,127 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Une machine de Turing en Ruby - La routine de copie]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/"/>
+    <updated>2015-02-04T10:22:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>La routine de copie est une brique élémentaire d'un programme pour une machine
+de Turing. Par exemple, si les données de la bande sont <code>111</code>, la routine de
+copie va doubler ces trois symboles en insérant un zéro au milieu: <code>1110111</code>.</p>
+
+<p><img class="center" src="/images/copie-clone.jpg"></p>
+
+<!-- more -->
+
+
+<p>Je ne vais pas expliquer la routine de copie
+— <a href="http://en.wikipedia.org/wiki/Turing_machine_examples#A_copy_subroutine">cet article de Wikipédia</a>
+le fait très bien — mais plutôt montrer comment j'ai du adapter
+<a href="https://github.com/lkdjiin/turing_machine">ma machine de Turing</a>
+pour pouvoir faire tourner cette routine.</p>
+
+<p>Voici le jeu d'instructions de la routine de copie:</p>
+
+<p><code>raw copy_with_data
+0 A  =&gt; 1 L B
+0 B  =&gt; 1 N s1
+0 s1 =&gt; N N HALT
+1 s1 =&gt; 0 R s2
+0 s2 =&gt; 0 R s3
+1 s2 =&gt; 1 R s2
+0 s3 =&gt; 1 L s4
+1 s3 =&gt; 1 R s3
+0 s4 =&gt; 0 L s5
+1 s4 =&gt; 1 L s4
+0 s5 =&gt; 1 R s1
+1 s5 =&gt; 1 L s5
+</code></p>
+
+<p>C'est en deux parties, les deux premières lignes écrivent des données sur la
+bande (le nombre <code>11</code>) et les neuf dernières lignes sont effectivement la
+routine de copie. Une des limitations actuelles de ma machine de Turing est de
+ne pas pouvoir initialiser la bande avec des données spécifiques, il faut donc
+le faire depuis le programme, comme ici les deux premières lignes.</p>
+
+<p>Les nouveautés dans ce jeu d'instructions sont les caractères <code>N</code>, qu'on peut
+trouver dans les symboles à écrire et dans le mouvement de la tête de lecture,
+par exemple dans la 3ème ligne:</p>
+
+<pre><code>0 s1 =&gt; N N HALT
+</code></pre>
+
+<p>Cela signifie pas d'écriture et pas de mouvement (<strong>N</strong>o write, <strong>N</strong>o move).</p>
+
+<p>Le parser étant déjà capable d'attraper n'importe quel mot/symbole, il suffit de
+faire évoluer la méthode de mise à jour de la bande ainsi (c'est un peu lourd
+comme écriture mais ça reste clair et pragmatique):</p>
+
+<p>``` ruby lib/turing_machine/instance.rb
+module TuringMachine</p>
+
+<p>  class Instance</p>
+
+<p>  [&hellip;]</p>
+
+<pre><code>def update_tape(current_action)
+  @tape.head = current_action[:write] unless current_action[:write] == 'N'
+  @tape.shift_left if current_action[:move] == 'L'
+  @tape.shift_right if current_action[:move] == 'R'
+end
+</code></pre>
+
+<p>  [&hellip;]
+```</p>
+
+<p>Et maintenant la routine de copie fonctionne !</p>
+
+<pre><code>$ turing_machine instruction_sets/copy_with_data
+  1 0000000000000000000000000000000000000000 A -&gt; 1LB
+                       ^
+  2 0000000000000000000100000000000000000000 B -&gt; 1Ns1
+                      ^
+  3 0000000000000000001100000000000000000000 s1 -&gt; 0Rs2
+                      ^
+  4 0000000000000000000100000000000000000000 s2 -&gt; 1Rs2
+                       ^
+  5 0000000000000000000100000000000000000000 s2 -&gt; 0Rs3
+                        ^
+  6 0000000000000000000100000000000000000000 s3 -&gt; 1Ls4
+                         ^
+  7 0000000000000000000101000000000000000000 s4 -&gt; 0Ls5
+                        ^
+  8 0000000000000000000101000000000000000000 s5 -&gt; 1Ls5
+                       ^
+  9 0000000000000000000101000000000000000000 s5 -&gt; 1Rs1
+                      ^
+ 10 0000000000000000001101000000000000000000 s1 -&gt; 0Rs2
+                       ^
+ 11 0000000000000000001001000000000000000000 s2 -&gt; 0Rs3
+                        ^
+ 12 0000000000000000001001000000000000000000 s3 -&gt; 1Rs3
+                         ^
+ 13 0000000000000000001001000000000000000000 s3 -&gt; 1Ls4
+                          ^
+ 14 0000000000000000001001100000000000000000 s4 -&gt; 1Ls4
+                         ^
+ 15 0000000000000000001001100000000000000000 s4 -&gt; 0Ls5
+                        ^
+ 16 0000000000000000001001100000000000000000 s5 -&gt; 1Rs1
+                       ^
+ 17 0000000000000000001101100000000000000000 s1 -&gt; NNHALT
+                        ^
+ 18 0000000000000000001101100000000000000000 HALT
+</code></pre>
+
+<p>Le code est <a href="https://github.com/lkdjiin/turing_machine">sur Github</a>, à plus tard.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Une machine de Turing en Ruby - Le parser]]></title>
