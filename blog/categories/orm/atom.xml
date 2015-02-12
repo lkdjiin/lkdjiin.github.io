@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : orm | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/orm/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-05T18:43:44+01:00</updated>
+  <updated>2015-02-12T10:21:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -20,7 +20,7 @@
     <id>http://lkdjiin.github.io/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>Aujourd'hui on termine de structurer quelque peu le projet. Voici ce que je
+<p>Aujourd’hui on termine de structurer quelque peu le projet. Voici ce que je
 veux obtenir:</p>
 
 <pre><code>$ tree -a
@@ -39,7 +39,6 @@ veux obtenir:</p>
 
 <!-- more -->
 
-
 <p>Le fichier <code>sorm.rb</code> à la racine du projet va contenir nos require:</p>
 
 <p><code>ruby sorm.rb
@@ -55,32 +54,26 @@ Voici ces fichiers:</p>
 
 <p>``` ruby lib/base.rb
 module SORM
-  class Base</p>
+  class Base
+    def self.save(parameters)
+      Recorder.new(self.to_s.downcase, parameters).save
+      self.new(parameters)
+    end</p>
 
-<pre><code>def self.save(parameters)
-  Recorder.new(self.to_s.downcase, parameters).save
-  self.new(parameters)
-end
-
-def initialize(attributes)
+<pre><code>def initialize(attributes)
   attributes.each do |name, value|
     instance_variable_set("@#{name}", value)
     singleton_class.class_eval{attr_reader name.to_sym}
   end
-end
+end   end end ```
 </code></pre>
-
-<p>  end
-end
-```</p>
 
 <p>``` ruby lib/database.rb
 module SORM
-  class Database</p>
+  class Database
+    @@connection = false</p>
 
-<pre><code>@@connection = false
-
-def self.connect(database_filename)
+<pre><code>def self.connect(database_filename)
   @@connection = SQLite3::Database.open(database_filename)
 end
 
@@ -94,23 +87,18 @@ end
 
 def self.execute(sql)
   @@connection.execute(sql)
-end
+end   end end ```
 </code></pre>
-
-<p>  end
-end
-```</p>
 
 <p>``` ruby lib/recorder.rb
 module SORM
-  class Recorder</p>
+  class Recorder
+    def initialize(table, parameters)
+      @table = table
+      @parameters = parameters
+    end</p>
 
-<pre><code>def initialize(table, parameters)
-  @table = table
-  @parameters = parameters
-end
-
-def save
+<pre><code>def save
   Database.execute(query)
 end
 
@@ -126,27 +114,23 @@ def values
   @parameters.values.map do |item|
     item.class == String ? "'#{item}'" : item
   end.join(',')
-end
+end   end end ```
 </code></pre>
 
-<p>  end
-end
-```</p>
-
 <p>On va enfin pouvoir ajouter de nouvelles fonctionnalités à notre ORM !
-C'est pas trop tôt, je commençais à m'ennuyer ;)</p>
+C’est pas trop tôt, je commençais à m’ennuyer ;)</p>
 
 <p>Je tâcherais aussi de mettre le projet sur Github prochainement pour
-qu'il soit plus facile à suivre.</p>
+qu’il soit plus facile à suivre.</p>
 
 <p><em>To be continued</em></p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
 <p></p>
+
 ]]></content>
   </entry>
   
@@ -157,53 +141,43 @@ qu'il soit plus facile à suivre.</p>
     <id>http://lkdjiin.github.io/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>Douzième partie déjà de cette série sur la construction d'un ORM en Ruby…</p>
+<p>Douzième partie déjà de cette série sur la construction d’un ORM en Ruby…</p>
 
 <!-- more -->
 
-
 <p>On doit ajouter une méthode <code>disconnect</code> à notre classe <code>Database</code>, voici
-d'abord le test:</p>
+d’abord le test:</p>
 
 <p>``` ruby spec/database_spec.rb
-require &lsquo;./sorm&rsquo;</p>
+require ‘./sorm’</p>
 
 <p>describe SORM::Database do</p>
 
-<p>  it &lsquo;is not connected by default&rsquo; do</p>
+<p>it ‘is not connected by default’ do
+    expect(SORM::Database.connected?).to be false
+  end</p>
 
-<pre><code>expect(SORM::Database.connected?).to be false
-</code></pre>
+<p>describe ‘after connection’ do
+    before { SORM::Database.connect(‘test.db’) }
+    after  { SORM::Database.disconnect }</p>
 
-<p>  end</p>
-
-<p>  describe &lsquo;after connection&rsquo; do</p>
-
-<pre><code>before { SORM::Database.connect('test.db') }
-after  { SORM::Database.disconnect }
-
-it 'is connected' do
+<pre><code>it 'is connected' do
   expect(SORM::Database.connected?).to be true
 end
 
 it 'is disconnected after disconnection' do
   SORM::Database.disconnect
   expect(SORM::Database.connected?).to be false
-end
+end   end end ```
 </code></pre>
 
-<p>  end
-end
-```</p>
-
-<p>Et maintenant l'implémentation:</p>
+<p>Et maintenant l’implémentation:</p>
 
 <p>``` ruby
-  class Database</p>
+  class Database
+    @@connection = false</p>
 
-<pre><code>@@connection = false
-
-def self.connect(database_filename)
+<pre><code>def self.connect(database_filename)
   @@connection = SQLite3::Database.open(database_filename)
 end
 
@@ -217,14 +191,11 @@ end
 
 def self.execute(sql)
   @@connection.execute(sql)
-end
+end   end ```
 </code></pre>
 
-<p>  end
-```</p>
-
-<p>Rien à dire d'intéressant là-dessus. Je vais aussi configurer Rspec pour
-qu'il joue les tests dans un ordre alétoire, et tant que j'y suis j'ajoute
+<p>Rien à dire d’intéressant là-dessus. Je vais aussi configurer Rspec pour
+qu’il joue les tests dans un ordre alétoire, et tant que j’y suis j’ajoute
 un peu de couleur à la sortie:</p>
 
 <p><code>raw .rspec
@@ -232,7 +203,7 @@ un peu de couleur à la sortie:</p>
 --order=random
 </code></p>
 
-<p>Et voici l'instant de vérité:</p>
+<p>Et voici l’instant de vérité:</p>
 
 <pre><code>$ rspec
 ........
@@ -242,17 +213,17 @@ Randomized with seed 55135
 </code></pre>
 
 <p>Parfait, on a splitté les tests, on les a mis dans un dossier <code>spec/</code>,
-on les a amélioré. C'est tout bon. Maintenant on devrait pouvoir faire
+on les a amélioré. C’est tout bon. Maintenant on devrait pouvoir faire
 facilement un truc similaire avec le fichier <code>sorm.rb</code>.</p>
 
 <p><em>To be continued</em></p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
 <p></p>
+
 ]]></content>
   </entry>
   
@@ -263,36 +234,30 @@ facilement un truc similaire avec le fichier <code>sorm.rb</code>.</p>
     <id>http://lkdjiin.github.io/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>On a dit qu'il était temps de <em>splitter</em> les fichiers, aussi bien pour
-les tests que pour le code d'implémentation.</p>
+<p>On a dit qu’il était temps de <em>splitter</em> les fichiers, aussi bien pour
+les tests que pour le code d’implémentation.</p>
 
 <!-- more -->
 
-
-<p>On commence par créer un dossier spec avec à l'intérieur le fichier
+<p>On commence par créer un dossier spec avec à l’intérieur le fichier
 <code>database_spec.rb</code>:</p>
 
 <p>``` ruby spec/database_spec.rb
-require &lsquo;./sorm&rsquo;</p>
+require ‘./sorm’</p>
 
 <p>describe SORM::Database do
-  describe &lsquo;connection&rsquo; do</p>
+  describe ‘connection’ do
+    it ‘is not connected’ do
+      expect(SORM::Database.connected?).to be false
+    end</p>
 
-<pre><code>it 'is not connected' do
-  expect(SORM::Database.connected?).to be false
-end
-
-describe 'after connection' do
+<pre><code>describe 'after connection' do
   it 'is connected' do
     SORM::Database.connect('test.db')
     expect(SORM::Database.connected?).to be true
   end
-end
+end   end end ```
 </code></pre>
-
-<p>  end
-end
-```</p>
 
 <p>Puis on vérifie que tout va bien:</p>
 
@@ -302,23 +267,22 @@ Finished in 0.00267 seconds
 2 examples, 0 failures
 </code></pre>
 
-<p>Au tour de la classe <code>Base</code> d'avoir son propre fichier de tests. Je vous
-épargne le contenu des méthodes <code>it</code>, il n'a pas changé:</p>
+<p>Au tour de la classe <code>Base</code> d’avoir son propre fichier de tests. Je vous
+épargne le contenu des méthodes <code>it</code>, il n’a pas changé:</p>
 
 <p>``` ruby spec/base_spec.rb
-require &lsquo;./sorm&rsquo;</p>
+require ‘./sorm’</p>
 
 <p>describe SORM::Base do
   class Article &lt; SORM::Base ; end</p>
 
-<p>  describe &lsquo;.execute&rsquo; do</p>
+<p>describe ‘.execute’ do
+    before do
+      SORM::Database.execute(“INSERT INTO article VALUES(1, ‘Foo’);”)
+      SORM::Database.execute(“INSERT INTO article VALUES(2, ‘Bar’);”)
+    end</p>
 
-<pre><code>before do
-  SORM::Database.execute("INSERT INTO article VALUES(1, 'Foo');")
-  SORM::Database.execute("INSERT INTO article VALUES(2, 'Bar');")
-end
-
-after do
+<pre><code>after do
   SORM::Database.execute("DELETE FROM article;")
 end
 
@@ -328,16 +292,13 @@ end
 
 it 'returns correct values' do
   #
-end
+end   end
 </code></pre>
 
-<p>  end</p>
+<p>describe ‘object creation’ do
+    after { SORM::Database.execute(“DELETE FROM article;”) }</p>
 
-<p>  describe &lsquo;object creation&rsquo; do</p>
-
-<pre><code>after { SORM::Database.execute("DELETE FROM article;") }
-
-it 'creates a record' do
+<pre><code>it 'creates a record' do
   #
 end
 
@@ -347,12 +308,8 @@ end
 
 it 'returns an object with correct attributes' do
   #
-end
+end   end end ```
 </code></pre>
-
-<p>  end
-end
-```</p>
 
 <p>Place à la vérification:</p>
 
@@ -364,7 +321,7 @@ An error occurred in an after hook
 </code></pre>
 
 <p>Bah oui, ça ne devrait pas nous surprendre. Notre ancien fichier de
-test <em>global</em> était mal conçu. On n'est plus connecté à la base de
+test <em>global</em> était mal conçu. On n’est plus connecté à la base de
 données. Et là se pose la question de savoir si on doit se connecter
 avant chaque test, dans un <code>before :each</code> ou bien une fois pour toute
 au début du fichier, dans un <code>before :all</code> ? La seconde solution me parait
@@ -375,14 +332,11 @@ est:</p>
 describe SORM::Base do
   class Article &lt; SORM::Base ; end</p>
 
-<p>  before :all do</p>
+<p>before :all do
+    SORM::Database.connect(‘test.db’)
+  end</p>
 
-<pre><code>SORM::Database.connect('test.db')
-</code></pre>
-
-<p>  end</p>
-
-<p>[&hellip;]
+<p>[…]
 ```</p>
 
 <p>Or relance les tests:</p>
@@ -403,10 +357,10 @@ Failures:
 
   1) SORM::Database connection is not connected
      Failure/Error: expect(SORM::Database.connected?).to be false
-
+       
        expected #&lt;FalseClass:0&gt; =&gt; false
             got #&lt;TrueClass:2&gt; =&gt; true
-
+       
        Compared using equal?, which compares object identity,
        but expected and actual are not the same object. Use
        `expect(actual).to eq(expected)` if you don't care about
@@ -421,22 +375,22 @@ Failed examples:
 rspec ./spec/database_spec.rb:5 # SORM::Database connection is not connected
 </code></pre>
 
-<p>Et oui, on ne maitrise plus l'ordre des tests ! <code>base_spec.rb</code>, premier
-dans l'ordre alphabétique a été joué avant, et donc <code>database_spec.rb</code> se
+<p>Et oui, on ne maitrise plus l’ordre des tests ! <code>base_spec.rb</code>, premier
+dans l’ordre alphabétique a été joué avant, et donc <code>database_spec.rb</code> se
 retrouve avec une base de données connectée.</p>
 
 <p>On ajoutera donc la prochaine fois une méthode <code>disconnect</code>. Et ça me
-fait penser aussi qu'il faudra configurer Rspec pour jouer les tests dans
+fait penser aussi qu’il faudra configurer Rspec pour jouer les tests dans
 un ordre aléatoire.</p>
 
 <p><em>To be continued</em></p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
 <p></p>
+
 ]]></content>
   </entry>
   
@@ -448,71 +402,60 @@ un ordre aléatoire.</p>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
 <p>Je continue toujours le refactoring de SORM, cette fois je veux supprimer
-le paramêtre <code>connection</code> dans l'initialisation de <code>Recorder</code>:</p>
+le paramêtre <code>connection</code> dans l’initialisation de <code>Recorder</code>:</p>
 
 <p>``` ruby
-  class Recorder</p>
+  class Recorder
+    def initialize(connection, table, parameters)
+      @connection = connection
+      @table = table
+      @parameters = parameters
+    end</p>
 
-<pre><code>def initialize(connection, table, parameters)
-  @connection = connection
-  @table = table
-  @parameters = parameters
-end
-
-def save
+<pre><code>def save
   @connection.execute(query)
-end
+end ```
 </code></pre>
-
-<p>```</p>
 
 <!-- more -->
 
-
-<p>Bon, c'est tout simple, on utilise directement la classe <code>Database</code>:</p>
+<p>Bon, c’est tout simple, on utilise directement la classe <code>Database</code>:</p>
 
 <p>``` ruby
-  class Recorder</p>
+  class Recorder
+    def initialize(table, parameters)
+      @table = table
+      @parameters = parameters
+    end</p>
 
-<pre><code>def initialize(table, parameters)
-  @table = table
-  @parameters = parameters
-end
-
-def save
+<pre><code>def save
   Database.execute(query)
-end
+end ```
 </code></pre>
 
-<p>```</p>
-
 <p>``` ruby
-  class Base</p>
+  class Base
+    # …</p>
 
-<pre><code># ...
-
-def self.save(parameters)
+<pre><code>def self.save(parameters)
   Recorder.new(self.to_s.downcase, parameters).save
   self.new(parameters)
-end
+end ```
 </code></pre>
 
-<p>```</p>
-
-<p>Ok, c'est trop court comme article, non ? Alors je continue. Comme dit la
+<p>Ok, c’est trop court comme article, non ? Alors je continue. Comme dit la
 dernière fois, la méthode <code>Base.sql</code> me semble inutile. Je la supprime donc,
 ce qui conduit à ce code:</p>
 
 <p>``` ruby sorm.rb
-require &lsquo;sqlite3&rsquo;</p>
+require ‘sqlite3’</p>
 
 <p>module SORM</p>
 
-<p>  class Database</p>
+<p>class Database
+    @@connection = false</p>
 
-<pre><code>@@connection = false
-
-def self.connect(database_filename)
+<pre><code>def self.connect(database_filename)
   @@connection = SQLite3::Database.open(database_filename)
 end
 
@@ -522,36 +465,30 @@ end
 
 def self.execute(sql)
   @@connection.execute(sql)
-end
+end   end
 </code></pre>
 
-<p>  end</p>
+<p>class Base
+    def self.save(parameters)
+      Recorder.new(self.to_s.downcase, parameters).save
+      self.new(parameters)
+    end</p>
 
-<p>  class Base</p>
-
-<pre><code>def self.save(parameters)
-  Recorder.new(self.to_s.downcase, parameters).save
-  self.new(parameters)
-end
-
-def initialize(attributes)
+<pre><code>def initialize(attributes)
   attributes.each do |name, value|
     instance_variable_set("@#{name}", value)
     singleton_class.class_eval{attr_reader name.to_sym}
   end
-end
+end   end
 </code></pre>
 
-<p>  end</p>
+<p>class Recorder
+    def initialize(table, parameters)
+      @table = table
+      @parameters = parameters
+    end</p>
 
-<p>  class Recorder</p>
-
-<pre><code>def initialize(table, parameters)
-  @table = table
-  @parameters = parameters
-end
-
-def save
+<pre><code>def save
   Database.execute(query)
 end
 
@@ -567,49 +504,40 @@ def values
   @parameters.values.map do |item|
     item.class == String ? "'#{item}'" : item
   end.join(',')
-end
+end   end end ```
 </code></pre>
-
-<p>  end
-end
-```</p>
 
 <p>Mais maintenant ce sont les tests qui sont dans les choux ! Il faut
 remplacer toutes les occurences de <code>Article.sql</code> par
 <code>SORM::Database.execute</code>. Ce qui donne:</p>
 
 <p>``` ruby sorm_spec.rb
-require &lsquo;./sorm&rsquo;</p>
+require ‘./sorm’</p>
 
 <p>describe SORM::Database do
-  describe &lsquo;connection&rsquo; do</p>
+  describe ‘connection’ do
+    it ‘is not connected’ do
+      expect(SORM::Database.connected?).to be false
+    end</p>
 
-<pre><code>it 'is not connected' do
-  expect(SORM::Database.connected?).to be false
-end
-
-describe 'after connection' do
+<pre><code>describe 'after connection' do
   it 'is connected' do
     SORM::Database.connect('test.db')
     expect(SORM::Database.connected?).to be true
   end
-end
+end   end end
 </code></pre>
-
-<p>  end
-end</p>
 
 <p>describe SORM::Base do
   class Article &lt; SORM::Base ; end</p>
 
-<p>  describe &lsquo;.sql&rsquo; do</p>
+<p>describe ‘.sql’ do
+    before do
+      SORM::Database.execute(“INSERT INTO article VALUES(1, ‘Foo’);”)
+      SORM::Database.execute(“INSERT INTO article VALUES(2, ‘Bar’);”)
+    end</p>
 
-<pre><code>before do
-  SORM::Database.execute("INSERT INTO article VALUES(1, 'Foo');")
-  SORM::Database.execute("INSERT INTO article VALUES(2, 'Bar');")
-end
-
-after do
+<pre><code>after do
   SORM::Database.execute("DELETE FROM article;")
 end
 
@@ -624,16 +552,13 @@ it 'returns correct values' do
   expect(rows[0][1]).to eq 'Foo'
   expect(rows[1][0]).to eq 2
   expect(rows[1][1]).to eq 'Bar'
-end
+end   end
 </code></pre>
 
-<p>  end</p>
+<p>describe ‘object creation’ do
+    after { SORM::Database.execute(“DELETE FROM article;”) }</p>
 
-<p>  describe &lsquo;object creation&rsquo; do</p>
-
-<pre><code>after { SORM::Database.execute("DELETE FROM article;") }
-
-it 'creates a record' do
+<pre><code>it 'creates a record' do
   Article.save(id: 1, name: 'bépo')
   rows = SORM::Database.execute("SELECT * FROM article WHERE id = 1;")
   expect(rows[0][0]).to eq 1
@@ -649,12 +574,8 @@ it 'returns an object with correct attributes' do
   article = Article.save(id: 1, name: 'bépo')
   expect(article.id).to eq 1
   expect(article.name).to eq 'bépo'
-end
+end   end end ```
 </code></pre>
-
-<p>  end
-end
-```</p>
 
 <p>Et les tests passent de nouveau. Mais on a un nouveau problème !
 Le bloc <code>describe '.sql'</code> suivant est devenu ridicule:</p>
@@ -663,14 +584,13 @@ Le bloc <code>describe '.sql'</code> suivant est devenu ridicule:</p>
 describe SORM::Base do
   class Article &lt; SORM::Base ; end</p>
 
-<p>  describe &lsquo;.sql&rsquo; do</p>
+<p>describe ‘.sql’ do
+    before do
+      SORM::Database.execute(“INSERT INTO article VALUES(1, ‘Foo’);”)
+      SORM::Database.execute(“INSERT INTO article VALUES(2, ‘Bar’);”)
+    end</p>
 
-<pre><code>before do
-  SORM::Database.execute("INSERT INTO article VALUES(1, 'Foo');")
-  SORM::Database.execute("INSERT INTO article VALUES(2, 'Bar');")
-end
-
-after do
+<pre><code>after do
   SORM::Database.execute("DELETE FROM article;")
 end
 
@@ -685,24 +605,21 @@ it 'returns correct values' do
   expect(rows[0][1]).to eq 'Foo'
   expect(rows[1][0]).to eq 2
   expect(rows[1][1]).to eq 'Bar'
-end
+end   end ```
 </code></pre>
 
-<p>  end
-```</p>
-
-<p>1) Il n'y a plus de méthode <code>sql</code> et 2) il teste <code>Database.execute</code> et
-n'a donc rien à faire ici. Je corrigerais ça la prochaine fois, et je pense
-qu'il est temps aussi de <em>splitter</em> les fichiers tests et sources…</p>
+<p>1) Il n’y a plus de méthode <code>sql</code> et 2) il teste <code>Database.execute</code> et
+n’a donc rien à faire ici. Je corrigerais ça la prochaine fois, et je pense
+qu’il est temps aussi de <em>splitter</em> les fichiers tests et sources…</p>
 
 <p><em>To be continued</em></p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
 <p></p>
+
 ]]></content>
   </entry>
   
@@ -716,43 +633,35 @@ qu'il est temps aussi de <em>splitter</em> les fichiers tests et sources…</p>
 <p>Encore du refactoring, cette fois ci dans la classe <code>Base</code>. Regardons le
 code suivant:</p>
 
-<p>``` ruby
-  class Base</p>
-
-<pre><code>def self.sql(raw_query)
-  Database.connection.execute(raw_query)
-end
-</code></pre>
-
-<p>```</p>
+<p><code>ruby
+  class Base
+    def self.sql(raw_query)
+      Database.connection.execute(raw_query)
+    end
+</code></p>
 
 <p>Le <code>Database.connection.execute</code> me dérange. Il viole
 <a href="http://fr.wikipedia.org/wiki/Loi_de_D%C3%A9m%C3%A9ter">la loi de Demeter</a>.</p>
 
 <!-- more -->
 
+<p>À bien y réfléchir, je n’ai tout simplement pas envie d’exposer la méthode
+<code>connection</code>, qu’on trouve aussi un peu plus loin dans la class <code>Base</code>:</p>
 
-<p>À bien y réfléchir, je n'ai tout simplement pas envie d'exposer la méthode
-<code>connection</code>, qu'on trouve aussi un peu plus loin dans la class <code>Base</code>:</p>
-
-<p>``` ruby</p>
-
-<pre><code>def self.save(parameters)
-  Recorder.new(Database.connection, self.to_s.downcase, parameters).save
-  self.new(parameters)
-end
-</code></pre>
-
-<p>```</p>
+<p><code>ruby
+    def self.save(parameters)
+      Recorder.new(Database.connection, self.to_s.downcase, parameters).save
+      self.new(parameters)
+    end
+</code></p>
 
 <p>La classe <code>Database</code> est actuellement comme ça:</p>
 
 <p>``` ruby
-  class Database</p>
+  class Database
+    @@connection = false</p>
 
-<pre><code>@@connection = false
-
-def self.connect(database_filename)
+<pre><code>def self.connect(database_filename)
   @@connection = SQLite3::Database.open(database_filename)
 end
 
@@ -762,30 +671,23 @@ end
 
 def self.connection
   @@connection
-end
+end   end ```
 </code></pre>
-
-<p>  end
-```</p>
 
 <p>Je supprime purement et simplement la méthode <code>connection</code>:</p>
 
 <p>``` ruby
-  class Database</p>
+  class Database
+    @@connection = false</p>
 
-<pre><code>@@connection = false
-
-def self.connect(database_filename)
+<pre><code>def self.connect(database_filename)
   @@connection = SQLite3::Database.open(database_filename)
 end
 
 def self.connected?
   !!@@connection
-end
+end   end ```
 </code></pre>
-
-<p>  end
-```</p>
 
 <p>Maintenant, on rejoue les tests, qui vont nous indiquer ce qui doit être
 réécrit:</p>
@@ -804,14 +706,13 @@ réécrit:</p>
 </code></pre>
 
 <p>On va simplement créer une méthode <code>Database.execute</code>, qui elle, pourra
-utiliser l'objet <code>connection</code>:</p>
+utiliser l’objet <code>connection</code>:</p>
 
 <p>``` ruby
-  class Database</p>
+  class Database
+    @@connection = false</p>
 
-<pre><code>@@connection = false
-
-def self.connect(database_filename)
+<pre><code>def self.connect(database_filename)
   @@connection = SQLite3::Database.open(database_filename)
 end
 
@@ -821,46 +722,38 @@ end
 
 def self.execute(sql)
   @@connection.execute(sql)
-end
+end   end
 </code></pre>
 
-<p>  end</p>
-
-<p>  class Base</p>
-
-<pre><code>def self.sql(raw_query)
-  Database.execute(raw_query)
-end
-</code></pre>
-
-<p>  # &hellip;
+<p>class Base
+    def self.sql(raw_query)
+      Database.execute(raw_query)
+    end
+  # …
 ```</p>
 
 <p>À y regarder de près, je ne suis plus certain de trouver un intérêt à
-<code>Base.sql</code>. Il faudrait la supprimer puisqu'elle peut être remplacée par
+<code>Base.sql</code>. Il faudrait la supprimer puisqu’elle peut être remplacée par
 <code>Database.execute</code>. Mais il faudra attendre car il y a encore des tests qui ne
 passent plus, à cause de ce code:</p>
 
-<p>``` ruby</p>
+<p><code>ruby
+    def self.save(parameters)
+      Recorder.new(Database.connection, self.to_s.downcase, parameters).save
+      self.new(parameters)
+    end
+</code></p>
 
-<pre><code>def self.save(parameters)
-  Recorder.new(Database.connection, self.to_s.downcase, parameters).save
-  self.new(parameters)
-end
-</code></pre>
-
-<p>```</p>
-
-<p>On s'en occupera la prochaine fois.</p>
+<p>On s’en occupera la prochaine fois.</p>
 
 <p><em>To be continued</em></p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
 <p></p>
+
 ]]></content>
   </entry>
   

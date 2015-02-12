@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : algorithme génétique | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/algorithme-genetique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-05T18:43:44+01:00</updated>
+  <updated>2015-02-12T10:21:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -20,7 +20,7 @@
     <id>http://lkdjiin.github.io/blog/2014/07/07/les-tours-de-hanoi-partie-3</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>On commence à coder l'algorithme génétique pour solutionner les tours de
+<p>On commence à coder l’algorithme génétique pour solutionner les tours de
 Hanoi.</p>
 
 <pre><code>$ tree
@@ -42,74 +42,58 @@ Hanoi.</p>
 
 <!-- more -->
 
-
 <p>``` ruby ga.rb
-require &lsquo;./lib/hanoi/board&rsquo;
-require &lsquo;./lib/hanoi/game&rsquo;
-require &lsquo;./lib/hanoi/rules&rsquo;</p>
+require ‘./lib/hanoi/board’
+require ‘./lib/hanoi/game’
+require ‘./lib/hanoi/rules’</p>
 
 <p>class Chromosome
   attr_reader :genes
-  def initialize(number_of_pieces)</p>
-
-<pre><code>@genes = Array.new(2 ** number_of_pieces - 1) { rand(6) }
-</code></pre>
-
-<p>  end
+  def initialize(number_of_pieces)
+    @genes = Array.new(2 ** number_of_pieces - 1) { rand(6) }
+  end
 end</p>
 
 <p>class Population
-  def initialize(size, number_of_pieces)</p>
+  def initialize(size, number_of_pieces)
+    @population = Array.new(size) { Chromosome.new(number_of_pieces) }
+  end</p>
 
-<pre><code>@population = Array.new(size) { Chromosome.new(number_of_pieces) }
-</code></pre>
-
-<p>  end</p>
-
-<p>  def each(&amp;block)</p>
-
-<pre><code>@population.each(&amp;block)
-</code></pre>
-
-<p>  end
+<p>def each(&amp;block)
+    @population.each(&amp;block)
+  end
 end</p>
 
 <p>class GA</p>
 
-<p>  def initialize</p>
+<p>def initialize
+    @population = Population.new(20, 3)
+  end</p>
 
-<pre><code>@population = Population.new(20, 3)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def evaluate</p>
-
-<pre><code>@population.each do |chromosome|
-  board = ::Hanoi::Board.new(3)
-  game = ::Hanoi::Game.new(board)
-  chromosome.genes.each do |gene|
-    case gene
-    when 0 then game.move from: 1, to: 2
-    when 1 then game.move from: 1, to: 3
-    when 2 then game.move from: 2, to: 1
-    when 3 then game.move from: 2, to: 3
-    when 4 then game.move from: 3, to: 1
-    when 5 then game.move from: 3, to: 2
+<p>def evaluate
+    @population.each do |chromosome|
+      board = ::Hanoi::Board.new(3)
+      game = ::Hanoi::Game.new(board)
+      chromosome.genes.each do |gene|
+        case gene
+        when 0 then game.move from: 1, to: 2
+        when 1 then game.move from: 1, to: 3
+        when 2 then game.move from: 2, to: 1
+        when 3 then game.move from: 2, to: 3
+        when 4 then game.move from: 3, to: 1
+        when 5 then game.move from: 3, to: 2
+        end
+      end
+      p board.eval
     end
   end
-  p board.eval
-end
-</code></pre>
-
-<p>  end
 end</p>
 
 <p>ga = GA.new
 ga.evaluate
 ```</p>
 
-<p>Voilà de quoi commencer, des chromosomes, une population et l'évaluation
+<p>Voilà de quoi commencer, des chromosomes, une population et l’évaluation
 de chaque chromosome.</p>
 
 <p>Ça fonctionne:</p>
@@ -137,14 +121,13 @@ de chaque chromosome.</p>
 4
 </code></pre>
 
-<p>Mais la fonction <code>GA#evaluate</code> me dérange. D'abord elle est trop longue, mais
-rien qui ne puisse s'arranger avec un refactoring. Ce qui me dérange surtout
-c'est qu'elle délègue la <em>vraie</em> évaluation à <code>Board</code>. Or, l'évaluation
-dévrait faire partie intégrante de l'algorithme génétique, et pas de la
-mécanique du jeu. C'est donc un point à améliorer avant d'aller plus loin.</p>
+<p>Mais la fonction <code>GA#evaluate</code> me dérange. D’abord elle est trop longue, mais
+rien qui ne puisse s’arranger avec un refactoring. Ce qui me dérange surtout
+c’est qu’elle délègue la <em>vraie</em> évaluation à <code>Board</code>. Or, l’évaluation
+dévrait faire partie intégrante de l’algorithme génétique, et pas de la
+mécanique du jeu. C’est donc un point à améliorer avant d’aller plus loin.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
@@ -159,8 +142,8 @@ mécanique du jeu. C'est donc un point à améliorer avant d'aller plus loin.</p
     <id>http://lkdjiin.github.io/blog/2014/07/06/les-tours-de-hanoi-partie-2</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>Je termine l'implémentation de la mécanique du jeu, pour pouvoir passer ensuite
-à la construction de l'algorithme génétique.</p>
+<p>Je termine l’implémentation de la mécanique du jeu, pour pouvoir passer ensuite
+à la construction de l’algorithme génétique.</p>
 
 <pre><code>$ tree
 .
@@ -180,8 +163,7 @@ mécanique du jeu. C'est donc un point à améliorer avant d'aller plus loin.</p
 
 <!-- more -->
 
-
-<p>J'ai mis <a href="https://github.com/lkdjiin/hanoi">le code</a> sur Github pour que vous puissiez le voir dans son
+<p>J’ai mis <a href="https://github.com/lkdjiin/hanoi">le code</a> sur Github pour que vous puissiez le voir dans son
 ensemble.</p>
 
 <p>La classe <code>Board</code> gagne une méthode <code>move</code>, sans intelligence aucune:</p>
@@ -189,7 +171,7 @@ ensemble.</p>
 <p>``` ruby
 module Hanoi</p>
 
-<p>  class Board</p>
+<p>class Board</p>
 
 <pre><code>def initialize(number_of_pieces)
   @pegs = [ (1..number_of_pieces).to_a.reverse, [], [] ]
@@ -210,10 +192,8 @@ end
 def move(from, to)
   piece = @pegs[from - 1].pop
   @pegs[to - 1].push(piece)
-end
+end   end
 </code></pre>
-
-<p>  end</p>
 
 <p>end
 ```</p>
@@ -224,7 +204,7 @@ se repose sur un module <code>Rules</code> pour les décisions:</p>
 <p>``` ruby
 module Hanoi</p>
 
-<p>  class Game</p>
+<p>class Game</p>
 
 <pre><code>def initialize(board)
   @board = board
@@ -240,10 +220,8 @@ end
 
 def position
   @board.position
-end
+end   end
 </code></pre>
-
-<p>  end</p>
 
 <p>end
 ```</p>
@@ -251,38 +229,31 @@ end
 <p>``` ruby
 module Hanoi::Rules</p>
 
-<p>  def self.valid?(board, from, to)</p>
+<p>def self.valid?(board, from, to)
+    return false if board.position[from - 1].empty?
+    return true if board.position[to - 1].empty?
+    if board.position[from - 1][0] &lt; board.position[to - 1][0]
+      true
+    else
+      false
+    end
+  end</p>
 
-<pre><code>return false if board.position[from - 1].empty?
-return true if board.position[to - 1].empty?
-if board.position[from - 1][0] &lt; board.position[to - 1][0]
-  true
-else
-  false
-end
-</code></pre>
-
-<p>  end</p>
-
-<p>  def self.win?(board)</p>
-
-<pre><code>if board.position[0].empty? &amp;&amp; board.position[1].empty?
-  true
-else
-  false
-end
-</code></pre>
-
-<p>  end</p>
+<p>def self.win?(board)
+    if board.position[0].empty? &amp;&amp; board.position[1].empty?
+      true
+    else
+      false
+    end
+  end</p>
 
 <p>end
 ```</p>
 
-<p>Voilà, notre futur algorithme génétique a maintenant les moyens d'évaluer
-une suite de mouvements, reste plus qu'à le coder ;)</p>
+<p>Voilà, notre futur algorithme génétique a maintenant les moyens d’évaluer
+une suite de mouvements, reste plus qu’à le coder ;)</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
@@ -298,8 +269,8 @@ une suite de mouvements, reste plus qu'à le coder ;)</p>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
 <p>Je vais commencer par implémenter une classe <code>Board</code>, dont la tâche est
-de retenir l'état du plateau de jeu, c'est à dire la position des pièces.
-J'ai envie de faire des tests avec Rspec, donc voici les premiers fichiers:</p>
+de retenir l’état du plateau de jeu, c’est à dire la position des pièces.
+J’ai envie de faire des tests avec Rspec, donc voici les premiers fichiers:</p>
 
 <pre><code>$ tree
 .
@@ -310,32 +281,25 @@ J'ai envie de faire des tests avec Rspec, donc voici les premiers fichiers:</p>
 
 <!-- more -->
 
-
-<p>Voici les tests de <code>Board</code>, qui décrivent ce que j'attend de cette classe:</p>
+<p>Voici les tests de <code>Board</code>, qui décrivent ce que j’attend de cette classe:</p>
 
 <p>``` ruby spec/board_spec.rb
-require &lsquo;./board&rsquo;</p>
+require ‘./board’</p>
 
 <p>describe Board do</p>
 
-<p>  before { @board = Board.new(3) }</p>
+<p>before { @board = Board.new(3) }</p>
 
-<p>  it &lsquo;has a position&rsquo; do</p>
+<p>it ‘has a position’ do
+    expect(@board.position).to eq [ [3, 2, 1], [], [] ]
+  end</p>
 
-<pre><code>expect(@board.position).to eq [ [3, 2, 1], [], [] ]
-</code></pre>
+<p>it ‘accepts a position’ do
+    @board.position = [ [], [3], [2, 1] ]
+    expect(@board.position).to eq [ [], [3], [2, 1] ]
+  end</p>
 
-<p>  end</p>
-
-<p>  it &lsquo;accepts a position&rsquo; do</p>
-
-<pre><code>@board.position = [ [], [3], [2, 1] ]
-expect(@board.position).to eq [ [], [3], [2, 1] ]
-</code></pre>
-
-<p>  end</p>
-
-<p>  describe &lsquo;position evalution&rsquo; do</p>
+<p>describe ‘position evalution’ do</p>
 
 <pre><code>specify { expect(@board.eval).to eq 0 }
 
@@ -350,17 +314,17 @@ specify do
 end
 </code></pre>
 
-<p>  end</p>
+<p>end</p>
 
 <p>end
 ```</p>
 
-<p>On doit pouvoir l'initialiser avec un nombre de pièces:</p>
+<p>On doit pouvoir l’initialiser avec un nombre de pièces:</p>
 
 <pre><code>before { @board = Board.new(3) }
 </code></pre>
 
-<p>À l'initialisation, les pièces sont en position de départ:</p>
+<p>À l’initialisation, les pièces sont en position de départ:</p>
 
 <pre><code>it 'has a position' do
   expect(@board.position).to eq [ [3, 2, 1], [], [] ]
@@ -394,44 +358,31 @@ end
 end
 </code></pre>
 
-<p>Pour finir, l'implémentation minimum:</p>
+<p>Pour finir, l’implémentation minimum:</p>
 
 <p>``` ruby board.rb
 class Board</p>
 
-<p>  def initialize(number_of_pieces)</p>
+<p>def initialize(number_of_pieces)
+    @pegs = [ (1..number_of_pieces).to_a.reverse, [], [] ]
+  end</p>
 
-<pre><code>@pegs = [ (1..number_of_pieces).to_a.reverse, [], [] ]
-</code></pre>
+<p>def position
+    @pegs
+  end</p>
 
-<p>  end</p>
+<p>def position=(pegs)
+    @pegs = pegs
+  end</p>
 
-<p>  def position</p>
-
-<pre><code>@pegs
-</code></pre>
-
-<p>  end</p>
-
-<p>  def position=(pegs)</p>
-
-<pre><code>@pegs = pegs
-</code></pre>
-
-<p>  end</p>
-
-<p>  def eval</p>
-
-<pre><code>@pegs[1].reduce(0, :+) + 2 * @pegs[2].reduce(0, :+)
-</code></pre>
-
-<p>  end</p>
+<p>def eval
+    @pegs[1].reduce(0, :+) + 2 * @pegs[2].reduce(0, :+)
+  end</p>
 
 <p>end
 ```</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
@@ -446,22 +397,21 @@ class Board</p>
     <id>http://lkdjiin.github.io/blog/2014/07/04/un-algorithme-genetique-pour-les-tours-de-hanoi-avec-opal-dot-rb</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>Pour débuter la résolution du jeu des tours de Hanoi à l'aide d'un algorithme
-génétique, j'ai envie de commencer par réfléchir à la représentation des
-chromosomes, aux règles de mouvement, à la fonction d'évaluation, sans
+<p>Pour débuter la résolution du jeu des tours de Hanoi à l’aide d’un algorithme
+génétique, j’ai envie de commencer par réfléchir à la représentation des
+chromosomes, aux règles de mouvement, à la fonction d’évaluation, sans
 forcément commencer à coder.</p>
 
 <!-- more -->
 
-
 <p>Les règles sont sur <a href="http://fr.wikipedia.org/wiki/Tours_de_Hano%C3%AF">wikipédia</a>.</p>
 
-<p>J'apprend un truc qui va me servir, il faut 2<sup>n</sup> &ndash; 1 coups au minimum pour
+<p>J’apprend un truc qui va me servir, il faut 2^n - 1 coups au minimum pour
 solutionner le problème (n est le nombre de disques). Du coup, mes chromosomes
-devront posséder 2<sup>n</sup> &ndash; 1 gènes. Ce qui ira sans trop de soucis jusqu'à une
-dizaines de disques, mais au delà c'est pas gagné.</p>
+devront posséder 2^n - 1 gènes. Ce qui ira sans trop de soucis jusqu’à une
+dizaines de disques, mais au delà c’est pas gagné.</p>
 
-<p>Pour faire simple, un gène va représenter un mouvement à l'aide d'un nombre:</p>
+<p>Pour faire simple, un gène va représenter un mouvement à l’aide d’un nombre:</p>
 
 <pre><code>0 -&gt; du 1er poteau au 2ème poteau
 1 -&gt; du 1er poteau au 3ème poteau
@@ -471,10 +421,10 @@ dizaines de disques, mais au delà c'est pas gagné.</p>
 5 -&gt; du 3ème poteau au 2ème poteau
 </code></pre>
 
-<p>Que faire quand un mouvement est illégal ? Le plus simple est de l'ignorer,
-c'est donc ce que je vais faire.</p>
+<p>Que faire quand un mouvement est illégal ? Le plus simple est de l’ignorer,
+c’est donc ce que je vais faire.</p>
 
-<p>La fonction d'évaluation, maintenant ? J'ai envie de donner un <em>poids</em> à
+<p>La fonction d’évaluation, maintenant ? J’ai envie de donner un <em>poids</em> à
 chaque disque suivant le poteau où il se trouve. Sur le premier poteau, un
 disque vaut 0 point. Sur le second poteau, il vaut 1 point, et sur le
 troisième, il vaut 2 points.</p>
@@ -494,15 +444,14 @@ xxx|xxx    |       |
    |       |    xxx|xxx
 </code></pre>
 
-<p>C'est pas suffisant pour différencier certaines solutions, donc on appliquera
+<p>C’est pas suffisant pour différencier certaines solutions, donc on appliquera
 un multiplicateur suivant la taille du disque, 1 pour le plus petit, 2 pour
 le suivant et 3 pour le plus grand. Je vous laisse faire les calculs, ça me
 prend trop de temps de faire les petits dessins ;)</p>
 
 <p>Allez, la prochaine fois on code…</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
@@ -515,24 +464,22 @@ prend trop de temps de faire les petits dessins ;)</p>
     <link href="http://lkdjiin.github.io/blog/2014/06/29/un-algorithme-genetique-avec-opal-dot-rb/"/>
     <updated>2014-06-29T20:59:00+02:00</updated>
     <id>http://lkdjiin.github.io/blog/2014/06/29/un-algorithme-genetique-avec-opal-dot-rb</id>
-    <content type="html"><![CDATA[<p>Aujourd'hui c'est dimanche, pas d'article technique. Par contre une idée
+    <content type="html"><![CDATA[<p>Aujourd’hui c’est dimanche, pas d’article technique. Par contre une idée
 pour la suite. Un algorithme génétique pour résoudre le jeu des tours de
 Hanoi.</p>
 
 <!-- more -->
 
-
-<p>Ça fait longtemps que j'ai envie de faire un algorithme génétique en rapport
+<p>Ça fait longtemps que j’ai envie de faire un algorithme génétique en rapport
 avec un jeu, où on pourrait visualiser de manière graphique et ludique
-l'avancée de l'algorithme. J'ai déjà fait une tentative <em>graphique</em> en
-utilisant javascript, mais le résultat n'a pas été à la hauteur de mes
+l’avancée de l’algorithme. J’ai déjà fait une tentative <em>graphique</em> en
+utilisant javascript, mais le résultat n’a pas été à la hauteur de mes
 espérances, même si ça fonctionnait. Avec Opal, je pourrais utiliser un
 langage que je connais bien.</p>
 
 <p>Je suis pressé de commencer ;)</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 

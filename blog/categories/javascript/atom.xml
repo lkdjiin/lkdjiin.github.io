@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : javascript | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/javascript/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-05T18:43:44+01:00</updated>
+  <updated>2015-02-12T10:21:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -20,90 +20,78 @@
     <id>http://lkdjiin.github.io/blog/2014/10/18/le-jeu-de-la-vie-en-javascript-partie-3</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>C'est le moment de mettre ensemble tous les éléments codés jusqu'ici pour
-contempler le jeu de la vie s'épanouir devant nos yeux.
-Seulement je n'ai pas d'idée claire sur la manière dont ça peut-être fait
+<p>C’est le moment de mettre ensemble tous les éléments codés jusqu’ici pour
+contempler le jeu de la vie s’épanouir devant nos yeux.
+Seulement je n’ai pas d’idée claire sur la manière dont ça peut-être fait
 en javascript, et même sur les problèmes que ça pourrait poser, et encore
 moins sur la manière de tester ça avec Jasmine.</p>
 
-<p>Le TDD n'est pas une religion ! Ce n'est pas un précepte qu'on suit
+<p>Le TDD n’est pas une religion ! Ce n’est pas un précepte qu’on suit
 aveuglement. On peut, et on doit, le questionner. Comment écrire un test quand
-on n'a pas la moindre idée du problème à résoudre ?</p>
+on n’a pas la moindre idée du problème à résoudre ?</p>
 
 <!-- more -->
 
-
-<p>Quand cette situation m'arrive, j'expérimente. Et voilà le résultat de mon
+<p>Quand cette situation m’arrive, j’expérimente. Et voilà le résultat de mon
 expérimentation:</p>
 
 <p>``` javascript app/application.js
-&hellip;</p>
+…</p>
 
 <p>function draw(context2d, generation, totalGeneration) {
   var height = generation.length;
   var width = generation[0].length;</p>
 
-<p>  clearBackground(context2d, width, height);
+<p>clearBackground(context2d, width, height);
   drawCells(context2d, generation, width, height);</p>
 
-<p>  if(totalGeneration > 0)</p>
+<p>if(totalGeneration &gt; 0)
+    setTimeout(update, 500, context2d, generation, totalGeneration);
+}</p>
 
-<pre><code>setTimeout(update, 500, context2d, generation, totalGeneration);
-</code></pre>
-
-<p>}</p>
-
-<p>&hellip;</p>
+<p>…</p>
 
 <p>function update(context2d, generation, totalGeneration) {
-  var height = generation.length,</p>
+  var height = generation.length,
+      width = generation[0].length;</p>
 
-<pre><code>  width = generation[0].length;
-</code></pre>
-
-<p>  // Create an empty generation.
+<p>// Create an empty generation.
   var nextGeneration = new Array(height);
-  for(var y = 0; y &lt; height; y++) {</p>
+  for(var y = 0; y &lt; height; y++) {
+    nextGeneration[y] = new Array(width);
+  }</p>
 
-<pre><code>nextGeneration[y] = new Array(width);
-</code></pre>
+<p>// Fill the next generation.
+  for(var y = 0; y &lt; height; y++) {
+    for(var x = 0; x &lt; width; x++) {
+      var neighborhood = extractNeighborhood(generation, x, y);
+      var state = nextCellState(neighborhood);
+      nextGeneration[y][x] = state;
+    }
+  }</p>
 
-<p>  }</p>
-
-<p>  // Fill the next generation.
-  for(var y = 0; y &lt; height; y++) {</p>
-
-<pre><code>for(var x = 0; x &lt; width; x++) {
-  var neighborhood = extractNeighborhood(generation, x, y);
-  var state = nextCellState(neighborhood);
-  nextGeneration[y][x] = state;
-}
-</code></pre>
-
-<p>  }</p>
-
-<p>  setTimeout(draw, 500, context2d, nextGeneration, totalGeneration &ndash; 1);
+<p>setTimeout(draw, 500, context2d, nextGeneration, totalGeneration - 1);
 }</p>
 
 <p>(function() {
   var generation = createGeneration(100, 100);
-  var c = document.getElementById(&lsquo;canvas&rsquo;);
-  var context2d = c.getContext(&lsquo;2d&rsquo;);
+  var c = document.getElementById(‘canvas’);
+  var context2d = c.getContext(‘2d’);
   var totalGeneration = 100;</p>
 
-<p>  draw(context2d, generation, totalGeneration);
+<p>draw(context2d, generation, totalGeneration);
 })()
 ```</p>
 
-<p>Maintenant que j'ai une meilleure connaissance du problème à résoudre, j'efface
+<p>Maintenant que j’ai une meilleure connaissance du problème à résoudre, j’efface
 toutes les modifications que je viens de faire et je recommence en TDD.</p>
 
-<p>Enfin c'est ce que je ferais normalement sur un projet réèl. Là, j'ai la flemme.</p>
+<p>Enfin c’est ce que je ferais normalement sur un projet réèl. Là, j’ai la flemme.</p>
 
-<h2>Un meilleur affichage</h2>
+<h2 id="un-meilleur-affichage">Un meilleur affichage</h2>
 
 <p>Je vais simplement faire un zoom 4x. Repérez <code>scale</code> dans le code suivant pour
-savoir ce que j'ai modifié.</p>
+savoir ce que j’ai modifié.</p>
 
 <p>``` javascript app/application.js
 function draw(context2d, generation, totalGeneration) {
@@ -111,50 +99,44 @@ function draw(context2d, generation, totalGeneration) {
   var width = generation[0].length;
   var scale = 4;</p>
 
-<p>  clearBackground(context2d, width, height, scale);
+<p>clearBackground(context2d, width, height, scale);
   drawCells(context2d, generation, width, height, scale);</p>
 
-<p>  if(totalGeneration > 0)</p>
-
-<pre><code>setTimeout(update, 500, context2d, generation, totalGeneration);
-</code></pre>
-
-<p>}</p>
+<p>if(totalGeneration &gt; 0)
+    setTimeout(update, 500, context2d, generation, totalGeneration);
+}</p>
 
 <p>function clearBackground(context2d, width, height, scale) {
-  context2d.fillStyle = &lsquo;black&rsquo;;
+  context2d.fillStyle = ‘black’;
   context2d.fillRect(0, 0, width * scale, height * scale);
 }</p>
 
 <p>function drawCells(context2d, generation, width, height, scale) {
-  context2d.fillStyle = &lsquo;white&rsquo;;
-  for(var y = 0; y &lt; height; y++) {</p>
-
-<pre><code>for(var x = 0; x &lt; width; x++) {
-  if(generation[x][y] === 1) {
-    context2d.fillRect(x * scale, y * scale, scale, scale);
+  context2d.fillStyle = ‘white’;
+  for(var y = 0; y &lt; height; y++) {
+    for(var x = 0; x &lt; width; x++) {
+      if(generation[x][y] === 1) {
+        context2d.fillRect(x * scale, y * scale, scale, scale);
+      }
+    }
   }
-}
-</code></pre>
-
-<p>  }
 }
 ```</p>
 
-<h2>Une surface de jeu «sans bord»</h2>
+<h2 id="une-surface-de-jeu-sans-bord">Une surface de jeu «sans bord»</h2>
 
 <p>Autre amélioration, mais non des moindres, on va connecter les bords du
 haut et du bas, ainsi que les bords de gauche et de droite. On aura ainsi un
 <a href="http://fr.wikipedia.org/wiki/Tore">tore</a>.</p>
 
-<p>Cette nouvelle fonctionnalité simule assez bien ce qu'il se passe dans le
+<p>Cette nouvelle fonctionnalité simule assez bien ce qu’il se passe dans le
 boulot du monde réèl. Je pourrais modifier le code, le regarder fonctionner,
 puis modifier les tests en conséquence. Je vois ça souvent. Seulement cette
-façon de faire revient à écrire les tests <strong>après</strong> le code. Et ça, ça n'est
-pas du TDD. Je vais d'abord modifier les test, quitte à en désactiver certains
+façon de faire revient à écrire les tests <strong>après</strong> le code. Et ça, ça n’est
+pas du TDD. Je vais d’abord modifier les test, quitte à en désactiver certains
 temporairement, <strong>puis</strong> modifier le code pour faire passer les nouveaux tests.</p>
 
-<p>C'est la fonction <code>extractNeighborhood</code> qui doit être modifée. Je vais donc
+<p>C’est la fonction <code>extractNeighborhood</code> qui doit être modifée. Je vais donc
 réécrire les <em>expect</em>s de:</p>
 
 <pre><code>describe("returns the neighborhood of a border's cell", function() {
@@ -168,16 +150,15 @@ réécrire les <em>expect</em>s de:</p>
 <p>Cela fait 8 tests à réécrire. Je les ai tous désactivés, sauf le premier.</p>
 
 <p>``` javascript
-  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
+  describe(“returns the neighborhood of a border’s cell”, function() {
+    it(“x=2, y=0”, function() {
+      var x = 2,
+          y = 0,
+          result = extractNeighborhood(this.generation, x, y);
+      expect(result).toEqual([1, 1, 0, 1, 0, 1, 0, 1, 0]);
+    });</p>
 
-<pre><code>it("x=2, y=0", function() {
-  var x = 2,
-      y = 0,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([1, 1, 0, 1, 0, 1, 0, 1, 0]);
-});
-
-xit("x=2, y=2", function() {
+<pre><code>xit("x=2, y=2", function() {
   var x = 2,
       y = 2,
       result = extractNeighborhood(this.generation, x, y);
@@ -196,21 +177,18 @@ xit("x=3, y=1", function() {
       y = 1,
       result = extractNeighborhood(this.generation, x, y);
   expect(result).toEqual([0, 1, 0, 1, 0, 1, 1, 0, 0]);
-});
+});   });
 </code></pre>
 
-<p>  });</p>
+<p>xdescribe(“returns the neighborhood of a corner’s cell”, function() {
+    it(“x=0, y=0”, function() {
+      var x = 0,
+          y = 0,
+          result = extractNeighborhood(this.generation, x, y);
+      expect(result).toEqual([0, 0, 1, 1, 0, 1, 0, 1, 0]);
+    });</p>
 
-<p>  xdescribe(&ldquo;returns the neighborhood of a corner&rsquo;s cell&rdquo;, function() {</p>
-
-<pre><code>it("x=0, y=0", function() {
-  var x = 0,
-      y = 0,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 0, 1, 1, 0, 1, 0, 1, 0]);
-});
-
-it("x=3, y=0", function() {
+<pre><code>it("x=3, y=0", function() {
   var x = 3,
       y = 0,
       result = extractNeighborhood(this.generation, x, y);
@@ -229,76 +207,51 @@ it("x=3, y=2", function() {
       y = 2,
       result = extractNeighborhood(this.generation, x, y);
   expect(result).toEqual([1, 0, 1, 1, 0, 0, 0, 1, 0]);
-});
+});   }); ```
 </code></pre>
 
-<p>  });
-```</p>
-
-<p>Je vais donc les refaire passer un par un. Pour mémoire, voici l'ancien code:</p>
+<p>Je vais donc les refaire passer un par un. Pour mémoire, voici l’ancien code:</p>
 
 <p>``` javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  var cells = extractLine(generation[y-1], x).concat(</p>
-
-<pre><code>          extractLine(generation[y], x),
-          extractLine(generation[y+1], x));
-</code></pre>
-
-<p>  return cells.map(function(cell) {</p>
-
-<pre><code>return cell === undefined ? 0 : cell;
-</code></pre>
-
-<p>  });
+  var cells = extractLine(generation[y-1], x).concat(
+              extractLine(generation[y], x),
+              extractLine(generation[y+1], x));
+  return cells.map(function(cell) {
+    return cell === undefined ? 0 : cell;
+  });
 }</p>
 
 <p>function extractLine(line, x) {
-  if(line === void 0)</p>
-
-<pre><code>return [0, 0, 0];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [line[x-1], line[x], line[x+1]];
-</code></pre>
-
-<p>}
+  if(line === void 0)
+    return [0, 0, 0];
+  else
+    return [line[x-1], line[x], line[x+1]];
+}
 ```</p>
 
 <p>Et voici le code réécrit pour faire passer ce premier test:</p>
 
 <p>``` javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  var cells,</p>
+  var cells,
+      line1,
+      line2,
+      line3;</p>
 
-<pre><code>  line1,
-  line2,
-  line3;
-</code></pre>
+<p>if(y &gt; 0)
+    line1 = extractLine(generation[y-1], x);
+  else
+    line1 = extractLine(generation[generation.length-1], x);</p>
 
-<p>  if(y > 0)</p>
-
-<pre><code>line1 = extractLine(generation[y-1], x);
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>line1 = extractLine(generation[generation.length-1], x);
-</code></pre>
-
-<p>  line2 = extractLine(generation[y], x);
+<p>line2 = extractLine(generation[y], x);
   line3 = extractLine(generation[y+1], x);</p>
 
-<p>  cells = line1.concat(line2, line3);</p>
+<p>cells = line1.concat(line2, line3);</p>
 
-<p>  return cells.map(function(cell) {</p>
-
-<pre><code>return cell === undefined ? 0 : cell;
-</code></pre>
-
-<p>  });
+<p>return cells.map(function(cell) {
+    return cell === undefined ? 0 : cell;
+  });
 }</p>
 
 <p>function extractLine(line, x) {
@@ -306,158 +259,108 @@ function extractNeighborhood(generation, x, y) {
 }
 ```</p>
 
-<p>Je réactive le second test, lance la suite de test pour confirmer qu'il
+<p>Je réactive le second test, lance la suite de test pour confirmer qu’il
 échoue, et voici le nouveau code:</p>
 
 <p>``` javascript app/application.js
 function extractNeighborhood(generation, x, y) {</p>
 
-<p>  &hellip;</p>
+<p>…</p>
 
-<p>  if(y > 0)</p>
+<p>if(y &gt; 0)
+    line1 = extractLine(generation[y-1], x);
+  else
+    line1 = extractLine(generation[generation.length-1], x);</p>
 
-<pre><code>line1 = extractLine(generation[y-1], x);
-</code></pre>
+<p>line2 = extractLine(generation[y], x);</p>
 
-<p>  else</p>
+<p>if(y === generation.length - 1)
+    line3 = extractLine(generation[0], x);
+  else
+    line3 = extractLine(generation[y+1], x);</p>
 
-<pre><code>line1 = extractLine(generation[generation.length-1], x);
-</code></pre>
-
-<p>  line2 = extractLine(generation[y], x);</p>
-
-<p>  if(y === generation.length &ndash; 1)</p>
-
-<pre><code>line3 = extractLine(generation[0], x);
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>line3 = extractLine(generation[y+1], x);
-</code></pre>
-
-<p>  &hellip;
+<p>…
 }
 ```</p>
 
-<p>Au tour du 3ème test. Pour le faire passer c'est <code>extractLine</code> que je dois
+<p>Au tour du 3ème test. Pour le faire passer c’est <code>extractLine</code> que je dois
 modifier.</p>
 
-<p>``` javascript app/application.js
+<p><code>javascript app/application.js
 function extractLine(line, x) {
-  if(x === 0)</p>
-
-<pre><code>return [line[line.length-1], line[x], line[x+1]];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [line[x-1], line[x], line[x+1]];
-</code></pre>
-
-<p>}
-```</p>
+  if(x === 0)
+    return [line[line.length-1], line[x], line[x+1]];
+  else
+    return [line[x-1], line[x], line[x+1]];
+}
+</code></p>
 
 <p>Et enfin je réactive le 4ème test.</p>
 
-<p>``` javascript app/application.js
+<p><code>javascript app/application.js
 function extractLine(line, x) {
-  if(x === 0)</p>
-
-<pre><code>return [line[line.length-1], line[x], line[x+1]];
-</code></pre>
-
-<p>  else if(x === line.length-1)</p>
-
-<pre><code>return [line[x-1], line[x], line[0]];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [line[x-1], line[x], line[x+1]];
-</code></pre>
-
-<p>}
-```</p>
+  if(x === 0)
+    return [line[line.length-1], line[x], line[x+1]];
+  else if(x === line.length-1)
+    return [line[x-1], line[x], line[0]];
+  else
+    return [line[x-1], line[x], line[x+1]];
+}
+</code></p>
 
 <p>Puis je réactive les 4 tests restants (ceux des coins) et je vérifie que tout
-passe. C'est un bon moment pour lancer le programme et vérifier visuellement
+passe. C’est un bon moment pour lancer le programme et vérifier visuellement
 que des objets <em>traversent</em> bien les bords.</p>
 
-<p>J'ai ensuite fait un peu de refactoring:</p>
+<p>J’ai ensuite fait un peu de refactoring:</p>
 
 <p>``` javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  var cells = line1(generation, x, y)</p>
+  var cells = line1(generation, x, y)
+              .concat(line2(generation, x, y), line3(generation, x, y));</p>
 
-<pre><code>          .concat(line2(generation, x, y), line3(generation, x, y));
-</code></pre>
-
-<p>  return cells.map(function(cell) {</p>
-
-<pre><code>return cell === undefined ? 0 : cell;
-</code></pre>
-
-<p>  });
+<p>return cells.map(function(cell) {
+    return cell === undefined ? 0 : cell;
+  });
 }</p>
 
 <p>function line1(generation, x, y) {
-  if(y > 0)</p>
-
-<pre><code>return extractLine(generation[y-1], x);
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return extractLine(generation[generation.length - 1], x);
-</code></pre>
-
-<p>}</p>
+  if(y &gt; 0)
+    return extractLine(generation[y-1], x);
+  else
+    return extractLine(generation[generation.length - 1], x);
+}</p>
 
 <p>function line2(generation, x, y) {
   return extractLine(generation[y], x);
 }</p>
 
 <p>function line3(generation, x, y) {
-  if(y === generation.length &ndash; 1)</p>
-
-<pre><code>return extractLine(generation[0], x);
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return extractLine(generation[y+1], x);
-</code></pre>
-
-<p>}</p>
+  if(y === generation.length - 1)
+    return extractLine(generation[0], x);
+  else
+    return extractLine(generation[y+1], x);
+}</p>
 
 <p>function extractLine(line, x) {
-  var left = x &ndash; 1,</p>
+  var left = x - 1,
+      right = x + 1;</p>
 
-<pre><code>  right = x + 1;
-</code></pre>
+<p>if(x === 0)
+    left = line.length - 1;
+  else if(x === line.length-1)
+    right = 0;</p>
 
-<p>  if(x === 0)</p>
-
-<pre><code>left = line.length - 1;
-</code></pre>
-
-<p>  else if(x === line.length-1)</p>
-
-<pre><code>right = 0;
-</code></pre>
-
-<p>  return [line[left], line[x], line[right]];
+<p>return [line[left], line[x], line[right]];
 }
 ```</p>
 
-<p>J'avoue que je ne sais pas si c'est mieux. Quoiqu'il en soit, vous pouvez
+<p>J’avoue que je ne sais pas si c’est mieux. Quoiqu’il en soit, vous pouvez
 trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code complet sur Github</a>.</p>
 
-<p>La prochaine fois je m'attaquerais à la version Ruby/Opal.</p>
+<p>La prochaine fois je m’attaquerais à la version Ruby/Opal.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -471,79 +374,65 @@ trouver le <a href="https://github.com/lkdjiin/game-of-life-javascript">code com
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
 <p><a href="http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1/">Précédement</a> nous avons écrit une fonction pour produire une génération de
-cellules au hasard. Nous allons aujourd'hui afficher une telle génération.
-Je veux maintenant calculer le prochain état d'une cellule, en fonction de son
+cellules au hasard. Nous allons aujourd’hui afficher une telle génération.
+Je veux maintenant calculer le prochain état d’une cellule, en fonction de son
 voisinage. Pour rappel:</p>
 
 <ul>
-<li>Si la somme des 9 cellules du voisinage est 3, le nouvel état est «vivant».</li>
-<li>Si la somme des 9 cellules du voisinage est 4, le nouvel état est le même
-que l'ancien.</li>
-<li>Dans tous les autres cas, le nouvel état est «mort».</li>
+  <li>Si la somme des 9 cellules du voisinage est 3, le nouvel état est «vivant».</li>
+  <li>Si la somme des 9 cellules du voisinage est 4, le nouvel état est le même
+que l’ancien.</li>
+  <li>Dans tous les autres cas, le nouvel état est «mort».</li>
 </ul>
-
 
 <!-- more -->
 
+<h2 id="calculer-le-prochain-tat-dune-cellule">Calculer le prochain état d’une cellule</h2>
 
-<h2>Calculer le prochain état d'une cellule</h2>
-
-<p>Voici les différents tests qui m'ont conduits à l'écriture de la fonction
+<p>Voici les différents tests qui m’ont conduits à l’écriture de la fonction
 <code>nextCellState</code>. Notez bien que, selon les principes du TDD, je ne les ai pas
-écrit tous d'un coup, mais bien un par un, en implémentant la fonction
+écrit tous d’un coup, mais bien un par un, en implémentant la fonction
 minimale à chaque nouveau test.</p>
 
 <p>``` javascript
-describe(&ldquo;nextCellState&rdquo;, function() {</p>
+describe(“nextCellState”, function() {</p>
 
-<p>  it(&ldquo;returns an integer&rdquo;, function() {</p>
+<p>it(“returns an integer”, function() {
+    var cells = [1, 1, 1, 0, 0, 0, 0, 0, 0];
+    var result = nextCellState(cells);
+    expect(Number.isInteger(result)).toBe(true);
+  });</p>
 
-<pre><code>var cells = [1, 1, 1, 0, 0, 0, 0, 0, 0];
-var result = nextCellState(cells);
-expect(Number.isInteger(result)).toBe(true);
-</code></pre>
+<p>it(“returns 1 when it’ll be alive”, function() {
+    var cells = [
+      [1, 1, 1, 0, 0, 0, 0, 0, 0],
+      [0, 1, 1, 0, 0, 1, 0, 0, 0],
+      [0, 1, 0, 0, 0, 1, 0, 1, 0]
+    ];
+    for(var i = 0; i &lt; cells.length; i++) {
+      expect(nextCellState(cells[i])).toBe(1);
+    }
+  });</p>
 
-<p>  });</p>
+<p>it(“returns 0 when it’ll be dead”, function() {
+    var cells = [
+      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 0, 0, 0, 0, 0, 0, 0]
+    ];
+    for(var i = 0; i &lt; cells.length; i++) {
+      expect(nextCellState(cells[i])).toBe(0);
+    }
+  });</p>
 
-<p>  it(&ldquo;returns 1 when it&rsquo;ll be alive&rdquo;, function() {</p>
-
-<pre><code>var cells = [
-  [1, 1, 1, 0, 0, 0, 0, 0, 0],
-  [0, 1, 1, 0, 0, 1, 0, 0, 0],
-  [0, 1, 0, 0, 0, 1, 0, 1, 0]
-];
-for(var i = 0; i &lt; cells.length; i++) {
-  expect(nextCellState(cells[i])).toBe(1);
-}
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns 0 when it&rsquo;ll be dead&rdquo;, function() {</p>
-
-<pre><code>var cells = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0, 0, 0]
-];
-for(var i = 0; i &lt; cells.length; i++) {
-  expect(nextCellState(cells[i])).toBe(0);
-}
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns current state as next state&rdquo;, function() {</p>
-
-<pre><code>var cells = [
-  [1, 1, 1, 1, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 1, 1, 1, 0, 0]
-];
-expect(nextCellState(cells[0])).toBe(0);
-expect(nextCellState(cells[1])).toBe(1);
-</code></pre>
-
-<p>  });</p>
+<p>it(“returns current state as next state”, function() {
+    var cells = [
+      [1, 1, 1, 1, 0, 0, 0, 0, 0],
+      [0, 1, 0, 0, 1, 1, 1, 0, 0]
+    ];
+    expect(nextCellState(cells[0])).toBe(0);
+    expect(nextCellState(cells[1])).toBe(1);
+  });</p>
 
 <p>});
 ```</p>
@@ -552,45 +441,30 @@ expect(nextCellState(cells[1])).toBe(1);
 
 <p>``` javascript app/application.js
 function nextCellState(neighborhood) {
-  var result = neighborhood.reduce(function(a, b) {</p>
+  var result = neighborhood.reduce(function(a, b) {
+    return a + b
+  }, 0);</p>
 
-<pre><code>return a + b
-</code></pre>
-
-<p>  }, 0);</p>
-
-<p>  if(result === 3)</p>
-
-<pre><code>return 1;
-</code></pre>
-
-<p>  else if(result === 4)</p>
-
-<pre><code>return neighborhood[4];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return 0;
-</code></pre>
-
-<p>}
+<p>if(result === 3)
+    return 1;
+  else if(result === 4)
+    return neighborhood[4];
+  else
+    return 0;
+}
 ```</p>
 
-<p>Maintenant il me faut une fonction qui extrait un <em>voisinage</em> à partir d'une
-position dans une génération. C'est la partie la plus complexe. Comme toujours,
-je commence doucement avec un test très simple et son code d'implémentation.</p>
+<p>Maintenant il me faut une fonction qui extrait un <em>voisinage</em> à partir d’une
+position dans une génération. C’est la partie la plus complexe. Comme toujours,
+je commence doucement avec un test très simple et son code d’implémentation.</p>
 
 <p>``` javascript
-describe(&ldquo;extractNeighborhood&rdquo;, function() {</p>
+describe(“extractNeighborhood”, function() {</p>
 
-<p>  it(&ldquo;returns an array&rdquo;, function() {</p>
-
-<pre><code>var result = extractNeighborhood();
-expect(Array.isArray(result)).toBe(true);
-</code></pre>
-
-<p>  });</p>
+<p>it(“returns an array”, function() {
+    var result = extractNeighborhood();
+    expect(Array.isArray(result)).toBe(true);
+  });</p>
 
 <p>});
 ```</p>
@@ -604,74 +478,59 @@ function extractNeighborhood() {
 <p>Je peux commencer à <em>specer</em> les choses sérieuses.</p>
 
 <p>``` javascript
-describe(&ldquo;extractNeighborhood&rdquo;, function() {</p>
+describe(“extractNeighborhood”, function() {</p>
 
-<p>  beforeEach(function() {</p>
+<p>beforeEach(function() {
+    this.generation = [
+      [0, 1, 0, 1],
+      [1, 0, 1, 0],
+      [0, 1, 1, 0]];
+  });</p>
 
-<pre><code>this.generation = [
-  [0, 1, 0, 1],
-  [1, 0, 1, 0],
-  [0, 1, 1, 0]];
+<p>it(“returns an array”, function() {
+    var result = extractNeighborhood(this.generation, 1, 1);
+    expect(Array.isArray(result)).toBe(true);
+  });</p>
+
+<p>it(“returns the neighborhood of a cell at x, y”, function() {
+    var x = 1,
+        y = 1,
+        result = extractNeighborhood(this.generation, x, y);</p>
+
+<pre><code>expect(result).toEqual([0, 1, 0, 1, 0, 1, 0, 1, 1]);   });
 </code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns an array&rdquo;, function() {</p>
-
-<pre><code>var result = extractNeighborhood(this.generation, 1, 1);
-expect(Array.isArray(result)).toBe(true);
-</code></pre>
-
-<p>  });</p>
-
-<p>  it(&ldquo;returns the neighborhood of a cell at x, y&rdquo;, function() {</p>
-
-<pre><code>var x = 1,
-    y = 1,
-    result = extractNeighborhood(this.generation, x, y);
-
-expect(result).toEqual([0, 1, 0, 1, 0, 1, 0, 1, 1]);
-</code></pre>
-
-<p>  });</p>
 
 <p>});
 ```</p>
 
-<p>On note l'utilisation de <code>toEqual</code> pour tester l'égalité de deux tableaux,
-<code>toBe()</code> testant l'identité d'après ce que j'ai compris.
+<p>On note l’utilisation de <code>toEqual</code> pour tester l’égalité de deux tableaux,
+<code>toBe()</code> testant l’identité d’après ce que j’ai compris.
 Et voici le code qui fait passer tout ça, moche mais pragmatique.</p>
 
-<p>``` javascript app/application.js
+<p><code>javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  return [</p>
+  return [
+    generation[y-1][x-1], generation[y-1][x], generation[y-1][x+1],
+    generation[y][x-1], generation[y][x], generation[y][x+1],
+    generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ];
+}
+</code></p>
 
-<pre><code>generation[y-1][x-1], generation[y-1][x], generation[y-1][x+1],
-generation[y][x-1], generation[y][x], generation[y][x+1],
-generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ];
-</code></pre>
-
-<p>}
-```</p>
-
-<p>C'est au tour des cellules du bord, d'abord en haut.</p>
+<p>C’est au tour des cellules du bord, d’abord en haut.</p>
 
 <p>``` javascript
-describe(&ldquo;extractNeighborhood&rdquo;, function() {</p>
+describe(“extractNeighborhood”, function() {</p>
 
-<p>  &hellip;</p>
+<p>…</p>
 
-<p>  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
-
-<pre><code>it("x=2, y=0", function() {
-  var x = 2,
-      y = 0,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 0, 0, 0, 0, 1, 0, 1, 0]);
-});
-</code></pre>
-
-<p>  });</p>
+<p>describe(“returns the neighborhood of a border’s cell”, function() {
+    it(“x=2, y=0”, function() {
+      var x = 2,
+          y = 0,
+          result = extractNeighborhood(this.generation, x, y);
+      expect(result).toEqual([0, 0, 0, 0, 0, 1, 0, 1, 0]);
+    });
+  });</p>
 
 <p>});
 ```</p>
@@ -680,121 +539,86 @@ describe(&ldquo;extractNeighborhood&rdquo;, function() {</p>
 
 <p>``` javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  return firstLine(generation, x, y-1).concat(</p>
-
-<pre><code>[generation[y][x-1], generation[y][x], generation[y][x+1],
-generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ]);
-</code></pre>
-
-<p>}</p>
+  return firstLine(generation, x, y-1).concat(
+    [generation[y][x-1], generation[y][x], generation[y][x+1],
+    generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ]);
+}</p>
 
 <p>function firstLine(generation, x, y) {
-  if(y &lt; 0)</p>
-
-<pre><code>return [0, 0, 0];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [generation[y][x-1], generation[y][x], generation[y][x+1]];
-</code></pre>
-
-<p>}
+  if(y &lt; 0)
+    return [0, 0, 0];
+  else
+    return [generation[y][x-1], generation[y][x], generation[y][x+1]];
+}
 ```</p>
 
-<p>Puisqu'il passe les tests, je cherche à l'améliorer un peu.</p>
+<p>Puisqu’il passe les tests, je cherche à l’améliorer un peu.</p>
 
 <p>``` javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  return firstLine(generation[y-1], x).concat(</p>
-
-<pre><code>[generation[y][x-1], generation[y][x], generation[y][x+1],
-generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ]);
-</code></pre>
-
-<p>}</p>
+  return firstLine(generation[y-1], x).concat(
+    [generation[y][x-1], generation[y][x], generation[y][x+1],
+    generation[y+1][x-1], generation[y+1][x], generation[y+1][x+1] ]);
+}</p>
 
 <p>function firstLine(line, x) {
-  if(line === void 0)</p>
-
-<pre><code>return [0, 0, 0];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [line[x-1], line[x], line[x+1]];
-</code></pre>
-
-<p>}
+  if(line === void 0)
+    return [0, 0, 0];
+  else
+    return [line[x-1], line[x], line[x+1]];
+}
 ```</p>
 
 <p>Cellule du bord en bas, maintenant.</p>
 
 <p>``` javascript
-  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
+  describe(“returns the neighborhood of a border’s cell”, function() {
+    it(“x=2, y=0”, function() {
+      …
+    });</p>
 
-<pre><code>it("x=2, y=0", function() {
-  ...
-});
-
-it("x=2, y=2", function() {
+<pre><code>it("x=2, y=2", function() {
   var x = 2,
       y = 2,
       result = extractNeighborhood(this.generation, x, y);
   expect(result).toEqual([0, 1, 0, 1, 1, 0, 0, 0, 0]);
-});
+});   }); ```
 </code></pre>
-
-<p>  });
-```</p>
 
 <p>``` javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  return extractLine(generation[y-1], x).concat(</p>
-
-<pre><code>[generation[y][x-1], generation[y][x], generation[y][x+1]],
-extractLine(generation[y+1], x));
-</code></pre>
-
-<p>}</p>
+  return extractLine(generation[y-1], x).concat(
+    [generation[y][x-1], generation[y][x], generation[y][x+1]],
+    extractLine(generation[y+1], x));
+}</p>
 
 <p>function extractLine(line, x) {
-  if(line === void 0)</p>
-
-<pre><code>return [0, 0, 0];
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>return [line[x-1], line[x], line[x+1]];
-</code></pre>
-
-<p>}
+  if(line === void 0)
+    return [0, 0, 0];
+  else
+    return [line[x-1], line[x], line[x+1]];
+}
 ```</p>
 
 <p>Puis refactoring.</p>
 
-<p>``` javascript app/application.js
+<p><code>javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  return extractLine(generation[y-1], x).concat(</p>
-
-<pre><code>     extractLine(generation[y], x),
-     extractLine(generation[y+1], x));
-</code></pre>
-
-<p>}
-```</p>
+  return extractLine(generation[y-1], x).concat(
+         extractLine(generation[y], x),
+         extractLine(generation[y+1], x));
+}
+</code></p>
 
 <p>On passe au bord gauche.</p>
 
 <p>``` javascript
-  describe(&ldquo;returns the neighborhood of a border&rsquo;s cell&rdquo;, function() {</p>
+  describe(“returns the neighborhood of a border’s cell”, function() {
+    it(“x=2, y=0”, function() {
+      …
+    });</p>
 
-<pre><code>it("x=2, y=0", function() {
-  ...
-});
-
-it("x=2, y=2", function() {
+<pre><code>it("x=2, y=2", function() {
   ...
 });
 
@@ -803,11 +627,8 @@ it("x=0, y=1", function() {
       y = 1,
       result = extractNeighborhood(this.generation, x, y);
   expect(result).toEqual([0, 0, 1, 0, 1, 0, 0, 0, 1]);
-});
+});   }); ```
 </code></pre>
-
-<p>  });
-```</p>
 
 <p>La réponse de Jasmine à ce test est:</p>
 
@@ -817,52 +638,42 @@ it("x=0, y=1", function() {
 <p>Si on suit les principes du TDD, il faut écrire le code tout juste suffisant
 pour faire passer ce test. Je me contente donc de mapper les <code>undefined</code> en <code>0</code>.</p>
 
-<p>``` javascript app/application.js
+<p><code>javascript app/application.js
 function extractNeighborhood(generation, x, y) {
-  var cells = extractLine(generation[y-1], x).concat(</p>
-
-<pre><code>          extractLine(generation[y], x),
-          extractLine(generation[y+1], x));
-</code></pre>
-
-<p>  return cells.map(function(cell) {</p>
-
-<pre><code>return cell === undefined ? 0 : cell;
-</code></pre>
-
-<p>  });
+  var cells = extractLine(generation[y-1], x).concat(
+              extractLine(generation[y], x),
+              extractLine(generation[y+1], x));
+  return cells.map(function(cell) {
+    return cell === undefined ? 0 : cell;
+  });
 }
-```</p>
+</code></p>
 
-<p>Si j'ajoute un test pour une cellule du bord droit, il passe.</p>
+<p>Si j’ajoute un test pour une cellule du bord droit, il passe.</p>
 
-<p>``` javascript</p>
+<p><code>javascript
+    it("x=3, y=1", function() {
+      var x = 3,
+          y = 1,
+          result = extractNeighborhood(this.generation, x, y);
+      expect(result).toEqual([0, 1, 0, 1, 0, 0, 1, 0, 0]);
+    });
+</code></p>
 
-<pre><code>it("x=3, y=1", function() {
-  var x = 3,
-      y = 1,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 1, 0, 1, 0, 0, 1, 0, 0]);
-});
-</code></pre>
-
-<p>```</p>
-
-<p>Très bien, il faut maintenant s'occuper des cellules de coins. Je me rends
-compte que les quatres tests suivants passent sans que je n'ai rien à modifier
+<p>Très bien, il faut maintenant s’occuper des cellules de coins. Je me rends
+compte que les quatres tests suivants passent sans que je n’ai rien à modifier
 dans le code.</p>
 
 <p>``` javascript
-  describe(&ldquo;returns the neighborhood of a corner&rsquo;s cell&rdquo;, function() {</p>
+  describe(“returns the neighborhood of a corner’s cell”, function() {
+    it(“x=0, y=0”, function() {
+      var x = 0,
+          y = 0,
+          result = extractNeighborhood(this.generation, x, y);
+      expect(result).toEqual([0, 0, 0, 0, 0, 1, 0, 1, 0]);
+    });</p>
 
-<pre><code>it("x=0, y=0", function() {
-  var x = 0,
-      y = 0,
-      result = extractNeighborhood(this.generation, x, y);
-  expect(result).toEqual([0, 0, 0, 0, 0, 1, 0, 1, 0]);
-});
-
-it("x=3, y=0", function() {
+<pre><code>it("x=3, y=0", function() {
   var x = 3,
       y = 0,
       result = extractNeighborhood(this.generation, x, y);
@@ -881,17 +692,13 @@ it("x=3, y=2", function() {
       y = 2,
       result = extractNeighborhood(this.generation, x, y);
   expect(result).toEqual([1, 0, 0, 1, 0, 0, 0, 0, 0]);
-});
+});   }); ```
 </code></pre>
-
-<p>  });
-```</p>
 
 <p>Je suis donc prêt à tout mettre ensemble. Ce sera pour le prochain article car
 celui-ci est déjà bien long.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -904,18 +711,17 @@ celui-ci est déjà bien long.</p>
     <id>http://lkdjiin.github.io/blog/2014/10/16/le-jeu-de-la-vie-en-javascript-partie-1</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>C'est parti pour le jeu de la vie version Javascript. Dans ce premier article
-nous allons créer une génération de cellules au hasard et l'afficher.</p>
+<p>C’est parti pour le jeu de la vie version Javascript. Dans ce premier article
+nous allons créer une génération de cellules au hasard et l’afficher.</p>
 
-<p><em>J'avais annoncé dans <a href="blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">l'article précédent</a> que je commencerais par la
-version Ruby/Opal. Je l'ai écrite mais je n'en suis pas satisfait. Les
-performances sont très pauvres et j'ai écrit plus de code que nécessaire.
+<p><em>J’avais annoncé dans <a href="blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">l’article précédent</a> que je commencerais par la
+version Ruby/Opal. Je l’ai écrite mais je n’en suis pas satisfait. Les
+performances sont très pauvres et j’ai écrit plus de code que nécessaire.
 Je prendrais donc le temps de la nettoyer un peu avant de la publier.</em></p>
 
 <!-- more -->
 
-
-<p>Pour les tests, j'utiliserais <a href="http://jasmine.github.io/">Jasmine</a> et la structure du projet sera la
+<p>Pour les tests, j’utiliserais <a href="http://jasmine.github.io/">Jasmine</a> et la structure du projet sera la
 suivante:</p>
 
 <pre><code>$ tree
@@ -941,53 +747,44 @@ suivante:</p>
 application (<code>app/application.js</code>) et enfin nos tests (<code>spec/test.js</code>).</p>
 
 <p>``` html test.html
-&lt;!DOCTYPE html>
+&lt;!DOCTYPE html&gt;</p>
 <html>
-  <head></p>
+  <head>
+    <meta charset="utf-8" />
+    <title>Test Game of Life</title>
+    <link rel="shortcut icon" type="image/png" href="jasmine/lib/jasmine-2.0.3/jasmine_favicon.png" />
+    <link rel="stylesheet" type="text/css" href="jasmine/lib/jasmine-2.0.3/jasmine.css" />
 
-<pre><code>&lt;meta charset="utf-8" /&gt;
-&lt;title&gt;Test Game of Life&lt;/title&gt;
-&lt;link rel="shortcut icon" type="image/png" href="jasmine/lib/jasmine-2.0.3/jasmine_favicon.png"&gt;
-&lt;link rel="stylesheet" type="text/css" href="jasmine/lib/jasmine-2.0.3/jasmine.css"&gt;
-
-&lt;script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/jasmine.js"&gt;&lt;/script&gt;
-&lt;script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/jasmine-html.js"&gt;&lt;/script&gt;
-&lt;script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/boot.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </head>
-  <body></p>
-
-<pre><code>&lt;script type="text/javascript" src="app/application.js"&gt;&lt;/script&gt;
-&lt;script type="text/javascript" src="spec/test.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </body>
+    <script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/jasmine.js"></script>
+    <script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/jasmine-html.js"></script>
+    <script type="text/javascript" src="jasmine/lib/jasmine-2.0.3/boot.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript" src="app/application.js"></script>
+    <script type="text/javascript" src="spec/test.js"></script>
+  </body>
 </html>
-```</p>
+<p>```</p>
 
-<h2>Créer une génération de cellules au hasard</h2>
+<h2 id="crer-une-gnration-de-cellules-au-hasard">Créer une génération de cellules au hasard</h2>
 
 <p>Nous allons écrire la fonction <code>createGeneration</code> qui
 devra <em>fabriquer</em> un ensemble de cellules, mortes (<code>0</code>) ou vivantes (<code>1</code>), au
-hasard. Mon premier test avec Jasmine est de m'assurer que cette fonction
+hasard. Mon premier test avec Jasmine est de m’assurer que cette fonction
 renvoie un tableau (<code>Array</code>).</p>
 
 <p>``` javascript spec/test.js
-describe(&ldquo;createGeneration&rdquo;, function() {</p>
+describe(“createGeneration”, function() {</p>
 
-<p>  it(&ldquo;returns an array&rdquo;, function() {</p>
-
-<pre><code>var result = createGeneration();
-expect(Array.isArray(result)).toBe(true);
-</code></pre>
-
-<p>  });</p>
+<p>it(“returns an array”, function() {
+    var result = createGeneration();
+    expect(Array.isArray(result)).toBe(true);
+  });</p>
 
 <p>});
 ```</p>
 
-<p>Lorsqu'on lance <code>test.html</code> Jasmine nous dit que <code>createGeneration</code> n'existe
+<p>Lorsqu’on lance <code>test.html</code> Jasmine nous dit que <code>createGeneration</code> n’existe
 pas. Le code javascript permettant de faire passer ce test consiste donc à
 renvoyer un tableau vide.</p>
 
@@ -1000,18 +797,15 @@ function createGeneration(x, y) {
 <p>Maintenant il nous faut un tableau à 2 dimensions:</p>
 
 <p>``` javascript spec/test.js
-describe(&ldquo;createGeneration&rdquo;, function() {</p>
+describe(“createGeneration”, function() {</p>
 
-<p>  &hellip;</p>
+<p>…</p>
 
-<p>  it(&ldquo;creates a 2D array&rdquo;, function() {</p>
-
-<pre><code>var result = createGeneration(3, 5);
-expect(result.length).toBe(5);
-expect(result[0].length).toBe(3);
-</code></pre>
-
-<p>  });</p>
+<p>it(“creates a 2D array”, function() {
+    var result = createGeneration(3, 5);
+    expect(result.length).toBe(5);
+    expect(result[0].length).toBe(3);
+  });</p>
 
 <p>});
 ```</p>
@@ -1022,90 +816,75 @@ expect(result[0].length).toBe(3);
 function createGeneration(x, y) {
   var generation = new Array(y);</p>
 
-<p>  for(var i = 0; i &lt; y; i++) {</p>
-
-<pre><code>generation[i] = new Array(x);
-</code></pre>
-
-<p>  }
+<p>for(var i = 0; i &lt; y; i++) {
+    generation[i] = new Array(x);
+  }
   return generation;
 }
 ```</p>
 
-<p>Et maintenant on rempli notre tableau 2D avec des <code>1</code> ou des <code>0</code>. D'abord un
+<p>Et maintenant on rempli notre tableau 2D avec des <code>1</code> ou des <code>0</code>. D’abord un
 test pour vérifier que chaque cellule du tableau contient <code>1</code> ou <code>0</code>.</p>
 
 <p>``` javascript spec/test.js
-describe(&ldquo;createGeneration&rdquo;, function() {</p>
+describe(“createGeneration”, function() {</p>
 
-<p>  &hellip;</p>
+<p>…</p>
 
-<p>  it(&ldquo;fills each room with 1 or 0&rdquo;, function() {</p>
-
-<pre><code>var generation = createGeneration(2, 3);
-for(var y = 0; y &lt; 3; y++) {
-  for(var x = 0; x &lt; 2; x++) {
-    var cell = generation[y][x];
-    var result = cell === 0 || cell === 1;
-    expect(result).toBe(true);
-  }
-}
-</code></pre>
-
-<p>  });</p>
+<p>it(“fills each room with 1 or 0”, function() {
+    var generation = createGeneration(2, 3);
+    for(var y = 0; y &lt; 3; y++) {
+      for(var x = 0; x &lt; 2; x++) {
+        var cell = generation[y][x];
+        var result = cell === 0 || cell === 1;
+        expect(result).toBe(true);
+      }
+    }
+  });</p>
 
 <p>});
 ```</p>
 
-<p>Puis l'implémentation.</p>
+<p>Puis l’implémentation.</p>
 
 <p>``` javascript app/application.js
 function createGeneration(x, y) {
   var generation = new Array(y);</p>
 
-<p>  for(var i = 0; i &lt; y; i++) {</p>
-
-<pre><code>generation[i] = [];
-for(var j = 0; j &lt; x; j++) {
-  generation[i][j] = Math.floor(Math.random() * 2);
-}
-</code></pre>
-
-<p>  }
+<p>for(var i = 0; i &lt; y; i++) {
+    generation[i] = [];
+    for(var j = 0; j &lt; x; j++) {
+      generation[i][j] = Math.floor(Math.random() * 2);
+    }
+  }
   return generation;
 }
 ```</p>
 
 <p>Voilà, cette première partie du jeu de la vie en Javascript était simple et
 rapide à coder. Je vais maintenant mettre les tests de coté pour me
-concentrer sur l'affichage d'une génération.</p>
+concentrer sur l’affichage d’une génération.</p>
 
-<h2>Afficher une génération</h2>
+<h2 id="afficher-une-gnration">Afficher une génération</h2>
 
 <p>Voyons pour commencer le contenu du fichier <code>index.html</code>.</p>
 
 <p>``` html index.html
-&lt;!DOCTYPE html>
+&lt;!DOCTYPE html&gt;</p>
 <html>
-  <head></p>
-
-<pre><code>&lt;meta charset="utf-8" /&gt;
-&lt;title&gt;Game of Life&lt;/title&gt;
-</code></pre>
-
-<p>  </head>
-  <body></p>
-
-<pre><code>&lt;canvas width="100" height="100" id="canvas"&gt;&lt;/canvas&gt;
-&lt;script src="app/application.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Game of Life</title>
+  </head>
+  <body>
+    <canvas width="100" height="100" id="canvas" />
+    <script src="app/application.js"></script>
+  </body>
 </html>
-```</p>
+<p>```</p>
 
 <p>Nous référençons bien entendu notre <code>application.js</code> et nous créons un
-<code>canvas</code> de (petite) dimension 100x100. C'est dans ce <code>canvas</code> que nous allons
+<code>canvas</code> de (petite) dimension 100x100. C’est dans ce <code>canvas</code> que nous allons
 <em>dessiner</em> nos cellules.</p>
 
 <p>Sans plus attendre, voici le contenu de <code>application.js</code>.</p>
@@ -1114,15 +893,12 @@ concentrer sur l'affichage d'une génération.</p>
 function createGeneration(width, height) {
   var generation = new Array(height);</p>
 
-<p>  for(var y = 0; y &lt; height; y++) {</p>
-
-<pre><code>generation[y] = [];
-for(var x = 0; x &lt; width; x++) {
-  generation[y][x] = Math.floor(Math.random() * 2);
-}
-</code></pre>
-
-<p>  }
+<p>for(var y = 0; y &lt; height; y++) {
+    generation[y] = [];
+    for(var x = 0; x &lt; width; x++) {
+      generation[y][x] = Math.floor(Math.random() * 2);
+    }
+  }
   return generation;
 }</p>
 
@@ -1130,45 +906,41 @@ for(var x = 0; x &lt; width; x++) {
   var height = generation.length;
   var width = generation[0].length;</p>
 
-<p>  clearBackground(context2d, width, height);
+<p>clearBackground(context2d, width, height);
   drawCells(context2d, generation, width, height);
 }</p>
 
 <p>function clearBackground(context2d, width, height) {
-  context2d.fillStyle = &lsquo;black&rsquo;;
+  context2d.fillStyle = ‘black’;
   context2d.fillRect(0, 0, width, height);
 }</p>
 
 <p>function drawCells(context2d, generation, width, height) {
-  context2d.fillStyle = &lsquo;white&rsquo;;
-  for(var y = 0; y &lt; height; y++) {</p>
-
-<pre><code>for(var x = 0; x &lt; width; x++) {
-  if(generation[x][y] === 1) {
-    context2d.fillRect(x, y, 1, 1);
+  context2d.fillStyle = ‘white’;
+  for(var y = 0; y &lt; height; y++) {
+    for(var x = 0; x &lt; width; x++) {
+      if(generation[x][y] === 1) {
+        context2d.fillRect(x, y, 1, 1);
+      }
+    }
   }
-}
-</code></pre>
-
-<p>  }
 }</p>
 
 <p>(function() {
   var generation = createGeneration(100, 100);
-  var c = document.getElementById(&lsquo;canvas&rsquo;);
-  var ctx = c.getContext(&lsquo;2d&rsquo;);</p>
+  var c = document.getElementById(‘canvas’);
+  var ctx = c.getContext(‘2d’);</p>
 
-<p>  draw(ctx, generation);
+<p>draw(ctx, generation);
 })()
 ```</p>
 
 <p>Ces quelques petites fonctions sont bien suffisantes pour afficher un
 ensemble de cellules.</p>
 
-<p>Dans le prochain article nous calculerons l'état des générations suivantes.</p>
+<p>Dans le prochain article nous calculerons l’état des générations suivantes.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -1182,62 +954,59 @@ ensemble de cellules.</p>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
 <p>Je vais écrire le <a href="http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">jeu de la vie</a> dans 7 langages, et
-en utilisant le TDD (sauf pour l'affichage).
-Ça va me permettre de réviser certains langages et d'en apprendre de nouveaux
-d'une manière amusante. Après tout, quoi de plus <em>fun</em> qu'un jeu pour zéro
+en utilisant le TDD (sauf pour l’affichage).
+Ça va me permettre de réviser certains langages et d’en apprendre de nouveaux
+d’une manière amusante. Après tout, quoi de plus <em>fun</em> qu’un jeu pour zéro
 joueur.</p>
 
-<h2>L'algorithme</h2>
+<h2 id="lalgorithme">L’algorithme</h2>
 
-<p>L'idée directrice, c'est de faire au plus simple.
-L'algorithme général sera le suivant :</p>
+<p>L’idée directrice, c’est de faire au plus simple.
+L’algorithme général sera le suivant :</p>
 
 <ol>
-<li>obtenir une première génération au hasard</li>
-<li>afficher la génération</li>
-<li>calculer la nouvelle génération et retour au point 2.</li>
+  <li>obtenir une première génération au hasard</li>
+  <li>afficher la génération</li>
+  <li>calculer la nouvelle génération et retour au point 2.</li>
 </ol>
-
 
 <p>Discutons un peu chacun des trois points.</p>
 
 <!-- more -->
 
-
-<h3>Obtenir une première génération au hasard</h3>
+<h3 id="obtenir-une-premire-gnration-au-hasard">Obtenir une première génération au hasard</h3>
 
 <p>Cette génération sera stockée dans un tableau (une liste). Suivant le
-langage, j'utiliserais un tableau à 1 ou 2 dimensions.</p>
+langage, j’utiliserais un tableau à 1 ou 2 dimensions.</p>
 
-<h3>Afficher la génération</h3>
+<h3 id="afficher-la-gnration">Afficher la génération</h3>
 
-<p>Il s'agit d'afficher à l'écran le tableau calculé précédement. Chaque élément
+<p>Il s’agit d’afficher à l’écran le tableau calculé précédement. Chaque élément
 du tableau représente une cellule du jeu de la vie, et une cellule sera
-représentée à l'écran par un pixel. Alors un pixel pour une cellule, ça risque
-d'être assez moche sur la plupart des dispositifs, mais c'est le plus simple.
-J'améliorerais peut-être cet affichage plus tard.</p>
+représentée à l’écran par un pixel. Alors un pixel pour une cellule, ça risque
+d’être assez moche sur la plupart des dispositifs, mais c’est le plus simple.
+J’améliorerais peut-être cet affichage plus tard.</p>
 
-<h3>Calculer la nouvelle génération</h3>
+<h3 id="calculer-la-nouvelle-gnration">Calculer la nouvelle génération</h3>
 
-<p>Là encore, j'essaye d'aller au plus simple. On va calculer la
+<p>Là encore, j’essaye d’aller au plus simple. On va calculer la
 nouvelle génération dans un second tableau. Une fois ce calcul effectué, ce
 second tableau remplacera le premier.</p>
 
-<p>Pour calculer le nouvel état d'une cellule, on devra observer la cellule et
+<p>Pour calculer le nouvel état d’une cellule, on devra observer la cellule et
 ces 8 voisins. Autrement dit on observe une fenêtre de 9 cellules et on veut
 connaitre le nouvel état de la cellule centrale. Il y a 3 cas possibles:</p>
 
 <ol>
-<li>Si la somme des cellules vivantes est 3, alors la nouvelle cellule sera
+  <li>Si la somme des cellules vivantes est 3, alors la nouvelle cellule sera
 vivante.</li>
-<li>Si la somme des cellules vivantes est 4, alors la nouvelle cellule conserve
+  <li>Si la somme des cellules vivantes est 4, alors la nouvelle cellule conserve
 son ancien état.</li>
-<li>Dans tous les autres cas, la nouvelle cellule est morte.</li>
+  <li>Dans tous les autres cas, la nouvelle cellule est morte.</li>
 </ol>
 
-
 <p>Il faut encore parler du cas des cellules qui se trouvent sur les bords du
-<em>plateau de jeu</em>. Normalement, le jeu de la vie est infini. Mais l'infini, c'est
+<em>plateau de jeu</em>. Normalement, le jeu de la vie est infini. Mais l’infini, c’est
 pas simple. Dans une première itération, le <em>plateau de jeu</em> aura des
 dimensions finies et les cellules qui se trouvent sur les bords se verront
 ajoutées arbitrairement des voisins morts.</p>
@@ -1245,54 +1014,53 @@ ajoutées arbitrairement des voisins morts.</p>
 <p>Une seconde itération pourrait implémenter une espèce de <a href="http://en.wikipedia.org/wiki/Torus">tore</a> pour avoir une surface
 de jeu sans bordures.</p>
 
-<h2>Les langages ciblés</h2>
+<h2 id="les-langages-cibls">Les langages ciblés</h2>
 
 <p>Je vais écrire le jeu de la vie dans 7 langages différents:</p>
 
 <ul>
-<li>ruby</li>
-<li>javascript</li>
-<li>racket</li>
-<li>logo</li>
-<li>julia</li>
-<li>haskell</li>
-<li>rust</li>
+  <li>ruby</li>
+  <li>javascript</li>
+  <li>racket</li>
+  <li>logo</li>
+  <li>julia</li>
+  <li>haskell</li>
+  <li>rust</li>
 </ul>
 
-
-<h3>Pourquoi ces langages ?</h3>
+<h3 id="pourquoi-ces-langages-">Pourquoi ces langages ?</h3>
 
 <p><strong>Ruby</strong></p>
 
-<p>Ça peut paraitre bizarre. Après tout j'écris en Ruby toute la journée, c'est
+<p>Ça peut paraitre bizarre. Après tout j’écris en Ruby toute la journée, c’est
 mon métier. Pourquoi vouloir en faire encore pendant mon temps libre ?
-En fait, ce qui m'intéresse vraiment ici, c'est <a href="http://opalrb.org/">Opal.rb</a>. Peut-être aussi
-que j'en ferais une seconde version avec <a href="http://www.libgosu.org/">Gosu</a>.</p>
+En fait, ce qui m’intéresse vraiment ici, c’est <a href="http://opalrb.org/">Opal.rb</a>. Peut-être aussi
+que j’en ferais une seconde version avec <a href="http://www.libgosu.org/">Gosu</a>.</p>
 
 <p><strong>Javascript</strong></p>
 
-<p>Après des années passées à tenter d'éviter d'écrire la moindre ligne de
-Javascript, je m'intéresse de nouveau à ce langage. Après tout, c'est un
-incontournable du Web et il commence à me plaire. Et puis j'ai trop tardé à
+<p>Après des années passées à tenter d’éviter d’écrire la moindre ligne de
+Javascript, je m’intéresse de nouveau à ce langage. Après tout, c’est un
+incontournable du Web et il commence à me plaire. Et puis j’ai trop tardé à
 faire du TDD avec Javascript, je crois que <a href="http://jasmine.github.io/">Jasmine</a> est devenu très bon.</p>
 
 <p><strong>Racket</strong></p>
 
-<p>Je crois que tout développeur devrait étudier un <em>Lisp like</em>. Lisp t'oblige à
+<p>Je crois que tout développeur devrait étudier un <em>Lisp like</em>. Lisp t’oblige à
 penser autrement et du coup tu trouves des solutions différentes à des
 problèmes de programmation de tout les jours.</p>
 
 <p><strong>Logo</strong></p>
 
-<p>Le <a href="http://fr.wikipedia.org/wiki/Logo_%28langage%29">Logo</a>, c'est ma <a href="http://fr.wikipedia.org/wiki/Madeleine_%28cuisine%29#La_madeleine_de_Proust">madeleine de Proust</a> ! Voilà. Encore un <em>Lisp like</em>,
-mais différent (on l'appelait Lisp sans parenthèses). J'espère que je trouverais
+<p>Le <a href="http://fr.wikipedia.org/wiki/Logo_%28langage%29">Logo</a>, c’est ma <a href="http://fr.wikipedia.org/wiki/Madeleine_%28cuisine%29#La_madeleine_de_Proust">madeleine de Proust</a> ! Voilà. Encore un <em>Lisp like</em>,
+mais différent (on l’appelait Lisp sans parenthèses). J’espère que je trouverais
 encore des ressources pour celui-ci.</p>
 
 <p><strong>Julia</strong></p>
 
 <p>Je pense que les langages fonctionnels ont un grand avenir. Ils résolvent au
 moins deux soucis. En ce concentrant sur la transformation des données plutôt
-que sur l'état de ces données, ils facilitent les tests et l'utilisation des
+que sur l’état de ces données, ils facilitent les tests et l’utilisation des
 multi-coeurs.</p>
 
 <p><strong>Haskell</strong></p>
@@ -1304,16 +1072,15 @@ que je devrais y goûter.</p>
 
 <p>Je voulais un langage système dans cette liste, ce sera <a href="http://www.rust-lang.org/">Rust</a>.</p>
 
-<h2>Fréquence de publication</h2>
+<h2 id="frquence-de-publication">Fréquence de publication</h2>
 
-<p>Je ne m'avancerais pas sur une fréquence de publication. J'imagine qu'il y
+<p>Je ne m’avancerais pas sur une fréquence de publication. J’imagine qu’il y
 aura 3 ou 4 articles par langage. Et suivant le temps dont je disposerais, ça
 pourrat-être aussi bien un article par mois ou trois articles par semaine.</p>
 
 <p>Allez, la prochaine fois on commence avec Ruby/Opal.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -1327,7 +1094,7 @@ pourrat-être aussi bien un article par mois ou trois articles par semaine.</p>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
 <p>Hier on a vu comment lancer une appli rack pour le développement. Seulement
-je n'ai pas envie de choisir entre les deux méthodes. Je veux les deux !
+je n’ai pas envie de choisir entre les deux méthodes. Je veux les deux !
 Le serveur rack pour le développement, et le build classique du fichier
 javascript pour la mise en production.</p>
 
@@ -1335,43 +1102,39 @@ javascript pour la mise en production.</p>
 
 <!-- more -->
 
-
-<p>Alors j'avertis tout de suite : le script n'est pas parfait. C'est malgré une
+<p>Alors j’avertis tout de suite : le script n’est pas parfait. C’est malgré une
 bonne base pour commencer.</p>
 
-<p>Voici le nouveau <code>Rakefile</code>, dans lequel j'ai ajouté une tâche <code>development</code>
+<p>Voici le nouveau <code>Rakefile</code>, dans lequel j’ai ajouté une tâche <code>development</code>
 et une tâche <code>production</code>:</p>
 
 <p>``` ruby Rakefile
-require &lsquo;opal&rsquo;
-require &lsquo;opal-jquery&rsquo;</p>
+require ‘opal’
+require ‘opal-jquery’</p>
 
-<p>desc &ldquo;Build our app to build.js&rdquo;
+<p>desc “Build our app to build.js”
 task :build do
   env = Opal::Environment.new
-  env.append_path &ldquo;app&rdquo;</p>
+  env.append_path “app”</p>
 
-<p>  File.open(&ldquo;build.js&rdquo;, &ldquo;w+&rdquo;) do |out|</p>
-
-<pre><code>out &lt;&lt; env["application"].to_s
-</code></pre>
-
-<p>  end
+<p>File.open(“build.js”, “w+”) do |out|
+    out « env[“application”].to_s
+  end
 end</p>
 
-<p>desc &lsquo;Build app for production&rsquo;
-task :production => :build do
-  cp &lsquo;app/templates/index_production.html&rsquo;, &lsquo;index.html&rsquo;
+<p>desc ‘Build app for production’
+task :production =&gt; :build do
+  cp ‘app/templates/index_production.html’, ‘index.html’
 end</p>
 
-<p>desc &lsquo;Run development server&rsquo;
+<p>desc ‘Run development server’
 task :development do
-  cp &lsquo;app/templates/index_development.html&rsquo;, &lsquo;index.html&rsquo;
+  cp ‘app/templates/index_development.html’, ‘index.html’
   <code>bundle exec rackup</code>
 end
 ```</p>
 
-<p>Pour que le fichier <code>index.html</code> reflète le bon environnement, j'ai
+<p>Pour que le fichier <code>index.html</code> reflète le bon environnement, j’ai
 ajouté un dossier <code>templates</code>, avec une version de chaque:</p>
 
 <pre><code>$ tree app
@@ -1391,52 +1154,39 @@ app
 <p>Pour info, voici le contenu des templates:</p>
 
 <p>``` html app/templates/index_development.html
-&lt;!DOCTYPE html>
+&lt;!DOCTYPE html&gt;</p>
 <html>
-  <head></p>
-
-<pre><code>&lt;meta charset="utf-8" /&gt;
-&lt;script src="http://code.jquery.com/jquery-1.11.0.min.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </head>
-  <body></p>
-
-<pre><code>&lt;canvas width="700" height="600" id="canvas"&gt;&lt;/canvas&gt;
-&lt;script src="assets/application.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </body>
+  <head>
+    <meta charset="utf-8" />
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+  </head>
+  <body>
+    <canvas width="700" height="600" id="canvas" />
+    <script src="assets/application.js"></script>
+  </body>
 </html>
-```</p>
+<p>```</p>
 
 <p>``` html app/templates/index_production.html
-&lt;!DOCTYPE html>
+&lt;!DOCTYPE html&gt;</p>
 <html>
-  <head></p>
-
-<pre><code>&lt;meta charset="utf-8" /&gt;
-&lt;script src="http://code.jquery.com/jquery-1.11.0.min.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </head>
-  <body></p>
-
-<pre><code>&lt;canvas width="700" height="600" id="canvas"&gt;&lt;/canvas&gt;
-&lt;script src="build.js"&gt;&lt;/script&gt;
-</code></pre>
-
-<p>  </body>
+  <head>
+    <meta charset="utf-8" />
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+  </head>
+  <body>
+    <canvas width="700" height="600" id="canvas" />
+    <script src="build.js"></script>
+  </body>
 </html>
-```</p>
+<p>```</p>
 
 <p>Alors oui, les templates sont redondants. Et si on doit modifier le contenu
 de <code>index.html</code>, il faudra faire la modification sur les deux templates.
-J'avais prévenu que ça n'était pas parfait ;) Par contre, pour cette appli
-c'est bien suffisant.</p>
+J’avais prévenu que ça n’était pas parfait ;) Par contre, pour cette appli
+c’est bien suffisant.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 

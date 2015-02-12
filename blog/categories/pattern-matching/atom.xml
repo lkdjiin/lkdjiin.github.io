@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : pattern matching | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/pattern-matching/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-05T18:43:44+01:00</updated>
+  <updated>2015-02-12T10:21:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -23,11 +23,10 @@
 <p>Une tâche réccurente quand on utilise la récursivité pour résoudre un problème
 est de séparer une liste en deux parties. La première partie étant le premier
 élément de la liste et la seconde partie étant ce qui reste. Pour faire cela,
-on peut utiliser le <em>pattern matching</em>, qu'on peut traduire par filtrage à
-l'aide de motifs.</p>
+on peut utiliser le <em>pattern matching</em>, qu’on peut traduire par filtrage à
+l’aide de motifs.</p>
 
 <!-- more -->
-
 
 <p>Voyons la syntaxe pour séparer une liste en deux:</p>
 
@@ -36,9 +35,9 @@ l'aide de motifs.</p>
 </code></p>
 
 <p>Après ça, <code>head</code> (la tête) vaut 1 et <code>tail</code> (la queue) vaut [2, 3].
-Maintenant les cas exceptionnels: Si on passe une liste d'un seul élément,
-<code>tail</code> sera une liste vide ([]). Si on passe une liste vide, et bien c'est
-une erreur. Voici une capture d'écran qui montre le résultat:</p>
+Maintenant les cas exceptionnels: Si on passe une liste d’un seul élément,
+<code>tail</code> sera une liste vide ([]). Si on passe une liste vide, et bien c’est
+une erreur. Voici une capture d’écran qui montre le résultat:</p>
 
 <p><img src="/images/2013-07-28-1.jpg" width="890" height="577" title="pattern matching avec Elixir" ></p>
 
@@ -48,37 +47,25 @@ entiers.</p>
 
 <p>``` elixir
 defmodule Stats do
-  def minimum([head|tail]) do</p>
+  def minimum([head|tail]) do
+    minimum tail, head
+  end</p>
 
-<pre><code>minimum tail, head
-</code></pre>
+<p>defp minimum([], candidate) do
+    candidate
+  end</p>
 
-<p>  end</p>
+<p>defp minimum([head|tail], candidate) when head &lt; candidate do
+    minimum tail, head
+  end</p>
 
-<p>  defp minimum([], candidate) do</p>
-
-<pre><code>candidate
-</code></pre>
-
-<p>  end</p>
-
-<p>  defp minimum([head|tail], candidate) when head &lt; candidate do</p>
-
-<pre><code>minimum tail, head
-</code></pre>
-
-<p>  end</p>
-
-<p>  defp minimum([_|tail], candidate) do</p>
-
-<pre><code>minimum tail, candidate
-</code></pre>
-
-<p>  end
+<p>defp minimum([_|tail], candidate) do
+    minimum tail, candidate
+  end
 end
 ```</p>
 
-<p>On peut l'utiliser comme ceci:</p>
+<p>On peut l’utiliser comme ceci:</p>
 
 <p><code>elixir
 IO.puts Stats.minimum([1, 2, -9, 3])
@@ -86,63 +73,50 @@ IO.puts Stats.minimum([1, 2, -9, 3])
 
 <p>Voici une explication des différentes fonctions:</p>
 
-<p>``` elixir
-  def minimum([head|tail]) do</p>
+<p><code>elixir
+  def minimum([head|tail]) do
+    minimum tail, head
+  end
+</code></p>
 
-<pre><code>minimum tail, head
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>Le <em>pattern matching</em> s'applique directement dans les arguments de la
+<p>Le <em>pattern matching</em> s’applique directement dans les arguments de la
 fonction. Pour cette première passe, on considère que <code>head</code> est à priori
 la plus petite valeur de la série.</p>
 
-<p>``` elixir
-  defp minimum([], candidate) do</p>
+<p><code>elixir
+  defp minimum([], candidate) do
+    candidate
+  end
+</code></p>
 
-<pre><code>candidate
-</code></pre>
+<p>Là, c’est la clause de sortie de la fonction <code>minimum</code>. Si la liste est
+vide, c’est qu’on à trouvé la valeur minimum (<code>candidate</code>).</p>
 
-<p>  end
-```</p>
-
-<p>Là, c'est la clause de sortie de la fonction <code>minimum</code>. Si la liste est
-vide, c'est qu'on à trouvé la valeur minimum (<code>candidate</code>).</p>
-
-<p>``` elixir
-  defp minimum([head|tail], candidate) when head &lt; candidate do</p>
-
-<pre><code>minimum tail, head
-</code></pre>
-
-<p>  end
-```</p>
+<p><code>elixir
+  defp minimum([head|tail], candidate) when head &lt; candidate do
+    minimum tail, head
+  end
+</code></p>
 
 <p>Quand la liste est encore remplie, on compare la valeur de tête à notre
 valeur candidate. Je rappelle que <code>candidate</code> est à ce moment la plus petite
-valeur trouvée jusqu'ici. Si la valeur de <code>head</code> est plus petite que
+valeur trouvée jusqu’ici. Si la valeur de <code>head</code> est plus petite que
 la valeur de <code>candidate</code>, la première remplace la dernière.</p>
 
-<p>``` elixir
-  defp minimum([_|tail], candidate) do</p>
+<p><code>elixir
+  defp minimum([_|tail], candidate) do
+    minimum tail, candidate
+  end
+</code></p>
 
-<pre><code>minimum tail, candidate
-</code></pre>
-
-<p>  end
-```</p>
-
-<p>Dans les autres cas, la valeur de tête n'a pas d'intérêt, ce que souligne
+<p>Dans les autres cas, la valeur de tête n’a pas d’intérêt, ce que souligne
 le caractère <code>_</code> dans <code>[_|tail]</code>. On remplace une variable par <code>_</code>
 lorsque cette variable est inutilisée.</p>
 
-<p>Nouveau venu en programmation fonctionnelle, je pense que je n'entrevois là
+<p>Nouveau venu en programmation fonctionnelle, je pense que je n’entrevois là
 que la surface du <em>pattern matching</em>.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 

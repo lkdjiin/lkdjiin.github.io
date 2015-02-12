@@ -9,8 +9,8 @@
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : intermédiaire On va tenter de résoudre le problème des 8 dames à l&#8217;aide d&#8217;un algorithme
-génétique. Le but du problème des huit &hellip;">
+  <meta name="description" content="Niveau : intermédiaire On va tenter de résoudre le problème des 8 dames à l’aide d’un algorithme
+génétique. Le but du problème des huit dames est de &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -111,29 +111,24 @@ génétique. Le but du problème des huit &hellip;">
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+<div class="entry-content"><div class="level-tag level-tag-2">Niveau : <span>intermédiaire</span></div>
 
-
-<p>On va tenter de résoudre le problème des 8 dames à l&#8217;aide d&#8217;un algorithme
+<p>On va tenter de résoudre le problème des 8 dames à l’aide d’un algorithme
 génétique.</p>
 
-<blockquote><p>Le but du problème des huit dames est de placer huit dames d&#8217;un jeu d&#8217;échecs sur un échiquier de 8 × 8 cases sans que les dames ne puissent se menacer mutuellement, conformément aux règles du jeu d&#8217;échecs (la couleur des pièces étant ignorée). Par conséquent, deux dames ne devraient jamais partager la même rangée, colonne, ou diagonale.</p><footer><strong>Wikipédia</strong> <cite><a href='http://fr.wikipedia.org/wiki/Probl%C3%A8me_des_huit_dames'>fr.wikipedia.org/wiki/&hellip;</a></cite></footer></blockquote>
-
-
-
+<blockquote><p>Le but du problème des huit dames est de placer huit dames d&#8217;un jeu d&#8217;échecs sur un échiquier de 8 × 8 cases sans que les dames ne puissent se menacer mutuellement, conformément aux règles du jeu d&#8217;échecs (la couleur des pièces étant ignorée). Par conséquent, deux dames ne devraient jamais partager la même rangée, colonne, ou diagonale.</p><footer><strong>Wikipédia</strong> <cite><a href="http://fr.wikipedia.org/wiki/Probl%C3%A8me_des_huit_dames">fr.wikipedia.org/wiki/&hellip;</a></cite></footer></blockquote>
 
 <!-- more -->
 
-
 <p>Avant toute chose, il faut trouver comment nos chromosomes vont pouvoir
 représenter une solution potentielle. On pourrait coder ça sous forme
-d&#8217;une chaîne de 64 bits, un par case, les 0 étants des cases vides et
+d’une chaîne de 64 bits, un par case, les 0 étants des cases vides et
 les 1 étants les cases occupées par les dames. On pourrait aussi les coder
 comme un tableau à deux dimensions, soit 8 rangées multipliées par 8 colonnes.
 En y regardant de plus près (ou simplement en relisant la définition du
-problème), on remarque que pour qu&#8217;une solution soit
+problème), on remarque que pour qu’une solution soit
 viable, il faut une seule dame par rangée, une seule par colonne et une
-seule par diagonale. On peut donc se contenter d&#8217;une liste (un tableau) de
+seule par diagonale. On peut donc se contenter d’une liste (un tableau) de
 8 nombres entiers, ces nombres étants le numéro de la colonne. Ainsi, pour
 un échiquier de 4 x 4 cases, la liste <code>[0, 2, 3, 3]</code> équivaut à la position
 suivante:</p>
@@ -149,101 +144,100 @@ suivante:</p>
 ---------
 </code></pre>
 
-<p>Maintenant on peut s&#8217;occuper de la population. Je vais me servir du code
+<p>Maintenant on peut s’occuper de la population. Je vais me servir du code
 objet développé dans les derniers articles, en essayant de le modifier
 le moins possible.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Individual</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span>
-</span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">from_chromosome</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
-</span><span class='line'>    <span class="kp">new</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kp">attr_accessor</span> <span class="ss">:score</span><span class="p">,</span> <span class="ss">:fitness</span>
-</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:chromosome</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">chromosome</span>
-</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="n">chromosome</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class='line'>      <span class="n">chromosome_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="no">Gene</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="nb">private_class_method</span> <span class="ss">:new</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Gene</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">rand</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Population</span> <span class="o">&lt;</span> <span class="nb">Array</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">population_size</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="nb">self</span> <span class="o">&lt;&lt;</span> <span class="no">Individual</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">best</span>
-</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">sort_by</span><span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="p">}</span><span class="o">.</span><span class="n">last</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Individual</span>
+</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class="line">    <span class="kp">new</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">from_chromosome</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class="line">    <span class="kp">new</span><span class="p">(</span><span class="n">chromosome</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">attr_accessor</span> <span class="ss">:score</span><span class="p">,</span> <span class="ss">:fitness</span>
+</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:chromosome</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">,</span> <span class="n">chromosome_size</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">chromosome</span>
+</span><span class="line">      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="n">chromosome</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="vi">@chromosome</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class="line">      <span class="n">chromosome_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="vi">@chromosome</span> <span class="o">&lt;&lt;</span> <span class="no">Gene</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">  <span class="nb">private_class_method</span> <span class="ss">:new</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">Gene</span>
+</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">random</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+</span><span class="line">    <span class="nb">rand</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">Population</span> <span class="o">&lt;</span> <span class="nb">Array</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">,</span> <span class="n">population_size</span><span class="p">)</span>
+</span><span class="line">    <span class="n">population_size</span><span class="o">.</span><span class="n">times</span> <span class="p">{</span> <span class="nb">self</span> <span class="o">&lt;&lt;</span> <span class="no">Individual</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">best</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">sort_by</span><span class="p">{</span><span class="o">|</span><span class="n">individual</span><span class="o">|</span> <span class="n">individual</span><span class="o">.</span><span class="n">score</span><span class="p">}</span><span class="o">.</span><span class="n">last</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>J&#8217;ai été obligé de modifier la méthode <code>initialize</code> de la classe <code>Individual</code>
-ainsi que la classe <code>Gene</code>. Il faudra en tenir compte si on veut qu&#8217;un
+<p>J’ai été obligé de modifier la méthode <code>initialize</code> de la classe <code>Individual</code>
+ainsi que la classe <code>Gene</code>. Il faudra en tenir compte si on veut qu’un
 framework sorte de tout ça…</p>
 
-<p>Le prochain article traitera de l&#8217;évaluation du problème des 8 dames.</p>
+<p>Le prochain article traitera de l’évaluation du problème des 8 dames.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/'>Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href='/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/'>Les algorithmes génétiques démystifiés 30: La population initiale</a></li><li><a href='/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/'>Les algorithmes génétiques démystifiés 29</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2013/10/09/les-algorithmes-genetiques-demystifies-un-point-sur-les-performances/">Les algorithmes génétiques démystifiés: un point sur les performances</a></li><li><a href="/blog/2013/10/08/les-algorithmes-genetiques-demystifies-30-la-population-initiale/">Les algorithmes génétiques démystifiés 30: La population initiale</a></li><li><a href="/blog/2013/10/07/les-algorithmes-genetiques-demystifies-29/">Les algorithmes génétiques démystifiés 29</a></li></ul></section>
+
 </div>
 
 
@@ -317,6 +311,10 @@ framework sorte de tout ça…</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a>
       </li>
     
@@ -330,10 +328,6 @@ framework sorte de tout ça…</p>
     
       <li class="post">
         <a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a>
       </li>
     
   </ul>
@@ -409,7 +403,12 @@ framework sorte de tout ça…</p>
   </script>
 
 
-
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
 
 </body>

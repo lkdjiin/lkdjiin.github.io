@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : date | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/date/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-05T18:43:44+01:00</updated>
+  <updated>2015-02-12T10:21:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -21,33 +21,31 @@
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
 <p>Hier je vous parlais de Timecop, une gem Ruby qui <em>arrête le
-temps</em>, très utile pour tester les dates. J'y ai repensé un
-peu aujourd'hui sur le mode : «j'aurais pu y penser avant !».</p>
+temps</em>, très utile pour tester les dates. J’y ai repensé un
+peu aujourd’hui sur le mode : «j’aurais pu y penser avant !».</p>
 
-<p>Alors justement, si j'avais eu cette idée, comment j'aurais
-fait ? C'est l'occasion de parler de méta-programmation.
-Allez j'essaye d'écrire ma propre méthode
+<p>Alors justement, si j’avais eu cette idée, comment j’aurais
+fait ? C’est l’occasion de parler de méta-programmation.
+Allez j’essaye d’écrire ma propre méthode
 <code>Time.freeze</code>, on verra bien…</p>
 
 <!-- more -->
 
-
 <p>Voilà les étapes qui me semble nécessaires:</p>
 
 <ol>
-<li>Geler le temps et le retenir.</li>
-<li>Faire un backup de Time.now.</li>
-<li>Définir une nouvelle méthode Time.now qui renvoie toujours
+  <li>Geler le temps et le retenir.</li>
+  <li>Faire un backup de Time.now.</li>
+  <li>Définir une nouvelle méthode Time.now qui renvoie toujours
 le même temps.</li>
-<li>Appeler le block passé à la méthode.</li>
-<li>Restaurer la méthode Time.now originale.</li>
+  <li>Appeler le block passé à la méthode.</li>
+  <li>Restaurer la méthode Time.now originale.</li>
 </ol>
 
-
-<p>Avant de coder, j'écris un test:</p>
+<p>Avant de coder, j’écris un test:</p>
 
 <p>``` ruby
-puts &ldquo;Time before #{Time.now}&rdquo;
+puts “Time before #{Time.now}”
 sleep 3</p>
 
 <p>Time.freeze do
@@ -57,7 +55,7 @@ sleep 3</p>
 end</p>
 
 <p>sleep 3
-puts &ldquo;Time after #{Time.now}&rdquo;
+puts “Time after #{Time.now}”
 ```</p>
 
 <p>Je veux donc obtenir un affichage du genre:</p>
@@ -68,9 +66,9 @@ hh:mm:03
 Time after hh:mm:09
 </code></pre>
 
-<p>Ok ? C'est parti.</p>
+<p>Ok ? C’est parti.</p>
 
-<h2>Ouvrir la classe Time</h2>
+<h2 id="ouvrir-la-classe-time">Ouvrir la classe Time</h2>
 
 <p><code>ruby
 class Time
@@ -80,123 +78,105 @@ end
 </code></p>
 
 <p>Premier truc à savoir, une classe Ruby est toujours ouverte
-à la modification. Même si il s'agit d'une classe du coeur
+à la modification. Même si il s’agit d’une classe du coeur
 du langage, comme Object ou Kernel. <em>Si vous êtes perdus,
 faites une recherche sur «ruby open class».</em></p>
 
-<h2>Arrêter le temps</h2>
+<h2 id="arrter-le-temps">Arrêter le temps</h2>
 
-<p>``` ruby
+<p><code>ruby
 class Time
-  def self.freeze</p>
-
-<pre><code>freezed = Time.now
-</code></pre>
-
-<p>  end
+  def self.freeze
+    freezed = Time.now
+  end
 end
-```</p>
+</code></p>
 
-<p>Pas grand chose à dire. On pourra renvoyer l'objet <code>freezed</code>
-chaque fois qu'on nous demandera <code>Time.now</code>.</p>
+<p>Pas grand chose à dire. On pourra renvoyer l’objet <code>freezed</code>
+chaque fois qu’on nous demandera <code>Time.now</code>.</p>
 
-<h2>Sauvegarder Time.now original</h2>
+<h2 id="sauvegarder-timenow-original">Sauvegarder Time.now original</h2>
 
-<p>``` ruby
+<p><code>ruby
 class Time
-  def self.freeze</p>
-
-<pre><code>freezed = Time.now
-singleton_class.send(:alias_method, :old_now, :now)
-</code></pre>
-
-<p>  end
+  def self.freeze
+    freezed = Time.now
+    singleton_class.send(:alias_method, :old_now, :now)
+  end
 end
-```</p>
+</code></p>
 
 <p>Là il y a beaucoup à dire. On rentre dans la
-méta-programmation et je n'ai pas la place (ni le temps) dans
+méta-programmation et je n’ai pas la place (ni le temps) dans
 cet article pour parler du modêle objet de Ruby.
-N'hésitez pas à faire une recherche sur «ruby object model» ou
+N’hésitez pas à faire une recherche sur «ruby object model» ou
 «ruby eigenclass».</p>
 
 <p>On dit à la classe <code>Time</code> de créer un alias de la méthode de
 classe <code>now</code> avec le nom <code>old_now</code>.</p>
 
-<h2>Un nouveau Time.now</h2>
+<h2 id="un-nouveau-timenow">Un nouveau Time.now</h2>
 
-<p>``` ruby
+<p><code>ruby
 class Time
-  def self.freeze</p>
-
-<pre><code>freezed = Time.now
-singleton_class.send(:alias_method, :old_now, :now)
-define_singleton_method('now') { freezed }
-</code></pre>
-
-<p>  end
+  def self.freeze
+    freezed = Time.now
+    singleton_class.send(:alias_method, :old_now, :now)
+    define_singleton_method('now') { freezed }
+  end
 end
-```</p>
+</code></p>
 
 <p>Cette fois, je dis à la classe <code>Time</code> de créer une méthode de
-classe qui s'appelle <code>now</code> et qui renvoie notre objet
+classe qui s’appelle <code>now</code> et qui renvoie notre objet
 <code>freezed</code>.</p>
 
-<h2>Appeler le block</h2>
+<h2 id="appeler-le-block">Appeler le block</h2>
 
-<p>``` ruby
+<p><code>ruby
 class Time
-  def self.freeze</p>
-
-<pre><code>freezed = Time.now
-singleton_class.send(:alias_method, :old_now, :now)
-define_singleton_method('now') { freezed }
-yield
-</code></pre>
-
-<p>  end
+  def self.freeze
+    freezed = Time.now
+    singleton_class.send(:alias_method, :old_now, :now)
+    define_singleton_method('now') { freezed }
+    yield
+  end
 end
-```</p>
+</code></p>
 
-<p>Bon, ça c'était facile ;)</p>
+<p>Bon, ça c’était facile ;)</p>
 
-<h2>Restaurer Time.now</h2>
+<h2 id="restaurer-timenow">Restaurer Time.now</h2>
 
-<p>``` ruby
+<p><code>ruby
 class Time
-  def self.freeze</p>
-
-<pre><code>freezed = Time.now
-singleton_class.send(:alias_method, :old_now, :now)
-define_singleton_method('now') { freezed }
-yield
-singleton_class.send(:alias_method, :now, :old_now)
-</code></pre>
-
-<p>  end
+  def self.freeze
+    freezed = Time.now
+    singleton_class.send(:alias_method, :old_now, :now)
+    define_singleton_method('now') { freezed }
+    yield
+    singleton_class.send(:alias_method, :now, :old_now)
+  end
 end
-```</p>
+</code></p>
 
 <p>Ça me semble tout bon. On teste ?</p>
 
-<h2>Le test</h2>
+<h2 id="le-test">Le test</h2>
 
 <p>``` ruby freeze.rb
 class Time
-  def self.freeze</p>
-
-<pre><code>freezed = Time.now
-singleton_class.send(:alias_method, :old_now, :now)
-define_singleton_method('now') { freezed }
-yield
-singleton_class.send(:alias_method, :now, :old_now)
-# singleton_class.send(:remove_method, :old_now)
-</code></pre>
-
-<p>  end
+  def self.freeze
+    freezed = Time.now
+    singleton_class.send(:alias_method, :old_now, :now)
+    define_singleton_method(‘now’) { freezed }
+    yield
+    singleton_class.send(:alias_method, :now, :old_now)
+    # singleton_class.send(:remove_method, :old_now)
+  end
 end</p>
 
-<p>puts &ldquo;Time before #{Time.now}&rdquo;
+<p>puts “Time before #{Time.now}”
 sleep 3</p>
 
 <p>Time.freeze do
@@ -206,11 +186,11 @@ sleep 3</p>
 end</p>
 
 <p>sleep 3
-puts &ldquo;Time after #{Time.now}&rdquo;
+puts “Time after #{Time.now}”
 ```</p>
 
 <p><code>bash
-$ ruby freeze.rb
+$ ruby freeze.rb 
 Time before 2014-04-02 21:40:57 +0200
 2014-04-02 21:41:00 +0200
 2014-04-02 21:41:00 +0200
@@ -220,19 +200,18 @@ Time after 2014-04-02 21:41:06 +0200
 <p>Excellent !</p>
 
 <p>Il reste un léger problème : la méthode <code>Time.old_now</code>
-existe toujours, ce qui n'est pas très propre. On pourra
+existe toujours, ce qui n’est pas très propre. On pourra
 la supprimer ainsi:</p>
 
 <pre><code>singleton_class.send(:remove_method, :old_now)
 </code></pre>
 
-<p>Voilà, j'aurais quand même pu y penser avant… J'espère
+<p>Voilà, j’aurais quand même pu y penser avant… J’espère
 trouver du temps une prochaine fois pour jeter un coup
-d'oeil au code de Timecop pour comparer avec le code
-d'aujourd'hui.</p>
+d’oeil au code de Timecop pour comparer avec le code
+d’aujourd’hui.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
@@ -248,110 +227,99 @@ d'aujourd'hui.</p>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
 
 <p><a href="https://github.com/travisjeffery/timecop">Timecop</a>
-n'est pas une nouvelle gem. Mais je ne la découvre qu'aujourd'hui.
+n’est pas une nouvelle gem. Mais je ne la découvre qu’aujourd’hui.
 Ça fait pourtant 4 ans que je travaille quotidiennement avec Ruby
-et/ou Rails… Et je ne me suis jamais sentis très à l'aise pour tester
-les dates. Avec Timecop, ça devient un jeu d'enfant.</p>
+et/ou Rails… Et je ne me suis jamais sentis très à l’aise pour tester
+les dates. Avec Timecop, ça devient un jeu d’enfant.</p>
 
 <!-- more -->
-
 
 <p>Pour voir un souci possible, prenons la classe suivante qui représente
 un article:</p>
 
 <p>``` ruby article.rb
 class Article
-  def initialize(name)</p>
+  def initialize(name)
+    @name = name
+    @created_at = Time.now
+  end</p>
 
-<pre><code>@name = name
-@created_at = Time.now
-</code></pre>
-
-<p>  end</p>
-
-<p>  attr_reader :name, :created_at
+<p>attr_reader :name, :created_at
 end
 ```</p>
 
 <p>Dans le monde réel, ce serait surement un ActiveRecord, mais pour
-l'exemple on se contentera bien de cette classe ;)</p>
+l’exemple on se contentera bien de cette classe ;)</p>
 
-<p>Maintenant testons la création d'un article:</p>
+<p>Maintenant testons la création d’un article:</p>
 
 <p>``` ruby tc_article.rb
-require_relative &ldquo;article&rdquo;
-require &ldquo;test/unit&rdquo;</p>
+require_relative “article”
+require “test/unit”</p>
 
 <p>class TestArticle &lt; Test::Unit::TestCase
-  def test_creation</p>
-
-<pre><code>article = Article.new('Foo')
-assert_equal 'Foo', article.name
-assert_equal Time.now, article.created_at
-</code></pre>
-
-<p>  end
+  def test_creation
+    article = Article.new(‘Foo’)
+    assert_equal ‘Foo’, article.name
+    assert_equal Time.now, article.created_at
+  end
 end
 ```</p>
 
 <p>Et voilà le souci, à quelques nano-secondes près ça pète:</p>
 
 <p>``` bash
-$ ruby tc_article.rb
-Run options:</p>
+$ ruby tc_article.rb 
+Run options: </p>
 
-<h1>Running tests:</h1>
+<h1 id="running-tests">Running tests:</h1>
 
 <p>[1/1] TestArticle#test_creation = 0.00 s
   1) Failure:
 TestArticle#test_creation [tc_article.rb:8]:
-&lt;2014-04-01 21:05:10 +0200> (204201[ns]) expected but was
-&lt;2014-04-01 21:05:10 +0200> (176685[ns]).</p>
+&lt;2014-04-01 21:05:10 +0200&gt; (204201[ns]) expected but was
+&lt;2014-04-01 21:05:10 +0200&gt; (176685[ns]).</p>
 
 <p>Finished tests in 0.009979s, 100.2062 tests/s, 200.4125 assertions/s.
 1 tests, 2 assertions, 1 failures, 0 errors, 0 skips
 ```</p>
 
-<p>Timecop est la meilleure solution que j'ai vu jusqu'ici pour régler
+<p>Timecop est la meilleure solution que j’ai vu jusqu’ici pour régler
 ce type de problème. La gem propose tout simplement (entre autres)
 <em>de geler le temps</em>:</p>
 
 <p>``` ruby tc_article.rb
-require_relative &ldquo;article&rdquo;
-require &ldquo;test/unit&rdquo;
-require &ldquo;timecop&rdquo;</p>
+require_relative “article”
+require “test/unit”
+require “timecop”</p>
 
 <p>class TestArticle &lt; Test::Unit::TestCase
-  def test_creation</p>
-
-<pre><code>Timecop.freeze do
-  article = Article.new('Foo')
-  assert_equal 'Foo', article.name
-  assert_equal Time.now, article.created_at
-end
-</code></pre>
-
-<p>  end
+  def test_creation
+    Timecop.freeze do
+      article = Article.new(‘Foo’)
+      assert_equal ‘Foo’, article.name
+      assert_equal Time.now, article.created_at
+    end
+  end
 end
 ```</p>
 
 <p>Et voilà le résultat:</p>
 
 <p>``` bash
-ruby tc_article.rb
-Run options:</p>
+ruby tc_article.rb 
+Run options: </p>
 
-<h1>Running tests:</h1>
+<h1 id="running-tests-1">Running tests:</h1>
 
 <p>Finished tests in 0.010756s, 92.9747 tests/s, 185.9494 assertions/s.
 1 tests, 2 assertions, 0 failures, 0 errors, 0 skips
 ```</p>
 
-<p>J'aimerais bien savoir quelles solutions vous avez adoptés pour
+<p>J’aimerais bien savoir quelles solutions vous avez adoptés pour
 régler ce genre de soucis…</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 

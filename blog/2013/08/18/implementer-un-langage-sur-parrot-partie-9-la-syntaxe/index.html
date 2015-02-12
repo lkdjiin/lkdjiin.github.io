@@ -9,8 +9,7 @@
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Après avoir écrit un
-tokenizer,
+  <meta name="description" content="Après avoir écrit un tokenizer,
 avoir produit les unités lexicales
 et avoir défini
 une grammaire
@@ -115,7 +114,7 @@ pour le langage Naam, je passe maintenant à la &hellip;">
   </header>
 
 
-<div class="entry-content"><p>Après avoir écrit un
+<div class="entry-content"><p>Après avoir écrit un 
 <a href="http://lkdjiin.github.io/blog/2013/08/12/parrot-6-ecrire-le-tokenizer/">tokenizer</a>,
 avoir produit les <a href="http://lkdjiin.github.io/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/">unités lexicales</a>
 et avoir défini
@@ -124,210 +123,205 @@ pour le langage Naam, je passe maintenant à la vérification de la syntaxe.</p>
 
 <!-- more -->
 
-
-<p>La vérification de la syntaxe se passe dans la classe <code>Compiler</code>. <em>&ndash; C&#8217;est pas
-le meilleur choix de nom et ça changera par la suite &ndash;</em>. Basiquement, cette
+<p>La vérification de la syntaxe se passe dans la classe <code>Compiler</code>. <em>- C’est pas
+le meilleur choix de nom et ça changera par la suite -</em>. Basiquement, cette
 classe ne fait que suivre la logique de la grammaire.</p>
 
-<figure class='code'><figcaption><span>lib/naam/compiler.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Compiler</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c1"># units - Array of LexicalUnits</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">compile</span> <span class="n">units</span>
-</span><span class='line'>    <span class="vi">@units</span> <span class="o">=</span> <span class="n">units</span>
-</span><span class='line'>    <span class="n">program</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kp">private</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">program</span>
-</span><span class='line'>    <span class="k">while</span> <span class="vi">@units</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span>
-</span><span class='line'>      <span class="k">case</span> <span class="vi">@units</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">type</span>
-</span><span class='line'>      <span class="k">when</span> <span class="ss">:eol</span> <span class="k">then</span> <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="n">instruction</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">instruction</span>
-</span><span class='line'>    <span class="k">case</span> <span class="vi">@units</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">type</span>
-</span><span class='line'>    <span class="k">when</span> <span class="ss">:keyword</span> <span class="k">then</span> <span class="n">print_statement</span>
-</span><span class='line'>    <span class="k">when</span> <span class="ss">:word</span> <span class="k">then</span> <span class="n">function_def</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="k">raise</span> <span class="no">Error</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">print_statement</span>
-</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="ss">:keyword</span><span class="p">,</span> <span class="s1">&#39;print&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:paro</span><span class="p">,</span> <span class="ss">:int</span><span class="p">,</span> <span class="ss">:parc</span><span class="p">,</span> <span class="ss">:eol</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">function_def</span>
-</span><span class='line'>    <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:paro</span><span class="p">,</span> <span class="ss">:word</span><span class="p">,</span> <span class="ss">:parc</span><span class="p">,</span> <span class="ss">:affect</span><span class="p">,</span> <span class="ss">:eol</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">if_clause</span> <span class="k">while</span> <span class="n">if_clause?</span>
-</span><span class='line'>    <span class="n">else_clause</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">if_clause</span>
-</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="ss">:int</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="ss">:keyword</span><span class="p">,</span> <span class="s1">&#39;if&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">test</span>
-</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">else_clause</span>
-</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="ss">:int</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="ss">:keyword</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test</span>
-</span><span class='line'>    <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:op</span><span class="p">,</span> <span class="ss">:int</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">accept</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">unit</span> <span class="o">=</span> <span class="vi">@units</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">type</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'>      <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">value</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">accept_series</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">args</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">arg</span><span class="o">|</span> <span class="n">accept</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">if_clause?</span>
-</span><span class='line'>    <span class="vi">@units</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">type</span> <span class="o">==</span> <span class="ss">:keyword</span> <span class="o">&amp;&amp;</span> <span class="vi">@units</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;if&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>lib/naam/compiler.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+<span class="line-number">63</span>
+<span class="line-number">64</span>
+<span class="line-number">65</span>
+<span class="line-number">66</span>
+<span class="line-number">67</span>
+<span class="line-number">68</span>
+<span class="line-number">69</span>
+<span class="line-number">70</span>
+<span class="line-number">71</span>
+<span class="line-number">72</span>
+<span class="line-number">73</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Compiler</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1"># units - Array of LexicalUnits</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">compile</span> <span class="n">units</span>
+</span><span class="line">    <span class="vi">@units</span> <span class="o">=</span> <span class="n">units</span>
+</span><span class="line">    <span class="n">program</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">private</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">program</span>
+</span><span class="line">    <span class="k">while</span> <span class="vi">@units</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span>
+</span><span class="line">      <span class="k">case</span> <span class="vi">@units</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">type</span>
+</span><span class="line">      <span class="k">when</span> <span class="ss">:eol</span> <span class="k">then</span> <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
+</span><span class="line">      <span class="k">else</span>
+</span><span class="line">        <span class="n">instruction</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">instruction</span>
+</span><span class="line">    <span class="k">case</span> <span class="vi">@units</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">type</span>
+</span><span class="line">    <span class="k">when</span> <span class="ss">:keyword</span> <span class="k">then</span> <span class="n">print_statement</span>
+</span><span class="line">    <span class="k">when</span> <span class="ss">:word</span> <span class="k">then</span> <span class="n">function_def</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="k">raise</span> <span class="no">Error</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">print_statement</span>
+</span><span class="line">    <span class="n">accept</span><span class="p">(</span><span class="ss">:keyword</span><span class="p">,</span> <span class="s1">&#39;print&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:paro</span><span class="p">,</span> <span class="ss">:int</span><span class="p">,</span> <span class="ss">:parc</span><span class="p">,</span> <span class="ss">:eol</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">function_def</span>
+</span><span class="line">    <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:paro</span><span class="p">,</span> <span class="ss">:word</span><span class="p">,</span> <span class="ss">:parc</span><span class="p">,</span> <span class="ss">:affect</span><span class="p">,</span> <span class="ss">:eol</span><span class="p">)</span>
+</span><span class="line">    <span class="n">if_clause</span> <span class="k">while</span> <span class="n">if_clause?</span>
+</span><span class="line">    <span class="n">else_clause</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">if_clause</span>
+</span><span class="line">    <span class="n">accept</span><span class="p">(</span><span class="ss">:int</span><span class="p">)</span>
+</span><span class="line">    <span class="n">accept</span><span class="p">(</span><span class="ss">:keyword</span><span class="p">,</span> <span class="s1">&#39;if&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="nb">test</span>
+</span><span class="line">    <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">else_clause</span>
+</span><span class="line">    <span class="n">accept</span><span class="p">(</span><span class="ss">:int</span><span class="p">)</span>
+</span><span class="line">    <span class="n">accept</span><span class="p">(</span><span class="ss">:keyword</span><span class="p">,</span> <span class="s1">&#39;else&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="n">accept</span><span class="p">(</span><span class="ss">:eol</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test</span>
+</span><span class="line">    <span class="n">accept_series</span><span class="p">(</span><span class="ss">:word</span><span class="p">,</span> <span class="ss">:op</span><span class="p">,</span> <span class="ss">:int</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">accept</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="n">unit</span> <span class="o">=</span> <span class="vi">@units</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">type</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span>
+</span><span class="line">      <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">value</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">accept_series</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class="line">    <span class="n">args</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span><span class="o">|</span><span class="n">arg</span><span class="o">|</span> <span class="n">accept</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">if_clause?</span>
+</span><span class="line">    <span class="vi">@units</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">type</span> <span class="o">==</span> <span class="ss">:keyword</span> <span class="o">&amp;&amp;</span> <span class="vi">@units</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;if&#39;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Quelques commentaires sur ce code:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">instruction</span>
-</span><span class='line'>  <span class="c1"># ...</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="k">raise</span> <span class="no">Error</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">instruction</span>
+</span><span class="line">  <span class="c1"># ...</span>
+</span><span class="line">  <span class="k">else</span>
+</span><span class="line">    <span class="k">raise</span> <span class="no">Error</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>Plusieurs fois j&#8217;utilise la classe <code>Error</code>, qui n&#8217;existe pas. C&#8217;est parce que
+<p>Plusieurs fois j’utilise la classe <code>Error</code>, qui n’existe pas. C’est parce que
 je ne veux pas encore réfléchir à la gestion des erreurs. Les seuls cas qui
-m&#8217;intéressent pour l&#8217;instant sont ceux où ça fonctionne.</p>
+m’intéressent pour l’instant sont ceux où ça fonctionne.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">accept</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">unit</span> <span class="o">=</span> <span class="vi">@units</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">type</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'>    <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">value</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">accept</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+</span><span class="line">  <span class="n">unit</span> <span class="o">=</span> <span class="vi">@units</span><span class="o">.</span><span class="n">slice!</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">  <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">type</span>
+</span><span class="line">  <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span>
+</span><span class="line">    <span class="k">raise</span> <span class="no">Error</span> <span class="k">unless</span> <span class="n">unit</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">value</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>C&#8217;est la méthode <code>accept</code>, toute simple, qui effectue la vérification
-de la syntaxe en comparant l&#8217;unité lexicale attendue avec celle réellement
+<p>C’est la méthode <code>accept</code>, toute simple, qui effectue la vérification
+de la syntaxe en comparant l’unité lexicale attendue avec celle réellement
 disponible. On constate que les unités lexicales (représentées par <code>@units</code>)
 sont détruites au fur et à mesure de leur consommation.</p>
 
-<p>La prochaine, il sera enfin temps d&#8217;émettre le code PIR.</p>
+<p>La prochaine, il sera enfin temps d’émettre le code PIR.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
-
-<p>À demain.
-<section><h1>Articles connexes</h1><ul><li><a href='/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/'>Implémenter un langage sur Parrot &ndash; partie 10: émettre le code assembleur</a></li><li><a href='/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/'>Implémenter un langage sur Parrot &ndash; partie 7: le lexer</a></li><li><a href='/blog/2013/09/01/un-langage-sur-parrot-partie-13/'>Un langage sur Parrot &ndash; partie 13</a></li></ul></section></p>
+<p>À demain.</p>
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2013/08/20/implementer-un-langage-sur-parrot-partie-10-emettre-le-code-assembleur/">Implémenter un langage sur Parrot - partie 10: émettre le code assembleur</a></li><li><a href="/blog/2013/08/13/implementer-un-langage-sur-parrot-partie-7-le-lexer/">Implémenter un langage sur Parrot - partie 7: le lexer</a></li><li><a href="/blog/2013/09/01/un-langage-sur-parrot-partie-13/">Un langage sur Parrot - partie 13</a></li></ul></section>
 </div>
 
 
@@ -401,6 +395,10 @@ sont détruites au fur et à mesure de leur consommation.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a>
       </li>
     
@@ -414,10 +412,6 @@ sont détruites au fur et à mesure de leur consommation.</p>
     
       <li class="post">
         <a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a>
       </li>
     
   </ul>
@@ -493,7 +487,12 @@ sont détruites au fur et à mesure de leur consommation.</p>
   </script>
 
 
-
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
 
 </body>

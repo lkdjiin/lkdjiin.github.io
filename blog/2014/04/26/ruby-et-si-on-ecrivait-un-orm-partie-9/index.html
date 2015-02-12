@@ -114,104 +114,98 @@ code suivant: 1
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
+<div class="entry-content"><div class="level-tag level-tag-2">Niveau : <span>intermédiaire</span></div>
 
 <p>Encore du refactoring, cette fois ci dans la classe <code>Base</code>. Regardons le
 code suivant:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Base</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>      <span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">class</span> <span class="nc">Base</span>
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
+</span><span class="line">      <span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Le <code>Database.connection.execute</code> me dérange. Il viole
 <a href="http://fr.wikipedia.org/wiki/Loi_de_D%C3%A9m%C3%A9ter">la loi de Demeter</a>.</p>
 
 <!-- more -->
 
+<p>À bien y réfléchir, je n’ai tout simplement pas envie d’exposer la méthode
+<code>connection</code>, qu’on trouve aussi un peu plus loin dans la class <code>Base</code>:</p>
 
-<p>À bien y réfléchir, je n&#8217;ai tout simplement pas envie d&#8217;exposer la méthode
-<code>connection</code>, qu&#8217;on trouve aussi un peu plus loin dans la class <code>Base</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
-</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class="line">  <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
+</span><span class="line">  <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>La classe <code>Database</code> est actuellement comme ça:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
-</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
-</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connection</span>
-</span><span class='line'>      <span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">class</span> <span class="nc">Database</span>
+</span><span class="line">    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class="line">      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class="line">      <span class="o">!!</span><span class="vc">@@connection</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connection</span>
+</span><span class="line">      <span class="vc">@@connection</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Je supprime purement et simplement la méthode <code>connection</code>:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
-</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
-</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">class</span> <span class="nc">Database</span>
+</span><span class="line">    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class="line">      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class="line">      <span class="o">!!</span><span class="vc">@@connection</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Maintenant, on rejoue les tests, qui vont nous indiquer ce qui doit être
 réécrit:</p>
@@ -230,79 +224,77 @@ réécrit:</p>
 </code></pre>
 
 <p>On va simplement créer une méthode <code>Database.execute</code>, qui elle, pourra
-utiliser l&#8217;objet <code>connection</code>:</p>
+utiliser l’objet <code>connection</code>:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">class</span> <span class="nc">Database</span>
-</span><span class='line'>    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
-</span><span class='line'>      <span class="o">!!</span><span class="vc">@@connection</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
-</span><span class='line'>      <span class="vc">@@connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">class</span> <span class="nc">Base</span>
-</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>      <span class="no">Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="c1"># ...</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">class</span> <span class="nc">Database</span>
+</span><span class="line">    <span class="vc">@@connection</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class="line">      <span class="vc">@@connection</span> <span class="o">=</span> <span class="ss">SQLite3</span><span class="p">:</span><span class="ss">:Database</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">database_filename</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">connected?</span>
+</span><span class="line">      <span class="o">!!</span><span class="vc">@@connection</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+</span><span class="line">      <span class="vc">@@connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Base</span>
+</span><span class="line">    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">sql</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
+</span><span class="line">      <span class="no">Database</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">raw_query</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="c1"># ...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>À y regarder de près, je ne suis plus certain de trouver un intérêt à
-<code>Base.sql</code>. Il faudrait la supprimer puisqu&#8217;elle peut être remplacée par
+<code>Base.sql</code>. Il faudrait la supprimer puisqu’elle peut être remplacée par
 <code>Database.execute</code>. Mais il faudra attendre car il y a encore des tests qui ne
 passent plus, à cause de ce code:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
-</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">save</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class="line">  <span class="no">Recorder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">Database</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="nb">self</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span><span class="o">.</span><span class="n">save</span>
+</span><span class="line">  <span class="nb">self</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>On s&#8217;en occupera la prochaine fois.</p>
+<p>On s’en occupera la prochaine fois.</p>
 
 <p><em>To be continued</em></p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 13</a></li><li><a href='/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 12</a></li><li><a href='/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/'>Ruby &ndash; Et si on écrivait un ORM ? &ndash; partie 11</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2014/05/04/ruby-et-si-on-ecrivait-un-orm-partie-13/">Ruby - Et si on écrivait un ORM ? - partie 13</a></li><li><a href="/blog/2014/05/02/ruby-et-si-on-ecrivait-un-orm-partie-12/">Ruby - Et si on écrivait un ORM ? - partie 12</a></li><li><a href="/blog/2014/04/30/ruby-et-si-on-ecrivait-un-orm-partie-11/">Ruby - Et si on écrivait un ORM ? - partie 11</a></li></ul></section>
+
 </div>
 
 
@@ -376,6 +368,10 @@ passent plus, à cause de ce code:</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a>
       </li>
     
@@ -389,10 +385,6 @@ passent plus, à cause de ce code:</p>
     
       <li class="post">
         <a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a>
       </li>
     
   </ul>
@@ -468,7 +460,12 @@ passent plus, à cause de ce code:</p>
   </script>
 
 
-
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
 
 </body>

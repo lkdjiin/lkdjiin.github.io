@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : haskell | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/haskell/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-05T18:43:44+01:00</updated>
+  <updated>2015-02-12T10:21:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -20,7 +20,7 @@
     <id>http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
 
-<p>Je dois maintenant pouvoir extraire 9 cellules d'une génération (la cellule
+<p>Je dois maintenant pouvoir extraire 9 cellules d’une génération (la cellule
 cible et ses 8 voisines). Pour cela, je vais avoir besoin de la fonction
 suivante:</p>
 
@@ -28,9 +28,9 @@ suivante:</p>
 extractNeighborhood :: Generation -&gt; Int -&gt; Int -&gt; [Cell]
 </code></p>
 
-<p>Elle prendra en entrée la génération, l'index de la rangée et l'index de la
-colonne. Mais pour simplifier l'implémentation de <code>extractNeighborhood</code> j'ai
-ressenti le besoin d'une fonction utilitaire <code>sliceAround</code> qui ferait ça:</p>
+<p>Elle prendra en entrée la génération, l’index de la rangée et l’index de la
+colonne. Mais pour simplifier l’implémentation de <code>extractNeighborhood</code> j’ai
+ressenti le besoin d’une fonction utilitaire <code>sliceAround</code> qui ferait ça:</p>
 
 <pre><code>$ ghci
 &gt; :load Slice.hs 
@@ -47,72 +47,63 @@ ressenti le besoin d'une fonction utilitaire <code>sliceAround</code> qui ferait
 
 <!-- more -->
 
-
-<p>J'ai donc écrit les tests (que vous pouvez trouvez sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>) et le module
+<p>J’ai donc écrit les tests (que vous pouvez trouvez sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>) et le module
 <code>Slice</code> qui en découle:</p>
 
 <p>``` haskell Slice.hs
 module Slice (sliceAround) where</p>
 
-<p>sliceAround :: Int &ndash;> [a] &ndash;> [a]
+<p>sliceAround :: Int -&gt; [a] -&gt; [a]
 sliceAround 0 list = take 2 list
 sliceAround n list = take 3 $ drop (n-1) list
 ```</p>
 
-<p>C'était facile. J'ai quand même été étonné de ne pas trouver une fonction
-<code>slice</code> de base (ou j'ai mal cherché, c'est toujours possible ;) ). Même s'il
-est vrai qu'avec <code>take</code> et <code>drop</code> c'est très simple à obtenir.
-Ensuite j'utilise <code>sliceAround</code> pour écrire <code>extractNeighborhood</code>:</p>
+<p>C’était facile. J’ai quand même été étonné de ne pas trouver une fonction
+<code>slice</code> de base (ou j’ai mal cherché, c’est toujours possible ;) ). Même s’il
+est vrai qu’avec <code>take</code> et <code>drop</code> c’est très simple à obtenir.
+Ensuite j’utilise <code>sliceAround</code> pour écrire <code>extractNeighborhood</code>:</p>
 
-<p>``` haskell GameOfLife.hs
-extractNeighborhood :: Generation &ndash;> Int &ndash;> Int &ndash;> [Cell]
+<p><code>haskell GameOfLife.hs
+extractNeighborhood :: Generation -&gt; Int -&gt; Int -&gt; [Cell]
 extractNeighborhood generation row column
   | row == 0 = row1 ++ row2
-  | row == (length generation) &ndash; 1 = row0 ++ row1
-  | otherwise = row0 ++ row1 ++ row2</p>
+  | row == (length generation) - 1 = row0 ++ row1
+  | otherwise = row0 ++ row1 ++ row2
+    where row0 = getRow $ row - 1
+          row1 = getRow row
+          row2 = getRow $ row + 1
+          getRow r = sliceAround column $ generation !! r
+</code></p>
 
-<pre><code>where row0 = getRow $ row - 1
-      row1 = getRow row
-      row2 = getRow $ row + 1
-      getRow r = sliceAround column $ generation !! r
-</code></pre>
-
-<p>```</p>
-
-<p>Je n'arrive pas à simplifier plus cette fonction, mais il doit y avoir moyen.
-Si vous connaissez Haskell, j'aimerais beaucoup avoir votre avis.</p>
+<p>Je n’arrive pas à simplifier plus cette fonction, mais il doit y avoir moyen.
+Si vous connaissez Haskell, j’aimerais beaucoup avoir votre avis.</p>
 
 <p>Avant de pouvoir en terminé avec ce jeu de la vie en Haskell, il me faut une
-fonction <code>nextGeneration</code>, et j'ai eu bien peur que celle-ci me fasse mal à la
+fonction <code>nextGeneration</code>, et j’ai eu bien peur que celle-ci me fasse mal à la
 tête.</p>
 
-<p>En fait ça n'a pas été si violent que ça. En décomposant, j'y suis arrivé
+<p>En fait ça n’a pas été si violent que ça. En décomposant, j’y suis arrivé
 rapidement:</p>
 
 <p>``` haskell
-nextGeneration :: Generation &ndash;> Generation
-nextGeneration generation = [(nextRow y generation) | y &lt;&ndash; [0..height]]
-  where height = (length generation) &ndash; 1</p>
+nextGeneration :: Generation -&gt; Generation
+nextGeneration generation = [(nextRow y generation) | y &lt;- [0..height]]
+  where height = (length generation) - 1</p>
 
-<p>nextRow :: Int &ndash;> Generation &ndash;> [Cell]
-nextRow y generation = [(nextCell y x generation) | x &lt;&ndash; [0..width]]
-  where row = generation !! y</p>
+<p>nextRow :: Int -&gt; Generation -&gt; [Cell]
+nextRow y generation = [(nextCell y x generation) | x &lt;- [0..width]]
+  where row = generation !! y
+        width = (length row) - 1</p>
 
-<pre><code>    width = (length row) - 1
-</code></pre>
-
-<p>nextCell :: Int &ndash;> Int &ndash;> Generation &ndash;> Cell
+<p>nextCell :: Int -&gt; Int -&gt; Generation -&gt; Cell
 nextCell y x generation = cellNextState cell neighborhood
-  where neighborhood = extractNeighborhood generation y x</p>
+  where neighborhood = extractNeighborhood generation y x
+        cell = (generation !! y) !! x
+```</p>
 
-<pre><code>    cell = (generation !! y) !! x
-</code></pre>
+<p>Mais là encore, j’ai l’impression qu’il y a moyen de simplifier…</p>
 
-<p>```</p>
-
-<p>Mais là encore, j'ai l'impression qu'il y a moyen de simplifier…</p>
-
-<p>Il ne me reste plus qu'à faire une boucle:</p>
+<p>Il ne me reste plus qu’à faire une boucle:</p>
 
 <p>``` haskell gol.hs
 import System.Random
@@ -128,19 +119,16 @@ loop n g =
 
 <p>main :: IO()
 main =
-  let width = 80</p>
-
-<pre><code>  height = 23
-  cells = randomCells (width * height) (mkStdGen 1234)
-  generation = createGeneration width cells
-</code></pre>
-
-<p>   in loop 40 generation
+  let width = 80
+      height = 23
+      cells = randomCells (width * height) (mkStdGen 1234)
+      generation = createGeneration width cells
+   in loop 40 generation
 ```</p>
 
 <p>Notez <code>threadDelay</code>, pour faire une pause, qui prend un
 nombre de micro-secondes ! Je ne sais pas si ça fonctionne à ce niveau de
-granularité, mais ça m'impressionne.</p>
+granularité, mais ça m’impressionne.</p>
 
 <p>Finalement, on peut compiler et lancer le programme \o/</p>
 
@@ -151,13 +139,12 @@ $ ./gol
 <p>Je vous rappelle que le code se trouve sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a> et que tous vos
 commentaires sur ce code seront les bienvenus.</p>
 
-<p>Voilà, j'en ai terminé avec Haskell. Je suis à la fois content, parce que
+<p>Voilà, j’en ai terminé avec Haskell. Je suis à la fois content, parce que
 impatient de commencer la version Rust, et à la fois un peu triste parce que
-je commence à peine à entrevoir les possibilités de Haskell. J'espère être en
+je commence à peine à entrevoir les possibilités de Haskell. J’espère être en
 mesure de me dégager un peu de temps pour continuer à étudier ce langage.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -171,12 +158,11 @@ mesure de me dégager un peu de temps pour continuer à étudier ce langage.</p>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
 
 <p>Cette fois je met des tests en place avec <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>.
-Pour cela, je dois d'abord <em>modulariser</em> mon code. J'ai donc déplacé le code
+Pour cela, je dois d’abord <em>modulariser</em> mon code. J’ai donc déplacé le code
 de la dernière fois, sans la fonction <code>main</code>, dans un fichier <code>GameOfLife</code>.
-Puis j'ai ajouté la déclaration du module.</p>
+Puis j’ai ajouté la déclaration du module.</p>
 
 <!-- more -->
-
 
 <p>``` haskell GameOfLife.hs
 module GameOfLife
@@ -191,26 +177,26 @@ import Data.List</p>
 <p>type Cell = Int
 type Generation = [[Cell]]</p>
 
-<p>randomCells :: Int &ndash;> StdGen &ndash;> [Cell]
+<p>randomCells :: Int -&gt; StdGen -&gt; [Cell]
 randomCells size gen = take size $ randomRs (0, 1) gen</p>
 
-<p>createGeneration :: Int &ndash;> [Cell] &ndash;> Generation
+<p>createGeneration :: Int -&gt; [Cell] -&gt; Generation
 createGeneration _ [] = []
 createGeneration width cells = line:(createGeneration width rest)
   where (line, rest) = splitAt width cells</p>
 
-<p>formatGeneration :: Generation &ndash;> String
+<p>formatGeneration :: Generation -&gt; String
 formatGeneration generation =
-  let rows = intercalate &ldquo;\n&rdquo; (map (concatMap show) generation)
+  let rows = intercalate “\n” (map (concatMap show) generation)
    in map replaceChar rows</p>
 
-<p>replaceChar :: Char &ndash;> Char
-replaceChar &lsquo;1&rsquo; = &lsquo;@&rsquo;
-replaceChar &lsquo;0&rsquo; = &lsquo; &rsquo;
+<p>replaceChar :: Char -&gt; Char
+replaceChar ‘1’ = ‘@’
+replaceChar ‘0’ = ‘ ‘
 replaceChar c   = c
 ```</p>
 
-<p>Une déclaration de module, c'est ça:</p>
+<p>Une déclaration de module, c’est ça:</p>
 
 <p><code>haskell
 module GameOfLife
@@ -220,7 +206,7 @@ module GameOfLife
 ) where
 </code></p>
 
-<p>J'ai donc un module <code>GameOfLife</code> qui exporte, pour l'instant, trois fonctions.
+<p>J’ai donc un module <code>GameOfLife</code> qui exporte, pour l’instant, trois fonctions.
 Au fait, le code est sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>.</p>
 
 <p>Je vais créer la fonction <code>cellNextState</code>, je la rajoute donc dans les exports
@@ -235,14 +221,14 @@ module GameOfLife
 ) where
 </code></p>
 
-<p>Et j'en crée une version qui ne fonctionne pas ;)</p>
+<p>Et j’en crée une version qui ne fonctionne pas ;)</p>
 
 <p><code>haskell
 cellNextState :: Cell -&gt; [Cell] -&gt; Cell
 cellNextState cell neighborhood = undefined
 </code></p>
 
-<p>C'est parti pour mon premier test en Haskell. Je crée un fichier
+<p>C’est parti pour mon premier test en Haskell. Je crée un fichier
 <code>GameOfLife_Test.hs</code>:</p>
 
 <p>``` haskell GameOfLife_Test.hs
@@ -252,12 +238,12 @@ module GameOfLife_Test where</p>
 import Test.HUnit</p>
 
 <p>testCellNextState3 = TestCase $ assertEqual
-  &ldquo;Gets live cell when neighborhood'sum is 3&rdquo; 1 (cellNextState 0 [1,1,1,0])</p>
+  “Gets live cell when neighborhood’sum is 3” 1 (cellNextState 0 [1,1,1,0])</p>
 
 <p>main = runTestTT testCellNextState3
 ```</p>
 
-<p>C'est du bon vieux test unitaire à l'ancienne. Je mentirais en disant que
+<p>C’est du bon vieux test unitaire à l’ancienne. Je mentirais en disant que
 je trouve la syntaxe sexy.</p>
 
 <pre><code>$ runhaskell GameOfLife_Test.hs 
@@ -278,10 +264,10 @@ Cases: 1  Tried: 1  Errors: 0  Failures: 0
 Counts {cases = 1, tried = 1, errors = 0, failures = 0}
 </code></pre>
 
-<p>J'aimerais bien avoir une sortie en couleur. Si il y a moyen, je n'ai pas
+<p>J’aimerais bien avoir une sortie en couleur. Si il y a moyen, je n’ai pas
 encore trouvé…</p>
 
-<p>Quoiqu'il en soit, je peux tester mon code Haskell, et ça c'est cool. Je vais
+<p>Quoiqu’il en soit, je peux tester mon code Haskell, et ça c’est cool. Je vais
 donc en finir avec <code>cellNextState</code> en faisant quelques tests de plus:</p>
 
 <p>``` haskell GameOfLife_Test.hs
@@ -291,29 +277,26 @@ module GameOfLife_Test where</p>
 import Test.HUnit</p>
 
 <p>testCellNextState3 = TestCase $ assertEqual
-  &ldquo;Gets 1 when neighborhood&rsquo;s sum is 3&rdquo;
+  “Gets 1 when neighborhood’s sum is 3”
   1 (cellNextState 0 [1,1,1,0])</p>
 
 <p>testCellNextState4AndAlive = TestCase $ assertEqual
-  &ldquo;Gets 1 when neighborhood&rsquo;s sum is 4 and cell is alive&rdquo;
+  “Gets 1 when neighborhood’s sum is 4 and cell is alive”
   1 (cellNextState 1 [1,1,1,0,1])</p>
 
 <p>testCellNextState4AndDead = TestCase $ assertEqual
-  &ldquo;Gets 0 when neighborhood&rsquo;s sum is 4 and cell is dead&rdquo;
+  “Gets 0 when neighborhood’s sum is 4 and cell is dead”
   0 (cellNextState 0 [1,1,1,0,1])</p>
 
 <p>testCellNextState6 = TestCase $ assertEqual
-  &ldquo;Gets 0 when neighborhood&rsquo;s sum is 6&rdquo;
+  “Gets 0 when neighborhood’s sum is 6”
   0 (cellNextState 1 [1,1,1,0,1,1,1])</p>
 
-<p>main = runTestTT $ TestList [testCellNextState3,</p>
-
-<pre><code>                        testCellNextState4AndAlive,
-                        testCellNextState4AndDead,
-                        testCellNextState6]
-</code></pre>
-
-<p>```</p>
+<p>main = runTestTT $ TestList [testCellNextState3,
+                            testCellNextState4AndAlive,
+                            testCellNextState4AndDead,
+                            testCellNextState6]
+```</p>
 
 <pre><code>$ runhaskell GameOfLife_Test.hs 
 ### Failure in: 2                         
@@ -328,25 +311,21 @@ Cases: 4  Tried: 4  Errors: 0  Failures: 2
 Counts {cases = 4, tried = 4, errors = 0, failures = 2}
 </code></pre>
 
-<p>``` haskell GameOfLife.hs
-cellNextState :: Cell &ndash;> [Cell] &ndash;> Cell
+<p><code>haskell GameOfLife.hs
+cellNextState :: Cell -&gt; [Cell] -&gt; Cell
 cellNextState cell neighborhood
   | total == 4 = cell
   | total == 3 = 1
-  | otherwise = 0</p>
-
-<pre><code>where total = sum neighborhood
-</code></pre>
-
-<p>```</p>
+  | otherwise = 0
+    where total = sum neighborhood
+</code></p>
 
 <pre><code>$ runhaskell GameOfLife_Test.hs 
 Cases: 4  Tried: 4  Errors: 0  Failures: 0
 Counts {cases = 4, tried = 4, errors = 0, failures = 0}
 </code></pre>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -365,23 +344,20 @@ Counts {cases = 4, tried = 4, errors = 0, failures = 0}
 
 <p>La fonction <code>createGeneration</code> était comme ceci:</p>
 
-<p>``` haskell
-createGeneration :: [Int] &ndash;> Int &ndash;> [[Int]] &ndash;> [[Int]]
+<p><code>haskell
+createGeneration :: [Int] -&gt; Int -&gt; [[Int]] -&gt; [[Int]]
 createGeneration [] width generation = generation
-createGeneration cells width generation =</p>
+createGeneration cells width generation =
+    let line = take width cells
+     in createGeneration (drop width cells) width (line:generation)
+</code></p>
 
-<pre><code>let line = take width cells
- in createGeneration (drop width cells) width (line:generation)
-</code></pre>
-
-<p>```</p>
-
-<p>Je l'ai transformé comme cela:</p>
+<p>Je l’ai transformé comme cela:</p>
 
 <p>``` haskell
 type Cell = Int</p>
 
-<p>createGeneration :: Int &ndash;> [Cell] &ndash;> [[Cell]]
+<p>createGeneration :: Int -&gt; [Cell] -&gt; [[Cell]]
 createGeneration _ [] = []
 createGeneration width cells = line:(createGeneration width rest)
   where (line, rest) = splitAt width cells
@@ -389,27 +365,26 @@ createGeneration width cells = line:(createGeneration width rest)
 
 <!-- more -->
 
-
 <p>Elle utilise maintenant <code>splitAt</code>, une fonction de base, qui simplifie la
-transformation d'une liste en une liste de listes. J'ai aussi créé un type
+transformation d’une liste en une liste de listes. J’ai aussi créé un type
 <code>Cell</code>, qui me semble utile à des fins de documentation.</p>
 
-<h2>Affichage d'une génération</h2>
+<h2 id="affichage-dune-gnration">Affichage d’une génération</h2>
 
-<p>Le sujet principal de cet article, c'est l'affichage d'une génération dans le
+<p>Le sujet principal de cet article, c’est l’affichage d’une génération dans le
 terminal. Voici ma solution:</p>
 
 <p>``` haskell
 import Data.List</p>
 
-<p>formatGeneration :: [[Cell]] &ndash;> String
+<p>formatGeneration :: [[Cell]] -&gt; String
 formatGeneration generation =
-  let rows = intercalate &ldquo;\n&rdquo; (map (concatMap show) generation)
+  let rows = intercalate “\n” (map (concatMap show) generation)
    in map replaceChar rows</p>
 
-<p>replaceChar :: Char &ndash;> Char
-replaceChar &lsquo;1&rsquo; = &lsquo;@&rsquo;
-replaceChar &lsquo;0&rsquo; = &lsquo; &rsquo;
+<p>replaceChar :: Char -&gt; Char
+replaceChar ‘1’ = ‘@’
+replaceChar ‘0’ = ‘ ‘
 replaceChar c   = c
 ```</p>
 
@@ -422,7 +397,7 @@ replaceChar c   = c
 "1"
 </code></pre>
 
-<p>Je <em>mappe</em> la fonction <code>show</code> sur chaque élément d'une liste de nombres.</p>
+<p>Je <em>mappe</em> la fonction <code>show</code> sur chaque élément d’une liste de nombres.</p>
 
 <pre><code>&gt; map show [1,0]
 ["1","0"]
@@ -453,14 +428,14 @@ replaceChar c   = c
 "10\n00\n11"
 </code></pre>
 
-<p>Pour ce qui est de <code>replaceChar</code>, l'exemple suivant parle de lui-même.</p>
+<p>Pour ce qui est de <code>replaceChar</code>, l’exemple suivant parle de lui-même.</p>
 
 <pre><code>&gt; :load gol.hs 
 &gt; map replaceChar "10\n00\n11"
 "@ \n  \n@@"
 </code></pre>
 
-<p>Voici le code actuel, n'hésitez pas à me faire part des améliorations possibles.</p>
+<p>Voici le code actuel, n’hésitez pas à me faire part des améliorations possibles.</p>
 
 <p>``` haskell gol.hs
 import System.Random
@@ -468,35 +443,32 @@ import Data.List</p>
 
 <p>type Cell = Int</p>
 
-<p>randomCells :: Int &ndash;> StdGen &ndash;> [Cell]
+<p>randomCells :: Int -&gt; StdGen -&gt; [Cell]
 randomCells size gen = take size $ randomRs (0, 1) gen</p>
 
-<p>createGeneration :: Int &ndash;> [Cell] &ndash;> [[Cell]]
+<p>createGeneration :: Int -&gt; [Cell] -&gt; [[Cell]]
 createGeneration _ [] = []
 createGeneration width cells = line:(createGeneration width rest)
   where (line, rest) = splitAt width cells</p>
 
-<p>formatGeneration :: [[Cell]] &ndash;> String
+<p>formatGeneration :: [[Cell]] -&gt; String
 formatGeneration generation =
-  let rows = intercalate &ldquo;\n&rdquo; (map (concatMap show) generation)
+  let rows = intercalate “\n” (map (concatMap show) generation)
    in map replaceChar rows</p>
 
-<p>replaceChar :: Char &ndash;> Char
-replaceChar &lsquo;1&rsquo; = &lsquo;@&rsquo;
-replaceChar &lsquo;0&rsquo; = &lsquo; &rsquo;
+<p>replaceChar :: Char -&gt; Char
+replaceChar ‘1’ = ‘@’
+replaceChar ‘0’ = ‘ ‘
 replaceChar c   = c</p>
 
 <p>main :: IO()
-main =</p>
-
-<pre><code>let width = 80
-    height = 24
-    cells = randomCells (width * height) (mkStdGen 123)
-    generation = createGeneration width cells
- in putStrLn $ formatGeneration generation
-</code></pre>
-
-<p>```</p>
+main =
+    let width = 80
+        height = 24
+        cells = randomCells (width * height) (mkStdGen 123)
+        generation = createGeneration width cells
+     in putStrLn $ formatGeneration generation
+```</p>
 
 <pre><code>$ runhaskell gol.hs
 @@@    @  @ @@@ @@@@@@ @ @  @ @   @ @ @  @@@@   @   @@  @  @@@@ @ @ @@@ @@  @  @
@@ -505,8 +477,7 @@ main =</p>
 [...]
 </code></pre>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -519,35 +490,34 @@ main =</p>
     <id>http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
 
-<h2>Première rencontre avec Haskell</h2>
+<h2 id="premire-rencontre-avec-haskell">Première rencontre avec Haskell</h2>
 
-<p>L'histoire qui suit a du arriver à de nombreux développeurs rencontrant Haskell
+<p>L’histoire qui suit a du arriver à de nombreux développeurs rencontrant Haskell
 pour la première fois.</p>
 
-<p>— Bon, comment produire un nombre aléatoire ?<br/>
-— Ah OK, je vois.<br/>
+<p>— Bon, comment produire un nombre aléatoire ?<br />
+— Ah OK, je vois.<br />
 — Euh, attends, tu veux dire que je dois passer un générateur avec une <em>seed</em> à
-chaque fois ?<br/>
-— Ah OK, c'est l'histoire des fonctions <em>pures</em>, quand tu as le même argument en
+chaque fois ?<br />
+— Ah OK, c’est l’histoire des fonctions <em>pures</em>, quand tu as le même argument en
 entrée, tu produis <strong>toujours</strong> la même valeur en sortie. Du coup, tu ne peux
 pas avoir une fonction <code>random</code> qui te sortirait une valeur différente à chaque
-appel. Oui, d'accord, c'est logique.<br/>
+appel. Oui, d’accord, c’est logique.<br />
 — Ah mais non, attends, je fais comment pour lui donner une <em>seed</em> différente à
-chaque lancement du programme ? Ah, bin oui, j'ai qu'a prendre l'heure système,
-ou un truc comme ça.<br/>
-— Comment ça le générateur n'accepte pas mon heure système comme <em>seed</em> !?
-— Comment ça c'est pas le bon type ?! Qu'est-ce que c'est que cette histoire de
-monade IO ? Qu'est-ce que c'est que ce langage où je ne peux pas convertir
-l'heure système en un entier qui me servirait à quelque chose ???!!!</p>
+chaque lancement du programme ? Ah, bin oui, j’ai qu’a prendre l’heure système,
+ou un truc comme ça.<br />
+— Comment ça le générateur n’accepte pas mon heure système comme <em>seed</em> !?
+— Comment ça c’est pas le bon type ?! Qu’est-ce que c’est que cette histoire de
+monade IO ? Qu’est-ce que c’est que ce langage où je ne peux pas convertir
+l’heure système en un entier qui me servirait à quelque chose ???!!!</p>
 
 <p>Bref, bonjour Haskell…</p>
 
 <!-- more -->
 
+<h2 id="cration-dune-gnration">Création d’une génération</h2>
 
-<h2>Création d'une génération</h2>
-
-<p>Toute cette histoire n'est peut-être pas si importante. Une fois
+<p>Toute cette histoire n’est peut-être pas si importante. Une fois
 accepté que Haskell a certainement une bonne raison de ne pas nous laisser faire
 une chose particulière, on peut avancer. Finalement, si je produis toujours les
 mêmes nombres, ça devrait être plus simple pour tester.</p>
@@ -558,18 +528,18 @@ prend la taille de la liste et un générateur de nombre aléatoire.</p>
 <p>``` haskell gol.hs
 import System.Random</p>
 
-<p>randomCells :: Int &ndash;> StdGen &ndash;> [Int]
+<p>randomCells :: Int -&gt; StdGen -&gt; [Int]
 randomCells size gen = take size $ randomRs (0, 1) gen
 ```</p>
 
-<p>Pour essayer ce code, j'utilise <code>ghci</code>, le REPL Haskell. C'est une vieille
+<p>Pour essayer ce code, j’utilise <code>ghci</code>, le REPL Haskell. C’est une vieille
 version qui était déjà installée sur ma machine.</p>
 
 <pre><code>$ ghci
 GHCi, version 6.12.1: http://www.haskell.org/ghc/  :? for help
 </code></pre>
 
-<p>Dans <code>ghci</code>, on charge notre fichier avec <code>:l gol.hs</code>. (<code>:l</code> est l'abbréviation
+<p>Dans <code>ghci</code>, on charge notre fichier avec <code>:l gol.hs</code>. (<code>:l</code> est l’abbréviation
 de <code>:load</code>).</p>
 
 <pre><code>Prelude&gt; :l gol.hs 
@@ -578,30 +548,27 @@ Ok, modules loaded: Main.
 </code></pre>
 
 <p>On va produire une liste de 12 nombres. Pour obtenir un générateur de nombre
-aléatoire, on utilise <code>mkStdGen</code>, que j'initialise ici avec le nombre <code>4567</code>.</p>
+aléatoire, on utilise <code>mkStdGen</code>, que j’initialise ici avec le nombre <code>4567</code>.</p>
 
 <pre><code>*Main&gt; randomCells 12 (mkStdGen 4567)
 [1,0,1,0,1,1,1,1,1,0,1,0]
 </code></pre>
 
-<p>Alors, on pourrait s'arrêter là pour la création des cellules. On pourrait très
+<p>Alors, on pourrait s’arrêter là pour la création des cellules. On pourrait très
 bien se débrouiller avec une liste simple. Mais je préfère quand même avoir une
 liste de listes (une liste de rangées).</p>
 
 <p>Voilà donc une jolie fonction récursive <code>createGeneration</code> qui prend en entrée
-la liste de cellules aléatoires, la largeur d'une rangée, et la génération en
-cours de production (l'accumulateur).</p>
+la liste de cellules aléatoires, la largeur d’une rangée, et la génération en
+cours de production (l’accumulateur).</p>
 
-<p>``` haskell
-createGeneration :: [Int] &ndash;> Int &ndash;> [[Int]] &ndash;> [[Int]]
+<p><code>haskell
+createGeneration :: [Int] -&gt; Int -&gt; [[Int]] -&gt; [[Int]]
 createGeneration [] width generation = generation
-createGeneration cells width generation =</p>
-
-<pre><code>let line = take width cells
- in createGeneration (drop width cells) width (line:generation)
-</code></pre>
-
-<p>```</p>
+createGeneration cells width generation =
+    let line = take width cells
+     in createGeneration (drop width cells) width (line:generation)
+</code></p>
 
 <pre><code>*Main&gt; let cells = randomCells 12 (mkStdGen 4567)
 *Main&gt; createGeneration cells 4 []
@@ -613,45 +580,39 @@ createGeneration cells width generation =</p>
 <p>``` haskell gol.hs
 import System.Random</p>
 
-<p>randomCells :: Int &ndash;> StdGen &ndash;> [Int]
+<p>randomCells :: Int -&gt; StdGen -&gt; [Int]
 randomCells size gen = take size $ randomRs (0, 1) gen</p>
 
-<p>createGeneration :: [Int] &ndash;> Int &ndash;> [[Int]] &ndash;> [[Int]]
+<p>createGeneration :: [Int] -&gt; Int -&gt; [[Int]] -&gt; [[Int]]
 createGeneration [] width generation = generation
-createGeneration cells width generation =</p>
+createGeneration cells width generation =
+    let line = take width cells
+     in createGeneration (drop width cells) width (line:generation)</p>
 
-<pre><code>let line = take width cells
- in createGeneration (drop width cells) width (line:generation)
-</code></pre>
-
-<p>main =</p>
-
-<pre><code>let cells = randomCells 12 (mkStdGen 123)
- in print (createGeneration cells 4 [])
-</code></pre>
-
-<p>```</p>
+<p>main =
+    let cells = randomCells 12 (mkStdGen 123)
+     in print (createGeneration cells 4 [])
+```</p>
 
 <pre><code>$ runhaskell gol.hs 
 [[0,0,1,0],[0,0,0,1],[1,1,1,0]]
 </code></pre>
 
-<p>Comme il s'agit de mon tout premier code en Haskell, n'hésitez surtout pas à me
+<p>Comme il s’agit de mon tout premier code en Haskell, n’hésitez surtout pas à me
 remonter mes erreurs, ou bien des trucs pour améliorer le code.</p>
 
 <p><strong>P.S.</strong></p>
 
-<p>Vous avez peut-être remarqué que je n'ai pas écrit de tests ?
-J'avais remarqué <a href="http://hspec.github.io/">Hspec</a>, que j'aurais aimé utilisé.
-Mais <code>cabal</code> refuse de l'installer. Je pense que ma version d'Haskell est trop
-datée et qu'il me faudrait refaire une installation sans passer par les paquets
-de mon OS. Je sais qu'il y a <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>
-de base, mais ça m'a l'air bien compliqué à mettre en place pour mon niveau de
+<p>Vous avez peut-être remarqué que je n’ai pas écrit de tests ?
+J’avais remarqué <a href="http://hspec.github.io/">Hspec</a>, que j’aurais aimé utilisé.
+Mais <code>cabal</code> refuse de l’installer. Je pense que ma version d’Haskell est trop
+datée et qu’il me faudrait refaire une installation sans passer par les paquets
+de mon OS. Je sais qu’il y a <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>
+de base, mais ça m’a l’air bien compliqué à mettre en place pour mon niveau de
 débutant. Si je continue Haskell après avoir écrit le jeu de la vie, il est sûr
-que je m'y mettrais.</p>
+que je m’y mettrais.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>
@@ -665,62 +626,59 @@ que je m'y mettrais.</p>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
 <p>Je vais écrire le <a href="http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">jeu de la vie</a> dans 7 langages, et
-en utilisant le TDD (sauf pour l'affichage).
-Ça va me permettre de réviser certains langages et d'en apprendre de nouveaux
-d'une manière amusante. Après tout, quoi de plus <em>fun</em> qu'un jeu pour zéro
+en utilisant le TDD (sauf pour l’affichage).
+Ça va me permettre de réviser certains langages et d’en apprendre de nouveaux
+d’une manière amusante. Après tout, quoi de plus <em>fun</em> qu’un jeu pour zéro
 joueur.</p>
 
-<h2>L'algorithme</h2>
+<h2 id="lalgorithme">L’algorithme</h2>
 
-<p>L'idée directrice, c'est de faire au plus simple.
-L'algorithme général sera le suivant :</p>
+<p>L’idée directrice, c’est de faire au plus simple.
+L’algorithme général sera le suivant :</p>
 
 <ol>
-<li>obtenir une première génération au hasard</li>
-<li>afficher la génération</li>
-<li>calculer la nouvelle génération et retour au point 2.</li>
+  <li>obtenir une première génération au hasard</li>
+  <li>afficher la génération</li>
+  <li>calculer la nouvelle génération et retour au point 2.</li>
 </ol>
-
 
 <p>Discutons un peu chacun des trois points.</p>
 
 <!-- more -->
 
-
-<h3>Obtenir une première génération au hasard</h3>
+<h3 id="obtenir-une-premire-gnration-au-hasard">Obtenir une première génération au hasard</h3>
 
 <p>Cette génération sera stockée dans un tableau (une liste). Suivant le
-langage, j'utiliserais un tableau à 1 ou 2 dimensions.</p>
+langage, j’utiliserais un tableau à 1 ou 2 dimensions.</p>
 
-<h3>Afficher la génération</h3>
+<h3 id="afficher-la-gnration">Afficher la génération</h3>
 
-<p>Il s'agit d'afficher à l'écran le tableau calculé précédement. Chaque élément
+<p>Il s’agit d’afficher à l’écran le tableau calculé précédement. Chaque élément
 du tableau représente une cellule du jeu de la vie, et une cellule sera
-représentée à l'écran par un pixel. Alors un pixel pour une cellule, ça risque
-d'être assez moche sur la plupart des dispositifs, mais c'est le plus simple.
-J'améliorerais peut-être cet affichage plus tard.</p>
+représentée à l’écran par un pixel. Alors un pixel pour une cellule, ça risque
+d’être assez moche sur la plupart des dispositifs, mais c’est le plus simple.
+J’améliorerais peut-être cet affichage plus tard.</p>
 
-<h3>Calculer la nouvelle génération</h3>
+<h3 id="calculer-la-nouvelle-gnration">Calculer la nouvelle génération</h3>
 
-<p>Là encore, j'essaye d'aller au plus simple. On va calculer la
+<p>Là encore, j’essaye d’aller au plus simple. On va calculer la
 nouvelle génération dans un second tableau. Une fois ce calcul effectué, ce
 second tableau remplacera le premier.</p>
 
-<p>Pour calculer le nouvel état d'une cellule, on devra observer la cellule et
+<p>Pour calculer le nouvel état d’une cellule, on devra observer la cellule et
 ces 8 voisins. Autrement dit on observe une fenêtre de 9 cellules et on veut
 connaitre le nouvel état de la cellule centrale. Il y a 3 cas possibles:</p>
 
 <ol>
-<li>Si la somme des cellules vivantes est 3, alors la nouvelle cellule sera
+  <li>Si la somme des cellules vivantes est 3, alors la nouvelle cellule sera
 vivante.</li>
-<li>Si la somme des cellules vivantes est 4, alors la nouvelle cellule conserve
+  <li>Si la somme des cellules vivantes est 4, alors la nouvelle cellule conserve
 son ancien état.</li>
-<li>Dans tous les autres cas, la nouvelle cellule est morte.</li>
+  <li>Dans tous les autres cas, la nouvelle cellule est morte.</li>
 </ol>
 
-
 <p>Il faut encore parler du cas des cellules qui se trouvent sur les bords du
-<em>plateau de jeu</em>. Normalement, le jeu de la vie est infini. Mais l'infini, c'est
+<em>plateau de jeu</em>. Normalement, le jeu de la vie est infini. Mais l’infini, c’est
 pas simple. Dans une première itération, le <em>plateau de jeu</em> aura des
 dimensions finies et les cellules qui se trouvent sur les bords se verront
 ajoutées arbitrairement des voisins morts.</p>
@@ -728,54 +686,53 @@ ajoutées arbitrairement des voisins morts.</p>
 <p>Une seconde itération pourrait implémenter une espèce de <a href="http://en.wikipedia.org/wiki/Torus">tore</a> pour avoir une surface
 de jeu sans bordures.</p>
 
-<h2>Les langages ciblés</h2>
+<h2 id="les-langages-cibls">Les langages ciblés</h2>
 
 <p>Je vais écrire le jeu de la vie dans 7 langages différents:</p>
 
 <ul>
-<li>ruby</li>
-<li>javascript</li>
-<li>racket</li>
-<li>logo</li>
-<li>julia</li>
-<li>haskell</li>
-<li>rust</li>
+  <li>ruby</li>
+  <li>javascript</li>
+  <li>racket</li>
+  <li>logo</li>
+  <li>julia</li>
+  <li>haskell</li>
+  <li>rust</li>
 </ul>
 
-
-<h3>Pourquoi ces langages ?</h3>
+<h3 id="pourquoi-ces-langages-">Pourquoi ces langages ?</h3>
 
 <p><strong>Ruby</strong></p>
 
-<p>Ça peut paraitre bizarre. Après tout j'écris en Ruby toute la journée, c'est
+<p>Ça peut paraitre bizarre. Après tout j’écris en Ruby toute la journée, c’est
 mon métier. Pourquoi vouloir en faire encore pendant mon temps libre ?
-En fait, ce qui m'intéresse vraiment ici, c'est <a href="http://opalrb.org/">Opal.rb</a>. Peut-être aussi
-que j'en ferais une seconde version avec <a href="http://www.libgosu.org/">Gosu</a>.</p>
+En fait, ce qui m’intéresse vraiment ici, c’est <a href="http://opalrb.org/">Opal.rb</a>. Peut-être aussi
+que j’en ferais une seconde version avec <a href="http://www.libgosu.org/">Gosu</a>.</p>
 
 <p><strong>Javascript</strong></p>
 
-<p>Après des années passées à tenter d'éviter d'écrire la moindre ligne de
-Javascript, je m'intéresse de nouveau à ce langage. Après tout, c'est un
-incontournable du Web et il commence à me plaire. Et puis j'ai trop tardé à
+<p>Après des années passées à tenter d’éviter d’écrire la moindre ligne de
+Javascript, je m’intéresse de nouveau à ce langage. Après tout, c’est un
+incontournable du Web et il commence à me plaire. Et puis j’ai trop tardé à
 faire du TDD avec Javascript, je crois que <a href="http://jasmine.github.io/">Jasmine</a> est devenu très bon.</p>
 
 <p><strong>Racket</strong></p>
 
-<p>Je crois que tout développeur devrait étudier un <em>Lisp like</em>. Lisp t'oblige à
+<p>Je crois que tout développeur devrait étudier un <em>Lisp like</em>. Lisp t’oblige à
 penser autrement et du coup tu trouves des solutions différentes à des
 problèmes de programmation de tout les jours.</p>
 
 <p><strong>Logo</strong></p>
 
-<p>Le <a href="http://fr.wikipedia.org/wiki/Logo_%28langage%29">Logo</a>, c'est ma <a href="http://fr.wikipedia.org/wiki/Madeleine_%28cuisine%29#La_madeleine_de_Proust">madeleine de Proust</a> ! Voilà. Encore un <em>Lisp like</em>,
-mais différent (on l'appelait Lisp sans parenthèses). J'espère que je trouverais
+<p>Le <a href="http://fr.wikipedia.org/wiki/Logo_%28langage%29">Logo</a>, c’est ma <a href="http://fr.wikipedia.org/wiki/Madeleine_%28cuisine%29#La_madeleine_de_Proust">madeleine de Proust</a> ! Voilà. Encore un <em>Lisp like</em>,
+mais différent (on l’appelait Lisp sans parenthèses). J’espère que je trouverais
 encore des ressources pour celui-ci.</p>
 
 <p><strong>Julia</strong></p>
 
 <p>Je pense que les langages fonctionnels ont un grand avenir. Ils résolvent au
 moins deux soucis. En ce concentrant sur la transformation des données plutôt
-que sur l'état de ces données, ils facilitent les tests et l'utilisation des
+que sur l’état de ces données, ils facilitent les tests et l’utilisation des
 multi-coeurs.</p>
 
 <p><strong>Haskell</strong></p>
@@ -787,16 +744,15 @@ que je devrais y goûter.</p>
 
 <p>Je voulais un langage système dans cette liste, ce sera <a href="http://www.rust-lang.org/">Rust</a>.</p>
 
-<h2>Fréquence de publication</h2>
+<h2 id="frquence-de-publication">Fréquence de publication</h2>
 
-<p>Je ne m'avancerais pas sur une fréquence de publication. J'imagine qu'il y
+<p>Je ne m’avancerais pas sur une fréquence de publication. J’imagine qu’il y
 aura 3 ou 4 articles par langage. Et suivant le temps dont je disposerais, ça
 pourrat-être aussi bien un article par mois ou trois articles par semaine.</p>
 
 <p>Allez, la prochaine fois on commence avec Ruby/Opal.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p></p>
 ]]></content>

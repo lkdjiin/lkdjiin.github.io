@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : set | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/set/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-02-05T18:43:44+01:00</updated>
+  <updated>2015-02-12T10:21:35+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -20,77 +20,64 @@
     <id>http://lkdjiin.github.io/blog/2014/01/02/mon-patch-pour-ruby-a-ete-refuse</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
 
-<p>Il y a quelque jours, j'ai présenté les <a href="http://lkdjiin.github.io/blog/2013/12/30/ruby-2-dot-1-les-nouvelles-methodes-de-set/">nouvelles méthodes de la classe
+<p>Il y a quelque jours, j’ai présenté les <a href="http://lkdjiin.github.io/blog/2013/12/30/ruby-2-dot-1-les-nouvelles-methodes-de-set/">nouvelles méthodes de la classe
 Set</a>, mise à jour avec la sortie de Ruby 2.1.
-Un commenteur m'a fait remarquer avec raison que le code pourrait être
-bien plus simple. Ni une, ni deux, j'écris un patch, les tests passent,
-j'envoie un pull request. Le patch sera gentillement refusé, et c'est
+Un commenteur m’a fait remarquer avec raison que le code pourrait être
+bien plus simple. Ni une, ni deux, j’écris un patch, les tests passent,
+j’envoie un pull request. Le patch sera gentillement refusé, et c’est
 bien normal…</p>
 
 <!-- more -->
 
-
 <p>Voici le code des méthodes originales:</p>
 
 <p>``` ruby
-  def intersect?(set)</p>
+  def intersect?(set)
+    set.is_a?(Set) or raise ArgumentError, “value must be a set”
+    if size &lt; set.size
+      any? { |o| set.include?(o) }
+    else
+      set.any? { |o| include?(o) }
+    end
+  end</p>
 
-<pre><code>set.is_a?(Set) or raise ArgumentError, "value must be a set"
-if size &lt; set.size
-  any? { |o| set.include?(o) }
-else
-  set.any? { |o| include?(o) }
-end
-</code></pre>
-
-<p>  end</p>
-
-<p>  def disjoint?(set)</p>
-
-<pre><code>!intersect?(set)
-</code></pre>
-
-<p>  end
+<p>def disjoint?(set)
+    !intersect?(set)
+  end
 ```</p>
 
 <p>Et voici comment je les ai recodées:</p>
 
 <p>``` ruby
-  def intersect?(set)</p>
+  def intersect?(set)
+    !disjoint?(self)
+  end</p>
 
-<pre><code>!disjoint?(self)
-</code></pre>
-
-<p>  end</p>
-
-<p>  def disjoint?(set)</p>
-
-<pre><code>set.is_a?(Set) or raise ArgumentError, "value must be a set"
-(self &amp; set).empty?
-</code></pre>
-
-<p>  end
+<p>def disjoint?(set)
+    set.is_a?(Set) or raise ArgumentError, “value must be a set”
+    (self &amp; set).empty?
+  end
 ```</p>
 
 <p>Je trouvais mon nouveau code vraiment très bien foutu: deux fois plus court et
-plus simple à lire. Seulement j'avais oublié deux petites choses qui le rendent
+plus simple à lire. Seulement j’avais oublié deux petites choses qui le rendent
 moins efficace que le code original:</p>
 
-<p>Premièrement, mon code crée un objet intermédiaire
-(avec <code>self &amp; set</code>) qui n'est pas nécessaire.</p>
+<p>Premièrement, mon code crée un objet intermédiaire 
+(avec <code>self &amp; set</code>) qui n’est pas nécessaire.</p>
 
-<p>Deuxièment, le code original s'arrête dès qu'un élément en commun est trouvé,
+<p>Deuxièment, le code original s’arrête dès qu’un élément en commun est trouvé,
 alors que le mien remplira un (nouveau) set avec tout les éléments en
-communs. C'est évidemment beaucoup moins efficace, surtout avec de gros sets.</p>
+communs. C’est évidemment beaucoup moins efficace, surtout avec de gros sets.</p>
 
-<p>Moralité : un code plus court n'est pas toujours synonyme de plus efficace !</p>
+<p>Moralité : un code plus court n’est pas toujours synonyme de plus efficace !</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
 <p></p>
+
 ]]></content>
   </entry>
   
@@ -101,70 +88,64 @@ communs. C'est évidemment beaucoup moins efficace, surtout avec de gros sets.</
     <id>http://lkdjiin.github.io/blog/2013/12/30/ruby-2-dot-1-les-nouvelles-methodes-de-set</id>
     <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
 
-<p>Avec la sortie de Ruby 2.1, la bibliothèque standard <code>Set</code> s'enrichie de
+<p>Avec la sortie de Ruby 2.1, la bibliothèque standard <code>Set</code> s’enrichie de 
 deux méthodes supplémentaires: <code>disjoint?</code> et <code>intersect?</code>.</p>
 
 <!-- more -->
 
+<p><code>Set</code> permet de créer un ensemble d’éléments uniques:</p>
 
-<p><code>Set</code> permet de créer un ensemble d'éléments uniques:</p>
-
-<p>``` irb</p>
-
-<blockquote><blockquote><p>require &lsquo;set&rsquo;
-Set.new [1, 2, 1, 2, 2]
-=> #&lt;Set: {1, 2}>
-```</p></blockquote></blockquote>
+<p><code>irb
+&gt;&gt; require 'set'
+&gt;&gt; Set.new [1, 2, 1, 2, 2]
+=&gt; #&lt;Set: {1, 2}&gt;
+</code></p>
 
 <p>La nouvelle méthode <code>intersect?</code> permet de tester si deux sets ont au moins
 un élément en commun:</p>
 
-<p>``` irb</p>
+<p>``` irb
+» s1 = Set.new [1, 2, 3]
+» s2 = Set.new [4, 5, 6]
+» s3 = Set.new [1, 8, 9]</p>
 
-<blockquote><blockquote><p>s1 = Set.new [1, 2, 3]
-s2 = Set.new [4, 5, 6]
-s3 = Set.new [1, 8, 9]</p>
-
-<p>s1.intersect? s2
-=> false
+<blockquote>
+  <blockquote>
+    <p>s1.intersect? s2
+=&gt; false
 s1.intersect? s3
-=> true
-```</p></blockquote></blockquote>
+=&gt; true
+```</p>
+  </blockquote>
+</blockquote>
 
-<p>La seconde méthode, <code>disjoint?</code>, est son opposée. Elle teste si deux sets n'ont
+<p>La seconde méthode, <code>disjoint?</code>, est son opposée. Elle teste si deux sets n’ont
 aucuns éléments communs:</p>
 
-<p>``` irb</p>
+<p><code>irb
+&gt;&gt; s1.disjoint? s2
+=&gt; true
+&gt;&gt; s1.disjoint? s3
+=&gt; false
+</code></p>
 
-<blockquote><blockquote><p>s1.disjoint? s2
-=> true
-s1.disjoint? s3
-=> false
-```</p></blockquote></blockquote>
-
-<p>Ce genre de méthode n'est pas très compliqué à coder soi-même, comme le
+<p>Ce genre de méthode n’est pas très compliqué à coder soi-même, comme le
 montre le code source de <code>intersect?</code>:</p>
 
-<p>``` ruby
+<p><code>ruby
 def intersect?(set)
-  set.is_a?(Set) or raise ArgumentError, &ldquo;value must be a set&rdquo;
-  if size &lt; set.size</p>
-
-<pre><code>any? { |o| set.include?(o) }
-</code></pre>
-
-<p>  else</p>
-
-<pre><code>set.any? { |o| include?(o) }
-</code></pre>
-
-<p>  end
+  set.is_a?(Set) or raise ArgumentError, "value must be a set"
+  if size &lt; set.size
+    any? { |o| set.include?(o) }
+  else
+    set.any? { |o| include?(o) }
+  end
 end
-```</p>
+</code></p>
 
-<p>Mais l'avoir en standard permet de ne pas réinventer la roue…
-Quant au code source de <code>disjoint?</code>, c'est très exactement comme je
-le disais plus haut, l'opposé de <code>intersect?</code>:</p>
+<p>Mais l’avoir en standard permet de ne pas réinventer la roue…
+Quant au code source de <code>disjoint?</code>, c’est très exactement comme je
+le disais plus haut, l’opposé de <code>intersect?</code>:</p>
 
 <p><code>ruby
 def disjoint?(set)
@@ -172,8 +153,7 @@ def disjoint?(set)
 end
 </code></p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 

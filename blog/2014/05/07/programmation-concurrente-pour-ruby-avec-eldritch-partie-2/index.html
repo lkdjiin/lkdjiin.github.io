@@ -111,38 +111,35 @@ qui facilite la programmation concurrente en Ruby. Prenons le programme de réf�
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
+<div class="entry-content"><div class="level-tag level-tag-2">Niveau : <span>intermédiaire</span></div>
 
 <p>Suite du test de la gem <a href="https://github.com/beraboris/eldritch">eldritch</a>
 qui facilite la programmation concurrente en Ruby.</p>
 
 <!-- more -->
 
-
 <p>Prenons le programme de référence suivant:</p>
 
-<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">long_task</span>
-</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">long_task</span>
+</span><span class="line">  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class="line">  <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>La méthode <code>long_task</code> va <em>dormir</em> pendant une seconde puis renvoyer la
-date courante. Si on l&#8217;appelle 10 fois de suite, voici la sortie:</p>
+date courante. Si on l’appelle 10 fois de suite, voici la sortie:</p>
 
 <pre><code>$ time ruby test.rb
 0 : 2014-05-07 18:15:52 +0200
@@ -156,7 +153,7 @@ date courante. Si on l&#8217;appelle 10 fois de suite, voici la sortie:</p>
 8 : 2014-05-07 18:16:00 +0200
 9 : 2014-05-07 18:16:01 +0200
 
-real    0m10.809s
+real	0m10.809s
 </code></pre>
 
 <p>Un appel par seconde, normal.</p>
@@ -164,39 +161,38 @@ real    0m10.809s
 <p>Maintenant on va se servir de <strong>eldritch</strong> pour que les 10 appels à
 <code>long_task</code> soient concurrents:</p>
 
-<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">long_task</span>
-</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">together</span> <span class="k">do</span>
-</span><span class='line'>  <span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">async</span> <span class="k">do</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">def</span> <span class="nf">long_task</span>
+</span><span class="line">  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">together</span> <span class="k">do</span>
+</span><span class="line">  <span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class="line">    <span class="n">async</span> <span class="k">do</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>Le bloc <code>together</code> permet au programme d&#8217;attendre que chacune des <em>tâches</em>
-soient terminées avant d&#8217;aller plus loin. Voici ce que ça donne:</p>
+<p>Le bloc <code>together</code> permet au programme d’attendre que chacune des <em>tâches</em>
+soient terminées avant d’aller plus loin. Voici ce que ça donne:</p>
 
 <pre><code>$ time ruby test.rb
 0 : 2014-05-07 18:16:52 +02002 : 2014-05-07 18:16:52 +0200
@@ -210,79 +206,77 @@ soient terminées avant d&#8217;aller plus loin. Voici ce que ça donne:</p>
 9 : 2014-05-07 18:16:52 +0200
 1 : 2014-05-07 18:16:52 +0200
 
-real    0m1.890s
+real	0m1.890s
 </code></pre>
 
 <p>Que nous apprend cette sortie ? Chacune des dix tâches a été démarrée à la
 même seconde (pas en même temps exactement bien sûr). On voit bien aussi
-que l&#8217;ordre de terminaison des 10 tâches est aléatoires, ce qui est normal
-en programmation concurrente. Le programme s&#8217;est terminé 10 fois plus vite,
-c&#8217;est normal puisque <code>long_task</code> passe son temps à ne rien faire ;)</p>
+que l’ordre de terminaison des 10 tâches est aléatoires, ce qui est normal
+en programmation concurrente. Le programme s’est terminé 10 fois plus vite,
+c’est normal puisque <code>long_task</code> passe son temps à ne rien faire ;)</p>
 
-<p>À quoi sert exactement ce bloc <code>together</code> ? Voyons ce qu&#8217;il se passe si on le
+<p>À quoi sert exactement ce bloc <code>together</code> ? Voyons ce qu’il se passe si on le
 retire:</p>
 
-<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">def</span> <span class="nf">long_task</span>
-</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
-</span><span class='line'>  <span class="n">async</span> <span class="k">do</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">def</span> <span class="nf">long_task</span>
+</span><span class="line">  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class="line">  <span class="n">async</span> <span class="k">do</span>
+</span><span class="line">    <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <pre><code>$ time ruby test.rb
 
-real    0m0.846s
+real	0m0.846s
 </code></pre>
 
-<p>Oups ! Le programme s&#8217;est terminé <em>avant</em> la fin des tâches, elles sont
+<p>Oups ! Le programme s’est terminé <em>avant</em> la fin des tâches, elles sont
 perdues !</p>
 
 <p>Une autre façon de faire est de créer <em>explicitement</em> une tâche, avec
-<code>task = async do ...</code> et d&#8217;utiliser <code>task.value</code> qui attend que la tâche
+<code>task = async do ...</code> et d’utiliser <code>task.value</code> qui attend que la tâche
 soit complètée:</p>
 
-<figure class='code'><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">long_task</span> <span class="o">=</span> <span class="n">async</span> <span class="k">do</span>
-</span><span class='line'>  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;eldritch&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">long_task</span> <span class="o">=</span> <span class="n">async</span> <span class="k">do</span>
+</span><span class="line">  <span class="nb">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="mi">10</span><span class="o">.</span><span class="n">times</span> <span class="k">do</span> <span class="o">|</span><span class="n">i</span><span class="o">|</span>
+</span><span class="line">  <span class="nb">puts</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">i</span><span class="si">}</span><span class="s2"> : </span><span class="si">#{</span><span class="n">long_task</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <pre><code>$ time ruby eldritch2.rb
 0 : 2014-05-07 18:38:20 +0200
@@ -296,22 +290,22 @@ soit complètée:</p>
 8 : 2014-05-07 18:38:20 +0200
 9 : 2014-05-07 18:38:20 +0200
 
-real    0m1.861s
+real	0m1.861s
 </code></pre>
 
-<p>Tout les tests que j&#8217;ai fait avec cette méthode montrent que l&#8217;ordre des
-tâches est respecté, de 0 à 9. Est-ce que c&#8217;est vraiment le cas ou bien
-est-ce une coincidence ? Je n&#8217;ai pas encore de réponses…</p>
+<p>Tout les tests que j’ai fait avec cette méthode montrent que l’ordre des
+tâches est respecté, de 0 à 9. Est-ce que c’est vraiment le cas ou bien
+est-ce une coincidence ? Je n’ai pas encore de réponses…</p>
 
-<p>Quoiqu&#8217;il en soit, je suis pressé d&#8217;essayer <strong>eldritch</strong> avec les algorithmes génétiques, ce
-qui par la même occasion me permettra d&#8217;en reparler (des algos) dans ce blog.</p>
+<p>Quoiqu’il en soit, je suis pressé d’essayer <strong>eldritch</strong> avec les algorithmes génétiques, ce
+qui par la même occasion me permettra d’en reparler (des algos) dans ce blog.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/'>Programmation concurrente pour Ruby avec eldritch</a></li><li><a href='/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/'>Une machine de Turing en Ruby &ndash; La routine de copie</a></li><li><a href='/blog/2015/02/01/une-machine-de-turing-en-ruby/'>Une machine de Turing en Ruby</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2014/05/06/programmation-concurrente-pour-ruby-avec-eldritch/">Programmation concurrente pour Ruby avec eldritch</a></li><li><a href="/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li><li><a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a></li></ul></section>
+
 </div>
 
 
@@ -385,6 +379,10 @@ qui par la même occasion me permettra d&#8217;en reparler (des algos) dans ce b
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a>
       </li>
     
@@ -398,10 +396,6 @@ qui par la même occasion me permettra d&#8217;en reparler (des algos) dans ce b
     
       <li class="post">
         <a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a>
       </li>
     
   </ul>
@@ -477,7 +471,12 @@ qui par la même occasion me permettra d&#8217;en reparler (des algos) dans ce b
   </script>
 
 
-
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
 
 </body>

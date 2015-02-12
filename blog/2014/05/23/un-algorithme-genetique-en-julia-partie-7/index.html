@@ -9,8 +9,8 @@
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : intermédiaire Dans le dernier article sur Julia, j&#8217;avais eu un problème avec les
-tableaux. En effet, leur comportement n&#8217;est pas &hellip;">
+  <meta name="description" content="Niveau : intermédiaire Dans le dernier article sur Julia, j’avais eu un problème avec les
+tableaux. En effet, leur comportement n’est pas celui que j &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -111,11 +111,10 @@ tableaux. En effet, leur comportement n&#8217;est pas &hellip;">
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
+<div class="entry-content"><div class="level-tag level-tag-2">Niveau : <span>intermédiaire</span></div>
 
-
-<p>Dans le <a href="blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/">dernier article</a> sur Julia, j&#8217;avais eu un problème avec les
-tableaux. En effet, leur comportement n&#8217;est pas celui que j&#8217;attendais:</p>
+<p>Dans le <a href="blog/2014/05/18/un-algorithme-genetique-en-julia-partie-6/">dernier article</a> sur Julia, j’avais eu un problème avec les
+tableaux. En effet, leur comportement n’est pas celui que j’attendais:</p>
 
 <pre><code>julia&gt; a = [1, 2]
 julia&gt; b = [3, 4]
@@ -135,52 +134,49 @@ julia&gt; append!(a, b)
  4
 </code></pre>
 
-<p>Alors que j&#8217;attendais plutôt ceci : <code>[ [1, 2], [3, 4] ]</code>.</p>
+<p>Alors que j’attendais plutôt ceci : <code>[ [1, 2], [3, 4] ]</code>.</p>
 
 <!-- more -->
 
-
 <p>Pour régler ça, on doit pouvoir utiliser les tableaux multi-dimensionnels,
 que Julia à tendance à nommer des «matrices». Vu mon niveau en math, ça
-ne m&#8217;a pas vraiment attiré ;)</p>
+ne m’a pas vraiment attiré ;)</p>
 
-<p>J&#8217;ai préféré regarder du coté des types. Pour l&#8217;instant, je comprends les
-types comme des structures dans le genre de C, c&#8217;est-à-dire un ensemble de
-donnés regroupées au sein d&#8217;une même référence.</p>
+<p>J’ai préféré regarder du coté des types. Pour l’instant, je comprends les
+types comme des structures dans le genre de C, c’est-à-dire un ensemble de 
+donnés regroupées au sein d’une même référence.</p>
 
-<p>J&#8217;ai donc besoin d&#8217;un type, que j&#8217;appelerais <code>Chromosome</code>, qui va contenir
+<p>J’ai donc besoin d’un type, que j’appelerais <code>Chromosome</code>, qui va contenir
 le tableau des gènes:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="k">type</span><span class="nc"> Chromosome</span>
-</span><span class='line'>  <span class="n">genes</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="julia"><span class="line"><span class="k">type</span><span class="nc"> Chromosome</span>
+</span><span class="line">  <span class="n">genes</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>On l&#8217;utilise comme ceci:</p>
+<p>On l’utilise comme ceci:</p>
 
 <pre><code>julia&gt; Chromosome([1, 2, 3])
 Chromosome([1,2,3])
 </code></pre>
 
-<p>Je vais devoir modifier un peu les fonctions définies jusqu&#8217;ici pour qu&#8217;elle
+<p>Je vais devoir modifier un peu les fonctions définies jusqu’ici pour qu’elle
 fonctionnent avec des <code>Chromosome</code>s. Par exemple, pour créer la population:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='julia'><span class='line'><span class="n">create_chromosome</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">[</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">create_chromosome</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="julia"><span class="line"><span class="n">create_chromosome</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line"><span class="k">function</span><span class="nf"> create_population</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">chromosome_size</span><span class="p">)</span>
+</span><span class="line">  <span class="p">[</span> <span class="n">Chromosome</span><span class="p">(</span><span class="n">create_chromosome</span><span class="p">(</span><span class="n">chromosome_size</span><span class="p">))</span> <span class="k">for</span> <span class="n">_</span> <span class="k">in</span> <span class="mi">1</span><span class="p">:</span><span class="n">size</span> <span class="p">]</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Ce qui donne:</p>
 
@@ -196,12 +192,12 @@ fonctionnent avec des <code>Chromosome</code>s. Par exemple, pour créer la popu
  Chromosome([1,1,1,1,1,0,0,1,1,1,1,0,0,1,0,1,1,1,1,0])
 </code></pre>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <p>À demain.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/'>Un algorithme génétique en Julia &ndash; partie 17</a></li><li><a href='/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/'>Un algorithme génétique en Julia &ndash; partie 16</a></li><li><a href='/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/'>Un algorithme génétique en Julia &ndash; partie 15</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2014/06/04/un-algorithme-genetique-en-julia-partie-17/">Un algorithme génétique en Julia - partie 17</a></li><li><a href="/blog/2014/06/03/un-algorithme-genetique-en-julia-partie-16/">Un algorithme génétique en Julia - partie 16</a></li><li><a href="/blog/2014/06/02/un-algorithme-genetique-en-julia-partie-15/">Un algorithme génétique en Julia - partie 15</a></li></ul></section>
+
 </div>
 
 
@@ -275,6 +271,10 @@ fonctionnent avec des <code>Chromosome</code>s. Par exemple, pour créer la popu
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a>
       </li>
     
@@ -288,10 +288,6 @@ fonctionnent avec des <code>Chromosome</code>s. Par exemple, pour créer la popu
     
       <li class="post">
         <a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a>
       </li>
     
   </ul>
@@ -367,7 +363,12 @@ fonctionnent avec des <code>Chromosome</code>s. Par exemple, pour créer la popu
   </script>
 
 
-
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
 
 </body>

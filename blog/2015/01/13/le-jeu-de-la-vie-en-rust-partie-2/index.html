@@ -9,8 +9,8 @@
   <meta name="author" content="Xavier Nayrac">
 
   
-  <meta name="description" content="Niveau : facile Tests unitaires avec Rust Je vais ajouter des tests unitaires au code du dernier article. Il s&#8217;agissait
-simplement d&#8217;une &hellip;">
+  <meta name="description" content="Niveau : facile Tests unitaires avec Rust Je vais ajouter des tests unitaires au code du dernier article. Il s’agissait
+simplement d’une seule &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -111,96 +111,91 @@ simplement d&#8217;une &hellip;">
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div>
+<div class="entry-content"><div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
 
+<h2 id="tests-unitaires-avec-rust">Tests unitaires avec Rust</h2>
 
-<h2>Tests unitaires avec Rust</h2>
+<p>Je vais ajouter des tests unitaires au code du dernier article. Il s’agissait
+simplement d’une seule fonction pour créer une génération aléatoire de cellule.
+Voici tout le code, l’implémentation et les tests dans le même fichier <code>src/main.rs</code>.</p>
 
-<p>Je vais ajouter des tests unitaires au code du dernier article. Il s&#8217;agissait
-simplement d&#8217;une seule fonction pour créer une génération aléatoire de cellule.
-Voici tout le code, l&#8217;implémentation et les tests dans le même fichier <code>src/main.rs</code>.</p>
-
-<figure class='code'><figcaption><span>src/main.rs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">Rng</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#[cfg(not(test))]</span>
-</span><span class='line'><span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">let</span> <span class="n">gen</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">3</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;{}&quot;</span><span class="p">,</span> <span class="n">gen</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">fn</span> <span class="n">create_generation</span><span class="p">(</span><span class="n">width</span><span class="o">:</span> <span class="k">uint</span><span class="p">,</span> <span class="n">height</span><span class="o">:</span> <span class="k">uint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">uint</span><span class="o">&gt;</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">let</span> <span class="n">size</span> <span class="o">=</span> <span class="n">width</span> <span class="o">*</span> <span class="n">height</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">let</span> <span class="k">mut</span> <span class="n">result</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">let</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">task_rng</span><span class="p">().</span><span class="n">gen_range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="m">2</span><span class="k">u</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">result</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="cp">#[cfg(test)]</span>
-</span><span class='line'><span class="k">mod</span> <span class="n">tests</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">use</span> <span class="n">super</span><span class="o">::</span><span class="n">create_generation</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cp">#[test]</span>
-</span><span class='line'>    <span class="k">fn</span> <span class="n">test_create_generation_length</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">let</span> <span class="n">result</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">4</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="m">12</span><span class="p">,</span> <span class="n">result</span><span class="p">.</span><span class="n">len</span><span class="p">());</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cp">#[test]</span>
-</span><span class='line'>    <span class="k">fn</span> <span class="n">test_create_generation_has_1_and_0</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">let</span> <span class="n">gen</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">for</span> <span class="n">i</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="n">gen</span><span class="p">.</span><span class="n">len</span><span class="p">())</span> <span class="p">{</span>
-</span><span class='line'>            <span class="k">assert</span><span class="o">!</span><span class="p">(</span><span class="n">gen</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="m">2</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>src/main.rs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+</pre></td><td class="code"><pre><code class="rust"><span class="line"><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">Rng</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#[cfg(not(test))]</span>
+</span><span class="line"><span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">    <span class="k">let</span> <span class="n">gen</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">3</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+</span><span class="line">    <span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;{}&quot;</span><span class="p">,</span> <span class="n">gen</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="k">fn</span> <span class="n">create_generation</span><span class="p">(</span><span class="n">width</span><span class="o">:</span> <span class="k">uint</span><span class="p">,</span> <span class="n">height</span><span class="o">:</span> <span class="k">uint</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Vec</span><span class="o">&lt;</span><span class="k">uint</span><span class="o">&gt;</span> <span class="p">{</span>
+</span><span class="line">    <span class="k">let</span> <span class="n">size</span> <span class="o">=</span> <span class="n">width</span> <span class="o">*</span> <span class="n">height</span><span class="p">;</span>
+</span><span class="line">    <span class="k">let</span> <span class="k">mut</span> <span class="n">result</span> <span class="o">=</span> <span class="n">Vec</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+</span><span class="line">    <span class="k">for</span> <span class="n">_</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">let</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">task_rng</span><span class="p">().</span><span class="n">gen_range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="m">2</span><span class="k">u</span><span class="p">);</span>
+</span><span class="line">        <span class="n">result</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="n">result</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#[cfg(test)]</span>
+</span><span class="line"><span class="k">mod</span> <span class="n">tests</span> <span class="p">{</span>
+</span><span class="line">    <span class="k">use</span> <span class="n">super</span><span class="o">::</span><span class="n">create_generation</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="cp">#[test]</span>
+</span><span class="line">    <span class="k">fn</span> <span class="n">test_create_generation_length</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">let</span> <span class="n">result</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">4</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+</span><span class="line">        <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="m">12</span><span class="p">,</span> <span class="n">result</span><span class="p">.</span><span class="n">len</span><span class="p">());</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="cp">#[test]</span>
+</span><span class="line">    <span class="k">fn</span> <span class="n">test_create_generation_has_1_and_0</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">        <span class="k">let</span> <span class="n">gen</span> <span class="o">=</span> <span class="n">create_generation</span><span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">);</span>
+</span><span class="line">        <span class="k">for</span> <span class="n">i</span> <span class="n">in</span> <span class="n">range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="n">gen</span><span class="p">.</span><span class="n">len</span><span class="p">())</span> <span class="p">{</span>
+</span><span class="line">            <span class="k">assert</span><span class="o">!</span><span class="p">(</span><span class="n">gen</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="m">2</span><span class="p">);</span>
+</span><span class="line">        <span class="p">}</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <!-- more -->
 
-
-<p>On lance les tests grâce à l&#8217;outil à tout faire, Cargo:</p>
+<p>On lance les tests grâce à l’outil à tout faire, Cargo:</p>
 
 <pre><code>$ cargo test
    Compiling game_of_life v0.0.1 (file:///home/xavier/code/rust/game_of_life)
@@ -216,15 +211,14 @@ test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured
 <p>Concernant le code, il se comprend assez facilement de lui-même, voici tout de même quelques
 éclaircissements:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="cp">#[cfg(not(test))]</span>
-</span><span class='line'><span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="rust"><span class="line"><span class="cp">#[cfg(not(test))]</span>
+</span><span class="line"><span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Sans cette annotation (pardon, attribut en langage Rust) <code>cargo test</code> produirait
-un avertissement assez ennuyeux, car la fonction <code>main</code> n&#8217;est pas utilisé par
+un avertissement assez ennuyeux, car la fonction <code>main</code> n’est pas utilisé par
 les tests:</p>
 
 <pre><code>$ cargo test
@@ -236,71 +230,66 @@ les tests:</p>
 /home/.../main.rs:6 }
 </code></pre>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="cp">#[cfg(test)]</span>
-</span><span class='line'><span class="k">mod</span> <span class="n">tests</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="rust"><span class="line"><span class="cp">#[cfg(test)]</span>
+</span><span class="line"><span class="k">mod</span> <span class="n">tests</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>C&#8217;est la déclaration d&#8217;un <strong>mod</strong>ule nommé <code>tests</code>, avec un attribut permettant
+<p>C’est la déclaration d’un <strong>mod</strong>ule nommé <code>tests</code>, avec un attribut permettant
 à Rust de savoir que ce qui suit concerne des tests et ne devra pas être compilé
 dans le programme final.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">use</span> <span class="n">super</span><span class="o">::</span><span class="n">create_generation</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="rust"><span class="line"><span class="k">use</span> <span class="n">super</span><span class="o">::</span><span class="n">create_generation</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>On va utiliser la fonction <code>create_generation</code>, définie dans le parent du
 module courant. <code>tests</code> est le module courant, le parent est créé automatiquement.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="cp">#[test]</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="rust"><span class="line"><span class="cp">#[test]</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>Ceci n&#8217;est pas un commentaire, vous l&#8217;avez compris, on appelle ça un attribut. C&#8217;est une sorte d&#8217;annotation.
-Ça dit à Rust que la prochaine fonction est un test et ça nous permet d&#8217;écrire des fonctions utilitaires
+<p>Ceci n’est pas un commentaire, vous l’avez compris, on appelle ça un attribut. C’est une sorte d’annotation.
+Ça dit à Rust que la prochaine fonction est un test et ça nous permet d’écrire des fonctions utilitaires
 dans le module <code>tests</code>.</p>
 
-<h2>Tests unitaires et implémentation dans le même fichier</h2>
+<h2 id="tests-unitaires-et-implmentation-dans-le-mme-fichier">Tests unitaires et implémentation dans le même fichier</h2>
 
-<p>C&#8217;est la recommendation de Rust : placer les tests unitaires dans le même fichier
-que l&#8217;implémentation. Bien sûr, les tests d&#8217;intégration ont un dossier et des
+<p>C’est la recommendation de Rust : placer les tests unitaires dans le même fichier
+que l’implémentation. Bien sûr, les tests d’intégration ont un dossier et des
 fichiers bien à eux.
-L&#8217;idée est originale même si elle ne doit pas être nouvelle. Je dis que
-l&#8217;idée n&#8217;est pas nouvelle parce que je l&#8217;ai environ deux ou trois fois par an.
-Par contre je n&#8217;y ai jamais cru suffisamment pour tenter de l&#8217;implémenter. Rust
-l&#8217;a fait et je suis très curieux de voir ce que cela va donner.</p>
+L’idée est originale même si elle ne doit pas être nouvelle. Je dis que
+l’idée n’est pas nouvelle parce que je l’ai environ deux ou trois fois par an.
+Par contre je n’y ai jamais cru suffisamment pour tenter de l’implémenter. Rust
+l’a fait et je suis très curieux de voir ce que cela va donner.</p>
 
 <p>Cette façon de faire a des avantages, comme ne pas perdre de temps à
 trouver les tests unitaires ou aider à rester <em>focus</em> sur ce qui doit être
-testé. Mais je m&#8217;interroge quand même sur ce que cela peut poser comme problèmes à l&#8217;usage.</p>
+testé. Mais je m’interroge quand même sur ce que cela peut poser comme problèmes à l’usage.</p>
 
 <p>Ma première interrogation concerne la taille des fichiers.
 Le code Rust, sans être le plus verbeux qui soit, est quand même loin de la concision.
 Un exemple simple, en Rust:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='rust'><span class='line'><span class="k">let</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">task_rng</span><span class="p">().</span><span class="n">gen_range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="m">2</span><span class="k">u</span><span class="p">);</span>
-</span><span class='line'><span class="n">result</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="rust"><span class="line"><span class="k">let</span> <span class="n">cell</span> <span class="o">=</span> <span class="n">std</span><span class="o">::</span><span class="n">rand</span><span class="o">::</span><span class="n">task_rng</span><span class="p">().</span><span class="n">gen_range</span><span class="p">(</span><span class="m">0</span><span class="k">u</span><span class="p">,</span> <span class="m">2</span><span class="k">u</span><span class="p">);</span>
+</span><span class="line"><span class="n">result</span><span class="p">.</span><span class="n">push</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Le même en Ruby:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">result</span> <span class="o">&lt;&lt;</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Je ne serais pas étonné de trouver des fichiers Rust avec 200 lignes de code
-d&#8217;implémentation (je vois ça régulièrement en Ruby).
+d’implémentation (je vois ça régulièrement en Ruby).
 Et si on respecte la <a href="http://martinfowler.com/bliki/TestPyramid.html">pyramide des tests</a> on se retrouve
-vite avec 3 ou 4 tests par fonction, d&#8217;où des fichiers assez imposants,
-d&#8217;un bon millier de lignes.
+vite avec 3 ou 4 tests par fonction, d’où des fichiers assez imposants,
+d’un bon millier de lignes.
 En fouillant un peu dans le code de Rust, par exemple le fichier <a href="https://github.com/rust-lang/rust/blob/master/src/libserialize/json.rs">json.rs</a>,
 on peut voir que je suis encore loin de la réalité (presque 4000 lignes).</p>
 
@@ -309,16 +298,16 @@ un fichier en plusieurs autres, plus petits. Dans quelle mesure ce type de
 «couplage» entre test et implémentation va faciliter, ou au contraire compliquer,
 cette tâche ?</p>
 
-<p>Bref, je trouve l&#8217;idée très séduisante en théorie, et j&#8217;attend de voir si sa mise
-en pratique fonctionne. Il y a encore d&#8217;autres choses à dire sur les tests avec
-Rust, et j&#8217;y reviendrais certainement dans un prochain article.</p>
+<p>Bref, je trouve l’idée très séduisante en théorie, et j’attend de voir si sa mise
+en pratique fonctionne. Il y a encore d’autres choses à dire sur les tests avec
+Rust, et j’y reviendrais certainement dans un prochain article.</p>
 
-<p>N&#8217;oubliez pas que votre opinion m&#8217;intéresse, alors si vous pensez quelque chose
+<p>N’oubliez pas que votre opinion m’intéresse, alors si vous pensez quelque chose
 de ces tests unitaires à même le code, laissez donc un commentaire.</p>
 
 <p>À bientôt.</p>
 
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2015/01/22/je-ne-vais-pas-terminer-le-jeu-de-la-vie-en-rust/'>Je ne vais pas terminer le jeu de la vie en Rust</a></li><li><a href='/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/'>Le jeu de la vie en Rust &ndash; partie 1</a></li><li><a href='/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/'>Le jeu de la vie en Haskell &ndash; partie 4</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2015/01/22/je-ne-vais-pas-terminer-le-jeu-de-la-vie-en-rust/">Je ne vais pas terminer le jeu de la vie en Rust</a></li><li><a href="/blog/2015/01/04/le-jeu-de-la-vie-en-rust-partie-1/">Le jeu de la vie en Rust - partie 1</a></li><li><a href="/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/">Le jeu de la vie en Haskell - partie 4</a></li></ul></section>
 </div>
 
 
@@ -392,6 +381,10 @@ de ces tests unitaires à même le code, laissez donc un commentaire.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a>
       </li>
     
@@ -405,10 +398,6 @@ de ces tests unitaires à même le code, laissez donc un commentaire.</p>
     
       <li class="post">
         <a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a>
       </li>
     
   </ul>
@@ -484,7 +473,12 @@ de ces tests unitaires à même le code, laissez donc un commentaire.</p>
   </script>
 
 
-
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
 
 </body>

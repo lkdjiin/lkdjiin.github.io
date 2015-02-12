@@ -10,7 +10,7 @@
 
   
   <meta name="description" content="Niveau : intermédiaire Deuxième partie du jeu de la vie en Ruby/Opal.rb, on va calculer le prochain
-état d&#8217;une cellule, et extraire un &hellip;">
+état d’une cellule, et extraire un voisinage de &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -111,403 +111,382 @@
   </header>
 
 
-<div class="entry-content"><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div>
-
+<div class="entry-content"><div class="level-tag level-tag-2">Niveau : <span>intermédiaire</span></div>
 
 <p>Deuxième partie du jeu de la vie en Ruby/Opal.rb, on va calculer le prochain
-état d&#8217;une cellule, et extraire un <em>voisinage</em> de cellules d&#8217;une génération.
-Après l&#8217;avoir écrit en Javascript, j&#8217;avoue que cette partie est quelque peu
+état d’une cellule, et extraire un <em>voisinage</em> de cellules d’une génération.
+Après l’avoir écrit en Javascript, j’avoue que cette partie est quelque peu
 ennuyeuse à reproduire. Je vais montrer du code, mais il y aura peu
-d&#8217;explications, la logique étant la même qu&#8217;en Javascript (quoiqu&#8217;à base de
+d’explications, la logique étant la même qu’en Javascript (quoiqu’à base de
 classes cette fois-ci).</p>
 
 <!-- more -->
 
-
 <p>Premier test et première classe pour spécifier une API.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood.rb&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">describe</span> <span class="no">Neighborhood</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:alive</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;#next_state&#39;</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns 1 when it will be alive&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alive</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood.rb&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">describe</span> <span class="no">Neighborhood</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:alive</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">describe</span> <span class="s1">&#39;#next_state&#39;</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">it</span> <span class="s1">&#39;returns 1 when it will be alive&#39;</span> <span class="k">do</span>
+</span><span class="line">      <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alive</span><span class="p">)</span>
+</span><span class="line">      <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-
-
-<figure class='code'><figcaption><span>app/neighborhood.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Neighborhood</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@cells</span> <span class="o">=</span> <span class="n">cells</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">next_state</span>
-</span><span class='line'>    <span class="mi">1</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Neighborhood</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@cells</span> <span class="o">=</span> <span class="n">cells</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">next_state</span>
+</span><span class="line">    <span class="mi">1</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p><code>next_state</code> doit être capable de determiner que la cellule va mourrir.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood.rb&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">describe</span> <span class="no">Neighborhood</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:alive</span><span class="p">)</span>       <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:dead</span><span class="p">)</span>        <span class="p">{</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:dead2</span><span class="p">)</span>       <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span> <span class="p">}</span>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:dead3</span><span class="p">)</span>       <span class="p">{</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;#next_state&#39;</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns 0 when it will be dead&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="o">[</span><span class="n">dead</span><span class="p">,</span> <span class="n">dead2</span><span class="p">,</span> <span class="n">dead3</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">cells</span><span class="o">|</span>
-</span><span class='line'>        <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">0</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood.rb&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">describe</span> <span class="no">Neighborhood</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:alive</span><span class="p">)</span>       <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:dead</span><span class="p">)</span>        <span class="p">{</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:dead2</span><span class="p">)</span>       <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span> <span class="p">}</span>
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:dead3</span><span class="p">)</span>       <span class="p">{</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">describe</span> <span class="s1">&#39;#next_state&#39;</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">it</span> <span class="s1">&#39;returns 0 when it will be dead&#39;</span> <span class="k">do</span>
+</span><span class="line">      <span class="o">[</span><span class="n">dead</span><span class="p">,</span> <span class="n">dead2</span><span class="p">,</span> <span class="n">dead3</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">cells</span><span class="o">|</span>
+</span><span class="line">        <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+</span><span class="line">        <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">0</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-
-
-<figure class='code'><figcaption><span>app/neighborhood.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Neighborhood</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="no">ALIVE</span> <span class="o">=</span> <span class="mi">3</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@sum</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">next_state</span>
-</span><span class='line'>    <span class="vi">@sum</span> <span class="o">==</span> <span class="no">ALIVE</span> <span class="p">?</span> <span class="mi">1</span> <span class="p">:</span> <span class="mi">0</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Neighborhood</span>
+</span><span class="line">
+</span><span class="line">  <span class="no">ALIVE</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@sum</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">next_state</span>
+</span><span class="line">    <span class="vi">@sum</span> <span class="o">==</span> <span class="no">ALIVE</span> <span class="p">?</span> <span class="mi">1</span> <span class="p">:</span> <span class="mi">0</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Quand le nombre de cellules vivantes du voisinage est 4, le prochain état de
-la cellule est le même que l&#8217;état actuel.</p>
+la cellule est le même que l’état actuel.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood.rb&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">describe</span> <span class="no">Neighborhood</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:status_quo1</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:status_quo2</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;#next_state&#39;</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">it</span> <span class="s1">&#39;returns old state in other cases&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">status_quo1</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">0</span>
-</span><span class='line'>
-</span><span class='line'>      <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">status_quo2</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood.rb&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">describe</span> <span class="no">Neighborhood</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:status_quo1</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:status_quo2</span><span class="p">)</span> <span class="p">{</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span> <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">describe</span> <span class="s1">&#39;#next_state&#39;</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">it</span> <span class="s1">&#39;returns old state in other cases&#39;</span> <span class="k">do</span>
+</span><span class="line">      <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">status_quo1</span><span class="p">)</span>
+</span><span class="line">      <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">0</span>
+</span><span class="line">
+</span><span class="line">      <span class="n">neighborhood</span> <span class="o">=</span> <span class="no">Neighborhood</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">status_quo2</span><span class="p">)</span>
+</span><span class="line">      <span class="n">expect</span><span class="p">(</span><span class="n">neighborhood</span><span class="o">.</span><span class="n">next_state</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">1</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Neighborhood</span>
+</span><span class="line">
+</span><span class="line">  <span class="no">ALIVE</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span class="line">  <span class="no">STATUS_QUO</span> <span class="o">=</span> <span class="mi">4</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@subject</span> <span class="o">=</span> <span class="n">cells</span><span class="o">[</span><span class="mi">4</span><span class="o">]</span>
+</span><span class="line">    <span class="vi">@sum</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">next_state</span>
+</span><span class="line">    <span class="k">case</span> <span class="vi">@sum</span>
+</span><span class="line">    <span class="k">when</span> <span class="no">ALIVE</span> <span class="k">then</span> <span class="mi">1</span>
+</span><span class="line">    <span class="k">when</span> <span class="no">STATUS_QUO</span> <span class="k">then</span> <span class="vi">@subject</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="mi">0</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
+<h2 id="extraire-un-voisinage-de-cellules">Extraire un voisinage de cellules</h2>
 
-
-<figure class='code'><figcaption><span>app/neighborhood.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Neighborhood</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="no">ALIVE</span> <span class="o">=</span> <span class="mi">3</span>
-</span><span class='line'>  <span class="no">STATUS_QUO</span> <span class="o">=</span> <span class="mi">4</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">cells</span><span class="p">)</span>
-</span><span class='line'>    <span class="vi">@subject</span> <span class="o">=</span> <span class="n">cells</span><span class="o">[</span><span class="mi">4</span><span class="o">]</span>
-</span><span class='line'>    <span class="vi">@sum</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:+</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">next_state</span>
-</span><span class='line'>    <span class="k">case</span> <span class="vi">@sum</span>
-</span><span class='line'>    <span class="k">when</span> <span class="no">ALIVE</span> <span class="k">then</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="k">when</span> <span class="no">STATUS_QUO</span> <span class="k">then</span> <span class="vi">@subject</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="mi">0</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Extraire un voisinage de cellules</h2>
-
-<p>Il faut pouvoir extraire un ensemble de 9 cellules (le <em>voisinage</em>) d&#8217;une
+<p>Il faut pouvoir extraire un ensemble de 9 cellules (le <em>voisinage</em>) d’une
 génération.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood_extractor.rb&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">describe</span> <span class="no">NeighborhoodExtractor</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:generation</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="o">[</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>    <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">it</span> <span class="s1">&#39;returns 9 cells&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
-</span><span class='line'>    <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">9</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;./app/neighborhood_extractor.rb&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">describe</span> <span class="no">NeighborhoodExtractor</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:generation</span><span class="p">)</span> <span class="k">do</span>
+</span><span class="line">    <span class="o">[</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">it</span> <span class="s1">&#39;returns 9 cells&#39;</span> <span class="k">do</span>
+</span><span class="line">    <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span>
+</span><span class="line">    <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line">    <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="mi">9</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
+<p>Ça, c’est juste la mise en train.</p>
 
-<p>Ça, c&#8217;est juste la mise en train.</p>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">cells</span>
+</span><span class="line">    <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<figure class='code'><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">cells</span>
-</span><span class='line'>    <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>Là, on commence à faire quelque chose d’utile.</p>
 
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">describe</span> <span class="no">NeighborhoodExtractor</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">let</span><span class="p">(</span><span class="ss">:generation</span><span class="p">)</span> <span class="k">do</span>
+</span><span class="line">    <span class="o">[</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">describe</span> <span class="s1">&#39;inner position&#39;</span> <span class="k">do</span>
+</span><span class="line">    <span class="n">specify</span> <span class="s1">&#39;x=1 y=1&#39;</span> <span class="k">do</span>
+</span><span class="line">      <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">      <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<p>Là, on commence à faire quelque chose d&#8217;utile.</p>
-
-<figure class='code'><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">describe</span> <span class="no">NeighborhoodExtractor</span> <span class="k">do</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">let</span><span class="p">(</span><span class="ss">:generation</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="o">[</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>    <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;inner position&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">specify</span> <span class="s1">&#39;x=1 y=1&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">cells</span>
-</span><span class='line'>    <span class="o">[</span>
-</span><span class='line'>      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">-</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>    <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">cells</span>
+</span><span class="line">    <span class="o">[</span>
+</span><span class="line">      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">-</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">    <span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Maintenant, voyons le problème des bordures.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">describe</span> <span class="s1">&#39;borders&#39;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">specify</span> <span class="s1">&#39;x=1 y=0&#39;</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="n">describe</span> <span class="s1">&#39;borders&#39;</span> <span class="k">do</span>
+</span><span class="line">    <span class="n">specify</span> <span class="s1">&#39;x=1 y=0&#39;</span> <span class="k">do</span>
+</span><span class="line">      <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">      <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-<p>La manière dont le test échoue est intéressante. C&#8217;est du à la façon dont Ruby
+<p>La manière dont le test échoue est intéressante. C’est du à la façon dont Ruby
 gère les indexs négatifs pour les tableaux, ceux-cis sont parfaitement
 autorisés.</p>
 
@@ -515,248 +494,236 @@ autorisés.</p>
 
   1) NeighborhoodExtractor borders x=1 y=0
      Failure/Error: expect(extractor.cells).to eq [0, 0, 0, 0, 1, 0, 1, 0, 1]
-
+       
        expected: [0, 0, 0, 0, 1, 0, 1, 0, 1]
             got: [0, 1, 1, 0, 1, 0, 1, 0, 1]
-
+       
        (compared using ==)
      # ./spec/neighborhood_extractor_spec.rb:29:in `block (3 levels) in &lt;top (required)&gt;'
 </code></pre>
 
-<figure class='code'><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">cells</span>
-</span><span class='line'>    <span class="o">[</span>
-</span><span class='line'>      <span class="o">*</span><span class="n">row1</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
-</span><span class='line'>    <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">row1</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="mi">0</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">-</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">cells</span>
+</span><span class="line">    <span class="o">[</span>
+</span><span class="line">      <span class="o">*</span><span class="n">row1</span><span class="p">,</span>
+</span><span class="line">      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">      <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span><span class="p">,</span>
+</span><span class="line">    <span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">row1</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">-</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Testons avec la bordure du bas.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">specify</span> <span class="s1">&#39;x=2 y=2&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">specify</span> <span class="s1">&#39;x=2 y=2&#39;</span> <span class="k">do</span>
+</span><span class="line">  <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">  <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-
-
-<figure class='code'><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">row3</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">row3</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="n">generation</span><span class="o">[</span><span class="n">y</span><span class="o">+</span><span class="mi">1</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Un peu de refactoring.</p>
 
-<figure class='code'><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">cells</span>
-</span><span class='line'>    <span class="o">[</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">group_of_tree</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">row</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="n">generation</span><span class="o">[</span><span class="n">row</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">cells</span>
+</span><span class="line">    <span class="o">[</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">group_of_tree</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">row</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="n">generation</span><span class="o">[</span><span class="n">row</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>La bordure de gauche.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">specify</span> <span class="s1">&#39;x=0 y=1&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">specify</span> <span class="s1">&#39;x=0 y=1&#39;</span> <span class="k">do</span>
+</span><span class="line">  <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-
-
-
-<figure class='code'><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">cells</span>
-</span><span class='line'>    <span class="o">[</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">group_of_tree</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">row</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span>
-</span><span class='line'>        <span class="o">[</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">row</span><span class="o">][</span><span class="n">x</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="n">generation</span><span class="o">[</span><span class="n">row</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">cells</span>
+</span><span class="line">    <span class="o">[</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">group_of_tree</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">row</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">row</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class="line">        <span class="o">[</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">row</span><span class="o">][</span><span class="n">x</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
+</span><span class="line">      <span class="k">else</span>
+</span><span class="line">        <span class="n">generation</span><span class="o">[</span><span class="n">row</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
 <p>Et enfin celle de droite.</p>
 
-<figure class='code'><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">specify</span> <span class="s1">&#39;x=3 y=1&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/neighborhood_extractor_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">specify</span> <span class="s1">&#39;x=3 y=1&#39;</span> <span class="k">do</span>
+</span><span class="line">  <span class="n">extractor</span> <span class="o">=</span> <span class="no">NeighborhoodExtractor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">generation</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="n">expect</span><span class="p">(</span><span class="n">extractor</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
+<p>Ok, c’est moche, mais ça fonctionne.</p>
 
-<p>Ok, c&#8217;est moche, mais ça fonctionne.</p>
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">cells</span>
+</span><span class="line">    <span class="o">[</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">group_of_tree</span><span class="p">(</span><span class="n">row_index</span><span class="p">)</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">row_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">row_index</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span>
+</span><span class="line">      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class="line">        <span class="o">[</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">row_index</span><span class="o">][</span><span class="n">x</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
+</span><span class="line">      <span class="k">elsif</span> <span class="n">x</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span>
+</span><span class="line">        <span class="o">[*</span><span class="n">generation</span><span class="o">[</span><span class="n">row_index</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">]</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
+</span><span class="line">      <span class="k">else</span>
+</span><span class="line">        <span class="n">generation</span><span class="o">[</span><span class="n">row_index</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<figure class='code'><figcaption><span>app/neighborhood_extractor.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">NeighborhoodExtractor</span> <span class="o">&lt;</span> <span class="no">Struct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:generation</span><span class="p">,</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">cells</span>
-</span><span class='line'>    <span class="o">[</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="o">*</span><span class="n">group_of_tree</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">]</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">group_of_tree</span><span class="p">(</span><span class="n">row_index</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">row_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">row_index</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">size</span>
-</span><span class='line'>      <span class="o">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>      <span class="k">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span>
-</span><span class='line'>        <span class="o">[</span> <span class="mi">0</span><span class="p">,</span> <span class="o">*</span><span class="n">generation</span><span class="o">[</span><span class="n">row_index</span><span class="o">][</span><span class="n">x</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span> <span class="o">]</span>
-</span><span class='line'>      <span class="k">elsif</span> <span class="n">x</span> <span class="o">==</span> <span class="n">generation</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mi">1</span>
-</span><span class='line'>        <span class="o">[*</span><span class="n">generation</span><span class="o">[</span><span class="n">row_index</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">]</span><span class="p">,</span> <span class="mi">0</span><span class="o">]</span>
-</span><span class='line'>      <span class="k">else</span>
-</span><span class='line'>        <span class="n">generation</span><span class="o">[</span><span class="n">row_index</span><span class="o">][</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="o">.</span><span class="n">.x</span><span class="o">+</span><span class="mi">1</span><span class="o">]</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Je devrais <em>refactorer</em> ce code, mais comme je sais qu&#8217;il va bientôt changer
-(quand on va supprimer les bordures de la surface de jeu) je me dis qu&#8217;on verra
+<p>Je devrais <em>refactorer</em> ce code, mais comme je sais qu’il va bientôt changer
+(quand on va supprimer les bordures de la surface de jeu) je me dis qu’on verra
 bien à ce moment là.</p>
 
 <p>À noter pour finir que je ne teste pas les cas des cellules de coin. Nous avons
@@ -766,10 +733,9 @@ hauts et bas fonctionnent, alors les coins fonctionnent aussi.</p>
 <p>La prochaine fois on verra la classe <code>Game</code> et une petite astuce pour faire
 un <code>sleep</code> like en Opal.rb.</p>
 
-<script id='fb33k8u'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
+<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
-
-<p><section><h1>Articles connexes</h1><ul><li><a href='/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/'>Le jeu de la vie en ruby (opal) &ndash; partie 3</a></li><li><a href='/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/'>Le jeu de la vie en ruby (opal) &ndash; partie 1</a></li><li><a href='/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/'>Le jeu de la vie dans sept langages différents</a></li></ul></section></p>
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2014/10/29/le-jeu-de-la-vie-en-ruby-opal-partie-3/">Le jeu de la vie en ruby (opal) - partie 3</a></li><li><a href="/blog/2014/10/25/le-jeu-de-la-vie-en-ruby-opal-partie-1/">Le jeu de la vie en ruby (opal) - partie 1</a></li><li><a href="/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">Le jeu de la vie dans sept langages différents</a></li></ul></section>
 </div>
 
 
@@ -843,6 +809,10 @@ un <code>sleep</code> like en Opal.rb.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a>
       </li>
     
@@ -856,10 +826,6 @@ un <code>sleep</code> like en Opal.rb.</p>
     
       <li class="post">
         <a href="/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a>
       </li>
     
   </ul>
@@ -935,7 +901,12 @@ un <code>sleep</code> like en Opal.rb.</p>
   </script>
 
 
-
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
 
 </body>
