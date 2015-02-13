@@ -119,7 +119,8 @@ V \times 2 &= R \times I \times 2 \\
 24 &= 24
 {% endmath %}
 
-Et bien sûr, ça fonctionne aussi avec la division:
+Et bien sûr, ça fonctionne aussi avec la division, tant qu'on divise par
+autre chose que zéro:
 
 {% math %}
 V / 2 &= R \times I / 2 \\
@@ -132,7 +133,7 @@ Un truc intéressant à propos de la division
 -------------------------------------------
 
 Puisqu'on parle de division, voici un truc intéressant à propos de la division.
-Quand on divise un nombre (n'importe lequel) par lui-même on obtient toujours 1.
+Quand on divise un nombre (n'importe lequel à part zéro) par lui-même on obtient toujours 1.
 Toujours. Par exemple:
 
 {% math %}
