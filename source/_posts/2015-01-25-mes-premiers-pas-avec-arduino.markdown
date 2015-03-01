@@ -3,7 +3,7 @@ layout: post
 title: "Mes premiers pas avec Arduino"
 date: 2015-01-25 18:04
 comments: true
-categories: [matériel, arduino]
+categories: [matériel, arduino, débutant]
 ---
 
 {% level 1 %}
