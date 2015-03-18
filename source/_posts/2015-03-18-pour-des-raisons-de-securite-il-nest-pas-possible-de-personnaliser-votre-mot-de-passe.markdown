@@ -7,7 +7,7 @@ categories: [opinion, mot de passe]
 ---
 
 J'ai coutume de râler sur twitter contre les sites web qui font n'importe quoi
-avec les mots de passes&nbsp;: limitation du nombre de caractères, impossibilité
+avec les mots de passe&nbsp;: limitation du nombre de caractères, impossibilité
 d'utiliser certains caractères, mail de confirmation avec mot de passe en
 clair, etc. Mais avec le site de ma mutuelle, on atteint un niveau
 d'incompétence hors catégorie.
