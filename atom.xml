@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-03-22T16:06:29+01:00</updated>
+  <updated>2015-03-28T14:21:22+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,147 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Pas de logique dans les vues Rails]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/"/>
+    <updated>2015-03-28T09:10:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails</id>
+    <content type="html"><![CDATA[<div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
+
+<p>Je dis souvent aux personnes avec qui je travaille qu’introduire de la logique
+dans les vues est une mauvaise idée.</p>
+
+<p>Pour moi, une vue n’est pas vraiment un fichier comme les autres. C’est avant tout du
+HTML, donc normalement rien de bien compliqué. Et à ce titre, j’ai rencontré beaucoup de
+développeurs, certains par ailleurs très doués, pour qui les vues sont
+inconsciemment les poubelles d’un projet Rails. Leurs modèles et leurs
+contrôleurs sont très bien écrits, concis, testés, refactorés, parfois même
+documentés ;) Mais leurs vues sont incompréhensibles et compliquées à outrance.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/complexity_512.jpg" /></p>
+
+<!-- more -->
+
+<p>Pourquoi ? J’explique ça surtout par le nombre de langages qui peuvent se
+côtoyer au sein d’une vue :</p>
+
+<ul>
+  <li>HTML</li>
+  <li>le langage de templating</li>
+  <li>Ruby</li>
+  <li>parfois même du Javascript</li>
+</ul>
+
+<p>C’est déjà assez dur de produire du bon code avec un seul
+langage, alors imaginez s’il faut jongler entre trois ou quatre !</p>
+
+<p>Je me suis aperçu aussi que lorsque je dis <strong>pas de logique dans les vues Rails</strong>
+de nombreux développeurs vont acquiescer. Ils seront d’accord avec moi sur le
+principe, mais ne sauront pas pour autant comment éviter d’introduire cette
+logique.</p>
+
+<p>Pour ne pas avoir à embarquer trop de code Ruby dans les vues (c’est une autre
+manière de dire «pas de logique») Rails propose pourtant une solution simple et parfaitement intégrée :
+les <em>helpers</em>. Voyons comment ça fonctionne.</p>
+
+<h2 id="avec-logique-dans-les-vues">Avec logique dans les vues</h2>
+
+<p>Prenons une vue très simple qui va lister tous les posts d’une collection
+nommée <code>@feed</code>. Nos posts contiennent uniquement un corps de texte, nommé
+<code>body</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/views/posts/index.html.erb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="erb"><span class="line"><span class="cp">&lt;%</span> <span class="vi">@feed</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;p class=&#39;post-body&#39;&gt;</span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">body</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;/p&gt;</span>
+</span><span class="line"><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Maintenant votre produit évolue : les posts peuvent contenir une photo, ou non.
+Et le texte d’un post <strong>avec</strong> photo doit s’afficher différemment du texte d’un
+post <strong>sans</strong> photo. On pourrait faire comme ça :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/views/posts/index.html.erb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="erb"><span class="line"><span class="cp">&lt;%</span> <span class="vi">@feed</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;p class=&#39;post-body </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">post_type</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">body</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;/p&gt;</span>
+</span><span class="line"><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">photo?</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">image_tag</span> <span class="s2">&quot;photos/</span><span class="si">#{</span><span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="ss">alt</span><span class="p">:</span> <span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
+</span><span class="line">        <span class="ss">class</span><span class="p">:</span> <span class="s1">&#39;photo&#39;</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Bien sûr ça va fonctionner. Et cette première version n’est pas si mauvaise.
+Mais le fait d’avoir mis un simple <code>if</code> ici fait que
+la semaine prochaine nous aurons un second <code>if</code>, dans 15 jours on ajoutera un
+<code>else</code>, puis dans 1 mois un <code>if</code> imbriqué avec une condition complexe, etc.</p>
+
+<h2 id="sans-logique-dans-les-vues">Sans logique dans les vues</h2>
+
+<p>Qu’est-ce qu’on veut vraiment, du point de vue de la vue ?
+On veut afficher une photo. C’est tout :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/views/posts/index.html.erb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="erb"><span class="line"><span class="cp">&lt;%</span> <span class="vi">@feed</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;p class=&#39;post-body </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">post_type</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">body</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;/p&gt;</span>
+</span><span class="line"><span class="x">  </span><span class="cp">&lt;%=</span> <span class="n">photo_for</span><span class="p">(</span><span class="n">post</span><span class="p">)</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On a pas besoin d’en écrire plus dans la vue. Le code Ruby, la logique, ira
+dans un <em>helper</em> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/helpers/posts_helper.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">postsHelper</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">photo_for</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">photo?</span>
+</span><span class="line">      <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;photos/</span><span class="si">#{</span><span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">      <span class="n">image_tag</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="ss">alt</span><span class="p">:</span> <span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="ss">class</span><span class="p">:</span> <span class="s1">&#39;photo&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Quand le post n’est pas une photo, la méthode <code>photo_for</code> renverra <code>nil</code>, valeur
+qui ne sera pas affichée dans la vue.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/">Une machine de Turing en Ruby - Le parser</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/23/mieux-utiliser-le-programme-gem/">Mieux utiliser le programme gem</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ce que je n'ai pas fait cette semaine]]></title>
@@ -52,7 +193,7 @@ si j’ai donné ;)</ins></p>
 
 <p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/18/pour-des-raisons-de-securite-il-nest-pas-possible-de-personnaliser-votre-mot-de-passe/">Pour des raisons de sécurité il n&#8217;est pas possible de personnaliser votre mot de passe</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/17/dis-digital-encore-une-fois/">Dis digital encore une fois</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/18/pour-des-raisons-de-securite-il-nest-pas-possible-de-personnaliser-votre-mot-de-passe/">Pour des raisons de sécurité il n&#8217;est pas possible de personnaliser votre mot de passe</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -719,7 +860,7 @@ Et de rattraper plusieurs heures de sèche du collège en quelques minutes ;)</p
 
 <p>À plus tard.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -861,7 +1002,7 @@ toute à droite du tableau (<code>@index == @symbols.size - 1</code>).</p>
 <p>Dans tous les cas, il faut déplacer la tête de lecture d’un cran à droite
 (<code>@index += 1</code>).</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/">Une machine de Turing en Ruby - Le parser</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/">Une machine de Turing en Ruby - Le parser</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1206,7 +1347,7 @@ avec un ruban qui contient des données…</p>
 
 <p>À plus tard.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1734,7 +1875,7 @@ par <code>ino init</code>. C’est le fichier <code>src/sketch.ino</code>.</p>
 produire de la musique, etc. Parce que j’en ai un peu marre d’allumer des
 LEDs ;)</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2173,7 +2314,7 @@ de refactorer.</p>
 <p>Bref, la méthode <code>Object#tap</code> me semble poser plus de problèmes qu’elle n’en
 résout. Vous avez un avis sur le sujet ?</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -3324,149 +3465,6 @@ que je m’y mettrais.</p>
 <script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/">Le jeu de la vie en Haskell - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/">Le jeu de la vie en Haskell - partie 3</a></li><li><a href="http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/">Le jeu de la vie en Haskell - partie 2</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ruby 2.2 - Une sélection des nouvelles méthodes]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes/"/>
-    <updated>2014-12-27T15:40:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/12/27/ruby-2-dot-2-une-selection-des-nouvelles-methodes</id>
-    <content type="html"><![CDATA[<div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
-
-<p>Ça y est, noël est passé et Ruby 2.2.0 est arrivé.
-Je vous ai préparé une sélection (personnelle) des nouveautés de cette dernière
-version de Ruby.</p>
-
-<p>Vous pouvez voir la liste exhaustive des changements ici:
-<a href="https://github.com/ruby/ruby/blob/v2_2_0/NEWS">ruby v2.2.0 NEWS</a></p>
-
-<!-- more -->
-
-<h2 id="les-symboles-pour-les-cls-dun-hash-peuvent-tre-entre-guillemets">Les symboles pour les clés d’un Hash peuvent être entre guillemets</h2>
-
-<p>Ce qui autorise l’utilisation des espaces.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">hash</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;foo bar&quot;</span><span class="p">:</span> <span class="s2">&quot;baz&quot;</span> <span class="p">}</span>
-</span><span class="line"><span class="go">=&gt; {:&quot;foo bar&quot;=&gt;&quot;baz&quot;}</span>
-</span><span class="line">
-</span><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">hash</span><span class="o">[</span><span class="ss">:&quot;foo bar&quot;</span><span class="o">]</span>
-</span><span class="line"><span class="go">=&gt; &quot;baz&quot;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="enumerableslicewhen">Enumerable#slice_when</h2>
-
-<p>J’ai le tableau suivant:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">21</span><span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Je veux rassembler ensemble les séries de nombre qui se suivent. Autrement dit,
-je veux obtenir ceci:</p>
-
-<pre><code>[ [1, 2], [4], [9, 10, 11, 12], [15, 16], [19, 20, 21] ]
-</code></pre>
-
-<p><code>slice_when</code> me fait ça facilement:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="n">a</span><span class="o">.</span><span class="n">slice_when</span> <span class="p">{</span><span class="o">|</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">|</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span> <span class="o">!=</span> <span class="n">j</span> <span class="p">}</span><span class="o">.</span><span class="n">to_a</span>
-</span><span class="line"><span class="go">=&gt; [[1, 2], [4], [9, 10, 11, 12], [15, 16], [19, 20, 21]]</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="max-et-min-peuvent-retourner-plusieurs-valeurs">max et min peuvent retourner plusieurs valeurs</h2>
-
-<p>Plutôt que d’obtenir la seule et unique valeur limite, on peut maintenant
-obtenir une liste.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="o">].</span><span class="n">max</span>
-</span><span class="line"><span class="go">=&gt; 3</span>
-</span><span class="line">
-</span><span class="line"><span class="gp">&gt;&gt; </span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="o">].</span><span class="n">max</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span><span class="line"><span class="go">=&gt; [3, 2]</span>
-</span><span class="line">
-</span><span class="line"><span class="gp">&gt;&gt; </span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="o">].</span><span class="n">max</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
-</span><span class="line"><span class="go">=&gt; [3, 3]</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="methodcurry">Method#curry</h2>
-
-<p>Tout d’abord, voici une méthode <code>add</code>, qui prend 3 arguments:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
-</span><span class="line">  <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">+</span> <span class="n">c</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>On <em>currifie</em> cette méthode:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">proc</span> <span class="o">=</span> <span class="nb">self</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="ss">:add</span><span class="p">)</span><span class="o">.</span><span class="n">curry</span>
-</span><span class="line"><span class="go">=&gt; #&lt;Proc:0x8f945a4 (lambda)&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Je peux maintenant l’appliquer partiellement:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">proc</span> <span class="o">=</span> <span class="nb">proc</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-</span><span class="line"><span class="go">=&gt; #&lt;Proc:0x9407dfc (lambda)&gt;</span>
-</span><span class="line">
-</span><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">proc</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-</span><span class="line"><span class="go">=&gt; 6</span>
-</span><span class="line">
-</span><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">proc</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-</span><span class="line"><span class="go">=&gt; 13</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="la-lib-etc">La lib Etc</h2>
-
-<p>Pour finir, voici deux nouvelles méthodes de la bibliothèque standard <code>Etc</code>.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">require</span> <span class="s1">&#39;etc&#39;</span>
-</span><span class="line">
-</span><span class="line"><span class="gp">&gt;&gt; </span><span class="no">Etc</span><span class="o">.</span><span class="n">uname</span>
-</span><span class="line"><span class="go">=&gt; {:sysname=&gt;&quot;Linux&quot;, ... }</span>
-</span><span class="line">
-</span><span class="line"><span class="gp">&gt;&gt; </span><span class="no">Etc</span><span class="o">.</span><span class="n">nprocessors</span>
-</span><span class="line"><span class="go">=&gt; 2</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/">Une machine de Turing en Ruby - Le parser</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/23/mieux-utiliser-le-programme-gem/">Mieux utiliser le programme gem</a></li></ul></section>
 ]]></content>
   </entry>
   

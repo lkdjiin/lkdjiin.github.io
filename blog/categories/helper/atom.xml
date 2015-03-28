@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : helper | Xavier Nayrac]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/helper/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2015-03-28T14:21:22+01:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Pas de logique dans les vues Rails]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/"/>
+    <updated>2015-03-28T09:10:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Je dis souvent aux personnes avec qui je travaille qu’introduire de la logique
+dans les vues est une mauvaise idée.</p>
+
+<p>Pour moi, une vue n’est pas vraiment un fichier comme les autres. C’est avant tout du
+HTML, donc normalement rien de bien compliqué. Et à ce titre, j’ai rencontré beaucoup de
+développeurs, certains par ailleurs très doués, pour qui les vues sont
+inconsciemment les poubelles d’un projet Rails. Leurs modèles et leurs
+contrôleurs sont très bien écrits, concis, testés, refactorés, parfois même
+documentés ;) Mais leurs vues sont incompréhensibles et compliquées à outrance.</p>
+
+<p><img class="center" src="/images/complexity_512.jpg"></p>
+
+<!-- more -->
+
+<p>Pourquoi ? J’explique ça surtout par le nombre de langages qui peuvent se
+côtoyer au sein d’une vue :</p>
+
+<ul>
+  <li>HTML</li>
+  <li>le langage de templating</li>
+  <li>Ruby</li>
+  <li>parfois même du Javascript</li>
+</ul>
+
+<p>C’est déjà assez dur de produire du bon code avec un seul
+langage, alors imaginez s’il faut jongler entre trois ou quatre !</p>
+
+<p>Je me suis aperçu aussi que lorsque je dis <strong>pas de logique dans les vues Rails</strong>
+de nombreux développeurs vont acquiescer. Ils seront d’accord avec moi sur le
+principe, mais ne sauront pas pour autant comment éviter d’introduire cette
+logique.</p>
+
+<p>Pour ne pas avoir à embarquer trop de code Ruby dans les vues (c’est une autre
+manière de dire «pas de logique») Rails propose pourtant une solution simple et parfaitement intégrée :
+les <em>helpers</em>. Voyons comment ça fonctionne.</p>
+
+<h2 id="avec-logique-dans-les-vues">Avec logique dans les vues</h2>
+
+<p>Prenons une vue très simple qui va lister tous les posts d’une collection
+nommée <code>@feed</code>. Nos posts contiennent uniquement un corps de texte, nommé
+<code>body</code> :</p>
+
+<p><code>erb app/views/posts/index.html.erb
+&lt;% @feed.each do |post| %&gt;
+  &lt;p class='post-body'&gt;
+    &lt;%= post.body %&gt;
+  &lt;/p&gt;
+&lt;% end %&gt;
+</code></p>
+
+<p>Maintenant votre produit évolue : les posts peuvent contenir une photo, ou non.
+Et le texte d’un post <strong>avec</strong> photo doit s’afficher différemment du texte d’un
+post <strong>sans</strong> photo. On pourrait faire comme ça :</p>
+
+<p><code>erb app/views/posts/index.html.erb
+&lt;% @feed.each do |post| %&gt;
+  &lt;p class='post-body &lt;%= post.post_type %&gt;'&gt;
+    &lt;%= post.body %&gt;
+  &lt;/p&gt;
+  &lt;% if post.photo? %&gt;
+    &lt;%= image_tag "photos/#{post.filename}", alt: post.filename,
+        class: 'photo' %&gt;
+  &lt;% end %&gt;
+&lt;% end %&gt;
+</code></p>
+
+<p>Bien sûr ça va fonctionner. Et cette première version n’est pas si mauvaise.
+Mais le fait d’avoir mis un simple <code>if</code> ici fait que
+la semaine prochaine nous aurons un second <code>if</code>, dans 15 jours on ajoutera un
+<code>else</code>, puis dans 1 mois un <code>if</code> imbriqué avec une condition complexe, etc.</p>
+
+<h2 id="sans-logique-dans-les-vues">Sans logique dans les vues</h2>
+
+<p>Qu’est-ce qu’on veut vraiment, du point de vue de la vue ?
+On veut afficher une photo. C’est tout :</p>
+
+<p><code>erb app/views/posts/index.html.erb
+&lt;% @feed.each do |post| %&gt;
+  &lt;p class='post-body &lt;%= post.post_type %&gt;'&gt;
+    &lt;%= post.body %&gt;
+  &lt;/p&gt;
+  &lt;%= photo_for(post) %&gt;
+&lt;% end %&gt;
+</code></p>
+
+<p>On a pas besoin d’en écrire plus dans la vue. Le code Ruby, la logique, ira
+dans un <em>helper</em> :</p>
+
+<p>``` ruby app/helpers/posts_helper.rb
+module postsHelper</p>
+
+<p>def photo_for(post)
+    if post.photo?
+      path = “photos/#{post.filename}”
+      image_tag(path, alt: post.filename, class: ‘photo’)
+    end
+  end</p>
+
+<p>end
+```</p>
+
+<p>Quand le post n’est pas une photo, la méthode <code>photo_for</code> renverra <code>nil</code>, valeur
+qui ne sera pas affichée dans la vue.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Pas de logique dans les vues Rails - Xavier Nayrac</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile Je dis souvent aux personnes avec qui je travaille qu’introduire de la logique
+dans les vues est une mauvaise idée. Pour moi, une vue &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Xavier Nayrac" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><a href="/">
+  <img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c?s=140"/>
+</a>
+<h1><a href="/">Xavier Nayrac</a></h1>
+<h2>
+  Rubyiste accro au TDD, serial blogger, heureux utilisateur de Vim,
+  accordéonniste.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+</h2>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"><img src="/images/rss.png"></img>
+    RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lkdjiin.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Pas de logique dans les vues Rails</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-28T09:10:00+01:00" pubdate data-updated="true">28 mars 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
+
+<p>Je dis souvent aux personnes avec qui je travaille qu’introduire de la logique
+dans les vues est une mauvaise idée.</p>
+
+<p>Pour moi, une vue n’est pas vraiment un fichier comme les autres. C’est avant tout du
+HTML, donc normalement rien de bien compliqué. Et à ce titre, j’ai rencontré beaucoup de
+développeurs, certains par ailleurs très doués, pour qui les vues sont
+inconsciemment les poubelles d’un projet Rails. Leurs modèles et leurs
+contrôleurs sont très bien écrits, concis, testés, refactorés, parfois même
+documentés ;) Mais leurs vues sont incompréhensibles et compliquées à outrance.</p>
+
+<p><img class="center" src="/images/complexity_512.jpg" /></p>
+
+<!-- more -->
+
+<p>Pourquoi ? J’explique ça surtout par le nombre de langages qui peuvent se
+côtoyer au sein d’une vue :</p>
+
+<ul>
+  <li>HTML</li>
+  <li>le langage de templating</li>
+  <li>Ruby</li>
+  <li>parfois même du Javascript</li>
+</ul>
+
+<p>C’est déjà assez dur de produire du bon code avec un seul
+langage, alors imaginez s’il faut jongler entre trois ou quatre !</p>
+
+<p>Je me suis aperçu aussi que lorsque je dis <strong>pas de logique dans les vues Rails</strong>
+de nombreux développeurs vont acquiescer. Ils seront d’accord avec moi sur le
+principe, mais ne sauront pas pour autant comment éviter d’introduire cette
+logique.</p>
+
+<p>Pour ne pas avoir à embarquer trop de code Ruby dans les vues (c’est une autre
+manière de dire «pas de logique») Rails propose pourtant une solution simple et parfaitement intégrée :
+les <em>helpers</em>. Voyons comment ça fonctionne.</p>
+
+<h2 id="avec-logique-dans-les-vues">Avec logique dans les vues</h2>
+
+<p>Prenons une vue très simple qui va lister tous les posts d’une collection
+nommée <code>@feed</code>. Nos posts contiennent uniquement un corps de texte, nommé
+<code>body</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/views/posts/index.html.erb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="erb"><span class="line"><span class="cp">&lt;%</span> <span class="vi">@feed</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;p class=&#39;post-body&#39;&gt;</span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">body</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;/p&gt;</span>
+</span><span class="line"><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Maintenant votre produit évolue : les posts peuvent contenir une photo, ou non.
+Et le texte d’un post <strong>avec</strong> photo doit s’afficher différemment du texte d’un
+post <strong>sans</strong> photo. On pourrait faire comme ça :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/views/posts/index.html.erb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="erb"><span class="line"><span class="cp">&lt;%</span> <span class="vi">@feed</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;p class=&#39;post-body </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">post_type</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">body</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;/p&gt;</span>
+</span><span class="line"><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">photo?</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">image_tag</span> <span class="s2">&quot;photos/</span><span class="si">#{</span><span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="ss">alt</span><span class="p">:</span> <span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
+</span><span class="line">        <span class="ss">class</span><span class="p">:</span> <span class="s1">&#39;photo&#39;</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  </span><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Bien sûr ça va fonctionner. Et cette première version n’est pas si mauvaise.
+Mais le fait d’avoir mis un simple <code>if</code> ici fait que
+la semaine prochaine nous aurons un second <code>if</code>, dans 15 jours on ajoutera un
+<code>else</code>, puis dans 1 mois un <code>if</code> imbriqué avec une condition complexe, etc.</p>
+
+<h2 id="sans-logique-dans-les-vues">Sans logique dans les vues</h2>
+
+<p>Qu’est-ce qu’on veut vraiment, du point de vue de la vue ?
+On veut afficher une photo. C’est tout :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/views/posts/index.html.erb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="erb"><span class="line"><span class="cp">&lt;%</span> <span class="vi">@feed</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;p class=&#39;post-body </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">post_type</span> <span class="cp">%&gt;</span><span class="x">&#39;&gt;</span>
+</span><span class="line"><span class="x">    </span><span class="cp">&lt;%=</span> <span class="n">post</span><span class="o">.</span><span class="n">body</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="x">  &lt;/p&gt;</span>
+</span><span class="line"><span class="x">  </span><span class="cp">&lt;%=</span> <span class="n">photo_for</span><span class="p">(</span><span class="n">post</span><span class="p">)</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span><span class="line"><span class="cp">&lt;%</span> <span class="k">end</span> <span class="cp">%&gt;</span><span class="x"></span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On a pas besoin d’en écrire plus dans la vue. Le code Ruby, la logique, ira
+dans un <em>helper</em> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>app/helpers/posts_helper.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">postsHelper</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">photo_for</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">photo?</span>
+</span><span class="line">      <span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;photos/</span><span class="si">#{</span><span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">      <span class="n">image_tag</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="ss">alt</span><span class="p">:</span> <span class="n">post</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="ss">class</span><span class="p">:</span> <span class="s1">&#39;photo&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Quand le post n’est pas une photo, la méthode <code>photo_for</code> renverra <code>nil</code>, valeur
+qui ne sera pas affichée dans la vue.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li><li><a href="/blog/2015/02/02/une-machine-de-turing-en-ruby-le-parser/">Une machine de Turing en Ruby - Le parser</a></li><li><a href="/blog/2015/01/23/mieux-utiliser-le-programme-gem/">Mieux utiliser le programme gem</a></li></ul></section>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-28T09:10:00+01:00" pubdate data-updated="true">28 mars 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/helper/'>helper</a>, <a class='category' href='/blog/categories/rails/'>rails</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>, <a class='category' href='/blog/categories/vue/'>vue</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/" title="Previous Post: Ce que je n'ai pas fait cette semaine">&laquo; Ce que je n'ai pas fait cette semaine</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Commentaires</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n'ai pas fait cette semaine</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/18/pour-des-raisons-de-securite-il-nest-pas-possible-de-personnaliser-votre-mot-de-passe/">Pour des raisons de sécurité il n'est pas possible de personnaliser votre mot de passe</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/17/dis-digital-encore-une-fois/">Dis digital encore une fois</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Sur Twitter</h1>
+  <a class="twitter-timeline"  href="https://twitter.com/lkdjiin" data-widget-id="554992534532136960">Tweets de @lkdjiin</a>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+          
+</section>
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+
+
+</body>
+</html>
