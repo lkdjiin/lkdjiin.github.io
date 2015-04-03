@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : éléctronique | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/electronique/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-04-02T12:17:10+02:00</updated>
+  <updated>2015-04-03T19:06:35+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,176 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Arduino : Un métronome tap tempo]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/"/>
+    <updated>2015-04-03T18:35:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>J’aimerais fabriquer un métronome <em>tap tempo</em> avec l’arduino. C’est un projet à
+moyen terme, et
+comme souvent, il pourrait être bénéfique de diviser le projet en plusieurs
+petites parties. Donc, avant de tenter la programmation du tap tempo, je vais
+faire un métronome tout simple avec juste une LED.</p>
+
+<h2 id="les-composants">Les composants</h2>
+
+<p>Coté composants, on a seulement besoin d’une LED et d’une résistance (220 Ohms
+ça ira).  Reliez la platine d’essai à l’arduino en branchant le 5 volt et la
+terre puis reliez la LED au port numérique 2 :</p>
+
+<p><img class="center" src="/images/metronome1_bb.png"></p>
+
+<!-- more -->
+
+<h2 id="un-premier-code-naif">Un premier code naif</h2>
+
+<p>Le premier jet est tout simple :</p>
+
+<p>``` cpp
+const byte LED_PIN = 2;</p>
+
+<p>void setup() {
+  pinMode(LED_PIN, OUTPUT);
+}</p>
+
+<p>void loop() {
+  digitalWrite(LED_PIN, HIGH);
+  delay(100);
+  digitalWrite(LED_PIN, LOW);
+  delay(600);
+}
+```</p>
+
+<p>Une fois compilé et envoyé dans l’arduino, la LED clignote toutes les 0,7
+secondes. Nous avons un métronome visuel !</p>
+
+<p>C’est simple, non ? Mouais. Trop simple, bien sûr. Ce code est problèmatique
+pour la fabrication d’un métronome. Alors afin de comprendre pourquoi, parlons
+un peu du tempo.</p>
+
+<h2 id="le-tempo">Le tempo</h2>
+
+<p>Pour le musicien, le tempo est une suite de clics (ou tic, ou tac, ou poum, ou
+tchak, ou clac). Ces clics, qui ont la particularité de se succéder à
+intervalles réguliers, marquent la <strong>vitesse</strong> de la musique.</p>
+
+<p>Le tempo (donc la vitesse de la musique) est indiqué à l’aide d’un nombre qui
+représente le nombre de clics par minute.
+Par exemple un tempo de 60 nous indique qu’il doit y avoir 60 clics dans une minute,
+ou plus simplement 1 clic par seconde. Autre exemple, un tempo de 120 indique
+120 clics par minute, soit 2 clics par seconde, ou encore 1 clic toutes les
+0,5 secondes.</p>
+
+<p>Voyons maintenant quelques formules. Pour trouver la fréquence F, en secondes,
+il faut diviser 60 par le tempo (noté T) :</p>
+
+<p>$$
+\begin{align}
+
+F = 60 / T
+\end{align}
+$$</p>
+
+<p>Pour obtenir cette fréquence en millisecondes, il faut multiplier le résultat
+précédent par 1000 ;</p>
+
+<p>$$
+\begin{align}
+
+F = 60 / T \times 1000
+\end{align}
+$$</p>
+
+<p>Le code arduino ci-dessus envoit un clic toutes les 0,7 secondes, à quel
+tempo cela correspond-t-il ? Pour calculer le tempo, on divise 60 par la
+fréquence en secondes :</p>
+
+<p>$$
+\begin{align}
+
+T = 60 / F
+\end{align}
+$$</p>
+
+<p>Donc, une fréquence de 0,7 seconde, comme celle de notre code arduino,
+correspond à un tempo de \(60 / 0,7\). Soit à peu près 86.</p>
+
+<h2 id="le-problme-de-la-boucle-de-code">Le problème de la boucle de code</h2>
+
+<p>Maintenant on peut regarder le souci de ce code :</p>
+
+<p><code>cpp
+void loop() {
+  digitalWrite(LED_PIN, HIGH);
+  delay(100);
+  digitalWrite(LED_PIN, LOW);
+  delay(600);
+}
+</code></p>
+
+<p>Partons de l’hypothèse qu’en plus des deux <code>digitalWrite</code>, mon code doit
+aussi :</p>
+
+<ul>
+  <li>calculer l’intensité de la LED suivant le beat.</li>
+  <li>jouer du son et ausssi calculer son intensité suivant le beat.</li>
+  <li>s’occuper de plusieurs LEDs, peut-être avec des motifs.</li>
+  <li>écrire le tempo et d’autres informations sur un écran LCD.</li>
+  <li>tout ce que vous pourrez imaginer d’autre ;)</li>
+</ul>
+
+<p>Imaginons maintenant que l’ensemble de ces actions prennent 30 millisecondes
+(0,03 secondes). Dans ce cas le tempo sera de \(60 / 0,73\). Soit à peu près 82.
+Donc plus du tout la valeur de 86 qu’on avait trouvé tout à l’heure. <strong>Notre
+métronome n’est pas fiable !</strong> Il ne vaut rien, arg.</p>
+
+<p><img class="center" src="/images/facepalm.jpg"></p>
+
+<h2 id="faire-et-ne-pas-attendre">Faire et ne pas attendre</h2>
+
+<p>Pour remédier à ce problème nous demandons à l’arduino d’allumer la LED toutes
+les 700 millisecondes et non pas <strong>d’attendre</strong> pendant 700 millisecondes.
+Pour cela nous gardons une trace du dernier moment où la LED a été allumée
+(dans <code>oldTime</code>) et nous comparons cette trace avec le moment présent
+(<code>currentTime</code>) à chaque passage dans la boucle :</p>
+
+<p>``` cpp
+const byte LED_PIN = 2;
+// In millisecondes.
+const long FREQUENCY = 700;</p>
+
+<p>long currentTime;
+long oldTime;</p>
+
+<p>void setup() {
+  pinMode(LED_PIN, OUTPUT);
+  currentTime = 0;
+  oldTime = 0;
+}</p>
+
+<p>void loop() {
+  currentTime = millis();</p>
+
+<p>if(currentTime &gt;= oldTime + FREQUENCY) {
+    digitalWrite(LED_PIN, HIGH);
+    delay(100);
+    digitalWrite(LED_PIN, LOW);
+    oldTime = currentTime;
+  }
+}
+```</p>
+
+<p>Ça fonctionne pour notre métronome, bien qu’il reste encore 100 millisecondes
+gachées (avec <code>delay(100);</code>). La prochaine fois on verra un moyen de se
+débarasser de cette attente inutile.</p>
+
+<p></p>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un jeu de Simon - Étape 1]]></title>

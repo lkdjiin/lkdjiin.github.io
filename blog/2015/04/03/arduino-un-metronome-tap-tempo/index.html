@@ -1,0 +1,488 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Arduino : Un métronome tap tempo - Xavier Nayrac</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile J’aimerais fabriquer un métronome tap tempo avec l’arduino. C’est un projet à
+moyen terme, et
+comme souvent, il pourrait être &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Xavier Nayrac" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><a href="/">
+  <img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c?s=140"/>
+</a>
+<h1><a href="/">Xavier Nayrac</a></h1>
+<h2>
+  Rubyiste accro au TDD, serial blogger, heureux utilisateur de Vim,
+  accordéonniste.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+</h2>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"><img src="/images/rss.png"></img>
+    RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lkdjiin.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Arduino : Un métronome tap tempo</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-03T18:35:00+02:00" pubdate data-updated="true">3 avril 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
+
+<p>J’aimerais fabriquer un métronome <em>tap tempo</em> avec l’arduino. C’est un projet à
+moyen terme, et
+comme souvent, il pourrait être bénéfique de diviser le projet en plusieurs
+petites parties. Donc, avant de tenter la programmation du tap tempo, je vais
+faire un métronome tout simple avec juste une LED.</p>
+
+<h2 id="les-composants">Les composants</h2>
+
+<p>Coté composants, on a seulement besoin d’une LED et d’une résistance (220 Ohms
+ça ira).  Reliez la platine d’essai à l’arduino en branchant le 5 volt et la
+terre puis reliez la LED au port numérique 2 :</p>
+
+<p><img class="center" src="/images/metronome1_bb.png" /></p>
+
+<!-- more -->
+
+<h2 id="un-premier-code-naif">Un premier code naif</h2>
+
+<p>Le premier jet est tout simple :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="k">const</span> <span class="n">byte</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">setup</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">600</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Une fois compilé et envoyé dans l’arduino, la LED clignote toutes les 0,7
+secondes. Nous avons un métronome visuel !</p>
+
+<p>C’est simple, non ? Mouais. Trop simple, bien sûr. Ce code est problèmatique
+pour la fabrication d’un métronome. Alors afin de comprendre pourquoi, parlons
+un peu du tempo.</p>
+
+<h2 id="le-tempo">Le tempo</h2>
+
+<p>Pour le musicien, le tempo est une suite de clics (ou tic, ou tac, ou poum, ou
+tchak, ou clac). Ces clics, qui ont la particularité de se succéder à
+intervalles réguliers, marquent la <strong>vitesse</strong> de la musique.</p>
+
+<p>Le tempo (donc la vitesse de la musique) est indiqué à l’aide d’un nombre qui
+représente le nombre de clics par minute.
+Par exemple un tempo de 60 nous indique qu’il doit y avoir 60 clics dans une minute,
+ou plus simplement 1 clic par seconde. Autre exemple, un tempo de 120 indique
+120 clics par minute, soit 2 clics par seconde, ou encore 1 clic toutes les
+0,5 secondes.</p>
+
+<p>Voyons maintenant quelques formules. Pour trouver la fréquence F, en secondes,
+il faut diviser 60 par le tempo (noté T) :</p>
+
+<script type="math/tex; mode=display">
+\begin{align}
+
+F = 60 / T
+\end{align}
+</script>
+
+<p>Pour obtenir cette fréquence en millisecondes, il faut multiplier le résultat
+précédent par 1000 ;</p>
+
+<script type="math/tex; mode=display">
+\begin{align}
+
+F = 60 / T \times 1000
+\end{align}
+</script>
+
+<p>Le code arduino ci-dessus envoit un clic toutes les 0,7 secondes, à quel
+tempo cela correspond-t-il ? Pour calculer le tempo, on divise 60 par la
+fréquence en secondes :</p>
+
+<script type="math/tex; mode=display">
+\begin{align}
+
+T = 60 / F
+\end{align}
+</script>
+
+<p>Donc, une fréquence de 0,7 seconde, comme celle de notre code arduino,
+correspond à un tempo de \(60 / 0,7\). Soit à peu près 86.</p>
+
+<h2 id="le-problme-de-la-boucle-de-code">Le problème de la boucle de code</h2>
+
+<p>Maintenant on peut regarder le souci de ce code :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">600</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Partons de l’hypothèse qu’en plus des deux <code>digitalWrite</code>, mon code doit
+aussi :</p>
+
+<ul>
+  <li>calculer l’intensité de la LED suivant le beat.</li>
+  <li>jouer du son et ausssi calculer son intensité suivant le beat.</li>
+  <li>s’occuper de plusieurs LEDs, peut-être avec des motifs.</li>
+  <li>écrire le tempo et d’autres informations sur un écran LCD.</li>
+  <li>tout ce que vous pourrez imaginer d’autre ;)</li>
+</ul>
+
+<p>Imaginons maintenant que l’ensemble de ces actions prennent 30 millisecondes
+(0,03 secondes). Dans ce cas le tempo sera de \(60 / 0,73\). Soit à peu près 82.
+Donc plus du tout la valeur de 86 qu’on avait trouvé tout à l’heure. <strong>Notre
+métronome n’est pas fiable !</strong> Il ne vaut rien, arg.</p>
+
+<p><img class="center" src="/images/facepalm.jpg" /></p>
+
+<h2 id="faire-et-ne-pas-attendre">Faire et ne pas attendre</h2>
+
+<p>Pour remédier à ce problème nous demandons à l’arduino d’allumer la LED toutes
+les 700 millisecondes et non pas <strong>d’attendre</strong> pendant 700 millisecondes.
+Pour cela nous gardons une trace du dernier moment où la LED a été allumée
+(dans <code>oldTime</code>) et nous comparons cette trace avec le moment présent
+(<code>currentTime</code>) à chaque passage dans la boucle :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="k">const</span> <span class="n">byte</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class="line"><span class="c1">// In millisecondes.</span>
+</span><span class="line"><span class="k">const</span> <span class="kt">long</span> <span class="n">FREQUENCY</span> <span class="o">=</span> <span class="mi">700</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">long</span> <span class="n">currentTime</span><span class="p">;</span>
+</span><span class="line"><span class="kt">long</span> <span class="n">oldTime</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">setup</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+</span><span class="line">  <span class="n">currentTime</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="n">oldTime</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">currentTime</span> <span class="o">=</span> <span class="n">millis</span><span class="p">();</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">currentTime</span> <span class="o">&gt;=</span> <span class="n">oldTime</span> <span class="o">+</span> <span class="n">FREQUENCY</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
+</span><span class="line">    <span class="n">oldTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Ça fonctionne pour notre métronome, bien qu’il reste encore 100 millisecondes
+gachées (avec <code>delay(100);</code>). La prochaine fois on verra un moyen de se
+débarasser de cette attente inutile.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li><li><a href="/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li></ul></section>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-03T18:35:00+02:00" pubdate data-updated="true">3 avril 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/arduino/'>arduino</a>, <a class='category' href='/blog/categories/debutant/'>débutant</a>, <a class='category' href='/blog/categories/musique/'>musique</a>, <a class='category' href='/blog/categories/electronique/'>éléctronique</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/02/vim-pourquoi-les-touches-hjkl/" title="Previous Post: Vim : Pourquoi les touches HJKL ?">&laquo; Vim : Pourquoi les touches HJKL ?</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Commentaires</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/02/vim-pourquoi-les-touches-hjkl/">Vim : Pourquoi les touches HJKL ?</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n'ai pas fait cette semaine - 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n'ai pas fait cette semaine</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Sur Twitter</h1>
+  <a class="twitter-timeline"  href="https://twitter.com/lkdjiin" data-widget-id="554992534532136960">Tweets de @lkdjiin</a>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+          
+</section>
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+
+
+</body>
+</html>

@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-04-02T12:17:10+02:00</updated>
+  <updated>2015-04-03T19:06:35+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,214 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Arduino : Un métronome tap tempo]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/"/>
+    <updated>2015-04-03T18:35:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo</id>
+    <content type="html"><![CDATA[<div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
+
+<p>J’aimerais fabriquer un métronome <em>tap tempo</em> avec l’arduino. C’est un projet à
+moyen terme, et
+comme souvent, il pourrait être bénéfique de diviser le projet en plusieurs
+petites parties. Donc, avant de tenter la programmation du tap tempo, je vais
+faire un métronome tout simple avec juste une LED.</p>
+
+<h2 id="les-composants">Les composants</h2>
+
+<p>Coté composants, on a seulement besoin d’une LED et d’une résistance (220 Ohms
+ça ira).  Reliez la platine d’essai à l’arduino en branchant le 5 volt et la
+terre puis reliez la LED au port numérique 2 :</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/metronome1_bb.png" /></p>
+
+<!-- more -->
+
+<h2 id="un-premier-code-naif">Un premier code naif</h2>
+
+<p>Le premier jet est tout simple :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="k">const</span> <span class="n">byte</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">setup</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">600</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Une fois compilé et envoyé dans l’arduino, la LED clignote toutes les 0,7
+secondes. Nous avons un métronome visuel !</p>
+
+<p>C’est simple, non ? Mouais. Trop simple, bien sûr. Ce code est problèmatique
+pour la fabrication d’un métronome. Alors afin de comprendre pourquoi, parlons
+un peu du tempo.</p>
+
+<h2 id="le-tempo">Le tempo</h2>
+
+<p>Pour le musicien, le tempo est une suite de clics (ou tic, ou tac, ou poum, ou
+tchak, ou clac). Ces clics, qui ont la particularité de se succéder à
+intervalles réguliers, marquent la <strong>vitesse</strong> de la musique.</p>
+
+<p>Le tempo (donc la vitesse de la musique) est indiqué à l’aide d’un nombre qui
+représente le nombre de clics par minute.
+Par exemple un tempo de 60 nous indique qu’il doit y avoir 60 clics dans une minute,
+ou plus simplement 1 clic par seconde. Autre exemple, un tempo de 120 indique
+120 clics par minute, soit 2 clics par seconde, ou encore 1 clic toutes les
+0,5 secondes.</p>
+
+<p>Voyons maintenant quelques formules. Pour trouver la fréquence F, en secondes,
+il faut diviser 60 par le tempo (noté T) :</p>
+
+<script type="math/tex; mode=display">
+\begin{align}
+
+F = 60 / T
+\end{align}
+</script>
+
+<p>Pour obtenir cette fréquence en millisecondes, il faut multiplier le résultat
+précédent par 1000 ;</p>
+
+<script type="math/tex; mode=display">
+\begin{align}
+
+F = 60 / T \times 1000
+\end{align}
+</script>
+
+<p>Le code arduino ci-dessus envoit un clic toutes les 0,7 secondes, à quel
+tempo cela correspond-t-il ? Pour calculer le tempo, on divise 60 par la
+fréquence en secondes :</p>
+
+<script type="math/tex; mode=display">
+\begin{align}
+
+T = 60 / F
+\end{align}
+</script>
+
+<p>Donc, une fréquence de 0,7 seconde, comme celle de notre code arduino,
+correspond à un tempo de \(60 / 0,7\). Soit à peu près 86.</p>
+
+<h2 id="le-problme-de-la-boucle-de-code">Le problème de la boucle de code</h2>
+
+<p>Maintenant on peut regarder le souci de ce code :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
+</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">600</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Partons de l’hypothèse qu’en plus des deux <code>digitalWrite</code>, mon code doit
+aussi :</p>
+
+<ul>
+  <li>calculer l’intensité de la LED suivant le beat.</li>
+  <li>jouer du son et ausssi calculer son intensité suivant le beat.</li>
+  <li>s’occuper de plusieurs LEDs, peut-être avec des motifs.</li>
+  <li>écrire le tempo et d’autres informations sur un écran LCD.</li>
+  <li>tout ce que vous pourrez imaginer d’autre ;)</li>
+</ul>
+
+<p>Imaginons maintenant que l’ensemble de ces actions prennent 30 millisecondes
+(0,03 secondes). Dans ce cas le tempo sera de \(60 / 0,73\). Soit à peu près 82.
+Donc plus du tout la valeur de 86 qu’on avait trouvé tout à l’heure. <strong>Notre
+métronome n’est pas fiable !</strong> Il ne vaut rien, arg.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/facepalm.jpg" /></p>
+
+<h2 id="faire-et-ne-pas-attendre">Faire et ne pas attendre</h2>
+
+<p>Pour remédier à ce problème nous demandons à l’arduino d’allumer la LED toutes
+les 700 millisecondes et non pas <strong>d’attendre</strong> pendant 700 millisecondes.
+Pour cela nous gardons une trace du dernier moment où la LED a été allumée
+(dans <code>oldTime</code>) et nous comparons cette trace avec le moment présent
+(<code>currentTime</code>) à chaque passage dans la boucle :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="k">const</span> <span class="n">byte</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+</span><span class="line"><span class="c1">// In millisecondes.</span>
+</span><span class="line"><span class="k">const</span> <span class="kt">long</span> <span class="n">FREQUENCY</span> <span class="o">=</span> <span class="mi">700</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">long</span> <span class="n">currentTime</span><span class="p">;</span>
+</span><span class="line"><span class="kt">long</span> <span class="n">oldTime</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">setup</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+</span><span class="line">  <span class="n">currentTime</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">  <span class="n">oldTime</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">currentTime</span> <span class="o">=</span> <span class="n">millis</span><span class="p">();</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">currentTime</span> <span class="o">&gt;=</span> <span class="n">oldTime</span> <span class="o">+</span> <span class="n">FREQUENCY</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
+</span><span class="line">    <span class="n">oldTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Ça fonctionne pour notre métronome, bien qu’il reste encore 100 millisecondes
+gachées (avec <code>delay(100);</code>). La prochaine fois on verra un moyen de se
+débarasser de cette attente inutile.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li></ul></section>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Vim : Pourquoi les touches HJKL ?]]></title>
@@ -276,7 +484,7 @@ si j’ai donné ;)</ins></p>
 
 <p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n&#8217;ai pas fait cette semaine - 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/18/pour-des-raisons-de-securite-il-nest-pas-possible-de-personnaliser-votre-mot-de-passe/">Pour des raisons de sécurité il n&#8217;est pas possible de personnaliser votre mot de passe</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n&#8217;ai pas fait cette semaine - 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -538,7 +746,7 @@ Et ensuite il faudra en faire un objet autonome, sans Arduino.</p>
 
 <p>Alors à la prochaine.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li><li><a href="http://lkdjiin.github.io/blog/2014/01/16/racket-trouves-mon-nombre-partie-4/">Racket: Trouves mon nombre - partie 4</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -943,7 +1151,7 @@ Et de rattraper plusieurs heures de sèche du collège en quelques minutes ;)</p
 
 <p>À plus tard.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/02/vim-pourquoi-les-touches-hjkl/">Vim : Pourquoi les touches HJKL ?</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1958,7 +2166,7 @@ par <code>ino init</code>. C’est le fichier <code>src/sketch.ino</code>.</p>
 produire de la musique, etc. Parce que j’en ai un peu marre d’allumer des
 LEDs ;)</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/02/vim-pourquoi-les-touches-hjkl/">Vim : Pourquoi les touches HJKL ?</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2937,262 +3145,6 @@ mesure de me dégager un peu de temps pour continuer à étudier ce langage.</p>
 <script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/">Le jeu de la vie en Haskell - partie 3</a></li><li><a href="http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/">Le jeu de la vie en Haskell - partie 2</a></li><li><a href="http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/">Le jeu de la vie en Haskell - partie 1</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Le jeu de la vie en Haskell - partie 3]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3/"/>
-    <updated>2014-12-30T08:53:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-3</id>
-    <content type="html"><![CDATA[<div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
-
-<p>Cette fois je met des tests en place avec <a href="https://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide">HUnit</a>.
-Pour cela, je dois d’abord <em>modulariser</em> mon code. J’ai donc déplacé le code
-de la dernière fois, sans la fonction <code>main</code>, dans un fichier <code>GameOfLife</code>.
-Puis j’ai ajouté la déclaration du module.</p>
-
-<!-- more -->
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>GameOfLife.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="kr">module</span> <span class="nn">GameOfLife</span>
-</span><span class="line"><span class="p">(</span> <span class="nf">randomCells</span>
-</span><span class="line"><span class="p">,</span> <span class="nf">createGeneration</span>
-</span><span class="line"><span class="p">,</span> <span class="nf">formatGeneration</span>
-</span><span class="line"><span class="p">)</span> <span class="kr">where</span>
-</span><span class="line">
-</span><span class="line"><span class="kr">import</span> <span class="nn">System.Random</span>
-</span><span class="line"><span class="kr">import</span> <span class="nn">Data.List</span>
-</span><span class="line">
-</span><span class="line"><span class="kr">type</span> <span class="kt">Cell</span> <span class="ow">=</span> <span class="kt">Int</span>
-</span><span class="line"><span class="kr">type</span> <span class="kt">Generation</span> <span class="ow">=</span> <span class="p">[[</span><span class="kt">Cell</span><span class="p">]]</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">randomCells</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="kt">StdGen</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span>
-</span><span class="line"><span class="nf">randomCells</span> <span class="n">size</span> <span class="n">gen</span> <span class="ow">=</span> <span class="n">take</span> <span class="n">size</span> <span class="o">$</span> <span class="n">randomRs</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="n">gen</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">createGeneration</span> <span class="ow">::</span> <span class="kt">Int</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Generation</span>
-</span><span class="line"><span class="nf">createGeneration</span> <span class="kr">_</span> <span class="kt">[]</span> <span class="ow">=</span> <span class="kt">[]</span>
-</span><span class="line"><span class="nf">createGeneration</span> <span class="n">width</span> <span class="n">cells</span> <span class="ow">=</span> <span class="n">line</span><span class="kt">:</span><span class="p">(</span><span class="n">createGeneration</span> <span class="n">width</span> <span class="n">rest</span><span class="p">)</span>
-</span><span class="line">  <span class="kr">where</span> <span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">rest</span><span class="p">)</span> <span class="ow">=</span> <span class="n">splitAt</span> <span class="n">width</span> <span class="n">cells</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">formatGeneration</span> <span class="ow">::</span> <span class="kt">Generation</span> <span class="ow">-&gt;</span> <span class="kt">String</span>
-</span><span class="line"><span class="nf">formatGeneration</span> <span class="n">generation</span> <span class="ow">=</span>
-</span><span class="line">  <span class="kr">let</span> <span class="n">rows</span> <span class="ow">=</span> <span class="n">intercalate</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span> <span class="p">(</span><span class="n">map</span> <span class="p">(</span><span class="n">concatMap</span> <span class="n">show</span><span class="p">)</span> <span class="n">generation</span><span class="p">)</span>
-</span><span class="line">   <span class="kr">in</span> <span class="n">map</span> <span class="n">replaceChar</span> <span class="n">rows</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">replaceChar</span> <span class="ow">::</span> <span class="kt">Char</span> <span class="ow">-&gt;</span> <span class="kt">Char</span>
-</span><span class="line"><span class="nf">replaceChar</span> <span class="sc">&#39;1&#39;</span> <span class="ow">=</span> <span class="sc">&#39;@&#39;</span>
-</span><span class="line"><span class="nf">replaceChar</span> <span class="sc">&#39;0&#39;</span> <span class="ow">=</span> <span class="sc">&#39; &#39;</span>
-</span><span class="line"><span class="nf">replaceChar</span> <span class="n">c</span>   <span class="ow">=</span> <span class="n">c</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Une déclaration de module, c’est ça:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="kr">module</span> <span class="nn">GameOfLife</span>
-</span><span class="line"><span class="p">(</span> <span class="nf">randomCells</span>
-</span><span class="line"><span class="p">,</span> <span class="nf">createGeneration</span>
-</span><span class="line"><span class="p">,</span> <span class="nf">formatGeneration</span>
-</span><span class="line"><span class="p">)</span> <span class="kr">where</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>J’ai donc un module <code>GameOfLife</code> qui exporte, pour l’instant, trois fonctions.
-Au fait, le code est sur <a href="https://github.com/lkdjiin/game-of-life-haskell">Github</a>.</p>
-
-<p>Je vais créer la fonction <code>cellNextState</code>, je la rajoute donc dans les exports
-du module:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="kr">module</span> <span class="nn">GameOfLife</span>
-</span><span class="line"><span class="p">(</span> <span class="nf">randomCells</span>
-</span><span class="line"><span class="p">,</span> <span class="nf">createGeneration</span>
-</span><span class="line"><span class="p">,</span> <span class="nf">formatGeneration</span>
-</span><span class="line"><span class="p">,</span> <span class="nf">cellNextState</span>
-</span><span class="line"><span class="p">)</span> <span class="kr">where</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Et j’en crée une version qui ne fonctionne pas ;)</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="nf">cellNextState</span> <span class="ow">::</span> <span class="kt">Cell</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Cell</span>
-</span><span class="line"><span class="nf">cellNextState</span> <span class="n">cell</span> <span class="n">neighborhood</span> <span class="ow">=</span> <span class="n">undefined</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>C’est parti pour mon premier test en Haskell. Je crée un fichier
-<code>GameOfLife_Test.hs</code>:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>GameOfLife_Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="kr">module</span> <span class="nn">GameOfLife_Test</span> <span class="kr">where</span>
-</span><span class="line">
-</span><span class="line"><span class="kr">import</span> <span class="nn">GameOfLife</span><span class="p">(</span><span class="n">cellNextState</span><span class="p">)</span>
-</span><span class="line"><span class="kr">import</span> <span class="nn">Test.HUnit</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">testCellNextState3</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
-</span><span class="line">  <span class="s">&quot;Gets live cell when neighborhood&#39;sum is 3&quot;</span> <span class="mi">1</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">0</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">main</span> <span class="ow">=</span> <span class="n">runTestTT</span> <span class="n">testCellNextState3</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>C’est du bon vieux test unitaire à l’ancienne. Je mentirais en disant que
-je trouve la syntaxe sexy.</p>
-
-<pre><code>$ runhaskell GameOfLife_Test.hs 
-### Error:                                
-Prelude.undefined
-Cases: 1  Tried: 1  Errors: 1  Failures: 0
-Counts {cases = 1, tried = 1, errors = 1, failures = 0}
-</code></pre>
-
-<p>Bon, si maintenant ma fonction renvoie 1, le test devrait passer.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="nf">cellNextState</span> <span class="n">cell</span> <span class="n">neighborhood</span> <span class="ow">=</span> <span class="mi">1</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<pre><code>$ runhaskell GameOfLife_Test.hs 
-Cases: 1  Tried: 1  Errors: 0  Failures: 0
-Counts {cases = 1, tried = 1, errors = 0, failures = 0}
-</code></pre>
-
-<p>J’aimerais bien avoir une sortie en couleur. Si il y a moyen, je n’ai pas
-encore trouvé…</p>
-
-<p>Quoiqu’il en soit, je peux tester mon code Haskell, et ça c’est cool. Je vais
-donc en finir avec <code>cellNextState</code> en faisant quelques tests de plus:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>GameOfLife_Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="kr">module</span> <span class="nn">GameOfLife_Test</span> <span class="kr">where</span>
-</span><span class="line">
-</span><span class="line"><span class="kr">import</span> <span class="nn">GameOfLife</span><span class="p">(</span><span class="n">cellNextState</span><span class="p">)</span>
-</span><span class="line"><span class="kr">import</span> <span class="nn">Test.HUnit</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">testCellNextState3</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
-</span><span class="line">  <span class="s">&quot;Gets 1 when neighborhood&#39;s sum is 3&quot;</span>
-</span><span class="line">  <span class="mi">1</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">0</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">testCellNextState4AndAlive</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
-</span><span class="line">  <span class="s">&quot;Gets 1 when neighborhood&#39;s sum is 4 and cell is alive&quot;</span>
-</span><span class="line">  <span class="mi">1</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">1</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">testCellNextState4AndDead</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
-</span><span class="line">  <span class="s">&quot;Gets 0 when neighborhood&#39;s sum is 4 and cell is dead&quot;</span>
-</span><span class="line">  <span class="mi">0</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">0</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">testCellNextState6</span> <span class="ow">=</span> <span class="kt">TestCase</span> <span class="o">$</span> <span class="n">assertEqual</span>
-</span><span class="line">  <span class="s">&quot;Gets 0 when neighborhood&#39;s sum is 6&quot;</span>
-</span><span class="line">  <span class="mi">0</span> <span class="p">(</span><span class="n">cellNextState</span> <span class="mi">1</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
-</span><span class="line">
-</span><span class="line"><span class="nf">main</span> <span class="ow">=</span> <span class="n">runTestTT</span> <span class="o">$</span> <span class="kt">TestList</span> <span class="p">[</span><span class="n">testCellNextState3</span><span class="p">,</span>
-</span><span class="line">                            <span class="n">testCellNextState4AndAlive</span><span class="p">,</span>
-</span><span class="line">                            <span class="n">testCellNextState4AndDead</span><span class="p">,</span>
-</span><span class="line">                            <span class="n">testCellNextState6</span><span class="p">]</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<pre><code>$ runhaskell GameOfLife_Test.hs 
-### Failure in: 2                         
-Gets 0 when neighborhood's sum is 4 and cell is dead
-expected: 0
- but got: 1
-### Failure in: 3                         
-Gets 0 when neighborhood's sum is 6
-expected: 0
- but got: 1
-Cases: 4  Tried: 4  Errors: 0  Failures: 2
-Counts {cases = 4, tried = 4, errors = 0, failures = 2}
-</code></pre>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>GameOfLife.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="haskell"><span class="line"><span class="nf">cellNextState</span> <span class="ow">::</span> <span class="kt">Cell</span> <span class="ow">-&gt;</span> <span class="p">[</span><span class="kt">Cell</span><span class="p">]</span> <span class="ow">-&gt;</span> <span class="kt">Cell</span>
-</span><span class="line"><span class="nf">cellNextState</span> <span class="n">cell</span> <span class="n">neighborhood</span>
-</span><span class="line">  <span class="o">|</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">4</span> <span class="ow">=</span> <span class="n">cell</span>
-</span><span class="line">  <span class="o">|</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">=</span> <span class="mi">1</span>
-</span><span class="line">  <span class="o">|</span> <span class="n">otherwise</span> <span class="ow">=</span> <span class="mi">0</span>
-</span><span class="line">    <span class="kr">where</span> <span class="n">total</span> <span class="ow">=</span> <span class="n">sum</span> <span class="n">neighborhood</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<pre><code>$ runhaskell GameOfLife_Test.hs 
-Cases: 4  Tried: 4  Errors: 0  Failures: 0
-Counts {cases = 4, tried = 4, errors = 0, failures = 0}
-</code></pre>
-
-<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2014/12/30/le-jeu-de-la-vie-en-haskell-partie-4/">Le jeu de la vie en Haskell - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2014/12/29/le-jeu-de-la-vie-en-haskell-partie-2/">Le jeu de la vie en Haskell - partie 2</a></li><li><a href="http://lkdjiin.github.io/blog/2014/12/28/le-jeu-de-la-vie-en-haskell-partie-1/">Le jeu de la vie en Haskell - partie 1</a></li></ul></section>
 ]]></content>
   </entry>
   
