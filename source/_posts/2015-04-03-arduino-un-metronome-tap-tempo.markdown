@@ -18,8 +18,7 @@ Les composants
 --------------
 
 Coté composants, on a seulement besoin d'une LED et d'une résistance (220 Ohms
-ça ira).  Reliez la platine d'essai à l'arduino en branchant le 5 volt et la
-terre puis reliez la LED au port numérique 2&nbsp;:
+ça ira).
 
 {% img center /images/metronome1_bb.png %}
 
