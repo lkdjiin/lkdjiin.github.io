@@ -6,7 +6,7 @@ comments: true
 categories: [opinion, livre, ruby, javascript, blog, sed, rake]
 ---
 
-Je n'ai pas commencer à bloguer en anglais, mais ça ne saurait tarder. Il me
+Je n'ai pas commencé à bloguer en anglais, mais ça ne saurait tarder. Il me
 reste à choisir quelle techno utiliser. J'hésite entre&nbsp;:
 
 1. Jekyll (que je connais bien)
