@@ -86,3 +86,5 @@ Voilà, mon premier article sur R est terminé, je vais certainement en écrire
 plein d'autres dans un futur proche. J'espère que ce sujet vous intéresse ;)
 
     > q()
+
+{% connexe %}
