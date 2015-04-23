@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : terminal | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/terminal/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-04-21T20:53:09+02:00</updated>
+  <updated>2015-04-23T15:26:30+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,81 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[3 réglages pour le langage R]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/04/23/3-reglages-pour-le-langage-r/"/>
+    <updated>2015-04-23T15:17:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/04/23/3-reglages-pour-le-langage-r</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
+
+<p>Voici trois astuces pour régler/personnaliser le comportement de
+l’environnement du langage R, en utilisant des fichiers de configuration.
+<em>(Attention, je ne sais absolument pas si ça fonctionne sous Windows.)</em></p>
+
+<h2 id="le-prompt">1) Le prompt</h2>
+
+<p>Pour personnaliser votre prompt dans R, ajoutez les lignes suivantes dans un
+fichier <code>~/.Rprofile</code> (créez le pour l’occasion s’il n’existe pas).</p>
+
+<p><code>r ~/.Rprofile
+options(prompt = "R&gt; ")
+options(continue = "+  ")
+</code></p>
+
+<p>Exemple :</p>
+
+<pre><code>R&gt; add2 &lt;- function(n) {
++    n + 2
++  }
+R&gt; 
+</code></pre>
+
+<!-- more -->
+
+<h2 id="la-largeur-de-la-sortie-console">2) La largeur de la sortie console</h2>
+
+<p>La largeur de la sortie console de R est de 80 caractères. Point barre !
+Si votre console est plus large (100, 120, etc) R n’utilisera quand même que
+80 caractères. En mettant une petite fonction dans un fichier à part
+<code>~/.Rutils</code> (par exemple) et en référençant ce fichier depuis le <code>~/.Rprofile</code>,
+on peut avoir quelque chose de <em>presque</em> dynamique.</p>
+
+<p><code>r ~/.Rprofile
+if (file.exists("~/.Rutils")) {
+  source("~/.Rutils")
+}
+</code></p>
+
+<p><code>r ~/.Rutils
+tryCatch({
+  options(width = as.integer(system('tput cols', intern = TRUE)))
+}, error = function(err) {
+  write("Width set to 80.", stderr());
+  options(width = 80)
+})
+</code></p>
+
+<p>Si vous redimensionnez votre console, il faut sourcer le fichier
+(<code>source('~/.Rutils')</code>) pour prendre en compte la nouvelle largeur.</p>
+
+<h2 id="le-dossier-des-bibliothques">3) Le dossier des bibliothèques</h2>
+
+<p>Pour éviter que R vous crée un dossier <code>R</code> dans votre home, définissez vous
+même un dossier pour stocker les packages, par exemple <code>~/local/R_libs/</code>.
+Ensuite spécifiez le dans votre <code>~/.bashrc</code> :</p>
+
+<p><code>bash
+# Custom repo of libraries for R.
+export R_LIBS=~/local/R_libs/
+</code></p>
+
+<p>Vous connaissez d’autres trucs et astuces pour configurer R ? Dites moi ça dans
+un commentaire. À bientôt.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un éditeur pour le terminal - partie 9]]></title>
@@ -316,78 +391,6 @@ end
 ```</p>
 
 <p>Et voilà.</p>
-
-<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-<p>À demain.</p>
-
-<p></p>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un éditeur pour le terminal - partie 5]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5/"/>
-    <updated>2014-03-02T20:54:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/03/02/ecrire-un-editeur-pour-le-terminal-partie-5</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>La bibliothèque <em>curses</em> sait gérer le fenêtrage. Voici un programme qui
-montre comment faire.</p>
-
-<!-- more -->
-
-<p>C’est une traduction en ruby d’un programme C issu d’un tutoriel
-sur <em>ncurses</em> (dont je ne retrouve plus la référence dans l’immédiat).</p>
-
-<p>``` ruby
-require ‘curses’
-include Curses</p>
-
-<p>def create_newwin(height, width, top, left)
-  local_win = Window.new(height, width, top, left)
-  local_win.box(?|, ?-)
-  local_win.refresh
-  local_win
-end</p>
-
-<p>def destroy_win(w)
-  w.clear
-  w.refresh
-  w.close
-end</p>
-
-<p>begin
-  init_screen
-  cbreak
-  stdscr.keypad(true)
-  height = 3
-  width = 10
-  top = (lines - height) / 2
-  left = (cols - width) / 2
-  addstr(“Press F1 to exit”)
-  refresh
-  my_win = create_newwin(height, width, top, left)</p>
-
-<p>while (ch = getch) != KEY_F1
-    case ch
-    when KEY_LEFT then left -= 1
-    when KEY_RIGHT then left += 1
-    when KEY_UP then top -= 1
-    when KEY_DOWN then top += 1
-    end
-    destroy_win(my_win)
-    my_win = create_newwin(height, width, top, left)
-  end
-ensure
-  close_screen
-end
-```</p>
-
-<p>En étudiant ce programme avec en parallèle la documentation ruby
-de <a href="http://ruby-doc.org/stdlib-2.1.0/libdoc/curses/rdoc/Curses.html">curses</a>,
-vous devriez comprendre sans problèmes la gestion des fenêtres.</p>
 
 <script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
