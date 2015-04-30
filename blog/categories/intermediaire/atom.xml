@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : intermédiaire | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/intermediaire/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-04-23T15:26:30+02:00</updated>
+  <updated>2015-04-30T17:16:55+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,234 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Le hack FizzBuzz en Ruby]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/04/30/le-hack-fizzbuzz-en-ruby/"/>
+    <updated>2015-04-30T17:07:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/04/30/le-hack-fizzbuzz-en-ruby</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
+
+<p>Voici ce qui trainait sur le net aujourd’hui, un jeu de
+<a href="http://en.wikipedia.org/wiki/Fizz_buzz">FizzBuzz</a> en une ligne de Ruby:</p>
+
+<p><code>ruby
+1.upto(100){|n|puts'FizzBuzz '[o=n**4%-15,o+13]||n}
+</code></p>
+
+<p>Ce qui donne:</p>
+
+<p><code>bash
+ruby -e "1.upto(100){|n|puts'FizzBuzz '[o=n**4%-15,o+13]||n}"
+1
+2
+Fizz
+4
+Buzz 
+Fizz
+7
+8
+Fizz
+Buzz 
+11
+.
+.
+.
+94
+Buzz 
+Fizz
+97
+98
+Fizz
+Buzz 
+</code></p>
+
+<p>Pour celles et ceux qui ne pigent pas cette ligne de code Ruby, on va la
+déconstruire petit à petit.</p>
+
+<!-- more -->
+
+<p>Nous avons affaire à une boucle (j’ai remplacé les <code>{}</code> par <code>do end</code>):</p>
+
+<p><code>ruby
+1.upto(100) do |n|
+  puts'FizzBuzz '[o=n**4%-15,o+13]||n
+end
+</code></p>
+
+<p><code>a.upto(b)</code> itère de <code>a</code> jusqu’à <code>b</code>:</p>
+
+<p><code>irb
+$ irb
+&gt;&gt; 10.upto(12) do |iteration|
+?&gt;   puts iteration
+&gt;&gt; end
+10
+11
+12
+</code></p>
+
+<p>Regardons de plus près l’intérieur de la boucle, là où c’est intéressant.
+Ruby permet d’appeler les
+méthodes sans utiliser de parenthèses. Ici je les ai simplement rajouter pour
+tenter de clarifier le code:</p>
+
+<p><code>ruby
+1.upto(100) do |n|
+  puts( 'FizzBuzz '[o=n**4%-15,o+13]||n )
+end
+</code></p>
+
+<p>Maintenant qu’on est bien sûr qu’il s’agit de la méthode <code>puts</code> avec un
+argument bizarre dedans, je sépare les différents éléments de la <em>grammaire de
+Ruby</em> par des espaces. Toujours pour essayer d’y voir plus clair:</p>
+
+<p><code>ruby
+1.upto(100) do |n|
+  puts( 'FizzBuzz '[o = n ** 4 % -15, o + 13] || n )
+end
+</code></p>
+
+<p>Arrêtons nous un peu sur les sous-ensembles de chaîne <code>[a, b]</code>.
+Le premier chiffre est la position de départ, le second est le nombre de
+caractères:</p>
+
+<p><code>irb
+$ irb
+&gt;&gt; "abcdef"[0, 2]
+"ab"
+&gt;&gt; "abcdef"[3, 2]
+"de"
+</code></p>
+
+<p>Ruby permet de donner une position de départ pas rapport à la fin:</p>
+
+<p><code>irb
+&gt;&gt; "abcdef"[-4, 2]
+"cd"
+</code></p>
+
+<p>Pour la suite, notez bien que si on va chercher des caractères <strong>avant</strong> le début ou <strong>après</strong> la fin de la chaîne, on se retrouve avec <code>nil</code>. Ça n’est pas une erreur, c’est le comportement attendu:</p>
+
+<p><code>irb
+&gt;&gt; "abcdef"[-123, 2]
+nil
+&gt;&gt; "abcdef"[999, 2]
+nil
+</code></p>
+
+<p>Maintenant essayons de décrypter la formule mathématique.
+Utilisons une variable temporaire pour l’isoler:</p>
+
+<p><code>ruby
+1.upto(100) do |n|
+  o = n ** 4 % -15
+  puts( 'FizzBuzz '[o, o + 13] || n )
+end
+</code></p>
+
+<p>En Ruby, <code>**</code> est l’opérateur de puissance:</p>
+
+<p><code>irb
+$ irb
+&gt;&gt; 10 ** 2
+100
+&gt;&gt; 10 ** 3
+1000
+&gt;&gt; 10 ** 4
+10000
+</code></p>
+
+<p>Quant à <code>%</code>, c’est l’opérateur de la division modulaire, souvent appelé
+<em>modulo</em>. Si vous avez plein de temps devant vous il y a la page wikipédia sur
+<a href="http://fr.wikipedia.org/wiki/Arithm%C3%A9tique_modulaire">l’arithmétique modulaire</a>.
+Sinon voici une explication rapide du modulo: <strong>c’est le reste de la division
+entière</strong>. Donc <code>9 % 4 == 1</code>.</p>
+
+<p>Sauf qu’ici on utilise le modulo avec un nombre négatif. Et là les maths se
+compliquent un peu, et surtout différents langages de programmation auront différents
+comportements.</p>
+
+<p>Essayons plutôt de <em>sentir</em> la formule en l’appliquant aux nombres de 1 à 16:</p>
+
+<p><code>irb
+$ irb
+&gt;&gt; (1..16).each do |n|
+?&gt;   o = n ** 4 % -15
+&gt;&gt;   puts "#{n} =&gt; #{o}"
+&gt;&gt; end
+1 =&gt; -14
+2 =&gt; -14
+3 =&gt; -9
+4 =&gt; -14
+5 =&gt; -5
+6 =&gt; -9
+7 =&gt; -14
+8 =&gt; -14
+9 =&gt; -9
+10 =&gt; -5
+11 =&gt; -14
+12 =&gt; -9
+13 =&gt; -14
+14 =&gt; -14
+15 =&gt; 0
+16 =&gt; -14
+</code></p>
+
+<p>J’imagine qu’à ce moment précis, vous êtes plusieurs à crier <strong>«Ha ha !»</strong>.</p>
+
+<p>Cette formule, en Ruby, a donc 4 solutions possibles:</p>
+
+<ul>
+  <li>Quand <em>n</em> est un multiple de 3, la solution est <strong>-9</strong>.</li>
+  <li>Quand <em>n</em> est un multiple de 5, la solution est <strong>-5</strong>.</li>
+  <li>Quand <em>n</em> est un multiple de 15 (c’est à dire à la fois multiple de 3 et de
+9), la solution est <strong>0</strong>.</li>
+  <li>Dans les autres cas, la solution est <strong>-14</strong>.</li>
+</ul>
+
+<p>Voyons ce qu’il se passe avec <code>'FizzBuzz '</code> quand <code>o</code> vaut respectivement -9, -5, 0 puis -14:</p>
+
+<p><code>irb
+$ irb
+&gt;&gt; 'FizzBuzz '[-9, -9 + 13]
+"Fizz"
+&gt;&gt; 'FizzBuzz '[-5, -5 + 13]
+"Buzz "
+&gt;&gt; 'FizzBuzz '[0, 13]
+"FizzBuzz "
+&gt;&gt; 'FizzBuzz '[-14, -14 + 13]
+nil
+</code></p>
+
+<p>Peut-être vous demandez vous pourquoi il y a un espace après FizzBuzz ?
+En pratique, voici la raison:</p>
+
+<p><code>irb
+&gt;&gt; 'FizzBuzz'[-9, -9 + 13]
+nil
+&gt;&gt; 'FizzBuzz'[-5, -5 + 13]
+"zBuzz"
+</code></p>
+
+<p>En théorie, je vous laisse faire les calculs ;)</p>
+
+<p>Pour finir, il reste à expliquer le <code>||</code>, un exemple vaut mieux qu’un long
+discours:</p>
+
+<p><code>irb
+&gt;&gt; "foo" || 13
+"foo"
+&gt;&gt; nil || 13
+13
+</code></p>
+
+<p>Voilà, si vous voulez ajouter d’autres explications, les commentaires sont fait
+pour ça ;)</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Une machine de Turing en Ruby - La routine de copie]]></title>
@@ -687,135 +915,6 @@ module Hanoi::Rules</p>
 
 <p>Voilà, notre futur algorithme génétique a maintenant les moyens d’évaluer
 une suite de mouvements, reste plus qu’à le coder ;)</p>
-
-<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Les tours de Hanoi - partie 1]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1/"/>
-    <updated>2014-07-05T15:25:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/07/05/les-tours-de-hanoi-partie-1</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-2'>Niveau : <span>intermédiaire</span></div></p>
-
-<p>Je vais commencer par implémenter une classe <code>Board</code>, dont la tâche est
-de retenir l’état du plateau de jeu, c’est à dire la position des pièces.
-J’ai envie de faire des tests avec Rspec, donc voici les premiers fichiers:</p>
-
-<pre><code>$ tree
-.
-├── board.rb
-└── spec
-    └── board_spec.rb
-</code></pre>
-
-<!-- more -->
-
-<p>Voici les tests de <code>Board</code>, qui décrivent ce que j’attend de cette classe:</p>
-
-<p>``` ruby spec/board_spec.rb
-require ‘./board’</p>
-
-<p>describe Board do</p>
-
-<p>before { @board = Board.new(3) }</p>
-
-<p>it ‘has a position’ do
-    expect(@board.position).to eq [ [3, 2, 1], [], [] ]
-  end</p>
-
-<p>it ‘accepts a position’ do
-    @board.position = [ [], [3], [2, 1] ]
-    expect(@board.position).to eq [ [], [3], [2, 1] ]
-  end</p>
-
-<p>describe ‘position evalution’ do</p>
-
-<pre><code>specify { expect(@board.eval).to eq 0 }
-
-specify do
-  @board.position = [ [], [3], [2, 1] ]
-  expect(@board.eval).to eq 9
-end
-
-specify do
-  @board.position = [ [], [], [3, 2, 1] ]
-  expect(@board.eval).to eq 12
-end
-</code></pre>
-
-<p>end</p>
-
-<p>end
-```</p>
-
-<p>On doit pouvoir l’initialiser avec un nombre de pièces:</p>
-
-<pre><code>before { @board = Board.new(3) }
-</code></pre>
-
-<p>À l’initialisation, les pièces sont en position de départ:</p>
-
-<pre><code>it 'has a position' do
-  expect(@board.position).to eq [ [3, 2, 1], [], [] ]
-end
-</code></pre>
-
-<p>On peut modifier la position à volonté:</p>
-
-<pre><code>it 'accepts a position' do
-  @board.position = [ [], [3], [2, 1] ]
-  expect(@board.position).to eq [ [], [3], [2, 1] ]
-end
-</code></pre>
-
-<p>Enfin, la position actuelle peut être évaluée:</p>
-
-<pre><code>describe 'position evalution' do
-
-  specify { expect(@board.eval).to eq 0 }
-
-  specify do
-    @board.position = [ [], [3], [2, 1] ]
-    expect(@board.eval).to eq 9
-  end
-
-  specify do
-    @board.position = [ [], [], [3, 2, 1] ]
-    expect(@board.eval).to eq 12
-  end
-
-end
-</code></pre>
-
-<p>Pour finir, l’implémentation minimum:</p>
-
-<p>``` ruby board.rb
-class Board</p>
-
-<p>def initialize(number_of_pieces)
-    @pegs = [ (1..number_of_pieces).to_a.reverse, [], [] ]
-  end</p>
-
-<p>def position
-    @pegs
-  end</p>
-
-<p>def position=(pegs)
-    @pegs = pegs
-  end</p>
-
-<p>def eval
-    @pegs[1].reduce(0, :+) + 2 * @pegs[2].reduce(0, :+)
-  end</p>
-
-<p>end
-```</p>
 
 <script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 
