@@ -3,7 +3,7 @@ layout: post
 title: "Le hack FizzBuzz en Ruby"
 date: 2015-04-30 17:07
 comments: true
-categories: [ruby, intermédiaire]
+categories: [ruby, intermédiaire, one liner]
 ---
 
 {% level 2 %}

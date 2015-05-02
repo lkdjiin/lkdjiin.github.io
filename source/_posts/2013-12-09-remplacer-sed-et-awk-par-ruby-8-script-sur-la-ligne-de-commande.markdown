@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande"
 date: 2013-12-09 20:36
 comments: true
-categories: [sed, awk, ruby, débutant]
+categories: [sed, awk, ruby, débutant, one liner]
 ---
 
 {% level 1 %}
