@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : assembleur | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/assembleur/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-05-02T12:43:25+02:00</updated>
+  <updated>2015-05-14T20:31:09+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,211 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un exemple de polymorphisme en situation réelle]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/05/14/un-exemple-de-polymorphisme-en-situation-reelle/"/>
+    <updated>2015-05-14T19:16:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/05/14/un-exemple-de-polymorphisme-en-situation-reelle</id>
+    <content type="html"><![CDATA[<p><div class='level-tag level-tag-3'>Niveau : <span>avancé</span></div></p>
+
+<p>J’écris en ce moment un <a href="http://fr.wikipedia.org/wiki/%C3%89mulation">émulateur</a>
+pour <a href="http://fr.wikipedia.org/wiki/CHIP-8">Chip-8</a>, en Ruby. Dans les outils que
+j’écris à coté il y a un <a href="http://fr.wikipedia.org/wiki/D%C3%A9sassembleur">désassembleur</a> de code Chip-8. Dans ce
+désassembleur il y a un bel exemple de polymorphisme.</p>
+
+<!-- more -->
+
+<h2 id="un-peu-de-contexte">Un peu de contexte</h2>
+
+<p>La classe Opcode permet de faire la correspondance entre un <a href="http://fr.wikipedia.org/wiki/Langage_machine#Opcode">opcode</a> Chip-8
+et une ligne de code assembleur. Un opcode Chip-8 est toujours représenté par
+un nombre <a href="http://fr.wikipedia.org/wiki/Syst%C3%A8me_hexad%C3%A9cimal">hexadécimal</a> de 4 chiffres.</p>
+
+<p>Voici quelques exemples d’opcodes et leur correspondance en assembleur :</p>
+
+<pre><code>Opcode | Assembleur  | Remarque
+-------|-------------|---------
+2a00   | CALL a00    |
+7012   | ADD V0, 12  | V0 est un registre
+a22e   | LOAD I, 22e | I est un registre
+</code></pre>
+
+<p>On pourra remarquer (même si ça n’est pas ultra visible avec seulement trois
+exemples) que c’est le premier chiffre (ici <code>2</code>, <code>7</code> et <code>a</code>) qui décide du
+type d’instruction.</p>
+
+<p>De <code>0</code> à <code>f</code>, on a donc 16 types possibles, ce qui donne ce genre de code :</p>
+
+<p>``` ruby opcode.rb
+class Opcode</p>
+
+<p>def initialize(opcode)
+    @opcode = opcode
+    @assembly = compute_assembly
+    …
+  end</p>
+
+<p>…</p>
+
+<p>private</p>
+
+<p>def compute_assembly
+    case @opcode[0]
+    when ‘0’ then “Return this code”
+    when ‘1’ then “Return that code”
+    when ‘2’ then # …
+    …
+    when ‘d’ then # …
+    when ‘e’ then # …
+    when ‘f’ then # …
+    end
+  end</p>
+
+<p>end
+```</p>
+
+<p>De plus, certains type d’instruction sont partagés en sous type, selon le
+quatrième chiffre, ou bien selon les troisième et quatrième, ça dépend. Comme
+toujours, on se retrouve à devoir gérer des cas particuliers, et le code
+ressemble rapidement à la monstruosité qui suit :</p>
+
+<p><code>ruby
+def compute_assembly
+  case @opcode[0]
+  when '0'
+    if @opcode == '00e0'
+      # do that
+    elsif @opcode == '00ee'
+      # do that
+    else
+      # do that
+    end
+  when '1' then # do that
+  when '2' then # do that
+  when '3' then # do that
+  when '4' then # do that
+  when '5' then # do that
+  when '6' then # do that
+  when '7' then # do that
+  when '8'
+    case @opcode[3]
+    when '0' then # do that
+    when '1' then # do that
+    when '2' then # do that
+    when '3' then # do that
+    when '4' then # do that
+    when '5' then # do that
+    when '6' then # do that
+    when '7' then # do that
+    when 'e' then # do that
+    else
+      # do that
+    end
+  when '9' then ...
+  when 'a' then ...
+  when 'b' then ...
+  when 'c' then ...
+  when 'd' then ...
+  when 'e'
+    # Ici, encore 2 sous-groupes
+  when 'f'
+    # Ici, encore 10 autres sous-groupes
+  end
+end
+</code></p>
+
+<p>C’est pas bon, hein ? Pour arranger ça, rien de tel qu’un peu de polymorphisme.
+La classe Opcode va donc se contenter de ceci :</p>
+
+<p>``` ruby Opcode
+class Opcode</p>
+
+<pre><code>def initialize(opcode)
+  asm = Assembly.new(opcode)
+  @assembly = asm.to_s
+end
+</code></pre>
+
+<p>end
+```</p>
+
+<p>Vous devinez que c’est maintenant dans une nouvelle classe <code>Assembly</code> que sont géré les différentes
+instructions et sous instructions :</p>
+
+<p>``` ruby Assembly
+class Assembly</p>
+
+<p>def initialize(opcode)
+    @opcode = opcode
+    @assembly = build_assembly.to_s || ‘’
+  end</p>
+
+<p>def to_s
+    @assembly
+  end</p>
+
+<p>private</p>
+
+<p>def build_assembly
+    klass = Kernel.const_get(‘Asm’ + @opcode[0])
+    klass.new(@opcode)
+  end</p>
+
+<p>end
+```</p>
+
+<p>Et bien non, elles sont gérées chacune dans sa classe respective, à savoir
+<code>Asm0</code>, <code>Asm1</code>, <code>Asm2</code>, et cetera jusqu’à <code>Asmf</code>. Voici un exemple :</p>
+
+<p>``` ruby asm2.rb
+class Asm2 &lt; AsmBase</p>
+
+<p>def to_s
+    “CALL #{nnn}”
+  end</p>
+
+<p>end
+```</p>
+
+<p>Chacune des classes <code>Asm0</code> à <code>Asmf</code> hérite de <code>AsmBase</code> qui définit le
+comportement commun (nnn, kk, x et y sont simplement des conventions de nommage en
+assembleur Chip-8) :</p>
+
+<p>``` ruby asm_base.rb
+class AsmBase</p>
+
+<p>def initialize(opcode)
+    @opcode = opcode
+  end</p>
+
+<p>def nnn
+    @opcode[1, 3]
+  end</p>
+
+<p>def kk
+    @opcode[2, 2]
+  end</p>
+
+<p>def x
+    @opcode[1]
+  end</p>
+
+<p>def y
+    @opcode[2]
+  end</p>
+
+<p>end
+```</p>
+
+<p>C’est un cas classique d’utilisation du polymorphisme. On troque
+un long switch/case (virtuellement infini) pour plusieurs petites classes simples.
+Le système est toujours aussi complexe dans son ensemble, mais sa maintenance
+est maintenant plus facile.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Implémenter un langage sur la machine virtuelle Parrot: partie 3]]></title>

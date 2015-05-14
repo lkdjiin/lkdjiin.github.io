@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-05-02T12:43:25+02:00</updated>
+  <updated>2015-05-14T20:31:09+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,328 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Un exemple de polymorphisme en situation réelle]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/05/14/un-exemple-de-polymorphisme-en-situation-reelle/"/>
+    <updated>2015-05-14T19:16:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/05/14/un-exemple-de-polymorphisme-en-situation-reelle</id>
+    <content type="html"><![CDATA[<div class="level-tag level-tag-3">Niveau : <span>avancé</span></div>
+
+<p>J’écris en ce moment un <a href="http://fr.wikipedia.org/wiki/%C3%89mulation">émulateur</a>
+pour <a href="http://fr.wikipedia.org/wiki/CHIP-8">Chip-8</a>, en Ruby. Dans les outils que
+j’écris à coté il y a un <a href="http://fr.wikipedia.org/wiki/D%C3%A9sassembleur">désassembleur</a> de code Chip-8. Dans ce
+désassembleur il y a un bel exemple de polymorphisme.</p>
+
+<!-- more -->
+
+<h2 id="un-peu-de-contexte">Un peu de contexte</h2>
+
+<p>La classe Opcode permet de faire la correspondance entre un <a href="http://fr.wikipedia.org/wiki/Langage_machine#Opcode">opcode</a> Chip-8
+et une ligne de code assembleur. Un opcode Chip-8 est toujours représenté par
+un nombre <a href="http://fr.wikipedia.org/wiki/Syst%C3%A8me_hexad%C3%A9cimal">hexadécimal</a> de 4 chiffres.</p>
+
+<p>Voici quelques exemples d’opcodes et leur correspondance en assembleur :</p>
+
+<pre><code>Opcode | Assembleur  | Remarque
+-------|-------------|---------
+2a00   | CALL a00    |
+7012   | ADD V0, 12  | V0 est un registre
+a22e   | LOAD I, 22e | I est un registre
+</code></pre>
+
+<p>On pourra remarquer (même si ça n’est pas ultra visible avec seulement trois
+exemples) que c’est le premier chiffre (ici <code>2</code>, <code>7</code> et <code>a</code>) qui décide du
+type d’instruction.</p>
+
+<p>De <code>0</code> à <code>f</code>, on a donc 16 types possibles, ce qui donne ce genre de code :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>opcode.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Opcode</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">opcode</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@opcode</span> <span class="o">=</span> <span class="n">opcode</span>
+</span><span class="line">    <span class="vi">@assembly</span> <span class="o">=</span> <span class="n">compute_assembly</span>
+</span><span class="line">    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">private</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">compute_assembly</span>
+</span><span class="line">    <span class="k">case</span> <span class="vi">@opcode</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;0&#39;</span> <span class="k">then</span> <span class="s2">&quot;Return this code&quot;</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;1&#39;</span> <span class="k">then</span> <span class="s2">&quot;Return that code&quot;</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;2&#39;</span> <span class="k">then</span> <span class="c1"># ...</span>
+</span><span class="line">    <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;d&#39;</span> <span class="k">then</span> <span class="c1"># ...</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;e&#39;</span> <span class="k">then</span> <span class="c1"># ...</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;f&#39;</span> <span class="k">then</span> <span class="c1"># ...</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>De plus, certains type d’instruction sont partagés en sous type, selon le
+quatrième chiffre, ou bien selon les troisième et quatrième, ça dépend. Comme
+toujours, on se retrouve à devoir gérer des cas particuliers, et le code
+ressemble rapidement à la monstruosité qui suit :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">compute_assembly</span>
+</span><span class="line">  <span class="k">case</span> <span class="vi">@opcode</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;0&#39;</span>
+</span><span class="line">    <span class="k">if</span> <span class="vi">@opcode</span> <span class="o">==</span> <span class="s1">&#39;00e0&#39;</span>
+</span><span class="line">      <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">elsif</span> <span class="vi">@opcode</span> <span class="o">==</span> <span class="s1">&#39;00ee&#39;</span>
+</span><span class="line">      <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;1&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;2&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;3&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;4&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;5&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;6&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;7&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;8&#39;</span>
+</span><span class="line">    <span class="k">case</span> <span class="vi">@opcode</span><span class="o">[</span><span class="mi">3</span><span class="o">]</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;0&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;1&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;2&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;3&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;4&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;5&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;6&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;7&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">when</span> <span class="s1">&#39;e&#39;</span> <span class="k">then</span> <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="c1"># do that</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;9&#39;</span> <span class="k">then</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;a&#39;</span> <span class="k">then</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;b&#39;</span> <span class="k">then</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;c&#39;</span> <span class="k">then</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;d&#39;</span> <span class="k">then</span> <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;e&#39;</span>
+</span><span class="line">    <span class="c1"># Ici, encore 2 sous-groupes</span>
+</span><span class="line">  <span class="k">when</span> <span class="s1">&#39;f&#39;</span>
+</span><span class="line">    <span class="c1"># Ici, encore 10 autres sous-groupes</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>C’est pas bon, hein ? Pour arranger ça, rien de tel qu’un peu de polymorphisme.
+La classe Opcode va donc se contenter de ceci :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>Opcode</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Opcode</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">opcode</span><span class="p">)</span>
+</span><span class="line">      <span class="n">asm</span> <span class="o">=</span> <span class="no">Assembly</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">opcode</span><span class="p">)</span>
+</span><span class="line">      <span class="vi">@assembly</span> <span class="o">=</span> <span class="n">asm</span><span class="o">.</span><span class="n">to_s</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Vous devinez que c’est maintenant dans une nouvelle classe <code>Assembly</code> que sont géré les différentes
+instructions et sous instructions :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>Assembly</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Assembly</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">opcode</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@opcode</span> <span class="o">=</span> <span class="n">opcode</span>
+</span><span class="line">    <span class="vi">@assembly</span> <span class="o">=</span> <span class="n">build_assembly</span><span class="o">.</span><span class="n">to_s</span> <span class="o">||</span> <span class="s1">&#39;&#39;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">to_s</span>
+</span><span class="line">    <span class="vi">@assembly</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">private</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">build_assembly</span>
+</span><span class="line">    <span class="n">klass</span> <span class="o">=</span> <span class="no">Kernel</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="s1">&#39;Asm&#39;</span> <span class="o">+</span> <span class="vi">@opcode</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span><span class="line">    <span class="n">klass</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@opcode</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et bien non, elles sont gérées chacune dans sa classe respective, à savoir
+<code>Asm0</code>, <code>Asm1</code>, <code>Asm2</code>, et cetera jusqu’à <code>Asmf</code>. Voici un exemple :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>asm2.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Asm2</span> <span class="o">&lt;</span> <span class="no">AsmBase</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">to_s</span>
+</span><span class="line">    <span class="s2">&quot;CALL </span><span class="si">#{</span><span class="n">nnn</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Chacune des classes <code>Asm0</code> à <code>Asmf</code> hérite de <code>AsmBase</code> qui définit le
+comportement commun (nnn, kk, x et y sont simplement des conventions de nommage en
+assembleur Chip-8) :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>asm_base.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">AsmBase</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">opcode</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@opcode</span> <span class="o">=</span> <span class="n">opcode</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">nnn</span>
+</span><span class="line">    <span class="vi">@opcode</span><span class="o">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">kk</span>
+</span><span class="line">    <span class="vi">@opcode</span><span class="o">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">x</span>
+</span><span class="line">    <span class="vi">@opcode</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">y</span>
+</span><span class="line">    <span class="vi">@opcode</span><span class="o">[</span><span class="mi">2</span><span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>C’est un cas classique d’utilisation du polymorphisme. On troque
+un long switch/case (virtuellement infini) pour plusieurs petites classes simples.
+Le système est toujours aussi complexe dans son ensemble, mais sa maintenance
+est maintenant plus facile.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/02/comment-convertir-un-nombre-decimal-en-binaire-en-bash/">Comment convertir un nombre décimal en binaire en Bash ?</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/30/le-hack-fizzbuzz-en-ruby/">Le hack FizzBuzz en Ruby</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Comment convertir un nombre décimal en binaire en Bash ?]]></title>
@@ -1353,7 +1675,7 @@ encore longtemps, mais ça m’intrigue vraiment.</p>
 
 <p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/">Ce que je n&#8217;ai pas fait cette 14ème semaine de 2015</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/02/comment-convertir-un-nombre-decimal-en-binaire-en-bash/">Comment convertir un nombre décimal en binaire en Bash ?</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/">Ce que je n&#8217;ai pas fait cette 14ème semaine de 2015</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/14/un-exemple-de-polymorphisme-en-situation-reelle/">Un exemple de polymorphisme en situation réelle</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1537,7 +1859,7 @@ si j’ai donné ;)</ins></p>
 
 <p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/">Ce que je n&#8217;ai pas fait cette 14ème semaine de 2015</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n&#8217;ai pas fait cette semaine - 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/02/comment-convertir-un-nombre-decimal-en-binaire-en-bash/">Comment convertir un nombre décimal en binaire en Bash ?</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/">Ce que je n&#8217;ai pas fait cette 14ème semaine de 2015</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n&#8217;ai pas fait cette semaine - 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/14/un-exemple-de-polymorphisme-en-situation-reelle/">Un exemple de polymorphisme en situation réelle</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2692,450 +3014,6 @@ avec un ruban qui contient des données…</p>
 <p>À plus tard.</p>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/02/comment-convertir-un-nombre-decimal-en-binaire-en-bash/">Comment convertir un nombre décimal en binaire en Bash ?</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/28/pas-de-logique-dans-les-vues-rails/">Pas de logique dans les vues Rails</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Une machine de Turing en Ruby]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/"/>
-    <updated>2015-02-01T10:11:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby</id>
-    <content type="html"><![CDATA[<div class="level-tag level-tag-2">Niveau : <span>intermédiaire</span></div>
-
-<p>Avec le film <em>Imitation Game</em> sorti récemment, Alan Turing, qu’on peut considérer
-comme un père fondateur de l’informatique, fait l’actualité.
-Je vous propose, dans cet article, de réaliser une machine de Turing en Ruby.</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/alan-turing2.jpg" /></p>
-
-<!-- more -->
-
-<h2 id="dfinition-de-la-machine-de-turing">Définition de la machine de Turing</h2>
-
-<p>Ma définition personnelle sera la suivante:</p>
-
-<p><strong>Une machine de Turing est une machine imaginaire et hyper-minimale, pouvant
-faire tourner un algorithme.</strong></p>
-
-<p>Si vous ressentez le besoin d’une définition plus formelle, les articles de
-Wikipédia, en <a href="http://en.wikipedia.org/wiki/Turing_machine">anglais</a>
-et en <a href="http://fr.wikipedia.org/wiki/Machine_de_Turing">français</a>
-sont très bien fourni. Il y a aussi une présentation sympathique de la machine de
-Turing dans une petite <a href="http://videotheque.cnrs.fr/doc=3001">vidéo en français</a>
-de 7 minutes, par le CNRS.</p>
-
-<p>Dans la suite de l’article, je prends comme hypothèse que vous savez ce qu’est
-une machine de Turing. Si ça n’est pas le cas, ou si vous avez besoin de vous
-rafraichir la mémoire, n’hésitez pas à visiter les liens précédents.</p>
-
-<h2 id="on-fait-une-gem-">On fait une gem ?</h2>
-
-<p>À terme, j’aimerais un programme qui puisse faire tourner n’importe quel jeu
-d’instructions. Mais pour un premier jet, concret, rapidement réalisable, et
-malgré tout intéressant,
-on va faire tourner un <a href="http://en.wikipedia.org/wiki/Busy_beaver">busy beaver</a>
-à 3 états.</p>
-
-<p>Deux trucs à noter:</p>
-
-<ol>
-  <li><em>Busy beaver à 3 états</em> ça peut faire peur. Je vous assure qu’il n’y a pas
-de quoi. C’est un algorithme relativement simple.</li>
-  <li><em>Busy beaver</em> se traduit par <em>castor affairé</em>, c’est bien la preuve qu’il n’y
-a pas de quoi avoir peur.</li>
-</ol>
-
-<p>Comme je veux une structure bien claire dès le départ, et pas un script vite
-fait qu’on aura toutes les peines du monde à étendre, je vais faire une gem:</p>
-
-<pre><code>$ bundle gem turing_machine -btV
-      create  turing_machine/Gemfile
-      create  turing_machine/Rakefile
-      create  turing_machine/LICENSE.txt
-      create  turing_machine/README.md
-      create  turing_machine/.gitignore
-      create  turing_machine/turing_machine.gemspec
-      create  turing_machine/lib/turing_machine.rb
-      create  turing_machine/lib/turing_machine/version.rb
-      create  turing_machine/bin/turing_machine
-      create  turing_machine/.rspec
-      create  turing_machine/spec/spec_helper.rb
-      create  turing_machine/spec/turing_machine_spec.rb
-      create  turing_machine/.travis.yml
-Initializing git repo in /home/xavier/devel/ruby/turing_machine
-</code></pre>
-
-<p>Vous pouvez trouver le code sur Github : <a href="https://github.com/lkdjiin/turing_machine">lkdjiin/turing_machine</a>.</p>
-
-<h2 id="objectif-de-la-premire-version">Objectif de la première version</h2>
-
-<p>Mon objectif est d’obtenir cette sortie quand je lance le programme
-<code>turing_machine</code>:</p>
-
-<pre><code>$ turing_machine 
-  1 0000000000 A -&gt; 1RB
-        ^
-  2 0000100000 B -&gt; 1LA
-         ^
-  3 0000110000 A -&gt; 1LC
-        ^
-  4 0000110000 C -&gt; 1LB
-       ^
-  5 0001110000 B -&gt; 1LA
-      ^
-  6 0011110000 A -&gt; 1RB
-     ^
-  7 0111110000 B -&gt; 1RB
-      ^
-  8 0111110000 B -&gt; 1RB
-       ^
-  9 0111110000 B -&gt; 1RB
-        ^
- 10 0111110000 B -&gt; 1RB
-         ^
- 11 0111110000 B -&gt; 1LA
-          ^
- 12 0111111000 A -&gt; 1LC
-         ^
- 13 0111111000 C -&gt; 1RHALT
-        ^
- 14 0111111000 HALT
-         ^
-</code></pre>
-
-<p>Explication d’une ligne de la sortie:</p>
-
-<pre><code>  5 0001110000 B -&gt; 1LA
-      ^ - Le `5` est le numéro de la séquence. - La suite de `0` et de `1` est le ruban. - Le `^` est la position de la tête de lecture. - Le `B` est l'état courant. - La fin, ici `1LA`, est la prochaine instruction à exécuter.
-</code></pre>
-
-<p>Une instruction est composé a) du symbole à écrire, b) du mouvement de la
-tête de lecture et, c) du nouvel état. Par exemple <code>1LA</code> signifie: écrire <code>1</code>,
-bouger la tête de lecture à gauche (<code>L</code>) et passer dans l’état <code>A</code>.</p>
-
-<h2 id="une-classe-pour-le-ruban-et-la-tte-de-lecture">Une classe pour le ruban et la tête de lecture</h2>
-
-<p>On commence par une classe <code>Tape</code> (ruban), que je combine avec <code>head</code> (tête de
-lecture) pour aller plus vite.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Tape</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class="line">    <span class="vi">@symbols</span> <span class="o">=</span> <span class="nb">Array</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span> <span class="p">{</span> <span class="s1">&#39;0&#39;</span> <span class="p">}</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="o">=</span> <span class="mi">4</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:index</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">head</span>
-</span><span class="line">    <span class="vi">@symbols</span><span class="o">[</span><span class="vi">@index</span><span class="o">]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">head</span><span class="o">=</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@symbols</span><span class="o">[</span><span class="vi">@index</span><span class="o">]</span> <span class="o">=</span> <span class="n">symbol</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">shift_left</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="o">-=</span> <span class="mi">1</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">shift_right</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">to_s</span>
-</span><span class="line">    <span class="vi">@symbols</span><span class="o">.</span><span class="n">join</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Il faut noter qu’une machine de Turing possède un ruban avec un nombre infini
-de cellules. Ici ça n’est pas le cas puisqu’il n’y en a que 10. C’est un
-raccourci qui permet d’aller plus vite, de garder le code simple, et 10 cellules
-sont largement suffisantes pour le <em>busy beaver à 3 états</em>.</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/castor2.png" /></p>
-
-<h2 id="une-classe-pour-le-registre-dtat">Une classe pour le registre d’état</h2>
-
-<p>Avoir une classe dédiée à conserver l’état peut sembler
-<a href="http://fr.wikipedia.org/wiki/Overkill">overkill</a>. Et pour être honnête, je dois
-dire que ça l’est certainement. Une simple variable aurait été suffisante pour
-cette première version. Mais bon, je suis sûr que cette classe sera bientôt
-utile ;)</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">StateRegister</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@state</span> <span class="o">=</span> <span class="n">state</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">current</span>
-</span><span class="line">    <span class="vi">@state</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">change</span><span class="p">(</span><span class="n">new_state</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@state</span> <span class="o">=</span> <span class="n">new_state</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">to_s</span>
-</span><span class="line">    <span class="vi">@state</span><span class="o">.</span><span class="n">to_s</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="une-classe-pour-la-table-dinstructions">Une classe pour la table d’instructions</h2>
-
-<p>Ici aussi, j’aurais pu (du ?) faire appel au
-<a href="http://en.wikipedia.org/wiki/You_aren%27t_gonna_need_it">YAGNI</a>.
-Un simple hash pourrait faire l’affaire pour l’instant.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Instruction</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@table</span> <span class="o">=</span> <span class="n">table</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">for</span><span class="p">(</span><span class="n">symbol</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@table</span><span class="o">[[</span><span class="n">symbol</span><span class="p">,</span> <span class="n">state</span><span class="o">]]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="une-instance-dune-machine-de-turing">Une instance d’une machine de Turing</h2>
-
-<p>Les trois petites classes ci-dessus vont se combiner à l’intérieur de la
-classe <code>Instance</code> suivante, pour simuler une machine de Turing. Même si elle
-est un peu plus complexe que les précédentes, cette classe reste malgré tout
-très simple.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-<span class="line-number">42</span>
-<span class="line-number">43</span>
-<span class="line-number">44</span>
-<span class="line-number">45</span>
-<span class="line-number">46</span>
-<span class="line-number">47</span>
-<span class="line-number">48</span>
-<span class="line-number">49</span>
-<span class="line-number">50</span>
-<span class="line-number">51</span>
-<span class="line-number">52</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Instance</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">instructions</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@instruction</span> <span class="o">=</span> <span class="no">Instruction</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">instructions</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@state</span> <span class="o">=</span> <span class="no">StateRegister</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">initial_state</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@tape</span> <span class="o">=</span> <span class="no">Tape</span><span class="o">.</span><span class="n">new</span>
-</span><span class="line">    <span class="vi">@sequence</span> <span class="o">=</span> <span class="mi">1</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">to_s</span>
-</span><span class="line">    <span class="s2">&quot;</span><span class="si">#{</span><span class="s1">&#39;%3d&#39;</span> <span class="o">%</span> <span class="vi">@sequence</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="vi">@tape</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="vi">@state</span><span class="si">}#{</span><span class="n">instr_to_s</span><span class="si">}</span><span class="se">\n</span><span class="s2">    &quot;</span> <span class="o">+</span>
-</span><span class="line">    <span class="s1">&#39; &#39;</span> <span class="o">*</span> <span class="vi">@tape</span><span class="o">.</span><span class="n">index</span> <span class="o">+</span> <span class="s1">&#39;^&#39;</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">proceed</span>
-</span><span class="line">    <span class="n">current</span> <span class="o">=</span> <span class="n">action</span>
-</span><span class="line">    <span class="n">update_sequence</span>
-</span><span class="line">    <span class="n">update_tape</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
-</span><span class="line">    <span class="n">update_state</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">halted?</span>
-</span><span class="line">    <span class="vi">@state</span><span class="o">.</span><span class="n">current</span> <span class="o">==</span> <span class="s1">&#39;HALT&#39;</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="kp">private</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update_sequence</span>
-</span><span class="line">    <span class="vi">@sequence</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update_tape</span><span class="p">(</span><span class="n">current_action</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@tape</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">current_action</span><span class="o">[</span><span class="ss">:write</span><span class="o">]</span>
-</span><span class="line">    <span class="n">current_action</span><span class="o">[</span><span class="ss">:move</span><span class="o">]</span> <span class="o">==</span> <span class="s1">&#39;L&#39;</span> <span class="p">?</span> <span class="vi">@tape</span><span class="o">.</span><span class="n">shift_left</span> <span class="p">:</span> <span class="vi">@tape</span><span class="o">.</span><span class="n">shift_right</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update_state</span><span class="p">(</span><span class="n">current_action</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@state</span><span class="o">.</span><span class="n">change</span><span class="p">(</span><span class="n">current_action</span><span class="o">[</span><span class="ss">:next_state</span><span class="o">]</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">action</span>
-</span><span class="line">    <span class="vi">@instruction</span><span class="o">.</span><span class="n">for</span><span class="p">(</span><span class="vi">@tape</span><span class="o">.</span><span class="n">head</span><span class="p">,</span> <span class="vi">@state</span><span class="o">.</span><span class="n">current</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">instr_to_s</span>
-</span><span class="line">    <span class="k">if</span> <span class="n">halted?</span>
-</span><span class="line">      <span class="s1">&#39;&#39;</span>
-</span><span class="line">    <span class="k">else</span>
-</span><span class="line">      <span class="s2">&quot; -&gt; &quot;</span> <span class="o">+</span> <span class="n">action</span><span class="o">[</span><span class="ss">:write</span><span class="o">]</span> <span class="o">+</span> <span class="n">action</span><span class="o">[</span><span class="ss">:move</span><span class="o">]</span> <span class="o">+</span> <span class="n">action</span><span class="o">[</span><span class="ss">:next_state</span><span class="o">]</span>
-</span><span class="line">    <span class="k">end</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="le-binaire">Le binaire</h2>
-
-<p>Enfin quand je dis le binaire c’est un abus de langage puisque ça reste un
-fichier texte ;) Quoiqu’il en soit voici le programme <code>turing_machine</code> qui
-implémente le <em>busy beaver à 3 états</em>.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>bin/turing_machine</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1">#!/usr/bin/env ruby</span>
-</span><span class="line">
-</span><span class="line"><span class="nb">require</span> <span class="s1">&#39;turing_machine&#39;</span>
-</span><span class="line">
-</span><span class="line"><span class="kp">include</span> <span class="no">TuringMachine</span>
-</span><span class="line">
-</span><span class="line"><span class="n">instructions</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class="line">  <span class="o">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="ss">write</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="ss">move</span><span class="p">:</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="s1">&#39;B&#39;</span><span class="p">},</span>
-</span><span class="line">  <span class="o">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="ss">write</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="ss">move</span><span class="p">:</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="s1">&#39;C&#39;</span><span class="p">},</span>
-</span><span class="line">  <span class="o">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="ss">write</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="ss">move</span><span class="p">:</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="s1">&#39;A&#39;</span><span class="p">},</span>
-</span><span class="line">  <span class="o">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="ss">write</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="ss">move</span><span class="p">:</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="s1">&#39;B&#39;</span><span class="p">},</span>
-</span><span class="line">  <span class="o">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="ss">write</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="ss">move</span><span class="p">:</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="s1">&#39;B&#39;</span><span class="p">},</span>
-</span><span class="line">  <span class="o">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="p">{</span><span class="ss">write</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="ss">move</span><span class="p">:</span> <span class="s1">&#39;R&#39;</span><span class="p">,</span> <span class="n">next_state</span><span class="p">:</span> <span class="s1">&#39;HALT&#39;</span><span class="p">},</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="n">initial_state</span> <span class="o">=</span> <span class="s1">&#39;A&#39;</span>
-</span><span class="line">
-</span><span class="line"><span class="n">instance</span> <span class="o">=</span> <span class="no">Instance</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">instructions</span><span class="p">,</span> <span class="n">initial_state</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line"><span class="kp">loop</span> <span class="k">do</span>
-</span><span class="line">  <span class="nb">puts</span> <span class="n">instance</span><span class="o">.</span><span class="n">to_s</span>
-</span><span class="line">  <span class="k">break</span> <span class="k">if</span> <span class="n">instance</span><span class="o">.</span><span class="n">halted?</span>
-</span><span class="line">  <span class="n">instance</span><span class="o">.</span><span class="n">proceed</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Cette version (<a href="https://github.com/lkdjiin/turing_machine">voir le code complet</a>) est juste une mise en train. Il faudrait maintenant disposer
-d’un ruban infini et pouvoir entrer n’importe quel jeu d’instructions.</p>
-
-<p>À plus tard.</p>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/30/le-hack-fizzbuzz-en-ruby/">Le hack FizzBuzz en Ruby</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/05/une-machine-de-turing-en-ruby-une-bande-de-donnees-infinie/">Une machine de Turing en Ruby - Une bande de données infinie</a></li></ul></section>
 ]]></content>
   </entry>
   
