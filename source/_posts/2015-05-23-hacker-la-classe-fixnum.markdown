@@ -71,7 +71,7 @@ class Fixnum
   def byte
     self
   end
-  alias_methodi :bytes, :byte
+  alias_method :bytes, :byte
 
   def word
     2 * self
