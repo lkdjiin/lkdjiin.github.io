@@ -113,4 +113,12 @@ Et voilà&nbsp;:
 3.words #=> 6
 ```
 
+**Edit du 5 juin 2015** J'ai oublié de mentionner que l'utilisation des classes
+ouvertes est sujet à controverse parmi les rubyistes. Trop de *monkey
+patching* (l'autre nom pas très gentil des classes ouvertes) peut
+effectivement rendre une gem compliquée ou délicate à utiliser en commun
+avec d'autres gems. Comme toujours, je pense que c'est une histoire de
+compromis et de «ça dépend». Notez que depuis Ruby 2.0 il existe une
+alternative au *monkey patching* : [le raffinement de méthode](http://lkdjiin.github.io/blog/2013/10/10/ruby-2-dot-0-raffinement-de-methode/).
+
 {% connexe %}
