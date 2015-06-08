@@ -9,7 +9,7 @@ categories: [R, débutant, hasard, data science]
 {% level 1 %}
 
 Nouveau venu en R, je découvre régulièrement des nouvelles fonctions qui me
-simplifie la vie. Comme par exemple la fonction `replicate` dont je vais
+simplifient la vie. Comme par exemple la fonction `replicate` dont je vais
 parler aujourd'hui.
 
 Partons de l'hypothèse que je veuille générer plusieurs nombres aléatoires de
