@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-06-18T10:57:45+02:00</updated>
+  <updated>2015-06-30T15:50:12+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,221 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Comportement inattendu de Rspec]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/06/30/comportement-inattendu-de-rspec/"/>
+    <updated>2015-06-30T15:37:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/06/30/comportement-inattendu-de-rspec</id>
+    <content type="html"><![CDATA[<div class="level-tag level-tag-2">Niveau : <span>intermédiaire</span></div>
+
+<p>Je suis tombé aujourd’hui sur un comportement inattendu de Rspec.
+Je ne dis pas que le comportement est mauvais, seulement je m’attendais à
+autre chose qui me semble plus logique. Quoiqu’il en soit, je partage mes
+réflexions avec vous.</p>
+
+<!-- more -->
+
+<p>J’utilise beaucoup Rspec que j’aime bien. Pourtant je connais assez mal sa
+mécanique interne. Un pattern dont je me sers de temps
+en temps est de définir des méthodes helper dans le fichier de test :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/thing1_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;spec_helper&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">describe</span> <span class="no">Thing1</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">it</span> <span class="s2">&quot;returns &#39;foo&#39;&quot;</span> <span class="k">do</span>
+</span><span class="line">    <span class="n">expect</span><span class="p">(</span><span class="no">Thing1</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">get</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="n">result</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">def</span> <span class="nf">result</span>
+</span><span class="line">  <span class="s1">&#39;foo&#39;</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Avec <code>Thing1</code> défini ainsi :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>thing1.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Thing1</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">get</span>
+</span><span class="line">    <span class="s1">&#39;foo&#39;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Ça marche très bien :</p>
+
+<pre><code>$ rspec -I. spec/thing1_spec.rb 
+.
+
+Finished in 0.00184 seconds (files took 0.23569 seconds to load)
+1 example, 0 failures
+</code></pre>
+
+<p>Là où ça devient problématique, c’est si j’utilise le même nom de méthode helper
+dans un autre fichier de test :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/thing2_spec.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;spec_helper&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">describe</span> <span class="no">Thing2</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">it</span> <span class="s2">&quot;returns &#39;bar&#39;&quot;</span> <span class="k">do</span>
+</span><span class="line">    <span class="n">expect</span><span class="p">(</span><span class="no">Thing2</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">get</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="n">result</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">def</span> <span class="nf">result</span>
+</span><span class="line">  <span class="s1">&#39;bar&#39;</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Avec <code>Thing2</code> comme ceci :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>thing2.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Thing2</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">get</span>
+</span><span class="line">    <span class="s1">&#39;bar&#39;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Dans ce cas un test échoue :</p>
+
+<pre><code>$ rspec -I.
+F.
+
+Failures:
+
+  1) Thing1 returns 'foo'
+     Failure/Error: expect(Thing1.new.get).to eq result
+       
+       expected: "bar"
+            got: "foo"
+       
+       (compared using ==)
+     # ./spec/thing1_spec.rb:6:in `block (2 levels) in &lt;top (required)&gt;'
+
+Finished in 0.00232 seconds (files took 0.21784 seconds to load)
+2 examples, 1 failure
+
+Failed examples:
+
+rspec ./spec/thing1_spec.rb:5 # Thing1 returns 'foo'
+</code></pre>
+
+<p>J’ai tenté de les jouer de différentes manières : seulement l’un, puis
+seulement l’autre, Thing1 puis Thing2, Thing2 puis Thing1, pour voir…</p>
+
+<p>J’en arrive à la conclusion que Rspec charge tous les fichiers de test avant de
+démarrer un test. Comme Ruby est dynamique, c’est la dernière méthode <code>result</code> chargée qui, en quelque sorte, à raison.</p>
+
+<p>La solution est donc simple, il faut <em>rentrer</em> les méthodes helper dans le
+bloc <code>describe</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;spec_helper&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">describe</span> <span class="no">Thing1</span> <span class="k">do</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">it</span> <span class="s2">&quot;returns &#39;foo&#39;&quot;</span> <span class="k">do</span>
+</span><span class="line">    <span class="n">expect</span><span class="p">(</span><span class="no">Thing1</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">get</span><span class="p">)</span><span class="o">.</span><span class="n">to</span> <span class="n">eq</span> <span class="n">result</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">result</span>
+</span><span class="line">    <span class="s1">&#39;foo&#39;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Maintenant les deux tests fonctionnent comme attendu :</p>
+
+<pre><code>$ rspec -I.
+..
+
+Finished in 0.00283 seconds (files took 0.21533 seconds to load)
+2 examples, 0 failures
+</code></pre>
+
+<p><strong>Je m’attendais à ce que les différents fichiers de test soient joués en
+isolation totale</strong>, sans connexion si mince soit elle avec d’autres fichiers.
+Manifestement c’est pas le cas.</p>
+
+<p>Pour être exhaustif voici le contenu du <em>spec helper</em> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>spec/spec_helper.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;thing1&#39;</span>
+</span><span class="line"><span class="nb">require</span> <span class="s1">&#39;thing2&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et voici les fichiers :</p>
+
+<pre><code>$ \tree
+.
+|-- spec
+|   |-- spec_helper.rb
+|   |-- thing1_spec.rb
+|   `-- thing2_spec.rb
+|-- thing1.rb
+`-- thing2.rb
+</code></pre>
+
+<p>Si vous avez un avis sur la question il m’intéresse beaucoup, n’hésitez donc pas à laisser un
+commentaire.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2014/04/02/ruby-timecop-comment-ca-marche/">Ruby Timecop - Comment ça marche ?</a></li><li><a href="http://lkdjiin.github.io/blog/2014/03/20/quelques-trucs-pour-lancer-rspec/">Quelques trucs pour lancer Rspec</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/30/le-hack-fizzbuzz-en-ruby/">Le hack FizzBuzz en Ruby</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Les langages que j'aimerais (ré)apprendre]]></title>
@@ -957,7 +1172,7 @@ un long switch/case (virtuellement infini) pour plusieurs petites classes simple
 Le système est toujours aussi complexe dans son ensemble, mais sa maintenance
 est maintenant plus facile.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/16/difference-entre-require-relative-et-require-en-ruby/">Différence entre require_relative et require en Ruby</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/30/comportement-inattendu-de-rspec/">Comportement inattendu de Rspec</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1525,7 +1740,7 @@ discours:</p>
 <p>Voilà, si vous voulez ajouter d’autres explications, les commentaires sont fait
 pour ça ;)</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/05/02/comment-convertir-un-nombre-decimal-en-binaire-en-bash/">Comment convertir un nombre décimal en binaire en Bash ?</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/01/une-machine-de-turing-en-ruby/">Une machine de Turing en Ruby</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/30/comportement-inattendu-de-rspec/">Comportement inattendu de Rspec</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/02/comment-convertir-un-nombre-decimal-en-binaire-en-bash/">Comment convertir un nombre décimal en binaire en Bash ?</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/04/une-machine-de-turing-en-ruby-la-routine-de-copie/">Une machine de Turing en Ruby - La routine de copie</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2301,7 +2516,7 @@ encore longtemps, mais ça m’intrigue vraiment.</p>
 
 <p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/">Ce que je n&#8217;ai pas fait cette 14ème semaine de 2015</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/">Ce que je n&#8217;ai pas fait cette 14ème semaine de 2015</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/30/comportement-inattendu-de-rspec/">Comportement inattendu de Rspec</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2443,49 +2658,6 @@ dans un <em>helper</em> :</p>
 qui ne sera pas affichée dans la vue.</p>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/16/difference-entre-require-relative-et-require-en-ruby/">Différence entre require_relative et require en Ruby</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/23/hacker-la-classe-fixnum/">Hacker la classe Fixnum</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/02/comment-convertir-un-nombre-decimal-en-binaire-en-bash/">Comment convertir un nombre décimal en binaire en Bash ?</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ce que je n'ai pas fait cette semaine]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/"/>
-    <updated>2015-03-22T15:18:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine</id>
-    <content type="html"><![CDATA[<p><em>Premier article d’une série récurente que je posterai chaque dimanche, voici
-ce que je n’ai pas fait cette semaine.</em></p>
-
-<p>Je n’ai pas installé <strong>la dernière version de l’</strong><a href="http://arduino.cc/en/Main/Software">IDE Arduino</a>.
-Je ne compte pas l’utiliser, mais il parait qu’elle intègre des outils en ligne
-de commande, et ça c’est cool.</p>
-
-<!-- more -->
-
-<p>Je n’ai pas (encore) lu <strong>le livre de Hilary Mason</strong>
-<a href="http://www.oreilly.com/data/free/data-driven.csp">Data Driven</a>.</p>
-
-<p>Je n’ai pas acheté <strong>le livre</strong> <a href="https://leanpub.com/developing-games-with-ruby/">Developing Games With Ruby</a>.
-J’hésite. Ça pourrait être fun.</p>
-
-<p>Je ne me suis pas abonné à <strong>la version numérique de
-Courrier International.</strong>
-Je voulais le faire, mais on ne peut payer ni par carte bancaire, ni par
-paypal. Et je n’aime pas l’idée du prélèvement bancaire.</p>
-
-<p>Je n’ai pas travaillé sur mon <a href="https://twitter.com/lkdjiin/status/570258711547023362">super algorithme de génération d’immenses
-labyrinthes</a> :</p>
-
-<p>Je n’ai pas donné d’argent à <a href="https://rubytogether.org/">RubyTogether</a>.
-Je voulais le faire, je voudrais le faire, je pense qu’il est nécessaire
-d’avoir une telle structure pour assurer l’avenir de Ruby et de son écosystème
-<del>mais le montant unique de 40$ par mois pour un particulier m’a refroidi.</del>
-<ins>Et voilà, je réagis à chaud, je m’emporte et donc je
-raconte n’importe quoi. On peut maintenant <a href="https://rubytogether.org/friends">faire un don</a>
-sans cotiser mensuellement. Alors rendez-vous la semaine prochaine pour savoir
-si j’ai donné ;)</ins></p>
-
-<p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/">Ce que je n&#8217;ai pas fait cette 14ème semaine de 2015</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n&#8217;ai pas fait cette semaine - 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li></ul></section>
 ]]></content>
   </entry>
   
