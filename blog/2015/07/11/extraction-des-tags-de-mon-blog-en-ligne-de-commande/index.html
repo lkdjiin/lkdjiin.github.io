@@ -1,0 +1,661 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Extraction des tags de mon blog en ligne de commande - Xavier Nayrac</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Niveau : facile J’aimerais savoir quels sont les tags que j’ai le plus employé sur ce blog.
+Pour cela il va d’abord falloir les extraire, si possible &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Xavier Nayrac" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><a href="/">
+  <img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c?s=140"/>
+</a>
+<h1><a href="/">Xavier Nayrac</a></h1>
+<h2>
+  Rubyiste accro au TDD, serial blogger, apprenti data scientist, heureux utilisateur de Vim,
+  accordéoniste.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+</h2>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"><img src="/images/rss.png"></img>
+    RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lkdjiin.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Extraction des tags de mon blog en ligne de commande</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-11T17:08:00+02:00" pubdate data-updated="true">11 juillet 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
+
+<p>J’aimerais savoir quels sont les tags que j’ai le plus employé sur ce blog.
+Pour cela il va d’abord falloir les extraire, si possible dans un fichier csv.</p>
+
+<p>Comment ? En Ruby ? En R ? Non non, en Bash, ça va être beaucoup plus drôle.</p>
+
+<p>Petite étude de cas pour découvrir la puissance de la ligne de commande, ou
+pour rafraichir ses connaissances ;)</p>
+
+<p><img class="center" src="/images/tags-cloud.png" /></p>
+
+<!-- more -->
+
+<p>Si vous voulez reproduire l’analyse en même temps que moi, les
+<a href="https://github.com/lkdjiin/lkdjiin.github.io/tree/source/source/_posts">articles sont ici</a>.</p>
+
+<p>Voyons à quoi ressemble le début d’un article au hasard avec <code>head</code>.
+Octopress, le framework que j’utilise pour ce blog, appelle les tags des
+<em>categories</em>. Mais c’est pareil.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head 2013-10-20-les-algorithmes-genetiques-demystifies-35.markdown
+</span><span class="line">---
+</span><span class="line">layout: post
+</span><span class="line">title: <span class="s2">&quot;Les algorithmes génétiques démystifiés 35&quot;</span>
+</span><span class="line">date: 2013-10-20 21:21
+</span><span class="line">comments: <span class="nb">true</span>
+</span><span class="line">categories: <span class="o">[</span>imagerie, algorithme génétique, intermédiaire, javascript<span class="o">]</span>
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>L’entête d’un article a toujours la même structure. Avec <code>head *.markdown</code>
+j’affiche le début de tous les articles, les uns à la suite des autres.
+Avec <code>sed</code> je peux extraire uniquement les lignes qui commencent par <code>cat</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span>
+</span><span class="line">categories: <span class="o">[</span>annonce, défi<span class="o">]</span>
+</span><span class="line">categories: <span class="o">[</span>vim, conseil, débutant<span class="o">]</span>
+</span><span class="line">categories: <span class="o">[</span>ruby, code propre, intermédiaire<span class="o">]</span>
+</span><span class="line">categories: <span class="o">[</span>ruby, eigenclass, object, intermédiaire<span class="o">]</span>
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Gardons seulement les tableaux. <code>cut -f1</code> <em>découpe</em> le premier champ, <code>-d' '</code>
+indique que le séparateur de champ est l’espace, et <code>--complement</code> indique
+qu’on veut conserver le complément. Autrement dit tout sauf la première
+colonne.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> |
+</span><span class="line">&gt; cut -f1 -d<span class="s1">&#39; &#39;</span> --complement
+</span><span class="line"><span class="o">[</span>annonce, défi<span class="o">]</span>
+</span><span class="line"><span class="o">[</span>vim, conseil, débutant<span class="o">]</span>
+</span><span class="line"><span class="o">[</span>ruby, code propre, intermédiaire<span class="o">]</span>
+</span><span class="line"><span class="o">[</span>ruby, eigenclass, object, intermédiaire<span class="o">]</span>
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Supprimons les crochets à l’aide de <code>sed</code> et d’une regex rigolote.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span>
+</span><span class="line">annonce, défi
+</span><span class="line">vim, conseil, débutant
+</span><span class="line">ruby, code propre, intermédiaire
+</span><span class="line">ruby, eigenclass, object, intermédiaire
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Supprimons les espaces inutiles. Attention, certains tags contiennent des
+espaces.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/, /,/g&#39;</span>
+</span><span class="line">annonce,défi
+</span><span class="line">vim,conseil,débutant
+</span><span class="line">ruby,code propre,intermédiaire
+</span><span class="line">ruby,eigenclass,object,intermédiaire
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Grâce à <code>tr</code>, je remplace chaque virgule par un retour à la ligne. Ça
+commence à prendre forme.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> |
+</span><span class="line">&gt; tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span>
+</span><span class="line">annonce
+</span><span class="line">défi
+</span><span class="line">vim
+</span><span class="line">conseil
+</span><span class="line">débutant
+</span><span class="line">ruby
+</span><span class="line">code propre
+</span><span class="line">intermédiaire
+</span><span class="line">ruby
+</span><span class="line">eigenclass
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Trions par ordre alphabétique.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> |
+</span><span class="line">&gt; sort
+</span><span class="line">
+</span><span class="line">ack
+</span><span class="line">activerecord
+</span><span class="line">activerecord
+</span><span class="line">ag
+</span><span class="line">airline
+</span><span class="line">airline
+</span><span class="line">airline
+</span><span class="line">airline
+</span><span class="line">algorithme génétique
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Réduisons les occurrences et comptons les avec <code>uniq -c</code>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sort |
+</span><span class="line">&gt; uniq -c
+</span><span class="line">      1
+</span><span class="line">      1 ack
+</span><span class="line">      2 activerecord
+</span><span class="line">      1 ag
+</span><span class="line">      4 airline
+</span><span class="line">     70 algorithme génétique
+</span><span class="line">      1 <span class="nb">alias</span>
+</span><span class="line"><span class="nb">     </span>16 annonce
+</span><span class="line">      3 app
+</span><span class="line">      1 application
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Trions à nouveau, cette fois sur le nombre et du plus grand au plus petit.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sort | uniq -c |
+</span><span class="line">&gt; sort -nr
+</span><span class="line">    213 ruby
+</span><span class="line">    176 intermédiaire
+</span><span class="line">    171 débutant
+</span><span class="line">     70 algorithme génétique
+</span><span class="line">     55 vim
+</span><span class="line">     26 tutoriel
+</span><span class="line">     26 julia
+</span><span class="line">     26 javascript
+</span><span class="line"><span class="c">#...</span>
+</span><span class="line">      1 application
+</span><span class="line">      1 <span class="nb">alias</span>
+</span><span class="line"><span class="nb">      </span>1 ag
+</span><span class="line">      1 ack
+</span><span class="line">      1
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Vous avez remarquez ? Un tag est vide. Ça pourrait poser problème pour la
+suite. Avec <code>sed</code> on peut facilement supprimer la dernière ligne.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sort | uniq -c |
+</span><span class="line">&gt; sort -nr | sed <span class="s1">&#39;$d&#39;</span>
+</span><span class="line">    213 ruby
+</span><span class="line">    176 intermédiaire
+</span><span class="line">    171 débutant
+</span><span class="line"><span class="c">#...</span>
+</span><span class="line">      1 <span class="nb">alias</span>
+</span><span class="line"><span class="nb">      </span>1 ag
+</span><span class="line">      1 ack
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>À la réflexion je préfère faire comme si il y avait plusieurs lignes vides et
+les supprimer toutes. Ça pourrait être plus réutilisable.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> |
+</span><span class="line">&gt; sed <span class="s1">&#39;/^$/d&#39;</span> |
+</span><span class="line">&gt; sort | uniq -c | sort -nr
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Il est temps de sortir une regex un peu plus complexe pour inverser les deux
+champs et ajouter une virgule entre eux.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sed <span class="s1">&#39;/^$/d&#39;</span> |
+</span><span class="line">&gt; sort | uniq -c | sort -nr |
+</span><span class="line">&gt; sed -r <span class="s1">&#39;s/\s+([0-9]+) (.*)/\2,\1/&#39;</span>
+</span><span class="line">ruby,213
+</span><span class="line">intermédiaire,176
+</span><span class="line">débutant,171
+</span><span class="line">algorithme génétique,70
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>C’est quasiment terminé. Il reste à ajouter l’entête du fichier csv. Pour cela
+je vais utiliser une commande non standard mais bien pratique, <code>header</code>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt;  sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sed <span class="s1">&#39;/^$/d&#39;</span> |
+</span><span class="line">&gt; sort | uniq -c | sort -nr | sed -r <span class="s1">&#39;s/\s+([0-9]+) (.*)/\2,\1/&#39;</span> |
+</span><span class="line">&gt; header -a tag,frequency
+</span><span class="line">tag,frequency
+</span><span class="line">ruby,213
+</span><span class="line">intermédiaire,176
+</span><span class="line">débutant,171
+</span><span class="line">algorithme génétique,70
+</span><span class="line"><span class="c">#...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On a terminé. C’est un beau pipeline, non ? Enregistrons le résultat dans un
+fichier.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
+</span><span class="line">&gt;  sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sed <span class="s1">&#39;/^$/d&#39;</span> |
+</span><span class="line">&gt; sort | uniq -c | sort -nr | sed -r <span class="s1">&#39;s/\s+([0-9]+) (.*)/\2,\1/&#39;</span> |
+</span><span class="line">&gt; header -a tag,frequency &gt; tags.csv
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>En bonus, voici le code R qui produit l’image qui illustre cet article.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="r"><span class="line">library<span class="p">(</span>wordcloud<span class="p">)</span>
+</span><span class="line">
+</span><span class="line">d <span class="o">&lt;-</span> read.csv<span class="p">(</span><span class="s">&#39;tags.csv&#39;</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">colors <span class="o">&lt;-</span> brewer.pal<span class="p">(</span><span class="m">12</span><span class="p">,</span> <span class="s">&#39;Paired&#39;</span><span class="p">)</span>
+</span><span class="line">colors <span class="o">&lt;-</span> colors<span class="p">[</span>seq<span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">10</span><span class="p">,</span> by<span class="o">=</span><span class="m">2</span><span class="p">)]</span>
+</span><span class="line">
+</span><span class="line">wordcloud<span class="p">(</span>d<span class="o">$</span>tag<span class="p">,</span> d<span class="o">$</span>frequency<span class="p">,</span> colors<span class="o">=</span>colors<span class="p">,</span> min.freq<span class="o">=</span><span class="m">1</span><span class="p">,</span> scale<span class="o">=</span>c<span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">.6</span><span class="p">),</span>
+</span><span class="line">          rot.per<span class="o">=</span><span class="m">.25</span><span class="p">,</span> random.order<span class="o">=</span><span class="kc">FALSE</span><span class="p">,</span> random.color<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2015/06/08/r-rep-vs-replicate/">R : rep vs replicate</a></li><li><a href="/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="/blog/2015/05/15/creer-plusieurs-fichiers-en-bash/">Créer plusieurs fichiers en Bash</a></li></ul></section>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-11T17:08:00+02:00" pubdate data-updated="true">11 juillet 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/r/'>R</a>, <a class='category' href='/blog/categories/bash/'>bash</a>, <a class='category' href='/blog/categories/csv/'>csv</a>, <a class='category' href='/blog/categories/data-science/'>data science</a>, <a class='category' href='/blog/categories/pipeline/'>pipeline</a>, <a class='category' href='/blog/categories/text-mining/'>text mining</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/07/08/ce-blog-a-2-ans/" title="Previous Post: Ce blog à 2 ans">&laquo; Ce blog à 2 ans</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Commentaires</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/">Extraction des tags de mon blog en ligne de commande</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/07/08/ce-blog-a-2-ans/">Ce blog à 2 ans</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/07/02/ruby-est-un-peu-paresseux/">Ruby est un peu paresseux</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/06/30/comportement-inattendu-de-rspec/">Comportement inattendu de Rspec</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j'aimerais (ré)apprendre</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Sur Twitter</h1>
+  <a class="twitter-timeline"  href="https://twitter.com/lkdjiin" data-widget-id="554992534532136960">Tweets de @lkdjiin</a>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+          
+</section>
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+
+
+</body>
+</html>
