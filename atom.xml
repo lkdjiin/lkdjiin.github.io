@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-07-11T17:34:16+02:00</updated>
+  <updated>2015-07-13T13:54:01+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,232 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Comment j'ai amélioré mon Ruby avec des contrats]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/07/13/comment-jai-ameliore-mon-ruby-avec-des-contrats/"/>
+    <updated>2015-07-13T12:42:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/07/13/comment-jai-ameliore-mon-ruby-avec-des-contrats</id>
+    <content type="html"><![CDATA[<p>Mes aventures avec une quantité de langages m’ont permis d’entrevoir de nouvelles approches et techniques.
+Par exemple, un des gros apports d’Haskell sont les <a href="http://lyah.haskell.fr/creer-nos-propres-types-et-classes-de-types">Types</a> et dans Erlang/Elixir le <a href="http://learnyousomeerlang.com/syntax-in-functions">Pattern-matching</a> est roi.
+Professionnellement je code principalement en Ruby et je rêvais d’avoir un système de Types avancé ainsi que du pattern-matching.
+C’est ainsi que j’ai découvert une super gem <a href="https://github.com/egonSchiele/contracts.ruby">Contracts.ruby</a> et dans cet article je vais essayer de vous présenter le <a href="https://en.wikipedia.org/wiki/Design_by_contract">Design par Contrats</a> à travers l’utilisation de cette gem.</p>
+
+<!-- more -->
+
+<h2 id="quest-ce-quun-contrat-">Qu’est-ce qu’un contrat ?</h2>
+
+<p>Un contrat permet de s’assurer de ce qu’une méthode attend en entrée (pré-condition), de ce qu’elle produit en sortie (post-condition). Il va définir comment notre méthode se comporte mais aussi vérifier ce comportement.
+La gem <code>Contracts.ruby</code> nous permet de décorer nos méthodes avec du code qui va vérifier que les entrées et les sorties correspondent à ce que le contrat spécifie. Bien sûr, on est pas obligé d’annoter chacune de nos méthodes mais je pense que spécifier le contrat sur toutes celles qui sont publiques ne peut qu’être bénéfique.</p>
+
+<h2 id="un-premier-exemple">Un premier exemple</h2>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="no">Num</span><span class="p">,</span> <span class="no">Num</span> <span class="o">=&gt;</span> <span class="no">Num</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</span><span class="line">  <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le contrat de ma méthode est <code>Contract Num, Num =&gt; Num</code> ce qui nous indique que la méthode <em>add</em> prend deux nombres en entrée et retourne un nombre. Simple, non ?
+Vous allez me dire que ok, c’est de la documentation, j’aurais pu juste ajouter un commentaire. Mais, puisqu’il s’agit d’un contrat, la gem Contracts.ruby va permettre de nous assurer que celui-ci est respecté.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;contracts&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">Foo</span>
+</span><span class="line">  <span class="kp">include</span> <span class="no">Contracts</span>
+</span><span class="line">
+</span><span class="line">  <span class="no">Contract</span> <span class="no">Num</span><span class="p">,</span> <span class="no">Num</span> <span class="o">=&gt;</span> <span class="no">Num</span>
+</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</span><span class="line">    <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p><code>Foo.add(1, 2)</code> nous retourne évidemmement <code>3</code> par contre <code>Foo.add(1, '2')</code> va retourner:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="ss">ParamContractError</span><span class="p">:</span> <span class="no">Contract</span> <span class="n">violation</span> <span class="k">for</span> <span class="n">argument</span> <span class="mi">2</span> <span class="n">of</span> <span class="mi">2</span><span class="p">:</span>
+</span><span class="line">        <span class="ss">Expected</span><span class="p">:</span> <span class="no">Num</span><span class="p">,</span>
+</span><span class="line">        <span class="ss">Actual</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span>
+</span><span class="line">        <span class="no">Value</span> <span class="n">guarded</span> <span class="k">in</span><span class="p">:</span> <span class="ss">Foo</span><span class="p">:</span><span class="ss">:add</span>
+</span><span class="line">        <span class="no">With</span> <span class="ss">Contract</span><span class="p">:</span> <span class="no">Num</span><span class="p">,</span> <span class="no">Num</span> <span class="o">=&gt;</span> <span class="no">Num</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>L’erreur nous montre que le contrat de la méthode <em>add</em> n’a pas été respecté par le second paramètre que nous lui avons passé, ‘2’, car il n’est pas du type <em>Num</em>.</p>
+
+<p>Notez que l’on doit toujours spécifier le type de la valeur retournée même si la méthode ne retourne rien:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="nb">String</span> <span class="o">=&gt;</span> <span class="kp">nil</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">hello</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class="line">  <span class="nb">puts</span> <span class="s2">&quot;hello, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">!&quot;</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Par exemple, si notre méthode retourne plusieurs valeurs, sa signature sera <code>Contract Num =&gt; [Num, Num]</code>.</p>
+
+<h2 id="les-diffrents-types--notre-disposition">Les différents Types à notre disposition</h2>
+
+<p>Outre les classiques <em>Num</em>, <em>String</em>, <em>Bool</em>, nous avons à notre disposition des types plus intéressants comme:</p>
+
+<ul>
+  <li><code>Any</code> lorsque votre argument n’a pas de contrainte</li>
+  <li><code>None</code> lorsqu’on n’a pas d’argument</li>
+  <li><code>Or</code> si notre argument peut être de plusieurs types, par exemple <code>Or[Fixnum, Float]</code></li>
+  <li><code>Not</code> si notre argument ne peut pas être d’un certain type, par exemple <code>Not[nil]</code></li>
+  <li><code>Maybe</code> si notre argument est optionnel, par exemple <code>Maybe[String]</code></li>
+</ul>
+
+<p>Et bien d’autres que vous pourrez découvrir dans la documentation.</p>
+
+<h2 id="contrats-sur-des-types-avancs">Contrats sur des Types avancés</h2>
+
+<p>On peut utiliser des contrats avec des Types plus avancés comme des listes:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="no">ArrayOf</span><span class="o">[</span><span class="no">Num</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="no">Num</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">multiply</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+</span><span class="line">  <span class="n">vals</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="ss">:*</span><span class="p">)</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le contrat de la méthode <em>multiply</em> nous indique qu’elle attend une liste de valeurs du type Num. Par conséquent on peut faire <code>multiply([2, 4, 16])</code> mais pas <code>multiply([2, 4, 'foo'])</code>.</p>
+
+<p>Des Hash:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="p">({</span> <span class="ss">nom</span><span class="p">:</span> <span class="nb">String</span><span class="p">,</span> <span class="ss">age</span><span class="p">:</span> <span class="no">Num</span><span class="p">,</span> <span class="ss">ville</span><span class="p">:</span> <span class="nb">String</span> <span class="p">})</span> <span class="o">=&gt;</span> <span class="kp">nil</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Des méthodes:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="no">ArrayOf</span><span class="o">[</span><span class="no">Any</span><span class="o">]</span><span class="p">,</span> <span class="no">Proc</span> <span class="o">=&gt;</span> <span class="no">ArrayOf</span><span class="o">[</span><span class="no">Any</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Si vous utilisez les arguments nommés de Ruby 2.x, le contrat ressemblera à:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="no">KeywordArgs</span><span class="o">[</span><span class="ss">foo</span><span class="p">:</span> <span class="nb">String</span><span class="p">,</span> <span class="ss">bar</span><span class="p">:</span> <span class="no">Num</span><span class="o">]</span> <span class="o">=&gt;</span> <span class="nb">String</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On peut aussi définir nos propres contrats grâce aux <code>synonymes</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Token</span> <span class="o">=</span> <span class="nb">String</span>
+</span><span class="line"><span class="no">Client</span> <span class="o">=</span> <span class="no">Or</span><span class="o">[</span><span class="no">Hash</span><span class="p">,</span> <span class="kp">nil</span><span class="o">]</span>
+</span><span class="line">
+</span><span class="line"><span class="no">Contract</span> <span class="no">Token</span> <span class="o">=&gt;</span> <span class="no">Client</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Notre méthode est ainsi plus claire quant à ce qu’elle attend et ce qu’elle permet de faire. On désire un <code>Token</code> qui est de type <code>String</code> en entrée et on retourne un <code>Client</code> qui peut être un <code>Hash</code> ou rien (nil).</p>
+
+<h2 id="le-pattern-matching">Le pattern-matching</h2>
+
+<p>Le pattern-matching consiste, pour une valeur donnée, à tester si elle correspond à un motif ou pas. Si c’est le cas une action est déclenchée. C’est un peu comme de l’overloading de méthode en Java. On pourrait l’imaginer comme un switch case géant mais en beaucoup plus élégant.</p>
+
+<p>Un exemple simple avec le calcul (pas efficace du tout) de la suite de Fibonacci:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="mi">0</span> <span class="o">=&gt;</span> <span class="mi">0</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">fib</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</span><span class="line">  <span class="mi">0</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="no">Contract</span> <span class="mi">1</span> <span class="o">=&gt;</span> <span class="mi">1</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">fib</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</span><span class="line">  <span class="mi">1</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="no">Contract</span> <span class="no">Num</span> <span class="o">=&gt;</span> <span class="no">Num</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">fib</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+</span><span class="line">  <span class="n">fib</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">fib</span><span class="p">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour un argument donné, chaque méthode va être essayée dans l’ordre. La première méthode qui ne génère pas d’erreur sera utilisée.</p>
+
+<p>Un exemple un peu plus utile, la gestion d’une réponse HTTP en fonction de son code:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="no">Contract</span> <span class="mi">200</span><span class="p">,</span> <span class="no">JsonString</span> <span class="o">=&gt;</span> <span class="no">JsonString</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">handle_response</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+</span><span class="line">  <span class="n">transform_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="no">Contract</span> <span class="no">Num</span><span class="p">,</span> <span class="no">JsonString</span> <span class="o">=&gt;</span> <span class="no">JsonString</span>
+</span><span class="line"><span class="k">def</span> <span class="nf">handle_response</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+</span><span class="line">  <span class="n">response</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Si le code de la réponse HTTP est 200 on va transformer la réponse, sinon on se contentera de retourner la réponse.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Les bénéfices sont nombreux. Les contrats nous permettent d’avoir une plus grande cohérence dans les entrées et les sorties. Le flux des données dans notre système est plus clair. Et toutes les erreurs logiques de notre système peuvent être corrigées rapidement et simplement. De plus ils permettent de rapidement comprendre ce que fait une méthode, ce qu’elle attend et ce qu’elle retourne, un peu comme de la documentation mais qui serait tout le temps à jour :p.
+Je pense que l’on peut ainsi économiser pas mal de tests unitaires sur le type d’argument reçu par une méthode et se concentrer sur ce qu’elle produit avec ce système de contrats.</p>
+
+<p>Voilà j’espère que cet article vous aura convaincu de l’utilité des contrats et du pattern-matching dans votre Ruby quotidien et vous donnera aussi l’envie d’explorer d’autres langages avec d’autres paradigmes.</p>
+
+<h1 id="qui-a-crit-cet-article-">Qui a écrit cet article ?</h1>
+
+<p><img src="http://lkdjiin.github.io/images/julien.jpeg" /></p>
+
+<p><strong>Julien Blanchard</strong><br />
+M-x CTO RET Sush.io</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Extraction des tags de mon blog en ligne de commande]]></title>
@@ -1673,7 +1899,7 @@ un long switch/case (virtuellement infini) pour plusieurs petites classes simple
 Le système est toujours aussi complexe dans son ensemble, mais sa maintenance
 est maintenant plus facile.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href="http://lkdjiin.github.io/blog/2015/07/02/ruby-est-un-peu-paresseux/">Ruby est un peu paresseux</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href="http://lkdjiin.github.io/blog/2015/07/13/comment-jai-ameliore-mon-ruby-avec-des-contrats/">Comment j&#8217;ai amélioré mon Ruby avec des contrats</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2728,213 +2954,6 @@ que ça va revenir vite.</p>
 <p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n&#8217;ai pas fait cette semaine - 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">Le jeu de la vie dans sept langages différents</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Arduino : Un métronome tap tempo]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/"/>
-    <updated>2015-04-03T18:35:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo</id>
-    <content type="html"><![CDATA[<div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
-
-<p>J’aimerais fabriquer un métronome <em>tap tempo</em> avec l’arduino. C’est un projet à
-moyen terme, et
-comme souvent, il pourrait être bénéfique de diviser le projet en plusieurs
-petites parties. Donc, avant de tenter la programmation du tap tempo, je vais
-faire un métronome tout simple avec juste une LED.</p>
-
-<h2 id="les-composants">Les composants</h2>
-
-<p>Coté composants, on a seulement besoin d’une LED et d’une résistance (220 Ohms
-ça ira).</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/metronome1_bb.png" /></p>
-
-<!-- more -->
-
-<h2 id="un-premier-code-naif">Un premier code naif</h2>
-
-<p>Le premier jet est tout simple :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="k">const</span> <span class="n">byte</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="n">setup</span><span class="p">()</span> <span class="p">{</span>
-</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
-</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
-</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
-</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
-</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">600</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Une fois compilé et envoyé dans l’arduino, la LED clignote toutes les 0,7
-secondes. Nous avons un métronome visuel !</p>
-
-<p>C’est simple, non ? Mouais. Trop simple, bien sûr. Ce code est problèmatique
-pour la fabrication d’un métronome. Alors afin de comprendre pourquoi, parlons
-un peu du tempo.</p>
-
-<h2 id="le-tempo">Le tempo</h2>
-
-<p>Pour le musicien, le tempo est une suite de clics (ou tic, ou tac, ou poum, ou
-tchak, ou clac). Ces clics, qui ont la particularité de se succéder à
-intervalles réguliers, marquent la <strong>vitesse</strong> de la musique.</p>
-
-<p>Le tempo (donc la vitesse de la musique) est indiqué à l’aide d’un nombre qui
-représente le nombre de clics par minute.
-Par exemple un tempo de 60 nous indique qu’il doit y avoir 60 clics dans une minute,
-ou plus simplement 1 clic par seconde. Autre exemple, un tempo de 120 indique
-120 clics par minute, soit 2 clics par seconde, ou encore 1 clic toutes les
-0,5 secondes.</p>
-
-<p>Voyons maintenant quelques formules. Pour trouver la fréquence F, en secondes,
-il faut diviser 60 par le tempo (noté T) :</p>
-
-<script type="math/tex; mode=display">
-\begin{align}
-
-F = 60 / T
-\end{align}
-</script>
-
-<p>Pour obtenir cette fréquence en millisecondes, il faut multiplier le résultat
-précédent par 1000 ;</p>
-
-<script type="math/tex; mode=display">
-\begin{align}
-
-F = 60 / T \times 1000
-\end{align}
-</script>
-
-<p>Le code arduino ci-dessus envoit un clic toutes les 0,7 secondes, à quel
-tempo cela correspond-t-il ? Pour calculer le tempo, on divise 60 par la
-fréquence en secondes :</p>
-
-<script type="math/tex; mode=display">
-\begin{align}
-
-T = 60 / F
-\end{align}
-</script>
-
-<p>Donc, une fréquence de 0,7 seconde, comme celle de notre code arduino,
-correspond à un tempo de \(60 / 0,7\). Soit à peu près 86.</p>
-
-<h2 id="le-problme-de-la-boucle-de-code">Le problème de la boucle de code</h2>
-
-<p>Maintenant on peut regarder le souci de ce code :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
-</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
-</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
-</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
-</span><span class="line">  <span class="n">delay</span><span class="p">(</span><span class="mi">600</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Partons de l’hypothèse qu’en plus des deux <code>digitalWrite</code>, mon code doit
-aussi :</p>
-
-<ul>
-  <li>calculer l’intensité de la LED suivant le beat.</li>
-  <li>jouer du son et ausssi calculer son intensité suivant le beat.</li>
-  <li>s’occuper de plusieurs LEDs, peut-être avec des motifs.</li>
-  <li>écrire le tempo et d’autres informations sur un écran LCD.</li>
-  <li>tout ce que vous pourrez imaginer d’autre ;)</li>
-</ul>
-
-<p>Imaginons maintenant que l’ensemble de ces actions prennent 30 millisecondes
-(0,03 secondes). Dans ce cas le tempo sera de \(60 / 0,73\). Soit à peu près 82.
-Donc plus du tout la valeur de 86 qu’on avait trouvé tout à l’heure. <strong>Notre
-métronome n’est pas fiable !</strong> Il ne vaut rien, arg.</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/facepalm.jpg" /></p>
-
-<h2 id="faire-et-ne-pas-attendre">Faire et ne pas attendre</h2>
-
-<p>Pour remédier à ce problème nous demandons à l’arduino d’allumer la LED toutes
-les 700 millisecondes et non pas <strong>d’attendre</strong> pendant 700 millisecondes.
-Pour cela nous gardons une trace du dernier moment où la LED a été allumée
-(dans <code>oldTime</code>) et nous comparons cette trace avec le moment présent
-(<code>currentTime</code>) à chaque passage dans la boucle :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-</pre></td><td class="code"><pre><code class="cpp"><span class="line"><span class="k">const</span> <span class="n">byte</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
-</span><span class="line"><span class="c1">// In millisecondes.</span>
-</span><span class="line"><span class="k">const</span> <span class="kt">long</span> <span class="n">FREQUENCY</span> <span class="o">=</span> <span class="mi">700</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">long</span> <span class="n">currentTime</span><span class="p">;</span>
-</span><span class="line"><span class="kt">long</span> <span class="n">oldTime</span><span class="p">;</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="n">setup</span><span class="p">()</span> <span class="p">{</span>
-</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
-</span><span class="line">  <span class="n">currentTime</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line">  <span class="n">oldTime</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="n">loop</span><span class="p">()</span> <span class="p">{</span>
-</span><span class="line">  <span class="n">currentTime</span> <span class="o">=</span> <span class="n">millis</span><span class="p">();</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">currentTime</span> <span class="o">&gt;=</span> <span class="n">oldTime</span> <span class="o">+</span> <span class="n">FREQUENCY</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
-</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
-</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
-</span><span class="line">    <span class="n">oldTime</span> <span class="o">=</span> <span class="n">currentTime</span><span class="p">;</span>
-</span><span class="line">  <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Ça fonctionne pour notre métronome, bien qu’il reste encore 100 millisecondes
-gachées (avec <code>delay(100);</code>). La prochaine fois on verra un moyen de se
-débarasser de cette attente inutile.</p>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/">Un jeu de Simon - Étape 1</a></li><li><a href="http://lkdjiin.github.io/blog/2015/02/11/les-maths-derriere-v-equals-ri/">Les maths derrière V=RI</a></li><li><a href="http://lkdjiin.github.io/blog/2015/01/25/mes-premiers-pas-avec-arduino/">Mes premiers pas avec Arduino</a></li></ul></section>
-
 ]]></content>
   </entry>
   
