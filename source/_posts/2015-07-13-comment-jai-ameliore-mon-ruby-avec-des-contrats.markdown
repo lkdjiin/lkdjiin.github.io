@@ -164,7 +164,7 @@ Si le code de la réponse HTTP est 200 on va transformer la réponse, sinon on s
 
 ## Conclusion
 
-Les bénéfices sont nombreux. Les contrats nous permettent d'avoir une plus grande cohérence dans les entrées et les sorties. Le flux des données dans notre système est plus clair. Et toutes les erreurs logiques de notre système peuvent être corrigées rapidement et simplement. De plus ils permettent de rapidement comprendre ce que fait une méthode, ce qu'elle attend et ce qu'elle retourne, un peu comme de la documentation mais qui serait tout le temps à jour :p.
+Les bénéfices sont nombreux. Les contrats nous permettent d'avoir une plus grande cohérence dans les entrées et les sorties. Le flux des données dans notre système est plus clair. Et la plupart des erreurs liées aux types dans notre système peuvent être corrigées rapidement et simplement. De plus ils permettent de rapidement comprendre ce que fait une méthode, ce qu'elle attend et ce qu'elle retourne, un peu comme de la documentation mais qui serait tout le temps à jour :p.
 Je pense que l'on peut ainsi économiser pas mal de tests unitaires sur le type d'argument reçu par une méthode et se concentrer sur ce qu'elle produit avec ce système de contrats.
 
 Voilà j'espère que cet article vous aura convaincu de l'utilité des contrats et du pattern-matching dans votre Ruby quotidien et vous donnera aussi l'envie d'explorer d'autres langages avec d'autres paradigmes.
