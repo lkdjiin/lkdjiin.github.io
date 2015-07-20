@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-07-15T13:44:39+02:00</updated>
+  <updated>2015-07-20T13:51:12+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,152 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[De meilleurs alias avec zsh]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/07/20/de-meilleurs-alias-avec-zsh/"/>
+    <updated>2015-07-20T13:12:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/07/20/de-meilleurs-alias-avec-zsh</id>
+    <content type="html"><![CDATA[<p>Pour m’améliorer en tant que dev, j’essaye au maximum de simplifier et d’automatiser mon workflow. L’idée est de passer moins de temps à faire des choses qu’un ordinateur peut faire à ma place, et plus de temps à réfléchir aux problèmes que je cherche à résoudre.</p>
+
+<p>C’est dans cette optique que je me suis mis à ajouter énormément d’alias très courts à mon shell. Un alias revient à automatiser l’action de taper sur les touches pour des commandes fréquentes. Malheureusement, les alias sont sous-utilisés pour plusieurs raisons : on a peur d’oublier la commande qui se cache derrière, un autre dev avec qui on est en train de faire du pair programming aura du mal à comprendre quelles commandes sont exécutées, et souvent on oublie tout simplement qu’on a un alias pour la commande qu’on est en train de taper.</p>
+
+<p>Pour remédier à ces problèmes, j’ai trouvé des solutions que des fonctions avancées de zsh permettent d’implémenter : les alias explicites, et les alias obligatoires.</p>
+
+<!-- more -->
+
+<h2 id="zsh">zsh</h2>
+
+<p>zsh est un shell Unix similaire à bash, mais en mieux. On cite souvent son autocompletion et la quantité de plugins disponibles, notamment ceux de <a href="https://github.com/robbyrussell/oh-my-zsh">oh-my-zsh</a>, comme les principales raisons de passer de bash à zsh.</p>
+
+<p>zsh est installé par défaut sur la plupart des distributions linux et OSX. Si vous ne l’utilisez pas encore, vous pouvez en faire votre shell par défaut avec cette commande :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">chsh -s $(which zsh)</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<h2 id="les-alias-explicites">Les alias explicites</h2>
+
+<p>C’est une fonction que @lkdjiin connait bien puisque c’est une des premières améliorations que j’ai apporté à mes alias quand j’ai commencé à travailler avec lui.
+Voilà à quoi ça ressemble:</p>
+
+<p><img src="https://cloud.githubusercontent.com/assets/1840367/8545448/16b25cfc-24af-11e5-85ab-69f77424b532.gif" alt="explicit_aliases" /></p>
+
+<p>Afin de ne pas oublier la commande qui se cache derrière un alias, les alias explicite la font s’afficher comme si elle avait été entrée juste après l’alias.
+Voici le code à rajouter dans votre .zshrc (le fichier de config que zsh charge avant chaque session) pour activer les alias explicites:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">preexec_functions=()
+</span><span class="line">
+</span><span class="line">function expand_aliases {
+</span><span class="line">  input_command=$1
+</span><span class="line">  expanded_command=$2
+</span><span class="line">  if [ $input_command != $expanded_command ]; then
+</span><span class="line">    print -nP $PROMPT
+</span><span class="line">    echo $expanded_command
+</span><span class="line">  fi
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">preexec_functions+=expand_aliases</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Les preexec functions de zsh sont des fonctions qui sont appelées après qu’une commande soit lue, et avant qu’elle ne soit exécutée. zsh leur donne comme argument la commande telle qu’elle est entrée par l’utilisateur, et la même commande après l’expansion des alias.</p>
+
+<p>Cette fonction vérifie donc que la version étendue est différente de la version entrée par l’utilisateur (c’est à dire qu’un alias a été utilisé), et le cas échéant affiche un prompt en utilisant la variable <code>$PROMPT</code> suivi de la commande.</p>
+
+<h2 id="les-alias-obligatoires">Les alias obligatoires</h2>
+
+<p>Cette idée plaît parfois un peu moins : pour ne pas oublier l’existence d’un alias, j’ai modifié mon setup pour que zsh refuse d’exécuter une commande si je la tape en entier plutôt que de me servir d’un alias.</p>
+
+<p><img src="https://cloud.githubusercontent.com/assets/1840367/7302861/9e437a96-e9ec-11e4-9978-9f33f21bd7d9.gif" alt="mandatory_alias" /></p>
+
+<p>Et voici l’implémentation dans le .zshrc:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class=""><span class="line">function check-alias-and-accept {
+</span><span class="line">  if [ $BUFFER ]; then
+</span><span class="line">
+</span><span class="line">    ALIAS=`alias -L | grep -e "=[\'\"]\?${BUFFER}[\'\"]\?$"`
+</span><span class="line">
+</span><span class="line">    if [ $ALIAS ]; then
+</span><span class="line">      echo
+</span><span class="line">      echo "You have this alias:"
+</span><span class="line">      echo
+</span><span class="line">      echo $ALIAS
+</span><span class="line">      echo
+</span><span class="line">      echo "Use it!"
+</span><span class="line">
+</span><span class="line">      zle kill-whole-line
+</span><span class="line">      zle reset-prompt
+</span><span class="line">    else
+</span><span class="line">      zle accept-line
+</span><span class="line">    fi
+</span><span class="line">  else
+</span><span class="line">    zle accept-line
+</span><span class="line">  fi
+</span><span class="line">}
+</span><span class="line">
+</span><span class="line">zle -N check-alias-and-accept
+</span><span class="line">bindkey '^J' check-alias-and-accept
+</span><span class="line">bindkey '^M' check-alias-and-accept</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>J’utilise ici une fonction peu connue de zsh: le Zsh Line Editor, ou zle. Il s’agit du programme que zsh execute pendant qu’il lit les évènements clavier de l’utilisateur (alors que les precommand functions sont exécutées après que l’utilisateur ai fini d’entrer la commande). C’est ce programme qui lance l’autocomplétion lorsque qu’on appuie sur TAB par exemple.</p>
+
+<p>L’implémentation est un peu plus compliquée que pour les alias explicites. Regardons un peu plus en détails ce qui se passe:</p>
+
+<ul>
+  <li>Les trois dernières lignes sont pour enregistrer la fonction <code>check-alias-and-accept</code> à la liste des fonctions que zle peut appeler, et binder la touche Entrée à l’appel de cette fonction.</li>
+  <li>A l’intérieur de <code>check-alias-and-accept</code>, on commence par vérifier que l’utilisateur a entré quelque chose, ce qui est indiqué par la variable <code>$BUFFER</code> initialisée par zle. Si rien n’a été entré (dans la branche du else), on appelle tout simplement la fonction <code>zle accept-line</code>, qui est celle que zle executerait normalement à l’appui sur la touche Entrée.</li>
+  <li>Si il y a une commande, on cherche parmis tous les alias si il y en a un qui correspond. <code>alias -L</code> permet d’obtenir la liste de tous les alias de la config, et un grep avec une regexp un peu sauvage permet de les filtrer.</li>
+  <li>Si un alias correspond, les fonctions <code>zle kill-whole-line</code> et <code>zle reset-prompt</code> permettent de revenir à un prompt vide. La commande est donc effacée et n’apparaitra même pas dans l’historique.</li>
+</ul>
+
+<h2 id="et-bien-plus-encore">Et bien plus encore</h2>
+
+<p>zsh est un shell très puissant lorsqu’on a le courage de lire son manuel, et permet de customizer votre setup de manière très poussée. Pour plus de customization zsh et vim, jetez un coup d’oeil à mes <a href="https://github.com/victormours/dotifles">dotfiles</a>, et si vous avez des idées pour d’autres améliorations à base de zsh, <a href="twitter.com/victormours">envoyez-les moi sur twitter</a> !</p>
+
+<h1 id="qui-a-crit-cet-article-">Qui a écrit cet article ?</h1>
+
+<p><img src="https://avatars3.githubusercontent.com/u/1840367?v=3&amp;s=200" /></p>
+
+<p><strong>Victor Mours</strong><br />
+Lead developer chez sleekapp.io, obsessionnel des dotfiles</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Comment j'ai amélioré mon Ruby avec des contrats]]></title>
@@ -2926,34 +3072,6 @@ plein d’autres dans un futur proche. J’espère que ce sujet vous intéresse 
 </code></pre>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/09/les-sous-ensembles-de-listes-dans-r/">Les sous-ensembles de listes dans R</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/08/r-rep-vs-replicate/">R : rep vs replicate</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/23/3-reglages-pour-le-langage-r/">3 réglages pour le langage R</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Ce que je n'ai pas fait cette 14ème semaine de 2015]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015/"/>
-    <updated>2015-04-05T20:15:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/04/05/ce-que-je-nai-pas-fait-cette-14eme-semaine-de-2015</id>
-    <content type="html"><![CDATA[<p>Je n’ai pas commencé à bloguer en anglais, mais ça ne saurait tarder. Il me
-reste à choisir quelle techno utiliser. J’hésite entre :</p>
-
-<ol>
-  <li>Jekyll (que je connais bien)</li>
-  <li><a href="http://www.metalsmith.io">metalsmith</a> (pour sortir de ma zone de comfort)</li>
-  <li>rake, cat, <a href="http://en.wikipedia.org/wiki/M4_%28computer_language%29">m4</a>, sed, etc (sans rire ! pour un retour aux sources)</li>
-</ol>
-
-<p>Vous me conseillez quoi ?</p>
-
-<!-- more -->
-
-<p>Sinon, je n’ai pas encore lu <a href="http://en.wikipedia.org/wiki/Super-Cannes">Super-Cannes</a> de J.G. Ballard, que je me suis offert
-il y a 2 semaines. J’ai plus envie de lire de la fiction en ce moment, j’espère
-que ça va revenir vite.</p>
-
-<p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/03/29/ce-que-je-nai-pas-fait-cette-semaine-2/">Ce que je n&#8217;ai pas fait cette semaine - 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li><li><a href="http://lkdjiin.github.io/blog/2014/10/08/le-jeu-de-la-vie-dans-sept-langages-differents/">Le jeu de la vie dans sept langages différents</a></li></ul></section>
 ]]></content>
   </entry>
   
