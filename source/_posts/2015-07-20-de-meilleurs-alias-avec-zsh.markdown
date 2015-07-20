@@ -6,6 +6,8 @@ comments: true
 categories: [alias, shell, zsh]
 ---
 
+## `{ Guest Post }`
+
 Pour m'améliorer en tant que dev, j'essaye au maximum de simplifier et d'automatiser mon workflow. L'idée est de passer moins de temps à faire des choses qu'un ordinateur peut faire à ma place, et plus de temps à réfléchir aux problèmes que je cherche à résoudre.
 
 C'est dans cette optique que je me suis mis à ajouter énormément d'alias très courts à mon shell. Un alias revient à automatiser l'action de taper sur les touches pour des commandes fréquentes. Malheureusement, les alias sont sous-utilisés pour plusieurs raisons : on a peur d'oublier la commande qui se cache derrière, un autre dev avec qui on est en train de faire du pair programming aura du mal à comprendre quelles commandes sont exécutées, et souvent on oublie tout simplement qu'on a un alias pour la commande qu'on est en train de taper.
@@ -103,7 +105,7 @@ L'implémentation est un peu plus compliquée que pour les alias explicites. Reg
 
 ## Et bien plus encore
 
-zsh est un shell très puissant lorsqu'on a le courage de lire son manuel, et permet de customizer votre setup de manière très poussée. Pour plus de customization zsh et vim, jetez un coup d'oeil à mes [dotfiles](https://github.com/victormours/dotifles), et si vous avez des idées pour d'autres améliorations à base de zsh, [envoyez-les moi sur twitter](twitter.com/victormours) !
+zsh est un shell très puissant lorsqu'on a le courage de lire son manuel, et permet de customizer votre setup de manière très poussée. Pour plus de customization zsh et vim, jetez un coup d'oeil à mes [dotfiles](https://github.com/victormours/dotfiles), et si vous avez des idées pour d'autres améliorations à base de zsh, [envoyez-les moi sur twitter](twitter.com/victormours) !
 
 # Qui a écrit cet article ?
 

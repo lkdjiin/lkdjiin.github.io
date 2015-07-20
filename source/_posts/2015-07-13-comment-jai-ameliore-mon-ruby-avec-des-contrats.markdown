@@ -6,6 +6,8 @@ comments: true
 categories: [guest, ruby, contrat]
 ---
 
+## `{ Guest Post }`
+
 Mes aventures avec une quantité de langages m'ont permis d'entrevoir de nouvelles approches et techniques.
 Par exemple, un des gros apports d'Haskell sont les [Types](http://lyah.haskell.fr/creer-nos-propres-types-et-classes-de-types) et dans Erlang/Elixir le [Pattern-matching](http://learnyousomeerlang.com/syntax-in-functions) est roi.
 Professionnellement je code principalement en Ruby et je rêvais d'avoir un système de Types avancé ainsi que du pattern-matching.
