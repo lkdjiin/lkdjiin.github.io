@@ -105,7 +105,7 @@ L'implémentation est un peu plus compliquée que pour les alias explicites. Reg
 
 ## Et bien plus encore
 
-zsh est un shell très puissant lorsqu'on a le courage de lire son manuel, et permet de customizer votre setup de manière très poussée. Pour plus de customization zsh et vim, jetez un coup d'oeil à mes [dotfiles](https://github.com/victormours/dotfiles), et si vous avez des idées pour d'autres améliorations à base de zsh, [envoyez-les moi sur twitter](twitter.com/victormours) !
+zsh est un shell très puissant lorsqu'on a le courage de lire son manuel, et permet de customizer votre setup de manière très poussée. Pour plus de customization zsh et vim, jetez un coup d'oeil à mes [dotfiles](https://github.com/victormours/dotfiles), et si vous avez des idées pour d'autres améliorations à base de zsh, [envoyez-les moi sur twitter](http://twitter.com/victormours) !
 
 # Qui a écrit cet article ?
 
