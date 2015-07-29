@@ -13,7 +13,7 @@ sujet !
 
 Coco est un outil de **co**uverture de **co**de pour Ruby — **co**de
 **co**verage en anglais —. En gros, coco vous dit quels sont les fichiers d'un
-projet qui ne sont pas suffisament testés :
+projet qui ne sont pas suffisamment testés :
 
 {% img center /images/coco-shot-1.png %}
 
