@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : bash | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/bash/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-07-29T11:20:22+02:00</updated>
+  <updated>2015-08-06T17:40:22+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,99 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Utiliser Bash pour supprimer les encodages magiques de Ruby 1.9]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/08/06/utiliser-bash-pour-supprimer-les-encodages-magiques-de-ruby-1-dot-9/"/>
+    <updated>2015-08-06T17:27:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/08/06/utiliser-bash-pour-supprimer-les-encodages-magiques-de-ruby-1-dot-9</id>
+    <content type="html"><![CDATA[<p>Si vous avez travaillé sur des projets écrit avec Ruby 1.9, vous avez peut-être
+utilisé les encodages magiques (souvent appelés <em>magic comment</em>). Il s’agit
+d’un commentaire en début de fichier qui définit l’encodage :</p>
+
+<p><code>ruby
+# -*- encoding: UTF-8 -*-
+</code></p>
+
+<p>Récemment j’ai passé plusieurs projets de Ruby 1.9.x à Ruby 2.x et j’ai
+naturellement voulu supprimer ces <em>directives d’encodage</em> qui ne sont plus
+nécessaires.</p>
+
+<p>J’imagine qu’un IDE ou un autre doit être capable de faire ça (<code>&lt;mode troll&gt;</code>
+sinon quel intérêt à utiliser un IDE ? <code>&lt;/mode troll&gt;</code>). Toujours est-il que
+quelques commandes dans Bash et hop, terminé ;)</p>
+
+<p>Voici comment faire, sans trop entrer dans les détails. J’espère juste vous
+donner envie d’utiliser Bash, ou un autre shell (si ça n’est pas déjà le cas).</p>
+
+<!-- more -->
+
+<p>De quoi a-t-on besoin ?  <code>find</code>, <code>sed</code> et <code>xargs</code> :</p>
+
+<p><code>bash
+$ find . -type f -name '*.rb' | xargs sed -i '1{/encoding/d}'
+$ find . -type f -name '*.rb' | xargs sed -i -n '/./,$p'
+</code></p>
+
+<p>La première commande efface la première ligne des fichiers ruby si cette
+ligne contient <code>encoding</code>. La seconde commande enlève la première ligne si
+cette ligne est vide.</p>
+
+<h2 id="find">find</h2>
+
+<pre><code>find . -type f -name '*.rb'
+</code></pre>
+
+<p>Cherche tout les fichiers dont le nom se termine par <code>.rb</code> et les affichent
+les uns après les autres.  Ça donne quelque chose comme ça :</p>
+
+<pre><code>./fichier1.rb
+./fichier2.rb
+./dossier1/fichier1.rb
+./dossier1/fichier2.rb
+./dossier2/fichier1.rb
+[...]
+</code></pre>
+
+<h2 id="xargs">xargs</h2>
+
+<p>Pour donner les noms de fichier à manger à sed, il faut qu’ils soient sur une
+seule ligne. C’est à dire les uns à coté des autres comme on écrirait des
+paramètres, et pas les uns en dessous des autres comme ce qui sort de <code>find</code>.</p>
+
+<p>Voilà donc <code>xargs</code> :</p>
+
+<p><code>bash
+$ echo -e "a\nb\nc"
+a
+b
+c
+$ echo -e "a\nb\nc" | xargs
+a b c
+</code></p>
+
+<p>– <em>Le switch <code>-e</code> de echo interprète la séquence \n comme un saut de ligne.</em> —</p>
+
+<h2 id="sed">sed</h2>
+
+<p>Le switch <code>-i</code> c’est pour <em>in place</em>. On modifie vraiment les fichiers.</p>
+
+<pre><code>sed -i '1{/encoding/d}'
+</code></pre>
+
+<p>Supprime (<code>d</code>) la ligne qui contient <code>encoding</code>. Ne s’applique qu’à la 1ère
+ligne <code>1{}</code>.</p>
+
+<pre><code>sed -i -n '/./,$p'
+</code></pre>
+
+<p>Supprime la 1ère ligne si elle est vide. Je trouve que cette ligne mérite bien
+un article à elle toute seule. Alors son explication sera pour une prochaine
+fois ;)</p>
+
+<p>Et vous, comment auriez vous fait ? Avec un shell ? Un IDE ?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Extraction des tags de mon blog en ligne de commande]]></title>
@@ -570,44 +663,6 @@ Bash ne vous branche pas, <strong>hr</strong> existe aussi dans d’autres langa
 
 <p></p>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Comment réduire les erreurs de frappe dans la console]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/06/comment-reduire-les-erreurs-de-frappe-dans-la-console/"/>
-    <updated>2014-04-06T20:52:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/06/comment-reduire-les-erreurs-de-frappe-dans-la-console</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Régulièrement j’analyse mon fichier <code>~/.bash_history</code>.
-Régulièrement ça veut dire 2 ou 3 fois par an. Et je regarde ce qui revient
-le plus pour voir si je peux en transformer certaines en alias.
-Quel rapport avec les fautes de frappe ?</p>
-
-<!-- more -->
-
-<p>La dernière fois que je l’ai regardé, ce fameux fichier <code>~/.bash_history</code>,
-j’ai trouvé un nombre non négligeable de lignes qui débutaient par <code>gti</code>.
-Et oui, j’écris souvent <code>gti</code> au lieu de <code>git</code> ! On a tous des petits
-défauts de ce type, non ?</p>
-
-<p>J’imagine que nombre d’entre vous ont déjà ce genre de choses dans
-leur fichier <code>~/.bashrc</code> (ou <code>~/.bash_profile</code>), mais pour ceux qui n’y
-avait pas encore pensé, la solution consiste à faire un alias:</p>
-
-<p><code>bash
-alias gti='git'
-</code></p>
-
-<p>Alors d’accord, le titre de cet article ment un peu ;) Ça ne réduit pas
-mes fautes de frappes, mais ça les rend transparentes, c’est déjà très bien.</p>
-
-<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-<p>À demain.</p>
-
-<p></p>
 ]]></content>
   </entry>
   

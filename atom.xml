@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-07-29T11:20:22+02:00</updated>
+  <updated>2015-08-06T17:40:22+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,105 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Utiliser Bash pour supprimer les encodages magiques de Ruby 1.9]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/08/06/utiliser-bash-pour-supprimer-les-encodages-magiques-de-ruby-1-dot-9/"/>
+    <updated>2015-08-06T17:27:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/08/06/utiliser-bash-pour-supprimer-les-encodages-magiques-de-ruby-1-dot-9</id>
+    <content type="html"><![CDATA[<p>Si vous avez travaillé sur des projets écrit avec Ruby 1.9, vous avez peut-être
+utilisé les encodages magiques (souvent appelés <em>magic comment</em>). Il s’agit
+d’un commentaire en début de fichier qui définit l’encodage :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># -*- encoding: UTF-8 -*-</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Récemment j’ai passé plusieurs projets de Ruby 1.9.x à Ruby 2.x et j’ai
+naturellement voulu supprimer ces <em>directives d’encodage</em> qui ne sont plus
+nécessaires.</p>
+
+<p>J’imagine qu’un IDE ou un autre doit être capable de faire ça (<code>&lt;mode troll&gt;</code>
+sinon quel intérêt à utiliser un IDE ? <code>&lt;/mode troll&gt;</code>). Toujours est-il que
+quelques commandes dans Bash et hop, terminé ;)</p>
+
+<p>Voici comment faire, sans trop entrer dans les détails. J’espère juste vous
+donner envie d’utiliser Bash, ou un autre shell (si ça n’est pas déjà le cas).</p>
+
+<!-- more -->
+
+<p>De quoi a-t-on besoin ?  <code>find</code>, <code>sed</code> et <code>xargs</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>find . -type f -name <span class="s1">&#39;*.rb&#39;</span> | xargs sed -i <span class="s1">&#39;1{/encoding/d}&#39;</span>
+</span><span class="line"><span class="nv">$ </span>find . -type f -name <span class="s1">&#39;*.rb&#39;</span> | xargs sed -i -n <span class="s1">&#39;/./,$p&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La première commande efface la première ligne des fichiers ruby si cette
+ligne contient <code>encoding</code>. La seconde commande enlève la première ligne si
+cette ligne est vide.</p>
+
+<h2 id="find">find</h2>
+
+<pre><code>find . -type f -name '*.rb'
+</code></pre>
+
+<p>Cherche tout les fichiers dont le nom se termine par <code>.rb</code> et les affichent
+les uns après les autres.  Ça donne quelque chose comme ça :</p>
+
+<pre><code>./fichier1.rb
+./fichier2.rb
+./dossier1/fichier1.rb
+./dossier1/fichier2.rb
+./dossier2/fichier1.rb
+[...]
+</code></pre>
+
+<h2 id="xargs">xargs</h2>
+
+<p>Pour donner les noms de fichier à manger à sed, il faut qu’ils soient sur une
+seule ligne. C’est à dire les uns à coté des autres comme on écrirait des
+paramètres, et pas les uns en dessous des autres comme ce qui sort de <code>find</code>.</p>
+
+<p>Voilà donc <code>xargs</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;a\nb\nc&quot;</span>
+</span><span class="line">a
+</span><span class="line">b
+</span><span class="line">c
+</span><span class="line"><span class="nv">$ </span><span class="nb">echo</span> -e <span class="s2">&quot;a\nb\nc&quot;</span> | xargs
+</span><span class="line">a b c
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>– <em>Le switch <code>-e</code> de echo interprète la séquence \n comme un saut de ligne.</em> —</p>
+
+<h2 id="sed">sed</h2>
+
+<p>Le switch <code>-i</code> c’est pour <em>in place</em>. On modifie vraiment les fichiers.</p>
+
+<pre><code>sed -i '1{/encoding/d}'
+</code></pre>
+
+<p>Supprime (<code>d</code>) la ligne qui contient <code>encoding</code>. Ne s’applique qu’à la 1ère
+ligne <code>1{}</code>.</p>
+
+<pre><code>sed -i -n '/./,$p'
+</code></pre>
+
+<p>Supprime la 1ère ligne si elle est vide. Je trouve que cette ligne mérite bien
+un article à elle toute seule. Alors son explication sera pour une prochaine
+fois ;)</p>
+
+<p>Et vous, comment auriez vous fait ? Avec un shell ? Un IDE ?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Coco version 0.13.0]]></title>
@@ -859,7 +958,7 @@ fichier.</p>
 </span><span class="line">          rot.per<span class="o">=</span><span class="m">.25</span><span class="p">,</span> random.order<span class="o">=</span><span class="kc">FALSE</span><span class="p">,</span> random.color<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/08/r-rep-vs-replicate/">R : rep vs replicate</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="http://lkdjiin.github.io/blog/2015/05/15/creer-plusieurs-fichiers-en-bash/">Créer plusieurs fichiers en Bash</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/08/r-rep-vs-replicate/">R : rep vs replicate</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/06/utiliser-bash-pour-supprimer-les-encodages-magiques-de-ruby-1-dot-9/">Utiliser Bash pour supprimer les encodages magiques de Ruby 1.9</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2141,7 +2240,7 @@ un long switch/case (virtuellement infini) pour plusieurs petites classes simple
 Le système est toujours aussi complexe dans son ensemble, mais sa maintenance
 est maintenant plus facile.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href="http://lkdjiin.github.io/blog/2015/07/29/coco-version-0-dot-13-dot-0/">Coco version 0.13.0</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/18/les-langages-que-jaimerais-re-apprendre/">Les langages que j&#8217;aimerais (ré)apprendre</a></li><li><a href="http://lkdjiin.github.io/blog/2013/11/24/utiliser-vim-comme-un-tableur-sur-linux-enfin-presque/">Utiliser Vim comme un tableur sur Linux (enfin presque)</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/06/utiliser-bash-pour-supprimer-les-encodages-magiques-de-ruby-1-dot-9/">Utiliser Bash pour supprimer les encodages magiques de Ruby 1.9</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2397,7 +2496,7 @@ binaire ? Il faudrait générer toutes les permutations entre deux suites
 </span><span class="line">00011011
 </span></code></pre></td></tr></table></div></figure></notextile></div>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2013/12/22/remplacer-sed-et-awk-par-ruby-un-dernier-exemple/">Remplacer Sed et Awk par Ruby: Un dernier exemple</a></li><li><a href="http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/">Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/16/difference-entre-require-relative-et-require-en-ruby/">Différence entre require_relative et require en Ruby</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2013/12/22/remplacer-sed-et-awk-par-ruby-un-dernier-exemple/">Remplacer Sed et Awk par Ruby: Un dernier exemple</a></li><li><a href="http://lkdjiin.github.io/blog/2013/12/09/remplacer-sed-et-awk-par-ruby-8-script-sur-la-ligne-de-commande/">Remplacer Sed et Awk par Ruby 8: Script sur la ligne de commande</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/06/utiliser-bash-pour-supprimer-les-encodages-magiques-de-ruby-1-dot-9/">Utiliser Bash pour supprimer les encodages magiques de Ruby 1.9</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2794,72 +2893,6 @@ Ensuite spécifiez le dans votre <code>~/.bashrc</code> :</p>
 un commentaire. À bientôt.</p>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/08/r-rep-vs-replicate/">R : rep vs replicate</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/09/les-sous-ensembles-de-listes-dans-r/">Les sous-ensembles de listes dans R</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/07/les-sous-ensembles-dans-r/">Les sous-ensembles dans R</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Comment mieux apprendre : La technique du rappel]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/04/21/comment-mieux-apprendre-la-technique-du-rappel/"/>
-    <updated>2015-04-21T19:45:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/04/21/comment-mieux-apprendre-la-technique-du-rappel</id>
-    <content type="html"><![CDATA[<div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
-
-<p>J’ai participé récemment au MOOC
-<a href="https://www.coursera.org/learn/learning-how-to-learn">Learning how to learn</a>
-produit par
-l’<a href="https://www.coursera.org/ucsd">université de San Diego, Californie</a>
-et accessible sur <a href="https://www.coursera.org/courses">Coursera</a>.</p>
-
-<p>Je cherchais des moyens, des trucs, des astuces, pour apprendre mieux. C’est à
-dire plus rapidement et plus facilement. J’ai été servi. Les professeurs
-Barbara Oakley et Terrence Sejnowski font un excellent travail. Je partagerai
-avec vous quelques uns des trucs que j’ai appris en suivant ce cours, et je
-vais commencer aujourd’hui par <strong>la technique du rappel</strong>.</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/total-recall.png" /></p>
-
-<!-- more -->
-
-<h2 id="quoi">Quoi</h2>
-
-<p>La technique du rappel (ou <em>recall</em> en anglais) consiste à faire un réel effort
-après un bloc de travail pour se rappeler les points essentiels abordés pendant
-ce bloc de travail.</p>
-
-<p>Ça n’est vraiment pas plus que ça, mais ce simple truc va booster votre
-capacité à apprendre en ancrant plus sûrement les connaissances toutes fraiches
-dans votre mémoire.</p>
-
-<p>Alors qu’est-ce que j’appelle <strong>un bloc de travail ?</strong> Ça peut être à peu près
-tout et n’importe quoi ;) Un cours de 20 minutes, 30 minutes de lecture, une
-conférence de 45 minutes, une séance de débugage d’une heure, une réunion de 3
-heures, etc…</p>
-
-<h2 id="pourquoi">Pourquoi</h2>
-
-<p>Si on ne fait rien pour ancrer dans son cerveau les informations vues durant un
-bloc de travail (tout spécialement si c’est de la théorie), celles-ci vont
-disparaitre rapidement. Il est <strong>naturel</strong> que ces informations s’effacent si
-on ne fait rien pour les retenir.</p>
-
-<p>La technique du rappel évite aussi, dans une certaine mesure, l’<strong>illusion de
-compétence</strong> (la fausse sensation d’avoir appris quelque chose) en mettant
-l’accent très vite sur les points non acquis ou délicats.</p>
-
-<h2 id="comment">Comment</h2>
-
-<p>La meilleure mise en œuvre que j’ai pu trouver est de prendre quelques
-dizaines de secondes (rarement plus d’une minute) à la fin d’un bloc de travail
-pour écrire les points essentiels. Ça peut être 2 ou 3 phrases, une liste, un
-schéma, ou tout ce que vous jugerez pertinent.</p>
-
-<p>Deux remarques : (i) Prendre des notes pendant le bloc de travail ne dispense
-pas de mettre en œuvre la technique du rappel, (ii) Penser aux quelques points
-essentiels abordés pendant le bloc de travail ne suffit pas, il faut vraiment
-les écrire.</p>
-
-<p><strong>C’est une habitude toute simple, qui se prend très vite, et qui peut vraiment vous
-permettre d’apprendre plus rapidement et plus facilement.</strong></p>
 ]]></content>
   </entry>
   
