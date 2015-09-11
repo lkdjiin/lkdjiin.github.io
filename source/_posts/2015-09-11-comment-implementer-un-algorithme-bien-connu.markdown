@@ -6,7 +6,7 @@ comments: true
 categories: [algorithme]
 ---
 
-Quand tu implémente un algorithme «bien connu», tu as tout intérêt à suivre
+Quand tu implémentes un algorithme «bien connu», tu as tout intérêt à suivre
 strictement l'algorithme tel qu'il est décrit.
 
 Ne commence pas à vouloir modifier telle ou telle partie.
