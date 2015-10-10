@@ -29,7 +29,7 @@ Sur le graphique précédent, à gauche, on peut voir les données brutes de la
 semaine. Toute l'échelle des valeurs est représentée. Suivant comment je suis
 assis sur mon fauteuil, comment le poids est réparti, le dispositif capte des
 valeurs différentes. Les points bleus, en bas, indiquent clairement quand je
-suis assis. Après quelques essais empiriques, j'ai trouvé que la valeur 20
+ne suis pas assis (zéro pression ou presque). Après quelques essais empiriques, j'ai trouvé que la valeur 20
 était un bon seuil pour séparer les données brutes en deux catégories :
 assis (*seated*) et pas assis (*not seated*).
 
