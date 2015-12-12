@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : arduino | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/arduino/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-10-29T15:17:17+01:00</updated>
+  <updated>2015-12-12T18:58:38+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,147 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Fabriquer un sablier à thé électronique 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/"/>
+    <updated>2015-12-12T16:51:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2</id>
+    <content type="html"><![CDATA[<p>Après avoir appris à programmer un ATtiny45 avec l’IDE Arduino, il fallait
+maintenant s’en passer. Pour cela je suis passé du langage Arduino au
+langage C, avec le cross compilateur <code>avr-gcc</code> et l’outil <code>avrdude</code>.</p>
+
+<p>Je vais profiter de vous montrer cela pour comparer la taille d’un même
+programme, écrit une fois en langage Arduino et l’autre en C.</p>
+
+<!-- more -->
+
+<p><a href="/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Lire la partie 1</a></p>
+
+<p>Le programme, c’est deux boutons/deux LEDs. Le bouton A s’occupe de la LED A.
+Le bouton B s’occupe de la LED B. Quand un bouton est pressé puis relâché, sa
+LED respective change d’état. Si elle était éteinte elle s’allume, et vice-versa.
+C’était un peu mon <em>hello world!</em></p>
+
+<p>Voilà le programme en langage Arduino:</p>
+
+<p>```c sketch/sketch.ino
+void setup() {
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  digitalWrite(3, HIGH);
+  digitalWrite(4, HIGH);
+  pinMode(0, INPUT_PULLUP);
+  pinMode(1, INPUT_PULLUP);
+}</p>
+
+<p>void loop() {
+  if(digitalRead(0) == LOW) {
+    delay(10);
+    while(digitalRead(0) != HIGH) ;
+    delay(10);
+    digitalWrite(3, bitRead(PORTB, 3) ^ HIGH);
+  }
+  if(digitalRead(1) == LOW) {
+    delay(10);
+    while(digitalRead(1) != HIGH) ;
+    delay(10);
+    digitalWrite(4, bitRead(PORTB, 4) ^ HIGH);
+  }
+}
+```</p>
+
+<p>Le dossier contient juste deux sous dossiers:</p>
+
+<pre><code>$ dirtree
+.
+├── build
+└── sketch
+</code></pre>
+
+<p>Je compile avec l’IDE (en ligne de commande mais avec l’IDE quand même):</p>
+
+<pre><code>$ ~/local/bin/arduino-1.6.5/arduino --verify sketch/sketch.ino
+--pref build.path=build
+Picked up JAVA_TOOL_OPTIONS: 
+Loading configuration...
+Initializing packages...
+Preparing boards...
+Verifying...
+
+Le croquis utilise 972 octets (23%) de l'espace de stockage de programmes.
+Le maximum est de 4 096 octets.
+Les variables globales utilisent 9 octets de mémoire dynamique.
+</code></pre>
+
+<p>La taille du programme a déjà était annoncée, mais on peut la vérifier avec
+<code>avr-size</code>, 972 octets:</p>
+
+<pre><code>$ avr-size -d build/sketch.cpp.hex 
+   text	   data	    bss	    dec	    hex	filename
+      0	    972	      0	    972	    3cc	build/sketch.cpp.hex
+</code></pre>
+
+<p>Maintenant voici le même programme, cette fois directement en C. Donc sans
+toutes les aides et fioritures de l’Arduino:</p>
+
+<p>```c main.c
+#include &lt;avr/io.h&gt;
+#define F_CPU 1000000UL
+#include &lt;util/delay.h&gt;</p>
+
+<p>int main(void)
+{
+  DDRB |= 1 « 4 | 1 « 3;
+  PORTB |= 1 « 4 | 1 « 3;
+  DDRB &amp;= ~(1 « 0 | 1 « 1);
+  PORTB |= (1 « 0 | 1 « 1);</p>
+
+<p>while(1) {
+    if(!(PINB &amp; (1 « 0))) {
+      _delay_ms(10);
+      while(!(PINB &amp; (1 « 0))) ;
+      _delay_ms(10);
+      PORTB ^= (1 « 3);
+    }
+    if(!(PINB &amp; (1 « 1))) {
+      _delay_ms(10);
+      while(!(PINB &amp; (1 « 1))) ;
+      _delay_ms(10);
+      PORTB ^= (1 « 4);
+    }
+  }
+}
+```</p>
+
+<p>La chaîne de compilation est cette fois un peu plus longue:</p>
+
+<pre><code>$ avr-gcc -O -mmcu=attiny45 -c main.c
+$ avr-gcc -mmcu=attiny45 -o main.elf main.o
+$ avr-objcopy -O ihex main.elf main.hex
+</code></pre>
+
+<p>Même avec une option d’optimisation au minimum, la différence de taille est… sidérale:</p>
+
+<pre><code>$ avr-size -d main.hex 
+   text	   data	    bss	    dec	    hex	filename
+      0	    158	      0	    158	     9e	main.hex
+</code></pre>
+
+<p>Pour transférer le code vers le micro processeur il n’y a plus besoin de l’IDE
+Arduino. Je place l’ATtiny45 sur le <a href="/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">shield programmateur</a> et j’utilise le
+programme avrdude :</p>
+
+<p><code>
+avrdude -p attiny45 -P /dev/ttyUSB0 -c arduino -U flash:w:main.hex -b 19200
+</code></p>
+
+<p>Rendez vous une prochaine fois pour le code du sablier électronique avec son
+Makefile et tout et tout.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Fabriquer un sablier à thé électronique]]></title>
@@ -86,6 +227,8 @@ outils en ligne de commande, pour des raisons de reproductibilité et d’automa
 je soupçonnais que le code de mon <em>sablier sonore</em> pouvait tenir sur un
 ATtiny13 qui ne posséde que 1K de ROM et est pratiquement deux fois moins cher
 que l’ATtiny45.</p>
+
+<p><a href="/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
 
 <p>À suivre…</p>
 
@@ -364,148 +507,6 @@ sans cotiser mensuellement. Alors rendez-vous la semaine prochaine pour savoir
 si j’ai donné ;)</ins></p>
 
 <p>Et vous ? Que n’avez-vous pas fait cette semaine ?</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Un jeu de Simon - Étape 1]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1/"/>
-    <updated>2015-03-01T21:00:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/03/01/un-jeu-de-simon-etape-1</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Lors d’un projet du dimanche avec ma fille, j’ai commencé un
-<a href="http://fr.wikipedia.org/wiki/Simon_%28jeu%29">jeu de Simon</a> sur l’Arduino.
-Nous avons simplifié les règles au maximum (ma fille n’a pas 3 ans) et obtenu
-ce que je vous propose dans cet article.</p>
-
-<p>C’est seulement un point de départ, j’ai bien envie d’implémenter le jeu en
-entier et d’en faire un objet réel. Il devrait donc y avoir d’autres articles…</p>
-
-<p><img class="center" src="/images/simon-1.jpg"></p>
-
-<!-- more -->
-
-<h2 id="les-rgles">Les règles</h2>
-
-<p>J’ai réduit les règles du jeu au plus simple : Il y a deux couleurs, rouge et
-vert. La machine donne une couleur en allumant une LED et le joueur répond en
-appuyant sur un bouton de couleur. Si la réponse est juste le joueur gagne et
-une nouvelle partie commence. Si la réponse est fausse les LEDs clignotent
-quelque temps pour signaler que le jeu est perdu et une nouvelle partie
-commence.</p>
-
-<p>Difficile de faire plus simple, hein ?</p>
-
-<h2 id="les-composants">Les composants</h2>
-
-<p>Nous aurons besoin de :</p>
-
-<ul>
-  <li>2 LEDs, une rouge et une verte</li>
-  <li>2 boutons momentanés, si possible un rouge et un vert (sinon les gris
-moches ça marche aussi)</li>
-  <li>2 résistances de 220 Ohms pour les LEDs</li>
-  <li>2 résistances de 10 kilo Ohms pour les boutons</li>
-  <li>du câble</li>
-</ul>
-
-<h2 id="lassemblage">L’assemblage</h2>
-
-<p><img class="center" src="/images/simon-etape1-bb.png"></p>
-
-<h2 id="le-code">Le code</h2>
-
-<p>Rien de spécial à dire pour le code, si ce n’est qu’il a été écrit sous la
-pression de ma fille et la patience n’est pas son fort. Ça pourrait expliquer
-pourquoi le code n’est pas très joli.</p>
-
-<p>``` c
-const byte RED = 0;
-const byte GREEN = 1;</p>
-
-<p>byte buttonRed = 8;
-byte buttonGreen = 9;
-byte ledRed = 2;
-byte ledGreen = 3;
-byte computerTurn = 1;
-byte lastPly;</p>
-
-<p>void setup() {
-  pinMode(buttonRed, INPUT);
-  pinMode(buttonGreen, INPUT);
-  pinMode(ledRed, OUTPUT);
-  pinMode(ledGreen, OUTPUT);</p>
-
-<p>randomSeed(analogRead(0));
-}</p>
-
-<p>void loop() {
-  if(computerTurn) {
-    lastPly = random(2);
-    allLedsOff();
-    if(lastPly == RED) {
-      digitalWrite(ledRed, HIGH);
-    } else {
-      digitalWrite(ledGreen, HIGH);
-    }
-    delay(300);
-    allLedsOff();
-    computerTurn = 0;
-  } else {
-    int stateRed = digitalRead(buttonRed);
-    int stateGreen = digitalRead(buttonGreen);
-    if(stateRed || stateGreen) {
-      if(stateRed) {
-        lightTheLed(ledRed);
-      } else {
-        lightTheLed(ledGreen);
-      }
-      if(stateRed &amp;&amp; lastPly == RED) {
-        delay(2000);
-      } else if(stateGreen &amp;&amp; lastPly == GREEN) {
-        delay(2000);
-      } else if((stateRed &amp;&amp; lastPly == GREEN) || (stateGreen &amp;&amp; lastPly == RED)) {
-        blinkLeds();
-        delay(2000);
-      }
-      computerTurn = 1;
-    }
-    delay(1);
-  }
-}</p>
-
-<p>void allLedsOff() {
-  digitalWrite(ledRed, LOW);
-  digitalWrite(ledGreen, LOW);
-}</p>
-
-<p>void lightTheLed(byte led) {
-  digitalWrite(led, HIGH);
-  delay(200);
-  digitalWrite(led, LOW);
-}</p>
-
-<p>void blinkLeds() {
-  for(int i = 0; i &lt; 10; i++) {
-    digitalWrite(ledRed, HIGH);
-    digitalWrite(ledGreen, HIGH);
-    delay(100);
-    allLedsOff();
-    delay(100);
-  }
-}
-```</p>
-
-<h2 id="la-suite">La suite</h2>
-
-<p>Il reste beaucoup de choses à faire… Ajouter le bleu et le jaune ; ajouter du son ;
-enregistrer les séquences de couleur ; le vrai jeu de Simon, quoi.
-Et ensuite il faudra en faire un objet autonome, sans Arduino.</p>
-
-<p>Alors à la prochaine.</p>
 
 <p></p>
 ]]></content>

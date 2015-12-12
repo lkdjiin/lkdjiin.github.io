@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2015-10-29T15:17:17+01:00</updated>
+  <updated>2015-12-12T18:58:38+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,194 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Fabriquer un sablier à thé électronique 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/"/>
+    <updated>2015-12-12T16:51:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2</id>
+    <content type="html"><![CDATA[<p>Après avoir appris à programmer un ATtiny45 avec l’IDE Arduino, il fallait
+maintenant s’en passer. Pour cela je suis passé du langage Arduino au
+langage C, avec le cross compilateur <code>avr-gcc</code> et l’outil <code>avrdude</code>.</p>
+
+<p>Je vais profiter de vous montrer cela pour comparer la taille d’un même
+programme, écrit une fois en langage Arduino et l’autre en C.</p>
+
+<!-- more -->
+
+<p><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Lire la partie 1</a></p>
+
+<p>Le programme, c’est deux boutons/deux LEDs. Le bouton A s’occupe de la LED A.
+Le bouton B s’occupe de la LED B. Quand un bouton est pressé puis relâché, sa
+LED respective change d’état. Si elle était éteinte elle s’allume, et vice-versa.
+C’était un peu mon <em>hello world!</em></p>
+
+<p>Voilà le programme en langage Arduino:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>sketch/sketch.ino</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INPUT_PULLUP</span><span class="p">);</span>
+</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">INPUT_PULLUP</span><span class="p">);</span>
+</span><span class="line"><span class="p">}</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">LOW</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="n">HIGH</span><span class="p">)</span> <span class="p">;</span>
+</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">bitRead</span><span class="p">(</span><span class="n">PORTB</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">^</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">LOW</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">HIGH</span><span class="p">)</span> <span class="p">;</span>
+</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">bitRead</span><span class="p">(</span><span class="n">PORTB</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">^</span> <span class="n">HIGH</span><span class="p">);</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le dossier contient juste deux sous dossiers:</p>
+
+<pre><code>$ dirtree
+.
+├── build
+└── sketch
+</code></pre>
+
+<p>Je compile avec l’IDE (en ligne de commande mais avec l’IDE quand même):</p>
+
+<pre><code>$ ~/local/bin/arduino-1.6.5/arduino --verify sketch/sketch.ino
+--pref build.path=build
+Picked up JAVA_TOOL_OPTIONS: 
+Loading configuration...
+Initializing packages...
+Preparing boards...
+Verifying...
+
+Le croquis utilise 972 octets (23%) de l'espace de stockage de programmes.
+Le maximum est de 4 096 octets.
+Les variables globales utilisent 9 octets de mémoire dynamique.
+</code></pre>
+
+<p>La taille du programme a déjà était annoncée, mais on peut la vérifier avec
+<code>avr-size</code>, 972 octets:</p>
+
+<pre><code>$ avr-size -d build/sketch.cpp.hex 
+   text	   data	    bss	    dec	    hex	filename
+      0	    972	      0	    972	    3cc	build/sketch.cpp.hex
+</code></pre>
+
+<p>Maintenant voici le même programme, cette fois directement en C. Donc sans
+toutes les aides et fioritures de l’Arduino:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;avr/io.h&gt;</span>
+</span><span class="line"><span class="cp">#define F_CPU 1000000UL</span>
+</span><span class="line"><span class="cp">#include &lt;util/delay.h&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="n">DDRB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class="line">  <span class="n">PORTB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">;</span>
+</span><span class="line">  <span class="n">DDRB</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">  <span class="n">PORTB</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span><span class="p">)))</span> <span class="p">{</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">      <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span><span class="p">)))</span> <span class="p">;</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">      <span class="n">PORTB</span> <span class="o">^=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)))</span> <span class="p">{</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">      <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)))</span> <span class="p">;</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">      <span class="n">PORTB</span> <span class="o">^=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La chaîne de compilation est cette fois un peu plus longue:</p>
+
+<pre><code>$ avr-gcc -O -mmcu=attiny45 -c main.c
+$ avr-gcc -mmcu=attiny45 -o main.elf main.o
+$ avr-objcopy -O ihex main.elf main.hex
+</code></pre>
+
+<p>Même avec une option d’optimisation au minimum, la différence de taille est… sidérale:</p>
+
+<pre><code>$ avr-size -d main.hex 
+   text	   data	    bss	    dec	    hex	filename
+      0	    158	      0	    158	     9e	main.hex
+</code></pre>
+
+<p>Pour transférer le code vers le micro processeur il n’y a plus besoin de l’IDE
+Arduino. Je place l’ATtiny45 sur le <a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">shield programmateur</a> et j’utilise le
+programme avrdude :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">avrdude</span> <span class="o">-</span><span class="n">p</span> <span class="n">attiny45</span> <span class="o">-</span><span class="n">P</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">ttyUSB0</span> <span class="o">-</span><span class="n">c</span> <span class="n">arduino</span> <span class="o">-</span><span class="n">U</span> <span class="n">flash</span><span class="o">:</span><span class="n">w</span><span class="o">:</span><span class="n">main</span><span class="p">.</span><span class="n">hex</span> <span class="o">-</span><span class="n">b</span> <span class="mi">19200</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Rendez vous une prochaine fois pour le code du sablier électronique avec son
+Makefile et tout et tout.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Fabriquer un sablier à thé électronique</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Fabriquer un sablier à thé électronique]]></title>
@@ -87,9 +275,11 @@ je soupçonnais que le code de mon <em>sablier sonore</em> pouvait tenir sur un
 ATtiny13 qui ne posséde que 1K de ROM et est pratiquement deux fois moins cher
 que l’ATtiny45.</p>
 
+<p><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
+
 <p>À suivre…</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li><li><a href="http://lkdjiin.github.io/blog/2015/03/22/ce-que-je-nai-pas-fait-cette-semaine/">Ce que je n&#8217;ai pas fait cette semaine</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Fabriquer un sablier à thé électronique 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2509,50 +2699,6 @@ générale <code>sapply</code> :</p>
 puisque cette méthode évite de générer un vecteur inutile (<code>1:4</code>) et de passer par une fonction anonyme qui n’utilise pas son argument.</p>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/">Extraction des tags de mon blog en ligne de commande</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/23/3-reglages-pour-le-langage-r/">3 réglages pour le langage R</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/09/les-sous-ensembles-de-listes-dans-r/">Les sous-ensembles de listes dans R</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Classons les développeurs selon le nombre de parenthèses utilisées]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/06/06/classons-les-developpeurs-selon-le-nombre-de-parentheses-utilisees/"/>
-    <updated>2015-06-06T10:25:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/06/06/classons-les-developpeurs-selon-le-nombre-de-parentheses-utilisees</id>
-    <content type="html"><![CDATA[<p>Depuis quelques mois je vois passer ici et là plusieurs «classements des
-développeurs».  Plutôt que de dire ce que je pense de ces
-classements, je voudrais en rire un peu en proposant une nouvelle méthode de
-classification.</p>
-
-<p><strong>Et si on se mettait à juger notre code par le nombre de parenthèses inutiles
-qu’il produit ?</strong></p>
-
-<!-- more -->
-
-<p>Petite histoire inventée : <em>Un jour j’ai passé 3 heures à trouver un bug causé
-par des parenthèses manquantes. Depuis, je m’assure que cela n’arrivera plus
-jamais, quitte à ce que personne (pas même moi d’ailleurs) puisse me relire.</em></p>
-
-<p>En R par exemple :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="r"><span class="line"><span class="c1"># Quand j&#39;ai décidé que je réfléchirai demain.</span>
-</span><span class="line">data<span class="p">[((</span>data<span class="o">$</span>var1 <span class="o">&lt;</span> <span class="m">3</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span>data<span class="o">$</span>var2 <span class="o">&gt;</span> <span class="m">11</span><span class="p">)),</span> <span class="p">]</span>
-</span><span class="line">
-</span><span class="line"><span class="c1"># Quand je suis en forme, mais pas trop quand même.</span>
-</span><span class="line">data<span class="p">[(</span>data<span class="o">$</span>var1 <span class="o">&lt;</span> <span class="m">3</span> <span class="o">&amp;</span> data<span class="o">$</span>var2 <span class="o">&gt;</span> <span class="m">11</span><span class="p">),</span> <span class="p">]</span>
-</span><span class="line">
-</span><span class="line"><span class="c1"># Bon, là, ça va.</span>
-</span><span class="line">data<span class="p">[</span>data<span class="o">$</span>var1 <span class="o">&lt;</span> <span class="m">3</span> <span class="o">&amp;</span> data<span class="o">$</span>var2 <span class="o">&gt;</span> <span class="m">11</span><span class="p">,</span> <span class="p">]</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>À plus tard pour un article plus sérieux ;) Peut-être sur la
-précédence des opérateurs ?!</p>
 ]]></content>
   </entry>
   
