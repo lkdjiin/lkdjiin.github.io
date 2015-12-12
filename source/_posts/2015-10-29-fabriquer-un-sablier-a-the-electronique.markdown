@@ -75,6 +75,8 @@ je soupçonnais que le code de mon *sablier sonore* pouvait tenir sur un
 ATtiny13 qui ne posséde que 1K de ROM et est pratiquement deux fois moins cher
 que l'ATtiny45.
 
+[Lire la partie 2](/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/)
+
 À suivre…
 
 {% connexe %}
