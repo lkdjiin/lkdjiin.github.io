@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : arbre | Xavier Nayrac]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/arbre/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2016-01-17T23:43:00+01:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Les arbres browniens]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/"/>
+    <updated>2016-01-17T23:30:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens</id>
+    <content type="html"><![CDATA[<p>Ce week end j’ai joué avec les arbres browniens (<em>brownian trees</em>).
+Ce sont des agglomerats de cellules qui ressemblent vaguement à des arbres,
+obtenus à partir d’un mouvement brownien. Et le mouvement brownien, c’est cool.</p>
+
+<p>C’est Robert Brown, un
+botaniste, qui le décrit en 1827 en observant des petites particles qui
+semblaient bouger toutes seules. Il voit ses particules avoir la tremblote, mais
+sans pouvoir expliquer pourquoi.</p>
+
+<p>C’est d’autant plus cool qu’en 1905, en donnant l’explication du mouvement
+brownien, Albert Enstein va fournir la preuve de l’existence des atomes.</p>
+
+<p>Le mouvement brownien c’est simplement les atomes qui <em>cognent</em> dans tout les
+sens sur des particules.</p>
+
+<p><img class="center" src="/images/brownian-tree.png"></p>
+
+<!-- more -->
+
+<p>L’algorithme pour créer un arbre brownien est enfantin:</p>
+
+<ol>
+  <li>Positionner au hasard une première cellule gelée qui sert de <em>graine</em>.</li>
+  <li>Positionner au hasard une cellule libre.</li>
+  <li>Mouvoir au hasard la cellule libre, c’est le mouvement brownien.</li>
+  <li>Quand la cellule libre <em>rencontre</em> une cellule gelée, elle gèle elle-même
+et on recommence au point 2.</li>
+</ol>
+
+<p>Mettre les cellules libres une par une, c.à.d attendre qu’une rencontre avec une
+cellule gelée se produise avant de passer à la cellule libre suivante est trop
+long. Avec un dispositif d’affichage assez grand on pourrait y passer plusieurs
+jours.
+Donc je met toutes les cellules libres dès le départ, ainsi il se passe très
+vite beaucoup de choses.</p>
+
+<p>J’ai fait <a href="https://www.youtube.com/watch?v=wQnTUZHfSKA&amp;feature=youtu.be">une vidéo de la construction d’un arbre brownien</a> pour que vous puissiez visualiser comment ça fonctionne.</p>
+
+<p>J’ai écrit un programme en JRuby pour faire un arbre brownien basique.  Le code
+n’est pas beau car il n’a pas été pensé pour durer plus que le temps d’un
+week-end. Malgré tout, je pense qu’il est compréhensible et qu’il peut servir
+de base pour des idées plus sophistiquées.</p>
+
+<p>```ruby
+include Java</p>
+
+<h1 id="its-ruby-but-its-also-java-so-import">It’s Ruby… but it’s also Java… so… import…</h1>
+<p>import javax.swing.JFrame
+import javax.swing.JPanel
+import javax.swing.Timer
+import java.awt.Color
+import java.awt.Dimension
+import java.awt.Toolkit
+import java.awt.event.ActionListener</p>
+
+<p>SIZE = 200        # Both width and height of the <em>image</em>.
+SCALE = 2         # Multiply size by scale to obtain the <em>window</em> size.
+FREE_TOTAL = 6000 # Number of particles to agregate.
+DELAY = 20        # Time to wait between <em>screen refreshes</em>.</p>
+
+<p>VOID = 0   # A cell with nothing in itself.
+FROZEN = 1 # A cell already agregated.</p>
+
+<p>class BrownianTree &lt; JFrame
+  include ActionListener</p>
+
+<p>def initialize
+    super(“Brownian Tree”)
+    init_ui
+  end</p>
+
+<p>def init_ui
+    @board = Board.new
+    @board.setPreferredSize(Dimension.new(SIZE * SCALE, SIZE * SCALE))
+    add(@board)
+    pack
+    setDefaultCloseOperation(JFrame::EXIT_ON_CLOSE)
+    setVisible(true)</p>
+
+<pre><code>@timer = Timer.new(DELAY, self)
+@timer.start   end
+</code></pre>
+
+<p># Called every DELAY millisecond, thanks to the <em>magic</em> of
+  # ActionListener.
+  def actionPerformed(e)
+    @board.move
+    @board.repaint
+  end</p>
+
+<p>end</p>
+
+<p>class Board &lt; JPanel</p>
+
+<p>def initialize
+    super
+    init_board
+  end</p>
+
+<p>def init_board
+    setBackground(Color.black)</p>
+
+<pre><code># An array of SIZE x SIZE.
+@cells = Array.new(SIZE) { Array.new(SIZE, VOID) }
+
+# The cell in the middle is the seed.
+@cells[SIZE / 2][SIZE / 2] = FROZEN
+
+# All free cells from the start, at random (x y) positions.
+@free_cells = Array.new(FREE_TOTAL) do
+  [rand(SIZE), rand(SIZE)]
+end   end
+</code></pre>
+
+<p># Called by <code>repaint</code> in BrownianTree. Yep, that’s right, <code>repaint</code>
+  # call <code>paint</code>. It’s also Java, after all…
+  def paint(g)
+    super(g)
+    update_board(g)
+    Toolkit.getDefaultToolkit.sync
+    g.dispose
+  end</p>
+
+<p># Display frozen cells in white and free cells in red.
+  def update_board(g)
+    g.setColor(Color::WHITE)
+    SIZE.times do |i|
+      SIZE.times do |j|
+        if @cells[i][j] == FROZEN
+          g.fillRect(i * SCALE, j * SCALE, SCALE, SCALE)
+        end
+      end
+    end</p>
+
+<pre><code>g.setColor(Color::RED)
+@free_cells.each do |cell|
+  g.fillRect(cell[0] * SCALE, cell[1] * SCALE, SCALE, SCALE)
+end   end
+</code></pre>
+
+<p>def move
+    # Move each free cell, one cell up or up-right or right or etc…
+    @free_cells.map! do |cell|
+      c = [
+        cell[0] + [-1, 0, 1].shuffle.first,
+        cell[1] + [-1, 0, 1].shuffle.first
+      ]</p>
+
+<pre><code>  if c[0] &lt; 0 || c[0] &gt;= SIZE || c[1] &lt; 0 || c[1] &gt;= SIZE
+    [rand(SIZE), rand(SIZE)]
+  else
+    c
+  end
+end
+
+# Freeze each free cell that have at least 1 neighbor.
+@free_cells.map! do |cell|
+  if has_neighbors?(cell)
+    @cells[cell[0]][cell[1]] = FROZEN
+    nil
+  else
+    cell
+  end
+end
+
+@free_cells.compact!   end
+</code></pre>
+
+<p>def has_neighbors?(cell)
+    if cell[0] &lt; 1 || cell[0] &gt; SIZE - 2 || cell[1] &lt; 1 || cell[1] &gt; SIZE - 2
+      return false
+    end
+    if @cells[cell.first - 1][cell.last - 1] == FROZEN ||
+       @cells[cell.first][cell.last - 1] == FROZEN ||
+       @cells[cell.first + 1][cell.last - 1] == FROZEN ||
+       @cells[cell.first + 1][cell.last] == FROZEN ||
+       @cells[cell.first + 1][cell.last + 1] == FROZEN ||
+       @cells[cell.first][cell.last + 1] == FROZEN ||
+       @cells[cell.first - 1][cell.last + 1] == FROZEN ||
+       @cells[cell.first][cell.last + 1] == FROZEN
+      true
+    else
+      false
+    end
+  end</p>
+
+<p>end</p>
+
+<p>BrownianTree.new
+```</p>
+
+<p>On se retrouve bientôt pour que je vous parle des quelques variations que j’ai
+essayé autour du thème des arbres browniens.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>
