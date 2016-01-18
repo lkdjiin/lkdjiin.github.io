@@ -42,6 +42,8 @@ vite beaucoup de choses.
 
 J'ai fait [une vidéo de la construction d'un arbre brownien](https://www.youtube.com/watch?v=wQnTUZHfSKA&feature=youtu.be) pour que vous puissiez visualiser comment ça fonctionne.
 
+<iframe width="420" height="315" src="https://www.youtube.com/embed/wQnTUZHfSKA" frameborder="0" allowfullscreen></iframe>
+
 J'ai écrit un programme en JRuby pour faire un arbre brownien basique.  Le code
 n'est pas beau car il n'a pas été pensé pour durer plus que le temps d'un
 week-end. Malgré tout, je pense qu'il est compréhensible et qu'il peut servir
