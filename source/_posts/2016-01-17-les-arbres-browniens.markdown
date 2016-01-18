@@ -7,11 +7,11 @@ categories: [ruby, jruby, brownian tree, arbre, mouvement brownien]
 ---
 
 Ce week end j'ai joué avec les arbres browniens (*brownian trees*).
-Ce sont des agglomerats de cellules qui ressemblent vaguement à des arbres,
+Ce sont des agglomérats de cellules qui ressemblent vaguement à des arbres,
 obtenus à partir d'un mouvement brownien. Et le mouvement brownien, c'est cool.
 
 C'est Robert Brown, un
-botaniste, qui le décrit en 1827 en observant des petites particles qui
+botaniste, qui le décrit en 1827 en observant des petites particules qui
 semblaient bouger toutes seules. Il voit ses particules avoir la tremblote, mais
 sans pouvoir expliquer pourquoi.
 
