@@ -77,6 +77,8 @@ que l'ATtiny45.
 
 [Lire la partie 2](/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/)
 
+[Lire la partie 3](/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/)
+
 À suivre…
 
 {% connexe %}

@@ -17,6 +17,8 @@ programme, écrit une fois en langage Arduino et l'autre en C.
 
 [Lire la partie 1](/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/)
 
+[Lire la partie 2](/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/)
+
 Le programme, c'est deux boutons/deux LEDs. Le bouton A s'occupe de la LED A.
 Le bouton B s'occupe de la LED B. Quand un bouton est pressé puis relâché, sa
 LED respective change d'état. Si elle était éteinte elle s'allume, et vice-versa.
