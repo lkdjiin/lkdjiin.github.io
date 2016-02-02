@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : maker | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/maker/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-01-31T11:01:25+01:00</updated>
+  <updated>2016-02-02T15:21:18+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,152 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Fabriquer un sablier à thé électronique 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/"/>
+    <updated>2016-02-02T15:05:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3</id>
+    <content type="html"><![CDATA[<p>Comme promis, voici le code de mon <em>sablier à thé électronique</em>. C’est le
+premier <em>objet</em> que j’ai pensé et fabriqué de A à Z, en me servant d’un
+arduino pour réaliser d’abord un prototype. Ce qui fait que, même si le
+résultat est moche, j’en suis fier ;)</p>
+
+<p><img class="center" src="/images/tea_timer.jpg"></p>
+
+<!-- more -->
+
+<p>Tout d’abord le code C qui doit être envoyé dans un micro contrôleur Attiny13,
+à l’aide d’un <a href="/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">programmateur</a>.</p>
+
+<p>```c main.c
+#include &lt;avr/io.h&gt;
+#include &lt;util/delay.h&gt;</p>
+
+<h1 id="define-led-pb0">define LED PB0</h1>
+<p>#define BUZZER PB2
+#define BUTTON3 PB3 // For 3 minutes
+#define BUTTON5 PB4 // For 5 minutes</p>
+
+<h1 id="define-threeminutesinseconds-180">define THREE_MINUTES_IN_SECONDS 180</h1>
+<p>#define FIVE_MINUTES_IN_SECONDS  300</p>
+
+<p>int main(void)
+{
+  DDRB |= 1 « LED | 1 « BUZZER; // Outputs declarations.
+  PORTB |= 1 « LED;              // Switch on the LED.
+  PORTB &amp;= ~(1 « BUZZER);        // Switch off the buzzer.</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>DDRB &amp;= ~(1 « BUTTON3</td>
+      <td>1 « BUTTON5); // Inputs declarations.</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>PORTB</td>
+      <td>= (1 « BUTTON3</td>
+      <td>1 « BUTTON5); // Pull up for inputs.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>// Number of seconds for the timer to buzz.
+  int g_timer = 0;</p>
+
+<p>// Give enough time to enable pull ups.
+  _delay_ms(100);</p>
+
+<p>while(1) {</p>
+
+<pre><code>// Button for 3 minutes pressed?
+if(!(PINB &amp; (1 &lt;&lt; BUTTON3))) {
+  _delay_ms(10);
+  g_timer = THREE_MINUTES_IN_SECONDS;
+  break;
+}
+
+// Button for 5 minutes pressed?
+if(!(PINB &amp; (1 &lt;&lt; BUTTON5))) {
+  _delay_ms(10);
+  g_timer = FIVE_MINUTES_IN_SECONDS;
+  break;
+}   }
+</code></pre>
+
+<p>// Each cycle is approximately 1 second, but this is not really
+  // accurate.
+  while(g_timer &gt; 0) {
+    PORTB ^= 1 « LED; // LED off cause it was set up to on.
+    _delay_ms(500);
+    PORTB ^= 1 « LED; // LED on.
+    _delay_ms(500);
+    g_timer–;
+  }</p>
+
+<p>// Now it’s time to bip and blink forever.
+  while(1) {</p>
+
+<pre><code>int i;
+
+for(i = 0; i &lt; 3; i++) {
+  PORTB |= 1 &lt;&lt; BUZZER;
+  _delay_ms(100);
+  PORTB &amp;= ~(1 &lt;&lt; BUZZER);
+  _delay_ms(100);
+}
+
+for(i = 0; i &lt; 3; i++) {
+  PORTB |= 1 &lt;&lt; LED;
+  _delay_ms(100);
+  PORTB &amp;= ~(1 &lt;&lt; LED);
+  _delay_ms(100);
+}   } } ```
+</code></pre>
+
+<p>Et voici le contenu du Makefile, qui simplifie les phases de compilation et
+d’installation.</p>
+
+<pre><code>DEVICE = attiny13
+CLOCK  = 1000000
+PROGRAMMER = -P /dev/ttyUSB0 -c arduino
+BAUDRATE   = -b 19200
+
+help:
+  @echo 'check =&gt; check connection with ATtiny13'
+  @echo 'hex   =&gt; compile hex file'
+  @echo 'flash =&gt; install hex file'
+  @echo 'clean =&gt; delete unnecessary files'
+
+check:
+  avrdude -p $(DEVICE) $(PROGRAMMER) $(BAUDRATE)
+
+hex:
+  avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -c main.c
+  avr-gcc -mmcu=$(DEVICE) -o main.elf main.o
+  avr-objcopy -O ihex main.elf main.hex
+
+flash:
+  avrdude -p $(DEVICE) $(PROGRAMMER) -U flash:w:main.hex $(BAUDRATE)
+
+clean:
+  rm main.o
+  rm main.elf
+</code></pre>
+
+<p>Vous pouvez retrouver ce code sur <a href="https://github.com/lkdjiin/tea-timer">gitub</a>, ainsi que le schéma avec les
+composants électroniques.</p>
+
+<p>J’espère me faire bientôt une deuxième version plus jolie et plus sophistiquée.</p>
+
+<p><a href="/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Lire la partie 1</a></p>
+
+<p><a href="/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Fabriquer un sablier à thé électronique 2]]></title>
@@ -28,6 +174,8 @@ programme, écrit une fois en langage Arduino et l’autre en C.</p>
 <!-- more -->
 
 <p><a href="/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Lire la partie 1</a></p>
+
+<p><a href="/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
 
 <p>Le programme, c’est deux boutons/deux LEDs. Le bouton A s’occupe de la LED A.
 Le bouton B s’occupe de la LED B. Quand un bouton est pressé puis relâché, sa
@@ -229,6 +377,8 @@ ATtiny13 qui ne posséde que 1K de ROM et est pratiquement deux fois moins cher
 que l’ATtiny45.</p>
 
 <p><a href="/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
+
+<p><a href="/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/">Lire la partie 3</a></p>
 
 <p>À suivre…</p>
 

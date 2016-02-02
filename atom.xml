@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-01-31T11:01:25+01:00</updated>
+  <updated>2016-02-02T15:21:18+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,214 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Fabriquer un sablier à thé électronique 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/"/>
+    <updated>2016-02-02T15:05:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3</id>
+    <content type="html"><![CDATA[<p>Comme promis, voici le code de mon <em>sablier à thé électronique</em>. C’est le
+premier <em>objet</em> que j’ai pensé et fabriqué de A à Z, en me servant d’un
+arduino pour réaliser d’abord un prototype. Ce qui fait que, même si le
+résultat est moche, j’en suis fier ;)</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/tea_timer.jpg" /></p>
+
+<!-- more -->
+
+<p>Tout d’abord le code C qui doit être envoyé dans un micro contrôleur Attiny13,
+à l’aide d’un <a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">programmateur</a>.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+<span class="line-number">41</span>
+<span class="line-number">42</span>
+<span class="line-number">43</span>
+<span class="line-number">44</span>
+<span class="line-number">45</span>
+<span class="line-number">46</span>
+<span class="line-number">47</span>
+<span class="line-number">48</span>
+<span class="line-number">49</span>
+<span class="line-number">50</span>
+<span class="line-number">51</span>
+<span class="line-number">52</span>
+<span class="line-number">53</span>
+<span class="line-number">54</span>
+<span class="line-number">55</span>
+<span class="line-number">56</span>
+<span class="line-number">57</span>
+<span class="line-number">58</span>
+<span class="line-number">59</span>
+<span class="line-number">60</span>
+<span class="line-number">61</span>
+<span class="line-number">62</span>
+<span class="line-number">63</span>
+<span class="line-number">64</span>
+<span class="line-number">65</span>
+<span class="line-number">66</span>
+<span class="line-number">67</span>
+<span class="line-number">68</span>
+<span class="line-number">69</span>
+<span class="line-number">70</span>
+<span class="line-number">71</span>
+<span class="line-number">72</span>
+<span class="line-number">73</span>
+</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;avr/io.h&gt;</span>
+</span><span class="line"><span class="cp">#include &lt;util/delay.h&gt;</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define LED PB0</span>
+</span><span class="line"><span class="cp">#define BUZZER PB2</span>
+</span><span class="line"><span class="cp">#define BUTTON3 PB3 </span><span class="c1">// For 3 minutes</span>
+</span><span class="line"><span class="cp">#define BUTTON5 PB4 </span><span class="c1">// For 5 minutes</span>
+</span><span class="line">
+</span><span class="line"><span class="cp">#define THREE_MINUTES_IN_SECONDS 180</span>
+</span><span class="line"><span class="cp">#define FIVE_MINUTES_IN_SECONDS  300</span>
+</span><span class="line">
+</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class="line"><span class="p">{</span>
+</span><span class="line">  <span class="n">DDRB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">LED</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUZZER</span><span class="p">;</span> <span class="c1">// Outputs declarations.</span>
+</span><span class="line">  <span class="n">PORTB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">LED</span><span class="p">;</span>              <span class="c1">// Switch on the LED.</span>
+</span><span class="line">  <span class="n">PORTB</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUZZER</span><span class="p">);</span>        <span class="c1">// Switch off the buzzer.</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">DDRB</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUTTON3</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUTTON5</span><span class="p">);</span> <span class="c1">// Inputs declarations.</span>
+</span><span class="line">  <span class="n">PORTB</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUTTON3</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUTTON5</span><span class="p">);</span> <span class="c1">// Pull up for inputs.</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">// Number of seconds for the timer to buzz.</span>
+</span><span class="line">  <span class="kt">int</span> <span class="n">g_timer</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">// Give enough time to enable pull ups.</span>
+</span><span class="line">  <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">
+</span><span class="line">    <span class="c1">// Button for 3 minutes pressed?</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUTTON3</span><span class="p">)))</span> <span class="p">{</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">      <span class="n">g_timer</span> <span class="o">=</span> <span class="n">THREE_MINUTES_IN_SECONDS</span><span class="p">;</span>
+</span><span class="line">      <span class="k">break</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="c1">// Button for 5 minutes pressed?</span>
+</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUTTON5</span><span class="p">)))</span> <span class="p">{</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span><span class="line">      <span class="n">g_timer</span> <span class="o">=</span> <span class="n">FIVE_MINUTES_IN_SECONDS</span><span class="p">;</span>
+</span><span class="line">      <span class="k">break</span><span class="p">;</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">// Each cycle is approximately 1 second, but this is not really</span>
+</span><span class="line">  <span class="c1">// accurate.</span>
+</span><span class="line">  <span class="k">while</span><span class="p">(</span><span class="n">g_timer</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">    <span class="n">PORTB</span> <span class="o">^=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">LED</span><span class="p">;</span> <span class="c1">// LED off cause it was set up to on.</span>
+</span><span class="line">    <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+</span><span class="line">    <span class="n">PORTB</span> <span class="o">^=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">LED</span><span class="p">;</span> <span class="c1">// LED on.</span>
+</span><span class="line">    <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+</span><span class="line">    <span class="n">g_timer</span><span class="o">--</span><span class="p">;</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1">// Now it&#39;s time to bip and blink forever.</span>
+</span><span class="line">  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">
+</span><span class="line">    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">      <span class="n">PORTB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUZZER</span><span class="p">;</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">      <span class="n">PORTB</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">BUZZER</span><span class="p">);</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class="line">      <span class="n">PORTB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">LED</span><span class="p">;</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">      <span class="n">PORTB</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">LED</span><span class="p">);</span>
+</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+</span><span class="line">    <span class="p">}</span>
+</span><span class="line">  <span class="p">}</span>
+</span><span class="line"><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et voici le contenu du Makefile, qui simplifie les phases de compilation et
+d’installation.</p>
+
+<pre><code>DEVICE = attiny13
+CLOCK  = 1000000
+PROGRAMMER = -P /dev/ttyUSB0 -c arduino
+BAUDRATE   = -b 19200
+
+help:
+  @echo 'check =&gt; check connection with ATtiny13'
+  @echo 'hex   =&gt; compile hex file'
+  @echo 'flash =&gt; install hex file'
+  @echo 'clean =&gt; delete unnecessary files'
+
+check:
+  avrdude -p $(DEVICE) $(PROGRAMMER) $(BAUDRATE)
+
+hex:
+  avr-gcc -Wall -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -c main.c
+  avr-gcc -mmcu=$(DEVICE) -o main.elf main.o
+  avr-objcopy -O ihex main.elf main.hex
+
+flash:
+  avrdude -p $(DEVICE) $(PROGRAMMER) -U flash:w:main.hex $(BAUDRATE)
+
+clean:
+  rm main.o
+  rm main.elf
+</code></pre>
+
+<p>Vous pouvez retrouver ce code sur <a href="https://github.com/lkdjiin/tea-timer">gitub</a>, ainsi que le schéma avec les
+composants électroniques.</p>
+
+<p>J’espère me faire bientôt une deuxième version plus jolie et plus sophistiquée.</p>
+
+<p><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Lire la partie 1</a></p>
+
+<p><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Fabriquer un sablier à thé électronique 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Fabriquer un sablier à thé électronique</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Un désassembleur pour Chip8]]></title>
@@ -881,6 +1089,8 @@ programme, écrit une fois en langage Arduino et l’autre en C.</p>
 
 <p><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Lire la partie 1</a></p>
 
+<p><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
+
 <p>Le programme, c’est deux boutons/deux LEDs. Le bouton A s’occupe de la LED A.
 Le bouton B s’occupe de la LED B. Quand un bouton est pressé puis relâché, sa
 LED respective change d’état. Si elle était éteinte elle s’allume, et vice-versa.
@@ -1049,7 +1259,7 @@ programme avrdude :</p>
 <p>Rendez vous une prochaine fois pour le code du sablier électronique avec son
 Makefile et tout et tout.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Fabriquer un sablier à thé électronique</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/">Fabriquer un sablier à thé électronique 3</a></li><li><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Fabriquer un sablier à thé électronique</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1129,9 +1339,11 @@ que l’ATtiny45.</p>
 
 <p><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
 
+<p><a href="http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/">Lire la partie 3</a></p>
+
 <p>À suivre…</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Fabriquer un sablier à thé électronique 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li><li><a href="http://lkdjiin.github.io/blog/2015/04/03/arduino-un-metronome-tap-tempo/">Arduino : Un métronome tap tempo</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/">Fabriquer un sablier à thé électronique 3</a></li><li><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Fabriquer un sablier à thé électronique 2</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2550,388 +2762,6 @@ Je pense que l’on peut ainsi économiser pas mal de tests unitaires sur le typ
 
 <p><strong>Julien Blanchard</strong><br />
 M-x CTO RET Sush.io</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Extraction des tags de mon blog en ligne de commande]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/"/>
-    <updated>2015-07-11T17:08:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande</id>
-    <content type="html"><![CDATA[<div class="level-tag level-tag-1">Niveau : <span>facile</span></div>
-
-<p>J’aimerais savoir quels sont les tags que j’ai le plus employé sur ce blog.
-Pour cela il va d’abord falloir les extraire, si possible dans un fichier csv.</p>
-
-<p>Comment ? En Ruby ? En R ? Non non, en Bash, ça va être beaucoup plus drôle.</p>
-
-<p>Petite étude de cas pour découvrir la puissance de la ligne de commande, ou
-pour rafraichir ses connaissances ;)</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/tags-cloud.png" /></p>
-
-<!-- more -->
-
-<p>Si vous voulez reproduire l’analyse en même temps que moi, les
-<a href="https://github.com/lkdjiin/lkdjiin.github.io/tree/source/source/_posts">articles sont ici</a>.</p>
-
-<p>Voyons à quoi ressemble le début d’un article au hasard avec <code>head</code>.
-Octopress, le framework que j’utilise pour ce blog, appelle les tags des
-<em>categories</em>. Mais c’est pareil.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head 2013-10-20-les-algorithmes-genetiques-demystifies-35.markdown
-</span><span class="line">---
-</span><span class="line">layout: post
-</span><span class="line">title: <span class="s2">&quot;Les algorithmes génétiques démystifiés 35&quot;</span>
-</span><span class="line">date: 2013-10-20 21:21
-</span><span class="line">comments: <span class="nb">true</span>
-</span><span class="line">categories: <span class="o">[</span>imagerie, algorithme génétique, intermédiaire, javascript<span class="o">]</span>
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>L’entête d’un article a toujours la même structure. Avec <code>head *.markdown</code>
-j’affiche le début de tous les articles, les uns à la suite des autres.
-Avec <code>sed</code> je peux extraire uniquement les lignes qui commencent par <code>cat</code> :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span>
-</span><span class="line">categories: <span class="o">[</span>annonce, défi<span class="o">]</span>
-</span><span class="line">categories: <span class="o">[</span>vim, conseil, débutant<span class="o">]</span>
-</span><span class="line">categories: <span class="o">[</span>ruby, code propre, intermédiaire<span class="o">]</span>
-</span><span class="line">categories: <span class="o">[</span>ruby, eigenclass, object, intermédiaire<span class="o">]</span>
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Gardons seulement les tableaux. <code>cut -f1</code> <em>découpe</em> le premier champ, <code>-d' '</code>
-indique que le séparateur de champ est l’espace, et <code>--complement</code> indique
-qu’on veut conserver le complément. Autrement dit tout sauf la première
-colonne.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> |
-</span><span class="line">&gt; cut -f1 -d<span class="s1">&#39; &#39;</span> --complement
-</span><span class="line"><span class="o">[</span>annonce, défi<span class="o">]</span>
-</span><span class="line"><span class="o">[</span>vim, conseil, débutant<span class="o">]</span>
-</span><span class="line"><span class="o">[</span>ruby, code propre, intermédiaire<span class="o">]</span>
-</span><span class="line"><span class="o">[</span>ruby, eigenclass, object, intermédiaire<span class="o">]</span>
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Supprimons les crochets à l’aide de <code>sed</code> et d’une regex rigolote.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span>
-</span><span class="line">annonce, défi
-</span><span class="line">vim, conseil, débutant
-</span><span class="line">ruby, code propre, intermédiaire
-</span><span class="line">ruby, eigenclass, object, intermédiaire
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Supprimons les espaces inutiles. Attention, certains tags contiennent des
-espaces.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/, /,/g&#39;</span>
-</span><span class="line">annonce,défi
-</span><span class="line">vim,conseil,débutant
-</span><span class="line">ruby,code propre,intermédiaire
-</span><span class="line">ruby,eigenclass,object,intermédiaire
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Grâce à <code>tr</code>, je remplace chaque virgule par un retour à la ligne. Ça
-commence à prendre forme.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> |
-</span><span class="line">&gt; tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span>
-</span><span class="line">annonce
-</span><span class="line">défi
-</span><span class="line">vim
-</span><span class="line">conseil
-</span><span class="line">débutant
-</span><span class="line">ruby
-</span><span class="line">code propre
-</span><span class="line">intermédiaire
-</span><span class="line">ruby
-</span><span class="line">eigenclass
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Trions par ordre alphabétique.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> |
-</span><span class="line">&gt; sort
-</span><span class="line">
-</span><span class="line">ack
-</span><span class="line">activerecord
-</span><span class="line">activerecord
-</span><span class="line">ag
-</span><span class="line">airline
-</span><span class="line">airline
-</span><span class="line">airline
-</span><span class="line">airline
-</span><span class="line">algorithme génétique
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Réduisons les occurrences et comptons les avec <code>uniq -c</code>.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sort |
-</span><span class="line">&gt; uniq -c
-</span><span class="line">      1
-</span><span class="line">      1 ack
-</span><span class="line">      2 activerecord
-</span><span class="line">      1 ag
-</span><span class="line">      4 airline
-</span><span class="line">     70 algorithme génétique
-</span><span class="line">      1 <span class="nb">alias</span>
-</span><span class="line"><span class="nb">     </span>16 annonce
-</span><span class="line">      3 app
-</span><span class="line">      1 application
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Trions à nouveau, cette fois sur le nombre et du plus grand au plus petit.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sort | uniq -c |
-</span><span class="line">&gt; sort -nr
-</span><span class="line">    213 ruby
-</span><span class="line">    176 intermédiaire
-</span><span class="line">    171 débutant
-</span><span class="line">     70 algorithme génétique
-</span><span class="line">     55 vim
-</span><span class="line">     26 tutoriel
-</span><span class="line">     26 julia
-</span><span class="line">     26 javascript
-</span><span class="line"><span class="c">#...</span>
-</span><span class="line">      1 application
-</span><span class="line">      1 <span class="nb">alias</span>
-</span><span class="line"><span class="nb">      </span>1 ag
-</span><span class="line">      1 ack
-</span><span class="line">      1
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Vous avez remarquez ? Un tag est vide. Ça pourrait poser problème pour la
-suite. Avec <code>sed</code> on peut facilement supprimer la dernière ligne.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sort | uniq -c |
-</span><span class="line">&gt; sort -nr | sed <span class="s1">&#39;$d&#39;</span>
-</span><span class="line">    213 ruby
-</span><span class="line">    176 intermédiaire
-</span><span class="line">    171 débutant
-</span><span class="line"><span class="c">#...</span>
-</span><span class="line">      1 <span class="nb">alias</span>
-</span><span class="line"><span class="nb">      </span>1 ag
-</span><span class="line">      1 ack
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>À la réflexion je préfère faire comme si il y avait plusieurs lignes vides et
-les supprimer toutes. Ça pourrait être plus réutilisable.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> |
-</span><span class="line">&gt; sed <span class="s1">&#39;/^$/d&#39;</span> |
-</span><span class="line">&gt; sort | uniq -c | sort -nr
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Il est temps de sortir une regex un peu plus complexe pour inverser les deux
-champs et ajouter une virgule entre eux.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt; sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sed <span class="s1">&#39;/^$/d&#39;</span> |
-</span><span class="line">&gt; sort | uniq -c | sort -nr |
-</span><span class="line">&gt; sed -r <span class="s1">&#39;s/\s+([0-9]+) (.*)/\2,\1/&#39;</span>
-</span><span class="line">ruby,213
-</span><span class="line">intermédiaire,176
-</span><span class="line">débutant,171
-</span><span class="line">algorithme génétique,70
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>C’est quasiment terminé. Il reste à ajouter l’entête du fichier csv. Pour cela
-je vais utiliser une commande non standard mais bien pratique, <code>header</code>.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt;  sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sed <span class="s1">&#39;/^$/d&#39;</span> |
-</span><span class="line">&gt; sort | uniq -c | sort -nr | sed -r <span class="s1">&#39;s/\s+([0-9]+) (.*)/\2,\1/&#39;</span> |
-</span><span class="line">&gt; header -a tag,frequency
-</span><span class="line">tag,frequency
-</span><span class="line">ruby,213
-</span><span class="line">intermédiaire,176
-</span><span class="line">débutant,171
-</span><span class="line">algorithme génétique,70
-</span><span class="line"><span class="c">#...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>On a terminé. C’est un beau pipeline, non ? Enregistrons le résultat dans un
-fichier.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>head *.markdown | sed -n <span class="s1">&#39;/^cat/p&#39;</span> | cut -f1 -d<span class="s1">&#39; &#39;</span> --complement |
-</span><span class="line">&gt;  sed <span class="s1">&#39;s/[][]//g&#39;</span> | sed <span class="s1">&#39;s/, /,/g&#39;</span> | tr <span class="s1">&#39;,&#39;</span> <span class="s1">&#39;\n&#39;</span> | sed <span class="s1">&#39;/^$/d&#39;</span> |
-</span><span class="line">&gt; sort | uniq -c | sort -nr | sed -r <span class="s1">&#39;s/\s+([0-9]+) (.*)/\2,\1/&#39;</span> |
-</span><span class="line">&gt; header -a tag,frequency &gt; tags.csv
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>En bonus, voici le code R qui produit l’image qui illustre cet article.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="r"><span class="line">library<span class="p">(</span>wordcloud<span class="p">)</span>
-</span><span class="line">
-</span><span class="line">d <span class="o">&lt;-</span> read.csv<span class="p">(</span><span class="s">&#39;tags.csv&#39;</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">colors <span class="o">&lt;-</span> brewer.pal<span class="p">(</span><span class="m">12</span><span class="p">,</span> <span class="s">&#39;Paired&#39;</span><span class="p">)</span>
-</span><span class="line">colors <span class="o">&lt;-</span> colors<span class="p">[</span>seq<span class="p">(</span><span class="m">2</span><span class="p">,</span> <span class="m">10</span><span class="p">,</span> by<span class="o">=</span><span class="m">2</span><span class="p">)]</span>
-</span><span class="line">
-</span><span class="line">wordcloud<span class="p">(</span>d<span class="o">$</span>tag<span class="p">,</span> d<span class="o">$</span>frequency<span class="p">,</span> colors<span class="o">=</span>colors<span class="p">,</span> min.freq<span class="o">=</span><span class="m">1</span><span class="p">,</span> scale<span class="o">=</span>c<span class="p">(</span><span class="m">5</span><span class="p">,</span> <span class="m">.6</span><span class="p">),</span>
-</span><span class="line">          rot.per<span class="o">=</span><span class="m">.25</span><span class="p">,</span> random.order<span class="o">=</span><span class="kc">FALSE</span><span class="p">,</span> random.color<span class="o">=</span><span class="kc">TRUE</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/06/08/r-rep-vs-replicate/">R : rep vs replicate</a></li><li><a href="http://lkdjiin.github.io/blog/2015/10/13/un-quine-en-r-le-retour/">Un quine en R - Le retour</a></li><li><a href="http://lkdjiin.github.io/blog/2015/10/10/un-quine-en-r/">Un quine en R</a></li></ul></section>
 ]]></content>
   </entry>
   
