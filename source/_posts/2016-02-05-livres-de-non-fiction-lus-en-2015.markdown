@@ -7,7 +7,7 @@ categories: [livre]
 ---
 
 J'ai lu beaucoup d'ouvrage de non-fiction l'année dernière (2015). Bien plus
-que d'habitude. Je voulais partager les titres avec pour, peut-être, vous
+que d'habitude. Je voulais partager les titres avec vous pour, peut-être, vous
 donner quelques idées, mais surtout pour que vous puissiez *vous* me donner
 des idées de livres à lire pour 2016.
 
