@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-05T17:21:02+01:00</updated>
+  <updated>2016-02-10T11:28:40+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -14,12 +14,410 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/"/>
+    <updated>2016-02-10T10:44:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1</id>
+    <content type="html"><![CDATA[<p>Voici une série d’articles sur l’écriture d’un jeu en 2d avec Ruby et Gosu.
+Dans ce premier article on verra comment installer Gosu, créer une
+fenêtre et afficher des images statiques les unes au dessus des autres.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/gosu0.png" /></p>
+
+<!-- more -->
+
+<h2 id="les-outils">Les outils</h2>
+
+<p>Avant d’écrire la première ligne de code, assurez vous d’avoir installé correctement Ruby et la
+gem Gosu.</p>
+
+<h3 id="ruby">Ruby</h3>
+
+<p>J’utiliserai Ruby en version 2.3 (la plus récente à ce jour). Si vous
+utilisez une version de Ruby plus ancienne, vous devrez peut-être adapter le
+code ici ou là. Pour gérer les différentes version de Ruby, j’utilise
+indifféremment <a href="https://rvm.io/">rvm</a> ou
+<a href="https://github.com/postmodern/chruby">chruby</a>
+<em>— mais pas les deux sur la même machine, hein ;) —</em>.</p>
+
+<blockquote>
+  <p>Si vous n’avez jamais utilisé de gestionnaire de version pour Ruby, je
+conseille de commencer par <strong>chruby</strong>. Si je préfère personnellement
+<strong>rvm</strong> que je trouve plus complet, <strong>chruby</strong> s’avère
+indéniablement plus simple à installer, à prendre en main, et à utiliser sur le
+long terme.</p>
+</blockquote>
+
+<h3 id="gosu">Gosu</h3>
+
+<p>Gosu est la gem qui nous fournira les méthodes basiques pour développer notre
+jeu. J’ai installé la dernière version en date : gosu 0.10.5.</p>
+
+<p>Sur <strong>Debian</strong> il faut d’abord s’assurer qu’on dispose des packages suivants:</p>
+
+<pre><code>sudo apt-get install build-essential libsdl2-dev libsdl2-ttf-dev \
+                     libpango1.0-dev libgl1-mesa-dev libfreeimage-dev \
+                     libopenal-dev libsndfile1-dev
+</code></pre>
+
+<p>Et ensuite seulement on peut installer la gem Gosu:</p>
+
+<pre><code>gem install gosu
+</code></pre>
+
+<p>Vous pouvez installer Gosu sur d’autres versions de Linux, sur OS X, ou sur
+Windows:</p>
+
+<ul>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-Linux">Installation sur Linux</a></li>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-OS-X">Installation sur OS X</a></li>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-Windows">Installation sur Windows</a></li>
+</ul>
+
+<p>Enfin, vous pourrez trouver de l’aide sur <a href="https://github.com/gosu/gosu/wiki">le wiki</a>
+et <a href="https://www.libgosu.org/rdoc/">la documentation de Gosu</a> pour le langage Ruby.</p>
+
+<h2 id="du-son-des-images-etc">Du son, des images, etc</h2>
+
+<p>Dans cette série d’articles nous allons coder un jeu. Pour ce qui est du son
+et des images, on va laisser faire les gens qui savent ;) Mes deux sources
+préférées pour les assets open source sont <a href="http://freesound.org/browse/">freesound.org</a>
+et <a href="http://opengameart.org/">opengameart.org</a>.</p>
+
+<p>J’utilise <strong>Gimp</strong> pour retoucher les images : découpe, mise à l’échelle,
+changement de couleur, etc. Et j’utilise <strong>Audacity</strong> pour retravailler les
+fichiers sonores : suppression des silences en début de fichier, conversion de
+format (par exemple mp3 en ogg puisque Gosu ne lit pas le mp3).</p>
+
+<h2 id="crer-une-fentre-pour-le-jeu">Créer une fenêtre pour le jeu</h2>
+
+<p>Ça y est ! Ruby et Gosu sont installés, vous savez où trouver des images et du
+son open source, on peut commencer en créant une fenêtre. Mettez le code
+suivant dans un fichier <code>window.rb</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;gosu&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="k">super</span><span class="p">(</span><span class="mi">640</span><span class="p">,</span> <span class="mi">480</span><span class="p">)</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">window</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line"><span class="n">window</span><span class="o">.</span><span class="n">show</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le code est suffisamment simple pour que vous puissiez le comprendre sans
+explications superflues. Pour savoir si vous avez bien installé Gosu, lancez
+le programme:</p>
+
+<pre><code>$ ruby window.rb
+</code></pre>
+
+<p>Et admirez le résultat:</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/gosu1.png" /></p>
+
+<p>Même avec si peu de code, on peut déjà refactorer. Le fichier précédent
+a deux problèmes. Un, il mélange la définition d’une classe et le lancement du
+jeu. Et deux, il utilise deux nombres magiques. Si on n’y prends pas garde, les
+nombres magiques vont vite devenir un fléau pour notre jeu. Les jeux ont tendance
+à être saturés de nombres magiques, alors autant s’atteler à ce problème dès le début.</p>
+
+<p>Après refactoring,
+nous avons donc d’une part le code de lancement, avec des constantes pour les
+dimensions.  On n’a plus à deviner ce que représente les nombres 640 et 480,
+c’est inscrit dans le code:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;gosu&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;window&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="no">WindowWidth</span>  <span class="o">=</span> <span class="mi">640</span>
+</span><span class="line"><span class="no">WindowHeight</span> <span class="o">=</span> <span class="mi">480</span>
+</span><span class="line">
+</span><span class="line"><span class="n">window</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">WindowWidth</span><span class="p">,</span> <span class="no">WindowHeight</span><span class="p">)</span>
+</span><span class="line"><span class="n">window</span><span class="o">.</span><span class="n">show</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et d’autre part la classe <code>Window</code>, tranquille dans son propre fichier:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+</span><span class="line">    <span class="k">super</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La structure du dossier est pour l’instant la suivante:</p>
+
+<pre><code>$ tree
+.
+├── window.rb
+└── main.rb
+</code></pre>
+
+<p>Et nous lancerons donc le jeu avec la commande <code>ruby main.rb</code>.</p>
+
+<h2 id="afficher-des-images">Afficher des images</h2>
+
+<p>Maintenant qu’on sait créer une fenêtre, l’étape suivante sera l’affichage
+d’images statiques. Nous allons afficher une image de fond, et par-dessus
+l’image du joueur.</p>
+
+<p>Toutes les images du jeu seront rangées dans le dossier <code>assets/images</code>:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   └── images
+│       ├── background.png
+│       └── player.png
+├── window.rb
+└── main.rb
+</code></pre>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+</span><span class="line">    <span class="k">super</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">
+</span><span class="line">    <span class="vi">@background_image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/background.png&quot;</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@player_image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/player.png&quot;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="vi">@background_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@player_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pendant l’initialisation on charge les images en mémoire avec
+<code>Gosu::Image.new</code>.  Puis l’affichage se fait avec <strong>les</strong> méthodes <code>draw</code>. La
+méthode <code>draw</code> de la classe <code>Window</code> est hérité de <code>Gosu::Window</code> et appelée 60
+fois par seconde.  Dans cette méthode, on appelle la méthode <code>draw</code> des images.
+Celle-ci prends trois paramètres : les coordonnées <strong>x</strong>, <strong>y</strong> et <strong>z</strong>.
+La coordonnée z est le plan d’affichage. Au dessus ou en dessous. Plus le
+nombre est haut, plus l’image sera affichée au-dessus des autres. Ici l’image
+de fond a un z de 0, et l’image du joueur a un z de 1, donc le joueur est
+affiché au-dessus du fond.</p>
+
+<p>Le joueur est affiché <em>à peu près</em> au milieu de la surface de jeu (<code>width / 2</code>
+et <code>height / 2</code>). À peu près, puisque les paramètres x et y de la méthode
+<code>draw</code> définissent les coordonnées du coin supérieur gauche de l’image.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/gosu2.png" /></p>
+
+<p>Ce code souffre lui aussi de certains problèmes.</p>
+
+<ol>
+  <li>S’il est acceptable que l’image de fond <em>appartienne</em> à la fenêtre de jeu,
+c’est absurde en ce qui concerne l’image du joueur.</li>
+  <li>Il y a des nouveaux nombres magiques : les coordonnées z.</li>
+</ol>
+
+<p>On va donc créer deux nouvelles classes (en fait une classe et un module),
+<code>ZOrder</code> et <code>Player</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;gosu&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;z_order&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;player&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;window&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="no">WindowWidth</span>  <span class="o">=</span> <span class="mi">640</span>
+</span><span class="line"><span class="no">WindowHeight</span> <span class="o">=</span> <span class="mi">480</span>
+</span><span class="line">
+</span><span class="line"><span class="n">window</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">WindowWidth</span><span class="p">,</span> <span class="no">WindowHeight</span><span class="p">)</span>
+</span><span class="line"><span class="n">window</span><span class="o">.</span><span class="n">show</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le contenu du module <code>ZOrder</code> est simpliste (c’est ni plus ni moins qu’un enum),
+il définit les différents plans:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>z_order.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">ZOrder</span>
+</span><span class="line">
+</span><span class="line">  <span class="no">Background</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class="line">  <span class="no">Player</span>     <span class="o">=</span> <span class="mi">1</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La classe <code>Player</code> est simple elle aussi.</p>
+
+<blockquote>
+  <p>C’est l’avantage écrasant d’éclater le code en petites classes ayant chacune
+une seule responsabilité : le code devient simplissime.</p>
+</blockquote>
+
+<p>L’image <em>appartient</em> désormais au joueur, tout comme ses coordonnées. Et c’est
+le joueur lui-même qui <em>sait</em> comment s’afficher. La classe <code>Window</code> aura
+juste à déclencher cet affichage.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class="line">    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
+</span><span class="line">    <span class="vi">@image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/player.png&quot;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="vi">@image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="vi">@x</span><span class="p">,</span> <span class="vi">@y</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Player</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+</span><span class="line">    <span class="k">super</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">
+</span><span class="line">    <span class="vi">@background_image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/background.png&quot;</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="vi">@background_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Background</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">draw</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   └── images
+│       ├── background.png
+│       └── player.png
+├── main.rb
+├── player.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.1.0">version 0.1.0</a>.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/">Un space invaders avec Opal.rb - partie 16</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/">Un space invaders avec Opal.rb - partie 15</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/">Un space invaders avec Opal.rb - partie 14</a></li></ul></section>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Livres de non-fiction lus en 2015]]></title>
     <link href="http://lkdjiin.github.io/blog/2016/02/05/livres-de-non-fiction-lus-en-2015/"/>
     <updated>2016-02-05T17:06:00+01:00</updated>
     <id>http://lkdjiin.github.io/blog/2016/02/05/livres-de-non-fiction-lus-en-2015</id>
     <content type="html"><![CDATA[<p>J’ai lu beaucoup d’ouvrage de non-fiction l’année dernière (2015). Bien plus
-que d’habitude. Je voulais partager les titres avec pour, peut-être, vous
+que d’habitude. Je voulais partager les titres avec vous pour, peut-être, vous
 donner quelques idées, mais surtout pour que vous puissiez <em>vous</em> me donner
 des idées de livres à lire pour 2016.</p>
 
@@ -520,7 +918,7 @@ Reste à savoir quels programmes Ruby on va pouvoir réécrire en Crystal sans
 avoir à réécrire, au hasard, tout ActiveRecord. Et là, je ne suis pas certain
 qu’on va en trouver beaucoup.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -588,7 +986,7 @@ histoire.</p>
 
 <p>La prochaine fois j’espère vous donner mes premières impressions sur Crystal.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -704,7 +1102,7 @@ la longueur du mouvement des cellules suit, en gros, une
 
 <p>Si vous pensez à d’autres variations possibles, n’hésitez pas à m’en faire part.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li></ul></section>
 
 ]]></content>
   </entry>
@@ -1054,7 +1452,7 @@ de base pour des idées plus sophistiquées.</p>
 <p>On se retrouve bientôt pour que je vous parle des quelques variations que j’ai
 essayé autour du thème des arbres browniens.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2437,154 +2835,6 @@ In my case, communication is even harder, as I’m the only one in my team that 
 
 <p><strong>Ana Rosas</strong><br />
 Full-stack developer, working remotely at Tigerlily from Mexico and Brazil.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[De meilleurs alias avec zsh]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/07/20/de-meilleurs-alias-avec-zsh/"/>
-    <updated>2015-07-20T13:12:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/07/20/de-meilleurs-alias-avec-zsh</id>
-    <content type="html"><![CDATA[<h2 id="guest-post-"><code>{ Guest Post }</code></h2>
-
-<p>Pour m’améliorer en tant que dev, j’essaye au maximum de simplifier et d’automatiser mon workflow. L’idée est de passer moins de temps à faire des choses qu’un ordinateur peut faire à ma place, et plus de temps à réfléchir aux problèmes que je cherche à résoudre.</p>
-
-<p>C’est dans cette optique que je me suis mis à ajouter énormément d’alias très courts à mon shell. Un alias revient à automatiser l’action de taper sur les touches pour des commandes fréquentes. Malheureusement, les alias sont sous-utilisés pour plusieurs raisons : on a peur d’oublier la commande qui se cache derrière, un autre dev avec qui on est en train de faire du pair programming aura du mal à comprendre quelles commandes sont exécutées, et souvent on oublie tout simplement qu’on a un alias pour la commande qu’on est en train de taper.</p>
-
-<p>Pour remédier à ces problèmes, j’ai trouvé des solutions que des fonctions avancées de zsh permettent d’implémenter : les alias explicites, et les alias obligatoires.</p>
-
-<!-- more -->
-
-<h2 id="zsh">zsh</h2>
-
-<p>zsh est un shell Unix similaire à bash, mais en mieux. On cite souvent son autocompletion et la quantité de plugins disponibles, notamment ceux de <a href="https://github.com/robbyrussell/oh-my-zsh">oh-my-zsh</a>, comme les principales raisons de passer de bash à zsh.</p>
-
-<p>zsh est installé par défaut sur la plupart des distributions linux et OSX. Si vous ne l’utilisez pas encore, vous pouvez en faire votre shell par défaut avec cette commande :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">chsh -s $(which zsh)</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="les-alias-explicites">Les alias explicites</h2>
-
-<p>C’est une fonction que @lkdjiin connait bien puisque c’est une des premières améliorations que j’ai apporté à mes alias quand j’ai commencé à travailler avec lui.
-Voilà à quoi ça ressemble:</p>
-
-<p><img src="https://cloud.githubusercontent.com/assets/1840367/8545448/16b25cfc-24af-11e5-85ab-69f77424b532.gif" alt="explicit_aliases" /></p>
-
-<p>Afin de ne pas oublier la commande qui se cache derrière un alias, les alias explicite la font s’afficher comme si elle avait été entrée juste après l’alias.
-Voici le code à rajouter dans votre .zshrc (le fichier de config que zsh charge avant chaque session) pour activer les alias explicites:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">preexec_functions=()
-</span><span class="line">
-</span><span class="line">function expand_aliases {
-</span><span class="line">  input_command=$1
-</span><span class="line">  expanded_command=$2
-</span><span class="line">  if [ $input_command != $expanded_command ]; then
-</span><span class="line">    print -nP $PROMPT
-</span><span class="line">    echo $expanded_command
-</span><span class="line">  fi
-</span><span class="line">}
-</span><span class="line">
-</span><span class="line">preexec_functions+=expand_aliases</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Les preexec functions de zsh sont des fonctions qui sont appelées après qu’une commande soit lue, et avant qu’elle ne soit exécutée. zsh leur donne comme argument la commande telle qu’elle est entrée par l’utilisateur, et la même commande après l’expansion des alias.</p>
-
-<p>Cette fonction vérifie donc que la version étendue est différente de la version entrée par l’utilisateur (c’est à dire qu’un alias a été utilisé), et le cas échéant affiche un prompt en utilisant la variable <code>$PROMPT</code> suivi de la commande.</p>
-
-<h2 id="les-alias-obligatoires">Les alias obligatoires</h2>
-
-<p>Cette idée plaît parfois un peu moins : pour ne pas oublier l’existence d’un alias, j’ai modifié mon setup pour que zsh refuse d’exécuter une commande si je la tape en entier plutôt que de me servir d’un alias.</p>
-
-<p><img src="https://cloud.githubusercontent.com/assets/1840367/7302861/9e437a96-e9ec-11e4-9978-9f33f21bd7d9.gif" alt="mandatory_alias" /></p>
-
-<p>Et voici l’implémentation dans le .zshrc:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-</pre></td><td class="code"><pre><code class=""><span class="line">function check-alias-and-accept {
-</span><span class="line">  if [ $BUFFER ]; then
-</span><span class="line">
-</span><span class="line">    ALIAS=`alias -L | grep -e "=[\'\"]\?${BUFFER}[\'\"]\?$"`
-</span><span class="line">
-</span><span class="line">    if [ $ALIAS ]; then
-</span><span class="line">      echo
-</span><span class="line">      echo "You have this alias:"
-</span><span class="line">      echo
-</span><span class="line">      echo $ALIAS
-</span><span class="line">      echo
-</span><span class="line">      echo "Use it!"
-</span><span class="line">
-</span><span class="line">      zle kill-whole-line
-</span><span class="line">      zle reset-prompt
-</span><span class="line">    else
-</span><span class="line">      zle accept-line
-</span><span class="line">    fi
-</span><span class="line">  else
-</span><span class="line">    zle accept-line
-</span><span class="line">  fi
-</span><span class="line">}
-</span><span class="line">
-</span><span class="line">zle -N check-alias-and-accept
-</span><span class="line">bindkey '^J' check-alias-and-accept
-</span><span class="line">bindkey '^M' check-alias-and-accept</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>J’utilise ici une fonction peu connue de zsh: le Zsh Line Editor, ou zle. Il s’agit du programme que zsh execute pendant qu’il lit les évènements clavier de l’utilisateur (alors que les precommand functions sont exécutées après que l’utilisateur ai fini d’entrer la commande). C’est ce programme qui lance l’autocomplétion lorsque qu’on appuie sur TAB par exemple.</p>
-
-<p>L’implémentation est un peu plus compliquée que pour les alias explicites. Regardons un peu plus en détails ce qui se passe:</p>
-
-<ul>
-  <li>Les trois dernières lignes sont pour enregistrer la fonction <code>check-alias-and-accept</code> à la liste des fonctions que zle peut appeler, et binder la touche Entrée à l’appel de cette fonction.</li>
-  <li>A l’intérieur de <code>check-alias-and-accept</code>, on commence par vérifier que l’utilisateur a entré quelque chose, ce qui est indiqué par la variable <code>$BUFFER</code> initialisée par zle. Si rien n’a été entré (dans la branche du else), on appelle tout simplement la fonction <code>zle accept-line</code>, qui est celle que zle executerait normalement à l’appui sur la touche Entrée.</li>
-  <li>Si il y a une commande, on cherche parmis tous les alias si il y en a un qui correspond. <code>alias -L</code> permet d’obtenir la liste de tous les alias de la config, et un grep avec une regexp un peu sauvage permet de les filtrer.</li>
-  <li>Si un alias correspond, les fonctions <code>zle kill-whole-line</code> et <code>zle reset-prompt</code> permettent de revenir à un prompt vide. La commande est donc effacée et n’apparaitra même pas dans l’historique.</li>
-</ul>
-
-<h2 id="et-bien-plus-encore">Et bien plus encore</h2>
-
-<p>zsh est un shell très puissant lorsqu’on a le courage de lire son manuel, et permet de customizer votre setup de manière très poussée. Pour plus de customization zsh et vim, jetez un coup d’oeil à mes <a href="https://github.com/victormours/dotfiles">dotfiles</a>, et si vous avez des idées pour d’autres améliorations à base de zsh, <a href="http://twitter.com/victormours">envoyez-les moi sur twitter</a> !</p>
-
-<h1 id="qui-a-crit-cet-article-">Qui a écrit cet article ?</h1>
-
-<p><img src="https://avatars3.githubusercontent.com/u/1840367?v=3&amp;s=200" /></p>
-
-<p><strong>Victor Mours</strong><br />
-Lead developer chez sleekapp.io, obsessionnel des dotfiles</p>
 ]]></content>
   </entry>
   

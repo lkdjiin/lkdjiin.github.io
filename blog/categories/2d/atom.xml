@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : 2d | Xavier Nayrac]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/2d/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2016-02-10T11:28:40+01:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 1]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/"/>
+    <updated>2016-02-10T10:44:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1</id>
+    <content type="html"><![CDATA[<p>Voici une série d’articles sur l’écriture d’un jeu en 2d avec Ruby et Gosu.
+Dans ce premier article on verra comment installer Gosu, créer une
+fenêtre et afficher des images statiques les unes au dessus des autres.</p>
+
+<p><img class="center" src="/images/gosu0.png"></p>
+
+<!-- more -->
+
+<h2 id="les-outils">Les outils</h2>
+
+<p>Avant d’écrire la première ligne de code, assurez vous d’avoir installé correctement Ruby et la
+gem Gosu.</p>
+
+<h3 id="ruby">Ruby</h3>
+
+<p>J’utiliserai Ruby en version 2.3 (la plus récente à ce jour). Si vous
+utilisez une version de Ruby plus ancienne, vous devrez peut-être adapter le
+code ici ou là. Pour gérer les différentes version de Ruby, j’utilise
+indifféremment <a href="https://rvm.io/">rvm</a> ou
+<a href="https://github.com/postmodern/chruby">chruby</a>
+<em>— mais pas les deux sur la même machine, hein ;) —</em>.</p>
+
+<blockquote>
+  <p>Si vous n’avez jamais utilisé de gestionnaire de version pour Ruby, je
+conseille de commencer par <strong>chruby</strong>. Si je préfère personnellement
+<strong>rvm</strong> que je trouve plus complet, <strong>chruby</strong> s’avère
+indéniablement plus simple à installer, à prendre en main, et à utiliser sur le
+long terme.</p>
+</blockquote>
+
+<h3 id="gosu">Gosu</h3>
+
+<p>Gosu est la gem qui nous fournira les méthodes basiques pour développer notre
+jeu. J’ai installé la dernière version en date : gosu 0.10.5.</p>
+
+<p>Sur <strong>Debian</strong> il faut d’abord s’assurer qu’on dispose des packages suivants:</p>
+
+<pre><code>sudo apt-get install build-essential libsdl2-dev libsdl2-ttf-dev \
+                     libpango1.0-dev libgl1-mesa-dev libfreeimage-dev \
+                     libopenal-dev libsndfile1-dev
+</code></pre>
+
+<p>Et ensuite seulement on peut installer la gem Gosu:</p>
+
+<pre><code>gem install gosu
+</code></pre>
+
+<p>Vous pouvez installer Gosu sur d’autres versions de Linux, sur OS X, ou sur
+Windows:</p>
+
+<ul>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-Linux">Installation sur Linux</a></li>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-OS-X">Installation sur OS X</a></li>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-Windows">Installation sur Windows</a></li>
+</ul>
+
+<p>Enfin, vous pourrez trouver de l’aide sur <a href="https://github.com/gosu/gosu/wiki">le wiki</a>
+et <a href="https://www.libgosu.org/rdoc/">la documentation de Gosu</a> pour le langage Ruby.</p>
+
+<h2 id="du-son-des-images-etc">Du son, des images, etc</h2>
+
+<p>Dans cette série d’articles nous allons coder un jeu. Pour ce qui est du son
+et des images, on va laisser faire les gens qui savent ;) Mes deux sources
+préférées pour les assets open source sont <a href="http://freesound.org/browse/">freesound.org</a>
+et <a href="http://opengameart.org/">opengameart.org</a>.</p>
+
+<p>J’utilise <strong>Gimp</strong> pour retoucher les images : découpe, mise à l’échelle,
+changement de couleur, etc. Et j’utilise <strong>Audacity</strong> pour retravailler les
+fichiers sonores : suppression des silences en début de fichier, conversion de
+format (par exemple mp3 en ogg puisque Gosu ne lit pas le mp3).</p>
+
+<h2 id="crer-une-fentre-pour-le-jeu">Créer une fenêtre pour le jeu</h2>
+
+<p>Ça y est ! Ruby et Gosu sont installés, vous savez où trouver des images et du
+son open source, on peut commencer en créant une fenêtre. Mettez le code
+suivant dans un fichier <code>window.rb</code>:</p>
+
+<p>```ruby window.rb
+require ‘gosu’</p>
+
+<p>class Window &lt; Gosu::Window</p>
+
+<p>def initialize
+    super(640, 480)
+    self.caption = “Collect The Smile!”
+  end</p>
+
+<p>end</p>
+
+<p>window = Window.new
+window.show
+```</p>
+
+<p>Le code est suffisamment simple pour que vous puissiez le comprendre sans
+explications superflues. Pour savoir si vous avez bien installé Gosu, lancez
+le programme:</p>
+
+<pre><code>$ ruby window.rb
+</code></pre>
+
+<p>Et admirez le résultat:</p>
+
+<p><img class="center" src="/images/gosu1.png"></p>
+
+<p>Même avec si peu de code, on peut déjà refactorer. Le fichier précédent
+a deux problèmes. Un, il mélange la définition d’une classe et le lancement du
+jeu. Et deux, il utilise deux nombres magiques. Si on n’y prends pas garde, les
+nombres magiques vont vite devenir un fléau pour notre jeu. Les jeux ont tendance
+à être saturés de nombres magiques, alors autant s’atteler à ce problème dès le début.</p>
+
+<p>Après refactoring,
+nous avons donc d’une part le code de lancement, avec des constantes pour les
+dimensions.  On n’a plus à deviner ce que représente les nombres 640 et 480,
+c’est inscrit dans le code:</p>
+
+<p>```ruby main.rb
+require ‘gosu’</p>
+
+<p>require_relative ‘window’</p>
+
+<p>WindowWidth  = 640
+WindowHeight = 480</p>
+
+<p>window = Window.new(WindowWidth, WindowHeight)
+window.show
+```</p>
+
+<p>Et d’autre part la classe <code>Window</code>, tranquille dans son propre fichier:</p>
+
+<p>```ruby window.rb
+class Window &lt; Gosu::Window</p>
+
+<p>def initialize(width, height)
+    super
+    self.caption = “Collect The Smile!”
+  end</p>
+
+<p>end
+```</p>
+
+<p>La structure du dossier est pour l’instant la suivante:</p>
+
+<pre><code>$ tree
+.
+├── window.rb
+└── main.rb
+</code></pre>
+
+<p>Et nous lancerons donc le jeu avec la commande <code>ruby main.rb</code>.</p>
+
+<h2 id="afficher-des-images">Afficher des images</h2>
+
+<p>Maintenant qu’on sait créer une fenêtre, l’étape suivante sera l’affichage
+d’images statiques. Nous allons afficher une image de fond, et par-dessus
+l’image du joueur.</p>
+
+<p>Toutes les images du jeu seront rangées dans le dossier <code>assets/images</code>:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   └── images
+│       ├── background.png
+│       └── player.png
+├── window.rb
+└── main.rb
+</code></pre>
+
+<p>```ruby window.rb
+class Window &lt; Gosu::Window</p>
+
+<p>def initialize(width, height)
+    super
+    self.caption = “Collect The Smile!”</p>
+
+<pre><code>@background_image = Gosu::Image.new("assets/images/background.png")
+@player_image = Gosu::Image.new("assets/images/player.png")   end
+</code></pre>
+
+<p>def draw
+    @background_image.draw(0, 0, 0)
+    @player_image.draw(width / 2, height / 2, 1)
+  end</p>
+
+<p>end
+```</p>
+
+<p>Pendant l’initialisation on charge les images en mémoire avec
+<code>Gosu::Image.new</code>.  Puis l’affichage se fait avec <strong>les</strong> méthodes <code>draw</code>. La
+méthode <code>draw</code> de la classe <code>Window</code> est hérité de <code>Gosu::Window</code> et appelée 60
+fois par seconde.  Dans cette méthode, on appelle la méthode <code>draw</code> des images.
+Celle-ci prends trois paramètres : les coordonnées <strong>x</strong>, <strong>y</strong> et <strong>z</strong>.
+La coordonnée z est le plan d’affichage. Au dessus ou en dessous. Plus le
+nombre est haut, plus l’image sera affichée au-dessus des autres. Ici l’image
+de fond a un z de 0, et l’image du joueur a un z de 1, donc le joueur est
+affiché au-dessus du fond.</p>
+
+<p>Le joueur est affiché <em>à peu près</em> au milieu de la surface de jeu (<code>width / 2</code>
+et <code>height / 2</code>). À peu près, puisque les paramètres x et y de la méthode
+<code>draw</code> définissent les coordonnées du coin supérieur gauche de l’image.</p>
+
+<p><img class="center" src="/images/gosu2.png"></p>
+
+<p>Ce code souffre lui aussi de certains problèmes.</p>
+
+<ol>
+  <li>S’il est acceptable que l’image de fond <em>appartienne</em> à la fenêtre de jeu,
+c’est absurde en ce qui concerne l’image du joueur.</li>
+  <li>Il y a des nouveaux nombres magiques : les coordonnées z.</li>
+</ol>
+
+<p>On va donc créer deux nouvelles classes (en fait une classe et un module),
+<code>ZOrder</code> et <code>Player</code>:</p>
+
+<p>```ruby main.rb
+require ‘gosu’</p>
+
+<p>require_relative ‘z_order’
+require_relative ‘player’
+require_relative ‘window’</p>
+
+<p>WindowWidth  = 640
+WindowHeight = 480</p>
+
+<p>window = Window.new(WindowWidth, WindowHeight)
+window.show
+```</p>
+
+<p>Le contenu du module <code>ZOrder</code> est simpliste (c’est ni plus ni moins qu’un enum),
+il définit les différents plans:</p>
+
+<p>```ruby z_order.rb
+module ZOrder</p>
+
+<p>Background = 0
+  Player     = 1</p>
+
+<p>end
+```</p>
+
+<p>La classe <code>Player</code> est simple elle aussi.</p>
+
+<blockquote>
+  <p>C’est l’avantage écrasant d’éclater le code en petites classes ayant chacune
+une seule responsabilité : le code devient simplissime.</p>
+</blockquote>
+
+<p>L’image <em>appartient</em> désormais au joueur, tout comme ses coordonnées. Et c’est
+le joueur lui-même qui <em>sait</em> comment s’afficher. La classe <code>Window</code> aura
+juste à déclencher cet affichage.</p>
+
+<p>```ruby player.rb
+class Player</p>
+
+<p>def initialize(x, y)
+    @x = x
+    @y = y
+    @image = Gosu::Image.new(“assets/images/player.png”)
+  end</p>
+
+<p>def draw
+    @image.draw(@x, @y, ZOrder::Player)
+  end</p>
+
+<p>end
+```</p>
+
+<p>```ruby window.rb
+class Window &lt; Gosu::Window</p>
+
+<p>def initialize(width, height)
+    super
+    self.caption = “Collect The Smile!”</p>
+
+<pre><code>@background_image = Gosu::Image.new("assets/images/background.png")
+
+@player = Player.new(width / 2, height / 2)   end
+</code></pre>
+
+<p>def draw
+    @background_image.draw(0, 0, ZOrder::Background)
+    @player.draw
+  end</p>
+
+<p>end
+```</p>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   └── images
+│       ├── background.png
+│       └── player.png
+├── main.rb
+├── player.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.1.0">version 0.1.0</a>.</p>
+
+<p></p>
+]]></content>
+  </entry>
+  
+</feed>

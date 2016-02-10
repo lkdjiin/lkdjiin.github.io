@@ -1,0 +1,677 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Écrire un jeu en 2d avec Ruby et Gosu - partie 1 - Xavier Nayrac</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Voici une série d’articles sur l’écriture d’un jeu en 2d avec Ruby et Gosu.
+Dans ce premier article on verra comment installer Gosu, créer une &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Xavier Nayrac" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><a href="/">
+  <img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c?s=140"/>
+</a>
+<h1><a href="/">Xavier Nayrac</a></h1>
+<h2>
+  Rubyiste accro au TDD, serial blogger, apprenti data scientist, heureux utilisateur de Vim,
+  accordéoniste.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+</h2>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"><img src="/images/rss.png"></img>
+    RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lkdjiin.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-02-10T10:44:00+01:00" pubdate data-updated="true">10 février 2016</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Voici une série d’articles sur l’écriture d’un jeu en 2d avec Ruby et Gosu.
+Dans ce premier article on verra comment installer Gosu, créer une
+fenêtre et afficher des images statiques les unes au dessus des autres.</p>
+
+<p><img class="center" src="/images/gosu0.png" /></p>
+
+<!-- more -->
+
+<h2 id="les-outils">Les outils</h2>
+
+<p>Avant d’écrire la première ligne de code, assurez vous d’avoir installé correctement Ruby et la
+gem Gosu.</p>
+
+<h3 id="ruby">Ruby</h3>
+
+<p>J’utiliserai Ruby en version 2.3 (la plus récente à ce jour). Si vous
+utilisez une version de Ruby plus ancienne, vous devrez peut-être adapter le
+code ici ou là. Pour gérer les différentes version de Ruby, j’utilise
+indifféremment <a href="https://rvm.io/">rvm</a> ou
+<a href="https://github.com/postmodern/chruby">chruby</a>
+<em>— mais pas les deux sur la même machine, hein ;) —</em>.</p>
+
+<blockquote>
+  <p>Si vous n’avez jamais utilisé de gestionnaire de version pour Ruby, je
+conseille de commencer par <strong>chruby</strong>. Si je préfère personnellement
+<strong>rvm</strong> que je trouve plus complet, <strong>chruby</strong> s’avère
+indéniablement plus simple à installer, à prendre en main, et à utiliser sur le
+long terme.</p>
+</blockquote>
+
+<h3 id="gosu">Gosu</h3>
+
+<p>Gosu est la gem qui nous fournira les méthodes basiques pour développer notre
+jeu. J’ai installé la dernière version en date : gosu 0.10.5.</p>
+
+<p>Sur <strong>Debian</strong> il faut d’abord s’assurer qu’on dispose des packages suivants:</p>
+
+<pre><code>sudo apt-get install build-essential libsdl2-dev libsdl2-ttf-dev \
+                     libpango1.0-dev libgl1-mesa-dev libfreeimage-dev \
+                     libopenal-dev libsndfile1-dev
+</code></pre>
+
+<p>Et ensuite seulement on peut installer la gem Gosu:</p>
+
+<pre><code>gem install gosu
+</code></pre>
+
+<p>Vous pouvez installer Gosu sur d’autres versions de Linux, sur OS X, ou sur
+Windows:</p>
+
+<ul>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-Linux">Installation sur Linux</a></li>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-OS-X">Installation sur OS X</a></li>
+  <li><a href="https://github.com/gosu/gosu/wiki/Getting-Started-on-Windows">Installation sur Windows</a></li>
+</ul>
+
+<p>Enfin, vous pourrez trouver de l’aide sur <a href="https://github.com/gosu/gosu/wiki">le wiki</a>
+et <a href="https://www.libgosu.org/rdoc/">la documentation de Gosu</a> pour le langage Ruby.</p>
+
+<h2 id="du-son-des-images-etc">Du son, des images, etc</h2>
+
+<p>Dans cette série d’articles nous allons coder un jeu. Pour ce qui est du son
+et des images, on va laisser faire les gens qui savent ;) Mes deux sources
+préférées pour les assets open source sont <a href="http://freesound.org/browse/">freesound.org</a>
+et <a href="http://opengameart.org/">opengameart.org</a>.</p>
+
+<p>J’utilise <strong>Gimp</strong> pour retoucher les images : découpe, mise à l’échelle,
+changement de couleur, etc. Et j’utilise <strong>Audacity</strong> pour retravailler les
+fichiers sonores : suppression des silences en début de fichier, conversion de
+format (par exemple mp3 en ogg puisque Gosu ne lit pas le mp3).</p>
+
+<h2 id="crer-une-fentre-pour-le-jeu">Créer une fenêtre pour le jeu</h2>
+
+<p>Ça y est ! Ruby et Gosu sont installés, vous savez où trouver des images et du
+son open source, on peut commencer en créant une fenêtre. Mettez le code
+suivant dans un fichier <code>window.rb</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;gosu&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="k">super</span><span class="p">(</span><span class="mi">640</span><span class="p">,</span> <span class="mi">480</span><span class="p">)</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">window</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line"><span class="n">window</span><span class="o">.</span><span class="n">show</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le code est suffisamment simple pour que vous puissiez le comprendre sans
+explications superflues. Pour savoir si vous avez bien installé Gosu, lancez
+le programme:</p>
+
+<pre><code>$ ruby window.rb
+</code></pre>
+
+<p>Et admirez le résultat:</p>
+
+<p><img class="center" src="/images/gosu1.png" /></p>
+
+<p>Même avec si peu de code, on peut déjà refactorer. Le fichier précédent
+a deux problèmes. Un, il mélange la définition d’une classe et le lancement du
+jeu. Et deux, il utilise deux nombres magiques. Si on n’y prends pas garde, les
+nombres magiques vont vite devenir un fléau pour notre jeu. Les jeux ont tendance
+à être saturés de nombres magiques, alors autant s’atteler à ce problème dès le début.</p>
+
+<p>Après refactoring,
+nous avons donc d’une part le code de lancement, avec des constantes pour les
+dimensions.  On n’a plus à deviner ce que représente les nombres 640 et 480,
+c’est inscrit dans le code:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;gosu&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;window&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="no">WindowWidth</span>  <span class="o">=</span> <span class="mi">640</span>
+</span><span class="line"><span class="no">WindowHeight</span> <span class="o">=</span> <span class="mi">480</span>
+</span><span class="line">
+</span><span class="line"><span class="n">window</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">WindowWidth</span><span class="p">,</span> <span class="no">WindowHeight</span><span class="p">)</span>
+</span><span class="line"><span class="n">window</span><span class="o">.</span><span class="n">show</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et d’autre part la classe <code>Window</code>, tranquille dans son propre fichier:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+</span><span class="line">    <span class="k">super</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La structure du dossier est pour l’instant la suivante:</p>
+
+<pre><code>$ tree
+.
+├── window.rb
+└── main.rb
+</code></pre>
+
+<p>Et nous lancerons donc le jeu avec la commande <code>ruby main.rb</code>.</p>
+
+<h2 id="afficher-des-images">Afficher des images</h2>
+
+<p>Maintenant qu’on sait créer une fenêtre, l’étape suivante sera l’affichage
+d’images statiques. Nous allons afficher une image de fond, et par-dessus
+l’image du joueur.</p>
+
+<p>Toutes les images du jeu seront rangées dans le dossier <code>assets/images</code>:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   └── images
+│       ├── background.png
+│       └── player.png
+├── window.rb
+└── main.rb
+</code></pre>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+</span><span class="line">    <span class="k">super</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">
+</span><span class="line">    <span class="vi">@background_image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/background.png&quot;</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@player_image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/player.png&quot;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="vi">@background_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@player_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pendant l’initialisation on charge les images en mémoire avec
+<code>Gosu::Image.new</code>.  Puis l’affichage se fait avec <strong>les</strong> méthodes <code>draw</code>. La
+méthode <code>draw</code> de la classe <code>Window</code> est hérité de <code>Gosu::Window</code> et appelée 60
+fois par seconde.  Dans cette méthode, on appelle la méthode <code>draw</code> des images.
+Celle-ci prends trois paramètres : les coordonnées <strong>x</strong>, <strong>y</strong> et <strong>z</strong>.
+La coordonnée z est le plan d’affichage. Au dessus ou en dessous. Plus le
+nombre est haut, plus l’image sera affichée au-dessus des autres. Ici l’image
+de fond a un z de 0, et l’image du joueur a un z de 1, donc le joueur est
+affiché au-dessus du fond.</p>
+
+<p>Le joueur est affiché <em>à peu près</em> au milieu de la surface de jeu (<code>width / 2</code>
+et <code>height / 2</code>). À peu près, puisque les paramètres x et y de la méthode
+<code>draw</code> définissent les coordonnées du coin supérieur gauche de l’image.</p>
+
+<p><img class="center" src="/images/gosu2.png" /></p>
+
+<p>Ce code souffre lui aussi de certains problèmes.</p>
+
+<ol>
+  <li>S’il est acceptable que l’image de fond <em>appartienne</em> à la fenêtre de jeu,
+c’est absurde en ce qui concerne l’image du joueur.</li>
+  <li>Il y a des nouveaux nombres magiques : les coordonnées z.</li>
+</ol>
+
+<p>On va donc créer deux nouvelles classes (en fait une classe et un module),
+<code>ZOrder</code> et <code>Player</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;gosu&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;z_order&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;player&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;window&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="no">WindowWidth</span>  <span class="o">=</span> <span class="mi">640</span>
+</span><span class="line"><span class="no">WindowHeight</span> <span class="o">=</span> <span class="mi">480</span>
+</span><span class="line">
+</span><span class="line"><span class="n">window</span> <span class="o">=</span> <span class="no">Window</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">WindowWidth</span><span class="p">,</span> <span class="no">WindowHeight</span><span class="p">)</span>
+</span><span class="line"><span class="n">window</span><span class="o">.</span><span class="n">show</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le contenu du module <code>ZOrder</code> est simpliste (c’est ni plus ni moins qu’un enum),
+il définit les différents plans:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>z_order.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">ZOrder</span>
+</span><span class="line">
+</span><span class="line">  <span class="no">Background</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class="line">  <span class="no">Player</span>     <span class="o">=</span> <span class="mi">1</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La classe <code>Player</code> est simple elle aussi.</p>
+
+<blockquote>
+  <p>C’est l’avantage écrasant d’éclater le code en petites classes ayant chacune
+une seule responsabilité : le code devient simplissime.</p>
+</blockquote>
+
+<p>L’image <em>appartient</em> désormais au joueur, tout comme ses coordonnées. Et c’est
+le joueur lui-même qui <em>sait</em> comment s’afficher. La classe <code>Window</code> aura
+juste à déclencher cet affichage.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class="line">    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
+</span><span class="line">    <span class="vi">@image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/player.png&quot;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="vi">@image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="vi">@x</span><span class="p">,</span> <span class="vi">@y</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Player</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+</span><span class="line">    <span class="k">super</span>
+</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
+</span><span class="line">
+</span><span class="line">    <span class="vi">@background_image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/background.png&quot;</span><span class="p">)</span>
+</span><span class="line">
+</span><span class="line">    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="vi">@background_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Background</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">draw</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   └── images
+│       ├── background.png
+│       └── player.png
+├── main.rb
+├── player.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.1.0">version 0.1.0</a>.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/">Un space invaders avec Opal.rb - partie 16</a></li><li><a href="/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/">Un space invaders avec Opal.rb - partie 15</a></li><li><a href="/blog/2014/06/23/un-space-invaders-avec-opal-dot-rb-partie-14/">Un space invaders avec Opal.rb - partie 14</a></li></ul></section>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-02-10T10:44:00+01:00" pubdate data-updated="true">10 février 2016</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/2d/'>2d</a>, <a class='category' href='/blog/categories/gosu/'>gosu</a>, <a class='category' href='/blog/categories/jeu/'>jeu</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/02/05/livres-de-non-fiction-lus-en-2015/" title="Previous Post: Livres de non-fiction lus en 2015">&laquo; Livres de non-fiction lus en 2015</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Commentaires</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/05/livres-de-non-fiction-lus-en-2015/">Livres de non-fiction lus en 2015</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/">Fabriquer un sablier à thé électronique 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Sur Twitter</h1>
+  <a class="twitter-timeline"  href="https://twitter.com/lkdjiin" data-widget-id="554992534532136960">Tweets de @lkdjiin</a>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+          
+</section>
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2016 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+
+
+</body>
+</html>
