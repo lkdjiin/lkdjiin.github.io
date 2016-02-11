@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : 2d | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/2d/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-10T11:28:40+01:00</updated>
+  <updated>2016-02-11T10:02:49+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,368 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 2]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/"/>
+    <updated>2016-02-11T09:40:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2</id>
+    <content type="html"><![CDATA[<p>Aujourd’hui on voit comment déplacer et contrôler le joueur, ainsi que
+comment faire tomber une pluie de smileys.</p>
+
+<p><img class="center" src="/images/gosu3.png"></p>
+
+<!-- more -->
+
+<p>La totalité des articles:</p>
+
+<ol>
+  <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
+  <li>Déplacer le joueur et pluie de smileys</li>
+</ol>
+
+<h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
+
+<p>On ajoute la méthode <code>update</code> à la classe <code>Window</code>. À l’instar de <code>draw</code>
+cette méthode vient aussi de <code>Gosu::Window</code> et est appelée régulièrement.
+Dans <code>draw</code> on dessine, on affiche. Dans <code>update</code> on calcule, on met à jour
+les éléments du jeu.</p>
+
+<blockquote>
+  <p><code>update</code> sera appelée 60 fois par seconde quoiqu’il arrive, par contre
+<code>draw</code> pourra être appelée plus ou moins souvent suivant les besoins de
+l’OS. C’est pour cela qu’il est important de séparer le calcul de l’affichage.
+Cette division entre calcul et affichage est d’ailleurs typique d’un framework de jeu,
+ou même GUI, quelque soit le langage utilisé.</p>
+</blockquote>
+
+<p>Le nouveau code de <code>Window</code> est le suivant:</p>
+
+<p>```ruby window.rb
+class Window &lt; Gosu::Window</p>
+
+<p>def initialize(width, height)
+    super
+    self.caption = “Collect The Smile!”</p>
+
+<pre><code>@background_image = Gosu::Image.new("assets/images/background.png")
+
+@player = Player.new   end
+</code></pre>
+
+<p>def update
+    @player.go_left if Gosu::button_down?(Gosu::KbLeft)
+    @player.go_right if Gosu::button_down?(Gosu::KbRight)</p>
+
+<pre><code>@player.move   end
+</code></pre>
+
+<p>def draw
+    @background_image.draw(0, 0, ZOrder::Background)
+    @player.draw
+  end</p>
+
+<p>end
+```</p>
+
+<p>Dans <code>update</code> on utilise la méthode <code>button_down?</code> de Gosu pour tester si le
+joueur appuit sur la touche gauche et/ou la touche droite. L’appui simultané sur
+les deux touches <em>annulera</em> en quelque sorte le déplacement. Et dans tout les cas
+on déplace le joueur avec <code>@player.move</code>.</p>
+
+<p>Voyons maintenant la classe <code>Player</code>, qui a gagné plusieurs nouvelles méthodes
+par rapport au dernier article:</p>
+
+<p>```ruby player.rb
+class Player</p>
+
+<p>Y = 390</p>
+
+<p>def initialize
+    @x = WindowHeight / 2
+    @velocity = 0.0
+    @image = Gosu::Image.new(“assets/images/player.png”)
+  end</p>
+
+<p>def draw
+    @image.draw(@x, Y, ZOrder::Player)
+  end</p>
+
+<p>def go_left
+    @velocity -= 0.5
+  end</p>
+
+<p>def go_right
+    @velocity += 0.5
+  end</p>
+
+<p>def move
+    @x += @velocity
+    @x %= WindowWidth
+    @velocity *= 0.96
+  end</p>
+
+<p>end
+```</p>
+
+<p>Le joueur se déplaçant toujours sur la même ligne, sa coordonnée y ne change
+pas, j’en ai donc fait une constante.</p>
+
+<p>L’idée générale pour le déplacement, c’est qu’il soit <em>smooth</em>, avec une
+accélération progressive et une glisse finale. On a donc un facteur
+d’accélération de 0.5 et un facteur de glisse de 0.96. Prenez le temps de jouer
+avec ces valeurs pour les comprendre, et peut-être pour en trouver d’autres qui vous
+conviennent mieux.</p>
+
+<p>Comme toujours, nous convertirons ces nombres magiques en constantes:</p>
+
+<p>```ruby player.rb
+class Player</p>
+
+<p>Y = 390
+  AccelerationFactor = 0.5
+  SkidingFactor = 0.96</p>
+
+<p># …</p>
+
+<p>def go_left
+    @velocity -= AccelerationFactor
+  end</p>
+
+<p>def go_right
+    @velocity += AccelerationFactor
+  end</p>
+
+<p>def move
+    @x += @velocity
+    @x %= WindowWidth
+    @velocity *= SkidingFactor
+  end</p>
+
+<p>end
+```</p>
+
+<h2 id="une-pluie-de-smileys">Une pluie de smileys</h2>
+
+<p>Il est temps de faire pleuvoir des smileys !</p>
+
+<p>Ajoutez un fichier <code>smiley.rb</code>:</p>
+
+<p>```ruby main.rb
+require ‘gosu’</p>
+
+<p>require_relative ‘z_order’
+require_relative ‘player’
+require_relative ‘smiley’
+require_relative ‘window’</p>
+
+<h1 id="section">…</h1>
+<p>```</p>
+
+<p>Et remplissez le avec le code suivant:</p>
+
+<p>```ruby smiley.rb
+class Smiley
+  attr_reader :y</p>
+
+<p>def initialize(type)
+    @image = if type == :smiley_up
+               Gosu::Image.new(“assets/images/smiley-yellow.png”)
+             elsif type == :smiley_down
+               Gosu::Image.new(“assets/images/smiley-green.png”)
+             end</p>
+
+<pre><code>@velocity = Gosu::random(0.8, 3.3)
+
+@x = rand * (WindowWidth - @image.width)
+@y = 0   end
+</code></pre>
+
+<p>def update
+    @y += @velocity
+  end</p>
+
+<p>def draw
+    @image.draw(@x, @y, ZOrder::Items)
+  end</p>
+
+<p>end
+```</p>
+
+<p>Il n’y a rien de vraiment nouveau par rapport à ce qu’on a vu jusqu’ici.
+Je peux toutefois signaler la méthode <code>Gosu::random(0.8, 3.3)</code>, qui retourne
+un Float entre 0.8 inclus et 3.3 exclus. Et aussi le calcul de <code>@x</code>:</p>
+
+<pre><code>@x = rand * (WindowWidth - @image.width)
+</code></pre>
+
+<p>qui soustrait la largeur du smiley de la largeur de la fenêtre pour s’assurer
+qu’un smiley sera toujours dans les limites de la fenêtre (visible, donc).</p>
+
+<p>Pour intégrer les smileys au jeu, vous devez modifier les méthodes
+<code>initialize</code>, <code>update</code> et <code>draw</code> de la classe Window:</p>
+
+<p>```ruby window.rb
+class Window &lt; Gosu::Window</p>
+
+<p>def initialize(width, height)</p>
+
+<pre><code># ...
+
+@items = []   end
+</code></pre>
+
+<p>def update
+    unless @items.size &gt;= 15
+      r = rand
+      if r &lt; 0.035
+        @items.push(Smiley.new(:smiley_up))
+      elsif r &lt; 0.040
+        @items.push(Smiley.new(:smiley_down))
+      end
+    end
+    @items.each(&amp;:update)
+    @items.reject! {|item| item.y &gt; WindowHeight }</p>
+
+<pre><code># Les 3 lignes suivantes sont décrites dans l'article précédent.
+@player.go_left if Gosu::button_down?(Gosu::KbLeft)
+@player.go_right if Gosu::button_down?(Gosu::KbRight)
+@player.move   end
+</code></pre>
+
+<p>def draw
+    @background_image.draw(0, 0, ZOrder::Background)</p>
+
+<pre><code># Ça c'est la nouvelle ligne:
+@items.each(&amp;:draw)
+
+@player.draw   end
+</code></pre>
+
+<p>end
+```</p>
+
+<p>La nouvelle méthode <code>update</code> mérite bien quelques explications !
+Tout d’abord je veux afficher un maximum de 15 smileys à l’écran:</p>
+
+<p><code>ruby
+  def update
+    if @items.size &lt; 15
+</code></p>
+
+<p>S’il y en a moins de 15, il y a <em>à chaque update</em> 3.5% de chances (0.035)
+de créer un sourire à l’endroit, et 0.5% de chances (0.04 - 0.035) de créer un
+sourire à l’envers:</p>
+
+<p><code>ruby
+      r = rand
+      if r &lt; 0.035
+        @items.push(Smiley.new(:smiley_up))
+      elsif r &lt; 0.040
+        @items.push(Smiley.new(:smiley_down))
+      end
+    end
+</code></p>
+
+<p>Dans tous les cas on met à jour les smileys existants (c’est à dire qu’on change leur
+coordonnée y):</p>
+
+<p><code>ruby
+    @items.each(&amp;:update)
+</code></p>
+
+<p>Et on supprime les smileys qui sont sortit de la fenêtre de jeu (par le bas):</p>
+
+<p><code>ruby
+    @items.reject! {|item| item.y &gt; WindowHeight }
+</code></p>
+
+<p>Ce code est hideux et il faut faire quelque chose pour lui ;)
+On commence le refactoring de la classe Window en extrayant les deux méthodes
+<code>update_items</code> et <code>update_player</code>:</p>
+
+<p>```ruby window.rb
+class Window
+  # …</p>
+
+<p>def update
+    update_items
+    update_player
+  end</p>
+
+<p>private</p>
+
+<p>def update_items
+    unless @items.size &gt;= 15
+      r = rand
+      if r &lt; 0.035
+        @items.push(Smiley.new(:smiley_up))
+      elsif r &lt; 0.040
+        @items.push(Smiley.new(:smiley_down))
+      end
+    end
+    @items.each(&amp;:update)
+    @items.reject! {|item| item.y &gt; WindowHeight }
+  end</p>
+
+<p>def update_player
+    @player.go_left if Gosu::button_down?(Gosu::KbLeft)
+    @player.go_right if Gosu::button_down?(Gosu::KbRight)
+    @player.move
+  end</p>
+
+<p>end
+```</p>
+
+<p>La nouvelle méthode <code>update_items</code> mérite aussi sa petite extraction:</p>
+
+<p>```ruby window.rb
+  def update_items
+    populate_items
+    @items.each(&amp;:update)
+    @items.reject! {|item| item.y &gt; WindowHeight }
+  end</p>
+
+<p>def populate_items
+    return if @items.size &gt;= 15</p>
+
+<pre><code>type = rand
+if type &lt; 0.035
+  @items.push(Smiley.new(:smiley_up))
+elsif type &lt; 0.040
+  @items.push(Smiley.new(:smiley_down))
+end   end ```
+</code></pre>
+
+<p>Maintenant <code>populate_items</code> est toujours moche, et on sent que cette méthode
+risque d’enfler dans l’avenir. Mais je pense que c’est le moment d’arrêter le refactoring
+pour éviter de tomber dans l’<a href="https://en.wikipedia.org/wiki/Overengineering">overengineering</a>
+et aussi parce que
+<a href="http://martinfowler.com/bliki/Yagni.html">YAGNI</a> !.</p>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   └── images
+│       ├── background.png
+│       ├── player.png
+│       ├── smiley-green.png
+│       └── smiley-yellow.png
+├── main.rb
+├── player.rb
+├── smiley.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.2.0">version 0.2.0</a>.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 1]]></title>
@@ -25,6 +387,13 @@ fenêtre et afficher des images statiques les unes au dessus des autres.</p>
 <p><img class="center" src="/images/gosu0.png"></p>
 
 <!-- more -->
+
+<p>La totalité des articles:</p>
+
+<ol>
+  <li>Installation de Gosu, affichage d’images statiques</li>
+  <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+</ol>
 
 <h2 id="les-outils">Les outils</h2>
 
