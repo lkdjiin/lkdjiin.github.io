@@ -14,6 +14,11 @@ fenêtre et afficher des images statiques les unes au dessus des autres.
 
 <!-- more -->
 
+La totalité des articles:
+
+1. Installation de Gosu, affichage d'images statiques
+2. [Déplacer le joueur et pluie de smileys](/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/)
+
 ## Les outils
 
 Avant d'écrire la première ligne de code, assurez vous d'avoir installé correctement Ruby et la
