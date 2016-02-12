@@ -17,6 +17,7 @@ La totalité des articles:
 
 1. [Installation de Gosu, affichage d'images statiques](/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/)
 2. Déplacer le joueur et pluie de smileys
+3. [Beep, fonte et collecte des smileys](/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/)
 
 ## Déplacer le joueur
 
