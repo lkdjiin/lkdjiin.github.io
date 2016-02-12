@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-11T10:02:49+01:00</updated>
+  <updated>2016-02-12T10:09:50+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,443 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 3]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/"/>
+    <updated>2016-02-12T09:49:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3</id>
+    <content type="html"><![CDATA[<p>On continue notre jeu en 2d en comptabilisant et en affichant le score.
+Au passage on voit aussi comment utiliser une fonte précise et comment jouer
+un son.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/gosu4.png" /></p>
+
+<!-- more -->
+
+<p>La totalité des articles:</p>
+
+<ol>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+  <li>Beep, fonte et collecte des smileys</li>
+</ol>
+
+<h2 id="beep-et-collecte">Beep et collecte</h2>
+
+<p>Pour donner l’illusion que le joueur attrape un smiley, dès que les deux images
+entre en collision on supprime le smiley et on joue un petit son. Le cœur de
+la fonctionnalité se passera au sein de la méthode <code>Player#collect</code>, qu’on
+déclenchera depuis la classe Window:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">update_player</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">collect</span><span class="p">(</span><span class="vi">@items</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Voici ce qui change dans la classe Player. On en discute après:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1"># ...</span>
+</span><span class="line">  <span class="no">DistanceOfCollision</span> <span class="o">=</span> <span class="mi">35</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@sound_collect</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Sample</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/sound/collect.wav&quot;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1"># ...</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">collect</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">    <span class="n">items</span><span class="o">.</span><span class="n">reject!</span> <span class="p">{</span><span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">collide?</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="p">?</span> <span class="n">collision</span> <span class="p">:</span> <span class="kp">false</span> <span class="p">}</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">private</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">collide?</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</span><span class="line">    <span class="n">distance</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:distance</span><span class="p">(</span><span class="n">x_center_of_mass</span><span class="p">,</span> <span class="n">y_center_of_mass</span><span class="p">,</span>
+</span><span class="line">                              <span class="n">item</span><span class="o">.</span><span class="n">x_center_of_mass</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">y_center_of_mass</span><span class="p">)</span>
+</span><span class="line">    <span class="n">distance</span> <span class="o">&lt;</span> <span class="no">DistanceOfCollision</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">x_center_of_mass</span>
+</span><span class="line">    <span class="vi">@x</span> <span class="o">+</span> <span class="vi">@image</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">y_center_of_mass</span>
+</span><span class="line">    <span class="n">Y</span> <span class="o">+</span> <span class="vi">@image</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">4</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">collision</span>
+</span><span class="line">    <span class="vi">@sound_collect</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="kp">true</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Tout d’abord, on charge un son comme on charge une image, sauf qu’on utilise
+<code>Sample</code> au lieu de <code>Image</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="vi">@sound_collect</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Sample</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/sound/collect.wav&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Ensuite, la méthode <code>collect</code>. On doit trouver le ou les objets (si il y en a)
+qui sont en collision avec le joueur. On teste justement cette éventuelle
+collision avec un smiley avec la méthode <code>collide?</code>. Si collision il y a,
+l’objet sera supprimé (voir <code>collision</code> plus loin):</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">collect</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">    <span class="n">items</span><span class="o">.</span><span class="n">reject!</span> <span class="p">{</span><span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">collide?</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="p">?</span> <span class="n">collision</span> <span class="p">:</span> <span class="kp">false</span> <span class="p">}</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<blockquote>
+  <p>Modifier un objet sans vraiment le dire, par effet de bord, par exemple avec
+<code>reject!</code> comme ci-dessus ne manquera pas de remplir d’horreur les tenants de la
+programmation fonctionnelle. Mais comme le paradigme ici est la programmation
+orienté objet, je ne vois pas de problèmes ;)</p>
+</blockquote>
+
+<p>Pour détecter si il y a eu collision entre deux objets, il existe plusieurs
+méthodes. Comme Gosu fournit une méthode pour connaître la distance entre deux
+points (<code>Gosu::distance</code>), voici ce que nous allons faire: le joueur et les smileys vont être
+chacun représentés par un seul point précis. Si la distance entre ses deux points
+tombe sous un certain seuil, nous considèrerons qu’il y a collision.</p>
+
+<p>Le joueur est représenté par le point (<code>x_center_of_mass</code>, <code>y_center_of_mass</code>)
+et un smiley par le point (<code>item.x_center_of_mass</code>, <code>item.y_center_of_mass</code>):</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">collide?</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</span><span class="line">    <span class="n">distance</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:distance</span><span class="p">(</span><span class="n">x_center_of_mass</span><span class="p">,</span> <span class="n">y_center_of_mass</span><span class="p">,</span>
+</span><span class="line">                              <span class="n">item</span><span class="o">.</span><span class="n">x_center_of_mass</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">y_center_of_mass</span><span class="p">)</span>
+</span><span class="line">    <span class="n">distance</span> <span class="o">&lt;</span> <span class="no">DistanceOfCollision</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour le joueur, la coordonnée x utilisée pour la détection de collision est
+pile au milieu:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">x_center_of_mass</span>
+</span><span class="line">    <span class="vi">@x</span> <span class="o">+</span> <span class="vi">@image</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour la coordonnée y, c’est le quart en partant du haut:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">y_center_of_mass</span>
+</span><span class="line">    <span class="n">Y</span> <span class="o">+</span> <span class="vi">@image</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">4</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Enfin, lors d’une collision il faut émettre un son et retourner <code>true</code> pour que
+<code>reject!</code> sache qu’il faut supprimer ce smiley de la collection. Le paramètre
+de <code>play</code> est le volume, de 0.0 à 1.0:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">collision</span>
+</span><span class="line">    <span class="vi">@sound_collect</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">)</span>
+</span><span class="line">    <span class="kp">true</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le point d’un smiley utilisé pour détecter une collision est le milieu de
+la largeur pour x et le haut pour y:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>smiley.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Smiley</span>
+</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:x</span><span class="p">,</span> <span class="ss">:y</span>
+</span><span class="line">
+</span><span class="line">  <span class="c1"># ...</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">x_center_of_mass</span>
+</span><span class="line">    <span class="vi">@x</span> <span class="o">+</span> <span class="vi">@image</span><span class="o">.</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">y_center_of_mass</span>
+</span><span class="line">    <span class="vi">@y</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>N’hésitez pas à modifier ces points de détection ainsi que la constante
+<code>DistanceOfCollision</code> pour trouver les valeurs qui vous conviennent.</p>
+
+<h2 id="compter-et-afficher-les-points">Compter et afficher les points</h2>
+
+<p>On va ajouter 10 points quelque soit le type de smiley collecté. Et on va
+afficher le score dans le coin supérieur gauche. Les sorties informatives
+telles que le score, les vies, etc, seront gérées depuis la classe <code>UI</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># ...</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;z_order&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;player&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;smiley&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;ui&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;window&#39;</span>
+</span><span class="line"><span class="c1"># ...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Un pattern commence à se dessiner, on crée un objet dans l’initialisation de
+<code>Window</code> et on appelle sa méthode <code>draw</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@ui</span> <span class="o">=</span> <span class="no">UI</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@ui</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="ss">score</span><span class="p">:</span> <span class="vi">@player</span><span class="o">.</span><span class="n">score</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Les sorties de l’UI doivent être toujours visibles, on leurs donnera donc le
+ZOrder le plus grand:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>z_order.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">ZOrder</span>
+</span><span class="line">
+</span><span class="line">  <span class="no">Background</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class="line">  <span class="no">Items</span>      <span class="o">=</span> <span class="mi">1</span>
+</span><span class="line">  <span class="no">Player</span>     <span class="o">=</span> <span class="mi">2</span>
+</span><span class="line">  <span class="no">UI</span>         <span class="o">=</span> <span class="mi">3</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La classe Player est un bon endroit pour tenir compte du score et le mettre à
+jour lors d’une collision avec un smiley:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
+</span><span class="line">  <span class="c1"># ...</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:score</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">collision</span>
+</span><span class="line">    <span class="vi">@score</span> <span class="o">+=</span> <span class="mi">10</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Finalement voici un peu de nouveauté avec la classe UI et l’utilisation d’une
+fonte pour afficher du texte.  Pour info, j’ai trouvé la police
+<code>VT323-Regular.ttf</code> sur Google Font.  Le chargement d’une police de caractères
+nécessite de fournir la taille et le fichier de la police:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>ui.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">UI</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="vi">@font</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Font</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="nb">name</span><span class="p">:</span> <span class="s2">&quot;assets/fonts/VT323/VT323-Regular.ttf&quot;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="ss">score</span><span class="p">:)</span>
+</span><span class="line">    <span class="vi">@font</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s2">&quot;Score: </span><span class="si">#{</span><span class="n">score</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:UI</span><span class="p">,</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0xff_ffff00</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Quant à la méthode <code>draw</code> d’une fonte, je vous invite à regarder
+<a href="https://www.libgosu.org/rdoc/Gosu/Font.html#draw-instance_method">sa documentation</a>
+pour connaître les paramètres à fournir.</p>
+
+<p>Une explication toutefois, ceci:</p>
+
+<pre><code>0xff_ffff00
+</code></pre>
+
+<p>…est une couleur au format alpha, rouge, vert, bleu en hexadécimal. Le
+<em>underscore</em> est juste une fonctionnalité de Ruby qui permet d’écrire les nombres
+avec des underscores pour faciliter la lecture. Par exemple les deux nombres
+qui suivent sont identiques, lequel est le plus simple à lire ?</p>
+
+<pre><code>1000000000
+
+1_000_000_000
+</code></pre>
+
+<p>Et ça marche pareil avec l’hexadécimal.</p>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   ├── fonts
+│   │   └── VT323
+│   │       ├── OFL.txt
+│   │       └── VT323-Regular.ttf
+│   ├── images
+│   │   ├── background.png
+│   │   ├── player.png
+│   │   ├── smiley-green.png
+│   │   └── smiley-yellow.png
+│   └── sound
+│       └── collect.wav
+├── main.rb
+├── player.rb
+├── smiley.rb
+├── ui.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.3.0">version 0.3.0</a>.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/">Un space invaders avec Opal.rb - partie 16</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 2]]></title>
@@ -30,6 +467,7 @@ comment faire tomber une pluie de smileys.</p>
 <ol>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
   <li>Déplacer le joueur et pluie de smileys</li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
 </ol>
 
 <h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
@@ -563,7 +1001,7 @@ et aussi parce que
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.2.0">version 0.2.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/">Un space invaders avec Opal.rb - partie 16</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/">Un space invaders avec Opal.rb - partie 15</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/">Un space invaders avec Opal.rb - partie 16</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -585,6 +1023,7 @@ fenêtre et afficher des images statiques les unes au dessus des autres.</p>
 <ol>
   <li>Installation de Gosu, affichage d’images statiques</li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
 </ol>
 
 <h2 id="les-outils">Les outils</h2>
@@ -968,7 +1407,7 @@ juste à déclencher cet affichage.</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.1.0">version 0.1.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/">Un space invaders avec Opal.rb - partie 16</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/26/un-space-invaders-avec-opal-dot-rb-partie-15/">Un space invaders avec Opal.rb - partie 15</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/27/un-space-invaders-avec-opal-dot-rb-partie-16/">Un space invaders avec Opal.rb - partie 16</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1479,7 +1918,7 @@ Reste à savoir quels programmes Ruby on va pouvoir réécrire en Crystal sans
 avoir à réécrire, au hasard, tout ActiveRecord. Et là, je ne suis pas certain
 qu’on va en trouver beaucoup.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Écrire un jeu en 2d avec Ruby et Gosu - partie 1</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1547,7 +1986,7 @@ histoire.</p>
 
 <p>La prochaine fois j’espère vous donner mes premières impressions sur Crystal.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1663,7 +2102,7 @@ la longueur du mouvement des cellules suit, en gros, une
 
 <p>Si vous pensez à d’autres variations possibles, n’hésitez pas à m’en faire part.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
 
 ]]></content>
   </entry>
@@ -2013,7 +2452,7 @@ de base pour des idées plus sophistiquées.</p>
 <p>On se retrouve bientôt pour que je vous parle des quelques variations que j’ai
 essayé autour du thème des arbres browniens.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -3304,41 +3743,6 @@ un article à elle toute seule. Alors son explication sera pour une prochaine
 fois ;)</p>
 
 <p>Et vous, comment auriez vous fait ? Avec un shell ? Un IDE ?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Coco version 0.13.0]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/07/29/coco-version-0-dot-13-dot-0/"/>
-    <updated>2015-07-29T10:50:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/07/29/coco-version-0-dot-13-dot-0</id>
-    <content type="html"><![CDATA[<p>Je me rend compte que j’ai sorti la version 0.13.0 de
-<a href="https://github.com/lkdjiin/coco">coco</a>
-il y a près d’un mois et que je n’ai pas encore écrit une seule ligne sur le
-sujet !</p>
-
-<p>Coco est un outil de <strong>co</strong>uverture de <strong>co</strong>de pour Ruby — <strong>co</strong>de
-<strong>co</strong>verage en anglais —. En gros, coco vous dit quels sont les fichiers d’un
-projet qui ne sont pas suffisamment testés :</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/coco-shot-1.png" /></p>
-
-<!-- more -->
-
-<p>Puis, pour les fichiers qui ne sont pas couverts à 100% par les tests, vous
-pouvez visualiser les parties du code qui ne sont pas couvertes (ici en rouge) :</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/coco-shot-2.png" /></p>
-
-<p>Qu’y a-t-il de nouveau dans cette version 0.13.0 ? J’ai essentiellement
-travaillé sur l’aspect du rapport HTML, afin qu’il soit un peu plus agréable
-à regarder (je ne suis toujours ni graphiste ni designer, mais je crois que
-cette fois ça n’est pas trop mal). On peut retenir aussi que les versions de
-Ruby inférieures à 2 ne sont plus supportées.</p>
-
-<p>Il ne reste plus grand chose à faire avant la <a href="https://github.com/lkdjiin/coco/issues">version 1.0</a>. Ça sera peut-être pour la fin de cette année, 5 ans après la première release, qui sait ?</p>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2013/10/26/couverture-de-code-pour-ruby-avec-coco/">Couverture de code pour Ruby avec coco</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/24/sortie-de-coco-version-0-dot-11-dot-0/">Sortie de Coco version 0.11.0</a></li><li><a href="http://lkdjiin.github.io/blog/2014/02/11/sortie-de-coco-0-dot-9/">Sortie de coco 0.9</a></li></ul></section>
 ]]></content>
   </entry>
   
