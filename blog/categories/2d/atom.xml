@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : 2d | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/2d/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-12T10:09:50+01:00</updated>
+  <updated>2016-02-13T16:37:27+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,215 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 4]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/"/>
+    <updated>2016-02-13T16:19:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4</id>
+    <content type="html"><![CDATA[<p>Dans cet article on va s’occuper de gérer les vies de notre joueur.
+On va les afficher et les perdre.</p>
+
+<p><img class="center" src="/images/gosu5.png"></p>
+
+<!-- more -->
+
+<ol>
+  <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
+  <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+  <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
+  <li>On s’occupe des vies</li>
+</ol>
+
+<h2 id="sourire--lenvers--autre-son-et-pas-de-points">Sourire à l’envers : autre son et pas de points</h2>
+
+<p>Pour l’instant notre joueur collecte tout les smileys. Quel qu’ils soient.
+Or, si les smiley oranges (sourire à l’endroit) doivent rapporter des points, les
+smileys verts (sourire à l’envers) doivent eux faire perdre une vie à notre joueur.</p>
+
+<p>On va commencer simplement par ne pas augmenter le score et jouer un son
+différent quand le joueur entre en collision avec un smiley vert.
+Dans la classe Player on charge le nouveau son (<code>life-lost.wav</code>) et on
+modifie la méthode <code>collision</code> pour qu’elle réagisse au type du smiley:</p>
+
+<p>```ruby
+class Player</p>
+
+<p>def initialize
+    # …
+    @sound_life_lost = Gosu::Sample.new(“assets/sound/life-lost.wav”)
+  end</p>
+
+<p>def collect(items)
+    items.reject! {|item| collide?(item) ? collision(item.type) : false }
+  end</p>
+
+<p>def collision(type)
+    case type
+    when :smiley_up
+      @score += 10
+      @sound_collect.play(1.0)
+    when :smiley_down
+      @sound_life_lost.play(1.0)
+    end</p>
+
+<pre><code>true   end
+</code></pre>
+
+<p>end
+```</p>
+
+<p>Il ne faut pas oublier d’ajouter une méthode <code>type</code> à la classe Smiley:</p>
+
+<p>```ruby
+class Smiley
+  attr_reader :x, :y, :type</p>
+
+<p>def initialize(type)
+    @type = type
+    # …
+  end</p>
+
+<p>end
+```</p>
+
+<p>Avouez que c’était simple…</p>
+
+<h2 id="afficher-les-vies">Afficher les vies</h2>
+
+<p>L’objectif de cet article est de gérer les vies du joueur. Pour cela,
+commençons par lui en donner 3:</p>
+
+<p>```ruby player.rb
+class Player</p>
+
+<p># …</p>
+
+<p>attr_reader :score, :lives</p>
+
+<p>def initialize
+    # …
+    @lives = 3
+  end</p>
+
+<p>end
+```</p>
+
+<p>Les vies seront affichées au niveau de l’UI, c’est donc dans la classe du même
+nom que cela va se passer. Jusqu’ici l’UI n’affichait que le score, et c’était
+ce score que recevait en paramètre la méthode <code>draw</code>. On va modifier cela pour
+pouvoir afficher le score et les vies.</p>
+
+<p>On charge une nouvelle image, <code>heart.gif</code>, qui va symboliser une vie.
+Puis dans <code>draw_lives</code> on affiche autant de <code>heart.gif</code> qu’il y a de vies:</p>
+
+<p>```ruby ui.rb
+class UI
+  ScoreX = 10
+  ScoreY = 10
+  ScoreColor = 0xff_ffff00</p>
+
+<p>LivesX = 10
+  LivesXShift = 20
+  LivesY = 30</p>
+
+<p>def initialize
+    @font = Gosu::Font.new(20, name: “assets/fonts/VT323/VT323-Regular.ttf”)
+    @heart = Gosu::Image.new(“assets/images/heart.gif”)
+  end</p>
+
+<p>def draw(player)
+    draw_score(player.score)
+    draw_lives(player.lives)
+  end</p>
+
+<p>private</p>
+
+<p>def draw_score(score)
+    @font.draw(“Score: #{score}”, ScoreX, ScoreY, ZOrder::UI, 1.0, 1.0,
+               ScoreColor)
+  end</p>
+
+<p>def draw_lives(number)
+    number.times do |index|
+      @heart.draw(LivesXShift * index + LivesX, LivesY, ZOrder::UI)
+    end
+  end
+end
+```</p>
+
+<p>L’affichage des vies commence à la coordonnée x <code>LiveX</code> (soit 10), et se
+poursuit en étant décalé à chaque fois de <code>LivesXShift</code> pixels vers la droite (soit 20).</p>
+
+<p>Pour finir, il faut modifier l’appel à <code>UI#draw</code> depuis la classe <code>Window</code>:</p>
+
+<p><code>ruby window.rb
+class Window &lt; Gosu::Window
+  def draw
+    # ...
+    @ui.draw(@player)
+  end
+end
+</code></p>
+
+<h2 id="perdre-une-vie">Perdre une vie</h2>
+
+<p>Maintenant qu’on peut comptabiliser et afficher les vies du joueur, on est
+prêt à lui en faire perdre. Il n’y a qu’une seule ligne à ajouter:</p>
+
+<p>```ruby
+class Player
+  def collision(type)
+    case type
+    when :smiley_up
+      @score += 10
+      @sound_collect.play(1.0)
+    when :smiley_down
+      @lives -= 1                # &lt;—————– Ici
+      @sound_life_lost.play(1.0)
+    end</p>
+
+<pre><code>true   end end ```
+</code></pre>
+
+<p>Cette méthode <code>collision</code> est déjà trop longue à mon goût, mais je préfère
+attendre qu’elle enfle encore avant d’y remédier. Je veux être certain que
+même les plus débutant(e)s d’entre vous puissent voir cette méthode devenir
+hors de contrôle avant de proposer une solution qui pourrait être vue comme
+trop compliquée dans cette version.</p>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   ├── fonts
+│   │   └── VT323
+│   │       ├── OFL.txt
+│   │       └── VT323-Regular.ttf
+│   ├── images
+│   │   ├── background.png
+│   │   ├── heart.gif
+│   │   ├── player.png
+│   │   ├── smiley-green.png
+│   │   └── smiley-yellow.png
+│   └── sound
+│       ├── collect.wav
+│       └── life-lost.wav
+├── main.rb
+├── player.rb
+├── smiley.rb
+├── ui.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.4.0">version 0.4.0</a>.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 3]]></title>
@@ -32,6 +241,7 @@ un son.</p>
   <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
   <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
   <li>Beep, fonte et collecte des smileys</li>
+  <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
 </ol>
 
 <h2 id="beep-et-collecte">Beep et collecte</h2>
@@ -348,6 +558,7 @@ comment faire tomber une pluie de smileys.</p>
   <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
   <li>Déplacer le joueur et pluie de smileys</li>
   <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
+  <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
 </ol>
 
 <h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
@@ -712,6 +923,7 @@ fenêtre et afficher des images statiques les unes au dessus des autres.</p>
   <li>Installation de Gosu, affichage d’images statiques</li>
   <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
   <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
+  <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
 </ol>
 
 <h2 id="les-outils">Les outils</h2>
