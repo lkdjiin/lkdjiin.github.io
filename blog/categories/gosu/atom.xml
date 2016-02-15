@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : gosu | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/gosu/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-13T16:37:27+01:00</updated>
+  <updated>2016-02-15T10:07:08+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,289 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 5]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/"/>
+    <updated>2016-02-15T09:12:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5</id>
+    <content type="html"><![CDATA[<p>Aujourd’hui on ajoute de la musique de fond, on s’intéresse à ce qui se passe
+quand on perd une vie, et on écrit un beau «Game Over» quand on a perdu toutes
+les vies.</p>
+
+<p><img class="center" src="/images/gosu6.png"></p>
+
+<!-- more -->
+
+<p>La totalité des articles:</p>
+
+<ol>
+  <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
+  <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+  <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
+  <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
+  <li>Musique et game over</li>
+</ol>
+
+<h2 id="de-la-musique">De la musique</h2>
+
+<p>Ajouter une musique de fond est très simple avec Gosu. On crée la ressource
+comme on a créé des sons ou des images. Ensuite on règle le volume entre
+0 et 1. Et enfin on appuie sur <code>play</code>:</p>
+
+<p>```ruby
+class Window &lt; Gosu::Window</p>
+
+<p>def initialize(width, height)
+    # …
+    @song = Gosu::Song.new(“assets/songs/Around the Bend.ogg”)
+    @song.volume = 0.25
+    @song.play(true)
+  end</p>
+
+<p>end
+```</p>
+
+<p>Le paramètre <code>true</code> passé à la méthode <code>play</code> lui indique qu’on veut jouer la
+musique en boucle.</p>
+
+<blockquote>
+  <p>Un paramètre booléen est ce que j’appelle un «paramètre de contrôle»
+(Martin Fowler appelle ça un <a href="http://martinfowler.com/bliki/FlagArgument.html">Flag argument</a>.
+C’est un bon vieux code smell et je suis un peu déçu de trouver ça dans Gosu.
+Surtout qu’il est ici facile de s’en débarrasser en proposant deux méthodes sans paramètres,
+par exemple <code>play</code> et <code>loop</code>.</p>
+</blockquote>
+
+<h2 id="petite-pause-quand-on-perd-une-vie">Petite pause quand on perd une vie</h2>
+
+<p>Pour marquer le coup, je voudrais que le jeu <em>pause</em> pendant un certain temps
+(ici une seconde et demi) quand le joueur perd une vie. Voici d’abord le code,
+puis les explications:</p>
+
+<p>```ruby
+class Player</p>
+
+<p># …
+  LifeLostPause = 1500</p>
+
+<p>def initialize
+    # …
+    @lost_life_at = -20_000
+  end</p>
+
+<p>def just_lost_a_life?
+    Gosu::milliseconds - @lost_life_at &lt; LifeLostPause
+  end</p>
+
+<p>private</p>
+
+<p>def collision(type)
+    case type
+    when :smiley_up
+      # …
+    when :smiley_down
+      # …
+      @lost_life_at = Gosu::milliseconds
+    end</p>
+
+<pre><code>true   end
+</code></pre>
+
+<p>end
+```</p>
+
+<p>Commençons par ce qui change dans <code>collision</code>. Lorsque le joueur entre en
+collision avec un smiley à l’envers, j’enregistre l’instant de cette collision.
+<code>Gosu::milliseconds</code> retourne le nombre de millisecondes écoulées depuis le
+début du jeu.</p>
+
+<p>Pour savoir si le joueur vient de perdre une vie, la méthode <code>just_lost_a_life?</code>
+compare le temps présent (<code>Gosu::milliseconds</code>) avec l’instant où le joueur a
+perdu une vie (<code>@lost_life_at</code>). Si la différence est de moins de 1500
+millisecondes (une seconde et demi) <code>just_lost_a_life?</code> retournera <code>true</code>.</p>
+
+<p>Lors de l’initialisation on trouve cette ligne:</p>
+
+<pre><code>@lost_life_at = -20_000
+</code></pre>
+
+<p>… qui est nécessaire pour que <code>@lost_life_at</code> ne soit pas <code>nil</code> au début
+du jeu, ce qui provoquerait une erreur dans <code>just_lost_a_life?</code>. Mais pourquoi
+-20,000 ? Essayez de la définir à zéro pour voir… En fait -20,000 est une
+valeur arbitraire, qui aurait aussi bien pu être -10,000 ou -9999, etc.
+Une autre solution aurait été d’écrire <code>just_lost_a_life?</code> comme ceci:</p>
+
+<p><code>ruby
+def just_lost_a_life?
+  if @lost_life_at
+    Gosu::milliseconds - @lost_life_at &lt; LifeLostPause
+  else
+    false
+  end
+end
+</code></p>
+
+<p>Mais j’aime moins cette solution, pour deux raisons, 1) c’est moins performant
+puisqu’on a un test de plus à chaque update (ok c’est pas grand chose, mais ça
+plus ça plus ça…, et là c’est très facilement évitable pour rien) et 2) je préfère que toutes les variables d’objets soient
+définies dans le constructeur (peut-être un vieux reste de mon passé de
+javaïste, ou un truc comme ça).</p>
+
+<p>Quoiqu’il en soit, la ligne <code>@lost_life_at = -20_000</code> mérite un commentaire
+expliquant la raison de cette valeur arbitraire. J’espère que ce sera
+compréhensible:</p>
+
+<p><code>ruby
+    # It's important to note that this value is necessary for the game
+    # to avoid to freeze at startup.
+    # −20_000 is an arbitrary value. One can use -9999 or -5000 instead.
+    @lost_life_at = -20_000
+</code></p>
+
+<p>Pour que tout ceci fonctionne, il suffit maintenant d’esquiver les updates au
+bon moment:</p>
+
+<p>```ruby
+class Window &lt; Gosu::Window</p>
+
+<p>def update
+    return if @player.just_lost_a_life?</p>
+
+<pre><code>update_items
+update_player   end
+</code></pre>
+
+<p>end
+```</p>
+
+<h2 id="game-over-quand-0-vies">Game over quand 0 vies</h2>
+
+<p>Vous avez maintenant compris que j’avance par petites itération successives,
+qui ne sont d’ailleurs pas toujours des fonctionnalités complètes.
+Cette fois on va afficher «Game Over» et geler le jeu quand le joueur atteint
+zéro vies:</p>
+
+<p>```ruby
+class Window &lt; Gosu::Window</p>
+
+<p>def initialize(width, height)
+    # …
+    @game_over = false
+  end</p>
+
+<p>def update
+    return if @player.just_lost_a_life?
+    return if @game_over
+    # …
+  end</p>
+
+<p>def draw
+    # …
+    @ui.draw(game_state)
+  end</p>
+
+<p>private</p>
+
+<p># …</p>
+
+<p>def update_player
+    # …
+    @game_over = true if @player.lives &lt;= 0
+  end</p>
+
+<p>def game_state
+    {
+      score: @player.score,
+      lives: @player.lives,
+      game_over: @game_over,
+    }
+  end</p>
+
+<p>end
+```</p>
+
+<p>Ce qui mérite des explications c’est ce nouveau <code>game_state</code>. Plutôt que
+d’envoyer les informations à l’UI sous la forme <code>@ui.draw(@player, @game_over)</code>
+je préfère envoyer un <em>état</em> du jeu. Tout d’abord je n’envoie que le nécessaire
+et ensuite on a un seul paramètre et non pas une liste de paramètres condamnée
+à enfler.</p>
+
+<p>Reste à refléter ça dans la classe UI:</p>
+
+<p>```ruby
+class UI
+  # …</p>
+
+<p>def initialize
+    # …
+    @big_font = Gosu::Font.new(80, name: “assets/fonts/VT323/VT323-Regular.ttf”)
+  end</p>
+
+<p>def draw(game)
+    draw_score(game[:score])
+    draw_lives(game[:lives])
+    draw_game_over if game[:game_over]
+  end</p>
+
+<p>private</p>
+
+<p>def draw_game_over
+    @big_font.draw_rel(“Game Over”,
+                       WindowWidth / 2, WindowHeight / 2,
+                       ZOrder::UI,
+                       0.5, 0.5)
+  end</p>
+
+<p>end
+```</p>
+
+<p>La nouveauté est la méthode <code>draw_rel</code>, qui va écrire son texte
+<em>relativement</em> à lui-même. Oui je sais, ça sonne bizarre. Mais si vous
+essayez les valeurs 0 et/ou 1 à la place de 0.5, vous devriez vite comprendre.
+Là on va centrer le texte autour du milieu de l’écran, à la fois
+horizontalement et verticalement.</p>
+
+<blockquote>
+  <p>Le fait que <code>draw_rel</code> soit l’abréviation de <code>draw_relative</code> ne sautera pas
+forcement aux yeux de tout le monde. Alors pourquoi avoir utilisé une
+abréviation ?</p>
+</blockquote>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   ├── fonts
+│   │   └── VT323
+│   │       ├── OFL.txt
+│   │       └── VT323-Regular.ttf
+│   ├── images
+│   │   ├── background.png
+│   │   ├── heart.gif
+│   │   ├── player.png
+│   │   ├── smiley-green.png
+│   │   └── smiley-yellow.png
+│   ├── songs
+│   │   └── Around the Bend.ogg
+│   └── sound
+│       ├── collect.wav
+│       └── life-lost.wav
+├── main.rb
+├── player.rb
+├── smiley.rb
+├── ui.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.5.0">version 0.5.0</a>.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 4]]></title>
@@ -25,11 +308,14 @@ On va les afficher et les perdre.</p>
 
 <!-- more -->
 
+<p>La totalité des articles:</p>
+
 <ol>
   <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
   <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
   <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
   <li>On s’occupe des vies</li>
+  <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
 </ol>
 
 <h2 id="sourire--lenvers--autre-son-et-pas-de-points">Sourire à l’envers : autre son et pas de points</h2>
@@ -242,6 +528,7 @@ un son.</p>
   <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
   <li>Beep, fonte et collecte des smileys</li>
   <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
+  <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
 </ol>
 
 <h2 id="beep-et-collecte">Beep et collecte</h2>
@@ -559,6 +846,7 @@ comment faire tomber une pluie de smileys.</p>
   <li>Déplacer le joueur et pluie de smileys</li>
   <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
   <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
+  <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
 </ol>
 
 <h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
@@ -924,6 +1212,7 @@ fenêtre et afficher des images statiques les unes au dessus des autres.</p>
   <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
   <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
   <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
+  <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
 </ol>
 
 <h2 id="les-outils">Les outils</h2>
