@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-15T10:07:08+01:00</updated>
+  <updated>2016-02-25T12:22:53+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,315 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 6]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/"/>
+    <updated>2016-02-25T11:37:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6</id>
+    <content type="html"><![CDATA[<p>Pour augmenter l’effet dramatique lorsque le joueur perd une vie, je voudrais
+que celui-ci se mette à tourner sur lui-même. Pour ça, on affichera l’image du
+joueur selon un certain angle, et cet angle sera mis à jour à chaque appel de
+<code>update</code>. Voyons cela pas à pas.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/gosu7.png" /></p>
+
+<!-- more -->
+
+<p>La totalité des articles:</p>
+
+<ol>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
+  <li>Affichage selon un angle</li>
+</ol>
+
+<h2 id="affichage-selon-un-angle">Affichage selon un angle</h2>
+
+<p>Il nous faut d’abord un angle:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@angle</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">0</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Ensuite nous ajoutons une méthode <code>update</code> à la classe Player. Quand le joueur
+vient de perdre une vie, la seule chose à mettre à jour est l’angle. Dans les
+autres cas, on fait la même mise à jour qu’avant:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">    <span class="n">just_lost_a_life?</span> <span class="p">?</span> <span class="n">update_angle</span> <span class="p">:</span> <span class="n">update_general</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La mise à jour de l’angle d’affichage de l’image du joueur ne demande pas
+d’explications:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">update_angle</span>
+</span><span class="line">    <span class="vi">@angle</span> <span class="o">+=</span> <span class="mi">10</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>En ce qui concerne la mise à jour générale, j’ai effectué un petit refactoring
+pour passer dans la classe Player du code venant de la classe Window, et qui
+n’avait pas à s’y trouver. Au passage j’ai aussi créé le module <code>Button</code> qu’on
+verra plus tard:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">update_general</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">    <span class="n">go_left</span> <span class="k">if</span> <span class="no">Button</span><span class="o">.</span><span class="n">left?</span>
+</span><span class="line">    <span class="n">go_right</span> <span class="k">if</span> <span class="no">Button</span><span class="o">.</span><span class="n">right?</span>
+</span><span class="line">    <span class="n">move</span>
+</span><span class="line">    <span class="n">collect</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On peut maintenant regarder l’affichage. Pour afficher une image selon un
+certain angle, Gosu propose la méthode <code>draw_rot</code>. L’image sera orientée par
+rapport à un point précis, ici je choisi le centre de l’image:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">just_lost_a_life?</span>
+</span><span class="line">      <span class="vi">@image</span><span class="o">.</span><span class="n">draw_rot</span><span class="p">(</span><span class="n">x_middle</span><span class="p">,</span> <span class="n">y_middle</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Player</span><span class="p">,</span> <span class="vi">@angle</span><span class="p">)</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="vi">@image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="vi">@x</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Player</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">alias_method</span> <span class="ss">:x_middle</span><span class="p">,</span> <span class="ss">:x_center_of_mass</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">y_middle</span>
+</span><span class="line">    <span class="n">Y</span> <span class="o">+</span> <span class="vi">@image</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Voici tout ce qui change dans la classe <code>Player</code> en un coup d’œil:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@angle</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">0</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">    <span class="n">just_lost_a_life?</span> <span class="p">?</span> <span class="n">update_angle</span> <span class="p">:</span> <span class="n">update_general</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
+</span><span class="line">    <span class="k">if</span> <span class="n">just_lost_a_life?</span>
+</span><span class="line">      <span class="vi">@image</span><span class="o">.</span><span class="n">draw_rot</span><span class="p">(</span><span class="n">x_middle</span><span class="p">,</span> <span class="n">y_middle</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Player</span><span class="p">,</span> <span class="vi">@angle</span><span class="p">)</span>
+</span><span class="line">    <span class="k">else</span>
+</span><span class="line">      <span class="vi">@image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="vi">@x</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Player</span><span class="p">)</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">alias_method</span> <span class="ss">:x_middle</span><span class="p">,</span> <span class="ss">:x_center_of_mass</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">y_middle</span>
+</span><span class="line">    <span class="n">Y</span> <span class="o">+</span> <span class="vi">@image</span><span class="o">.</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">update_angle</span>
+</span><span class="line">    <span class="vi">@angle</span> <span class="o">+=</span> <span class="mi">10</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">update_general</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">    <span class="n">go_left</span> <span class="k">if</span> <span class="no">Button</span><span class="o">.</span><span class="n">left?</span>
+</span><span class="line">    <span class="n">go_right</span> <span class="k">if</span> <span class="no">Button</span><span class="o">.</span><span class="n">right?</span>
+</span><span class="line">    <span class="n">move</span>
+</span><span class="line">    <span class="n">collect</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Voici maintenant le contenu du module <code>Button</code>:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">Button</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">left?</span>
+</span><span class="line">    <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbLeft</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">right?</span>
+</span><span class="line">    <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbRight</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On peut légitimement se demander «Mais pourquoi ajouter un tel module ?».
+Simplement parce que je préfère 100 fois lire ceci:</p>
+
+<pre><code>do_this if Button.left?
+</code></pre>
+
+<p>… plutôt que cela:</p>
+
+<pre><code>do_this if Gosu::button_down?(Gosu::KbLeft)
+</code></pre>
+
+<p>Voyons enfin ce qui change dans la classe Window.
+J’ai déplacé la ligne <code>return if @player.just_lost_a_life?</code> de la méthode
+<code>update</code> vers la méthode <code>update_items</code>. Ainsi la méthode <code>update_player</code> est
+toujours appelée et peut changer l’angle d’affichage du joueur:</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
+</span><span class="line">    <span class="k">return</span> <span class="k">if</span> <span class="vi">@game_over</span>
+</span><span class="line">
+</span><span class="line">    <span class="n">update_items</span>
+</span><span class="line">    <span class="n">update_player</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">update_items</span>
+</span><span class="line">    <span class="k">return</span> <span class="k">if</span> <span class="vi">@player</span><span class="o">.</span><span class="n">just_lost_a_life?</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">update_player</span>
+</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="vi">@items</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">true</span> <span class="k">if</span> <span class="vi">@player</span><span class="o">.</span><span class="n">lives</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   ├── fonts
+│   │   └── VT323
+│   │       ├── OFL.txt
+│   │       └── VT323-Regular.ttf
+│   ├── images
+│   │   ├── background.png
+│   │   ├── heart.gif
+│   │   ├── player.png
+│   │   ├── smiley-green.png
+│   │   └── smiley-yellow.png
+│   ├── songs
+│   │   └── Around the Bend.ogg
+│   └── sound
+│       ├── collect.wav
+│       └── life-lost.wav
+├── button.rb
+├── main.rb
+├── player.rb
+├── smiley.rb
+├── ui.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.6.0">version 0.6.0</a>.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 5]]></title>
@@ -34,6 +343,7 @@ les vies.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li>Musique et game over</li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
 </ol>
 
 <h2 id="de-la-musique">De la musique</h2>
@@ -225,7 +535,7 @@ bon moment:</p>
 
 <h2 id="game-over-quand-0-vies">Game over quand 0 vies</h2>
 
-<p>Vous avez maintenant compris que j’avance par petites itération successives,
+<p>Vous avez maintenant compris que j’avance par petites itérations successives,
 qui ne sont d’ailleurs pas toujours des fonctionnalités complètes.
 Cette fois on va afficher «Game Over» et geler le jeu quand le joueur atteint
 zéro vies:</p>
@@ -405,7 +715,7 @@ abréviation ?</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.5.0">version 0.5.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -429,6 +739,7 @@ On va les afficher et les perdre.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
   <li>On s’occupe des vies</li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
 </ol>
 
 <h2 id="sourire--lenvers--autre-son-et-pas-de-points">Sourire à l’envers : autre son et pas de points</h2>
@@ -710,7 +1021,7 @@ trop compliquée dans cette version.</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.4.0">version 0.4.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -735,6 +1046,7 @@ un son.</p>
   <li>Beep, fonte et collecte des smileys</li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
 </ol>
 
 <h2 id="beep-et-collecte">Beep et collecte</h2>
@@ -1149,7 +1461,7 @@ qui suivent sont identiques, lequel est le plus simple à lire ?</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.3.0">version 0.3.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Écrire un jeu en 2d avec Ruby et Gosu - partie 2</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1173,6 +1485,7 @@ comment faire tomber une pluie de smileys.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
 </ol>
 
 <h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
@@ -1706,7 +2019,7 @@ et aussi parce que
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.2.0">version 0.2.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1731,6 +2044,7 @@ fenêtre et afficher des images statiques les unes au dessus des autres.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
 </ol>
 
 <h2 id="les-outils">Les outils</h2>
@@ -2114,7 +2428,7 @@ juste à déclencher cet affichage.</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.1.0">version 0.1.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2625,7 +2939,7 @@ Reste à savoir quels programmes Ruby on va pouvoir réécrire en Crystal sans
 avoir à réécrire, au hasard, tout ActiveRecord. Et là, je ne suis pas certain
 qu’on va en trouver beaucoup.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2693,7 +3007,7 @@ histoire.</p>
 
 <p>La prochaine fois j’espère vous donner mes premières impressions sur Crystal.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2809,7 +3123,7 @@ la longueur du mouvement des cellules suit, en gros, une
 
 <p>Si vous pensez à d’autres variations possibles, n’hésitez pas à m’en faire part.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li></ul></section>
 
 ]]></content>
   </entry>
@@ -3159,7 +3473,7 @@ de base pour des idées plus sophistiquées.</p>
 <p>On se retrouve bientôt pour que je vous parle des quelques variations que j’ai
 essayé autour du thème des arbres browniens.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -4244,39 +4558,6 @@ développement web en Ruby ainsi que la manière dont vous l’aborderiez aujour
 
 <p><strong>Nicolas Zermati</strong><br />
 Software writer, building the backend of Sleekapp.io at Tigerlily</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Comment implémenter un algorithme bien connu]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/09/11/comment-implementer-un-algorithme-bien-connu/"/>
-    <updated>2015-09-11T14:49:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/09/11/comment-implementer-un-algorithme-bien-connu</id>
-    <content type="html"><![CDATA[<p>Quand tu implémentes un algorithme «bien connu», tu as tout intérêt à suivre
-strictement l’algorithme tel qu’il est décrit.</p>
-
-<p>Ne commence pas à vouloir modifier telle ou telle partie.</p>
-
-<p>Ou pire, ne cherche pas à optimiser quoi que ce soit.</p>
-
-<!-- more -->
-
-<p>Si on l’appelle un algorithme «bien connu», il doit y avoir une bonne raison à
-ça.</p>
-
-<p>C’est sûrement que des tas et des tas de personnes s’y sont déjà cassé les
-dents.</p>
-
-<p>C’est qu’une armée de développeur s’est déjà arraché les cheveux en travaillant dessus.</p>
-
-<p>Parfois depuis plus de 40 ans.</p>
-
-<p>Un algorithme «bien connu» est bien assez bon pour toi.</p>
-
-<p>Implémente le tel quel.</p>
-
-<p>Gagne du temps.</p>
-
 ]]></content>
   </entry>
   
