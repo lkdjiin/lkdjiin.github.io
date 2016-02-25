@@ -21,6 +21,7 @@ La totalité des articles:
 3. [Beep, fonte et collecte des smileys](/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/)
 4. [On s'occupe des vies](/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/)
 5. Musique et game over
+6. [Affichage selon un angle](/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/)
 
 ## De la musique
 
@@ -153,7 +154,7 @@ end
 
 ## Game over quand 0 vies
 
-Vous avez maintenant compris que j'avance par petites itération successives,
+Vous avez maintenant compris que j'avance par petites itérations successives,
 qui ne sont d'ailleurs pas toujours des fonctionnalités complètes.
 Cette fois on va afficher «Game Over» et geler le jeu quand le joueur atteint
 zéro vies:
