@@ -22,6 +22,7 @@ La totalité des articles:
 4. [On s'occupe des vies](/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/)
 5. Musique et game over
 6. [Affichage selon un angle](/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/)
+7. [Plusieurs musiques et reset de la partie](/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/)
 
 ## De la musique
 
