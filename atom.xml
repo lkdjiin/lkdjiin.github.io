@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-25T12:22:53+01:00</updated>
+  <updated>2016-05-01T11:09:07+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,409 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/"/>
+    <updated>2016-05-01T09:29:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7</id>
+    <content type="html"><![CDATA[<p>Ça fait plus de 2 mois que je dois terminer ce jeu et cette série d’article, alors au boulot !</p>
+
+<p>Pour cette nouvelle version je voudrais ajouter une musique différente pour le
+game over.  Et aussi pouvoir enfin recommencer une nouvelle partie après
+un <em>game over</em>.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/gosu8.png" /></p>
+
+<!-- more -->
+
+<p>La totalité des articles:</p>
+
+<ol>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li>Plusieurs musiques et reset de la partie</li>
+</ol>
+
+<h2 id="plusieurs-musiques">Plusieurs musiques</h2>
+
+<p>Nous allons devoir gérer plusieurs musiques. Donnons leur des noms plus simple
+à manipuler que leurs <em>paths</em> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>song.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">Song</span>
+</span><span class="line">  <span class="no">GameOver</span> <span class="o">=</span> <span class="s2">&quot;assets/songs/In early time.ogg&quot;</span>
+</span><span class="line">  <span class="no">Level1</span>   <span class="o">=</span> <span class="s2">&quot;assets/songs/Around the Bend.ogg&quot;</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et avec quoi écoute-t-on de la musique ? Avec un <em>song player</em> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>song_player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">SongPlayer</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">play</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@song</span><span class="o">.</span><span class="n">stop</span> <span class="k">if</span> <span class="vi">@song</span>
+</span><span class="line">    <span class="vi">@song</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Song</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@song</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">25</span>
+</span><span class="line">    <span class="vi">@song</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Dans la classe <code>Window</code> on remplace l’ancienne manière de jouer une musique :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="vi">@song</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Song</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/songs/Around the Bend.ogg&quot;</span><span class="p">)</span>
+</span><span class="line"><span class="vi">@song</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">25</span>
+</span><span class="line"><span class="vi">@song</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="kp">true</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>par notre nouvelle abstraction :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="vi">@song_player</span> <span class="o">=</span> <span class="no">SongPlayer</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line"><span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="ss">Song</span><span class="p">:</span><span class="ss">:Level1</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>N’oubliez pas d’ajouter les require qui vont bien dans le fichier <code>main.rb</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;song&#39;</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;song_player&#39;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Trouver un bon endroit où mettre le code pour changer la musique après un
+<em>game over</em> n’est pas si 
+évident que ça. Le moment où l’on capte que le jeu est dans l’état game over est
+la méthode <code>update_player</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">update_player</span>
+</span><span class="line">  <span class="vi">@player</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="vi">@items</span><span class="p">)</span>
+</span><span class="line">  <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">true</span> <span class="k">if</span> <span class="vi">@player</span><span class="o">.</span><span class="n">lives</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et il semblerait vraiment bizarre de modifier la musique alors qu’on est
+sensé mettre à jour le joueur. Autrement dit, le code suivant ne me plait pas :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">update_player</span>
+</span><span class="line">  <span class="vi">@player</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="vi">@items</span><span class="p">)</span>
+</span><span class="line">  <span class="k">if</span> <span class="vi">@player</span><span class="o">.</span><span class="n">lives</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</span><span class="line">    <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="ss">Song</span><span class="p">:</span><span class="ss">:GameOver</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>À bien y réfléchir, le problème vient d’avant. On ne devrait pas changer l’état
+de <code>@game_over</code> ici, mais plutôt dans la méthode <code>update</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
+</span><span class="line">    <span class="k">return</span> <span class="k">if</span> <span class="vi">@game_over</span>
+</span><span class="line">
+</span><span class="line">    <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">true</span> <span class="k">if</span> <span class="vi">@player</span><span class="o">.</span><span class="n">lives</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</span><span class="line">    <span class="n">update_items</span>
+</span><span class="line">    <span class="n">update_player</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">update_player</span>
+</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="vi">@items</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Changer la musique se fera donc de cette manière :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">update</span>
+</span><span class="line">  <span class="k">return</span> <span class="k">if</span> <span class="vi">@game_over</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">if</span> <span class="vi">@player</span><span class="o">.</span><span class="n">lives</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</span><span class="line">    <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="ss">Song</span><span class="p">:</span><span class="ss">:GameOver</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">update_items</span>
+</span><span class="line">  <span class="n">update_player</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Après extraction d’une nouvelle méthode, nous obtenons un code plus clair :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">update</span>
+</span><span class="line">  <span class="k">return</span> <span class="k">if</span> <span class="vi">@game_over</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">update_game_over</span>
+</span><span class="line">  <span class="n">update_items</span>
+</span><span class="line">  <span class="n">update_player</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">def</span> <span class="nf">update_game_over</span>
+</span><span class="line">  <span class="k">return</span> <span class="k">unless</span> <span class="vi">@player</span><span class="o">.</span><span class="n">lives</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</span><span class="line">
+</span><span class="line">  <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class="line">  <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="ss">Song</span><span class="p">:</span><span class="ss">:GameOver</span><span class="p">)</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<h2 id="nouvelle-partie">Nouvelle partie</h2>
+
+<p>Ok, il est temps maintenant de pouvoir jouer une nouvelle partie après un
+game over. Pour cela, il faut regarder si le joueur appuie sur la touche
+espace pendant l’état game over, et dans ce cas faire un reset :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">update</span>
+</span><span class="line">  <span class="n">reset</span> <span class="k">if</span> <span class="vi">@game_over</span> <span class="o">&amp;&amp;</span> <span class="no">Button</span><span class="o">.</span><span class="n">space?</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">return</span> <span class="k">if</span> <span class="vi">@game_over</span>
+</span><span class="line">
+</span><span class="line">  <span class="n">update_game_over</span>
+</span><span class="line">  <span class="n">update_items</span>
+</span><span class="line">  <span class="n">update_player</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On peut tout de suite extraire une méthode <code>new_game?</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">update</span>
+</span><span class="line">  <span class="n">reset</span> <span class="k">if</span> <span class="n">new_game?</span>
+</span><span class="line">  <span class="c1"># [...]</span>
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">def</span> <span class="nf">new_game?</span>
+</span><span class="line">  <span class="vi">@game_over</span> <span class="o">&amp;&amp;</span> <span class="no">Button</span><span class="o">.</span><span class="n">space?</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On peut maintenant réfléchir à la méthode <code>reset</code>, qui a son tour appellera
+la méthode <code>reset</code> du joueur. Ces deux méthodes sont évidentes :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">reset</span>
+</span><span class="line">    <span class="vi">@items</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">reset</span>
+</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="ss">Song</span><span class="p">:</span><span class="ss">:Level1</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">reset</span>
+</span><span class="line">    <span class="vi">@score</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span class="line">    <span class="vi">@lives</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span class="line">    <span class="vi">@angle</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">0</span>
+</span><span class="line">    <span class="vi">@velocity</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">0</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour terminer cette version, on va ajouter un message «press space to start»
+qui bouge pour attirer l’attention. Pour ça, on varie régulièrement d’une
+petite quantité la coordonnée <strong>y</strong> du message.</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">UI</span>
+</span><span class="line">  <span class="c1"># ...</span>
+</span><span class="line">  <span class="no">PressSpaceLow</span> <span class="o">=</span> <span class="mi">210</span>
+</span><span class="line">  <span class="no">PressSpaceHigh</span> <span class="o">=</span> <span class="mi">270</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
+</span><span class="line">    <span class="c1"># ...</span>
+</span><span class="line">    <span class="vi">@y</span> <span class="o">=</span> <span class="mi">240</span>
+</span><span class="line">    <span class="vi">@y_velocity</span> <span class="o">=</span> <span class="o">-</span><span class="mi">0</span><span class="o">.</span><span class="mi">3</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">private</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">draw_game_over</span>
+</span><span class="line">    <span class="vi">@big_font</span><span class="o">.</span><span class="n">draw_rel</span><span class="p">(</span><span class="s2">&quot;Game Over&quot;</span><span class="p">,</span> <span class="no">WindowWidth</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="no">WindowHeight</span> <span class="o">/</span> <span class="mi">3</span><span class="p">,</span>
+</span><span class="line">                       <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:UI</span><span class="p">,</span> <span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@big_font</span><span class="o">.</span><span class="n">draw_rel</span><span class="p">(</span><span class="s2">&quot;Press Space To Start&quot;</span><span class="p">,</span> <span class="no">WindowWidth</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span>
+</span><span class="line">                       <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:UI</span><span class="p">,</span> <span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">y</span>
+</span><span class="line">    <span class="vi">@y</span> <span class="o">+=</span> <span class="n">y_velocity</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">y_velocity</span>
+</span><span class="line">    <span class="k">if</span> <span class="vi">@y</span> <span class="o">&lt;</span> <span class="no">PressSpaceLow</span> <span class="o">||</span> <span class="vi">@y</span> <span class="o">&gt;</span> <span class="no">PressSpaceHigh</span>
+</span><span class="line">      <span class="vi">@y_velocity</span> <span class="o">=</span> <span class="o">-</span><span class="vi">@y_velocity</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">    <span class="vi">@y_velocity</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   ├── fonts
+│   │   └── VT323
+│   │       ├── OFL.txt
+│   │       └── VT323-Regular.ttf
+│   ├── images
+│   │   ├── background.png
+│   │   ├── heart.gif
+│   │   ├── player.png
+│   │   ├── smiley-green.png
+│   │   └── smiley-yellow.png
+│   ├── songs
+│   │   ├── Around the Bend.ogg
+│   │   └── In early time.ogg
+│   └── sound
+│       ├── collect.wav
+│       └── life-lost.wav
+├── button.rb
+├── main.rb
+├── player.rb
+├── smiley.rb
+├── song_player.rb
+├── song.rb
+├── ui.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.7.0">version 0.7.0</a>.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 6]]></title>
@@ -36,6 +439,7 @@ joueur selon un certain angle, et cet angle sera mis à jour à chaque appel de
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li>Affichage selon un angle</li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="affichage-selon-un-angle">Affichage selon un angle</h2>
@@ -318,7 +722,7 @@ toujours appelée et peut changer l’angle d’affichage du joueur:</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.6.0">version 0.6.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -344,6 +748,7 @@ les vies.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li>Musique et game over</li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="de-la-musique">De la musique</h2>
@@ -715,7 +1120,7 @@ abréviation ?</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.5.0">version 0.5.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -740,6 +1145,7 @@ On va les afficher et les perdre.</p>
   <li>On s’occupe des vies</li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="sourire--lenvers--autre-son-et-pas-de-points">Sourire à l’envers : autre son et pas de points</h2>
@@ -1021,7 +1427,7 @@ trop compliquée dans cette version.</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.4.0">version 0.4.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Écrire un jeu en 2d avec Ruby et Gosu - partie 3</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1047,6 +1453,7 @@ un son.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="beep-et-collecte">Beep et collecte</h2>
@@ -1461,7 +1868,7 @@ qui suivent sont identiques, lequel est le plus simple à lire ?</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.3.0">version 0.3.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -1486,6 +1893,7 @@ comment faire tomber une pluie de smileys.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
@@ -2019,7 +2427,7 @@ et aussi parce que
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.2.0">version 0.2.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2045,6 +2453,7 @@ fenêtre et afficher des images statiques les unes au dessus des autres.</p>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="les-outils">Les outils</h2>
@@ -2428,7 +2837,7 @@ juste à déclencher cet affichage.</p>
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.1.0">version 0.1.0</a>.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">Écrire un jeu en 2d avec Ruby et Gosu - partie 4</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -2939,7 +3348,7 @@ Reste à savoir quels programmes Ruby on va pouvoir réécrire en Crystal sans
 avoir à réécrire, au hasard, tout ActiveRecord. Et là, je ne suis pas certain
 qu’on va en trouver beaucoup.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal/">Ruby vs Crystal</a></li><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -3007,7 +3416,7 @@ histoire.</p>
 
 <p>La prochaine fois j’espère vous donner mes premières impressions sur Crystal.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/19/ruby-vs-crystal-2eme-partie/">Ruby vs Crystal - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2014/05/08/des-benchmarks-en-general-et-de-ruby-en-particulier/">Des benchmarks en général et de Ruby en particulier</a></li><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -3123,7 +3532,7 @@ la longueur du mouvement des cellules suit, en gros, une
 
 <p>Si vous pensez à d’autres variations possibles, n’hésitez pas à m’en faire part.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/17/les-arbres-browniens/">Les arbres browniens</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li></ul></section>
 
 ]]></content>
   </entry>
@@ -3473,7 +3882,7 @@ de base pour des idées plus sophistiquées.</p>
 <p>On se retrouve bientôt pour que je vous parle des quelques variations que j’ai
 essayé autour du thème des arbres browniens.</p>
 
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li></ul></section>
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/01/18/les-arbres-browniens-2eme-partie/">Les arbres browniens - 2ème partie</a></li><li><a href="http://lkdjiin.github.io/blog/2016/01/31/un-desassembleur-pour-chip8/">Un désassembleur pour Chip8</a></li><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li></ul></section>
 ]]></content>
   </entry>
   
@@ -4032,532 +4441,6 @@ j’aimerais beaucoup en entendre parler, alors n’hésitez pas à laisser votr
 commentaire.</p>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/07/11/extraction-des-tags-de-mon-blog-en-ligne-de-commande/">Extraction des tags de mon blog en ligne de commande</a></li><li><a href="http://lkdjiin.github.io/blog/2015/06/08/r-rep-vs-replicate/">R : rep vs replicate</a></li><li><a href="http://lkdjiin.github.io/blog/2014/04/09/projet-de-client-twitter-en-console/">Projet de client Twitter en console</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Commencer le développement web en Ruby]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/09/16/commencer-le-developpement-web-en-ruby/"/>
-    <updated>2015-09-16T15:10:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/09/16/commencer-le-developpement-web-en-ruby</id>
-    <content type="html"><![CDATA[<h2 id="guest-post-"><code>{ Guest Post }</code></h2>
-
-<p>Grâce au framework <a href="http://rubyonrails.org/">Ruby on Rails</a>, Ruby est maintenant très populaire pour le développement d’application web.
-Ce domaine est un pleine croissance et Ruby on Rails attire beaucoup de débutants de tout horizons.</p>
-
-<p>Je pense que commencer l’apprentissage d’un framework web nécessite de bien comprendre le rôle de chacun de ses composants.
-Des composants, Ruby on Rails en comporte beaucoup et chacun d’entre eux répond à une problématique bien précise.
-ORM, routeur, templates, controlleurs, tâches de fond et bien d’autres ; il y a de quoi se perdre.</p>
-
-<p>Mon conseil à ceux qui débutent dans le domaine est de bien comprendre la raison d’être de chaque chose.
-Une manière amusante de cerner les problématiques qui ont donnés naissance aux frameworks tel que Rails,
-c’est de se passer complètement de ces briques. C’est à dire partir du strict minimum et ajouter, petit à petit,
-les composants dont on ressent le besoin.</p>
-
-<!-- more -->
-
-<h2 id="rack">Rack</h2>
-
-<p><a href="https://rack.github.io/">Rack</a> est la brique de base de la plupart des frameworks web Ruby actuels. Rack est avant tout une API définissant
-la manière pour un programme Ruby de prendre en charge et de répondre à une requête HTTP. Voici un exemple simple :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># ./config.ru</span>
-</span><span class="line">
-</span><span class="line"><span class="n">app</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">env</span><span class="o">|</span>
-</span><span class="line">  <span class="o">[</span>
-</span><span class="line">    <span class="mi">200</span><span class="p">,</span>
-</span><span class="line">    <span class="p">{</span> <span class="s2">&quot;Content-Type&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;text/html&quot;</span> <span class="p">},</span>
-</span><span class="line">    <span class="o">[</span> <span class="s2">&quot;&lt;h1&gt;Hello world&lt;/h1&gt;&quot;</span> <span class="o">]</span>
-</span><span class="line">  <span class="o">]</span>
-</span><span class="line"><span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="n">run</span> <span class="n">app</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Dans cet exemple, on voit que l’on declare une variable <code>app</code> à laquelle on assigne un object <code>Proc</code>.
-Cet objet <code>app</code> est ensuite passé à la méthode <code>Rack::Builder#run</code> indiquant ainsi au serveur compatible
-ce qu’il faut exectuter lorsqu’une requête arrivera.</p>
-
-<p>Regardons de plus près comment se comporte le <code>Proc</code> ci-dessus. On voit qu’il prend un argument que l’on
-appelle <em>l’environement Rack</em>. Le <code>Proc</code> retourne une <em>réponse Rack</em> qui est un tableau contenant les
-informations nécessaire à la construction de la réponse HTTP : le code de retour, les entêtes et le corps
-de la reponse.</p>
-
-<p>Rack ne nécessite pas d’utiliser un <code>Proc</code>. La seule contrainte est d’être un objet répondant à la méthode
-<code>#call</code> prenant en argument un environement Rack et retournant une réponse Rack telle que nous venons de le voir.</p>
-
-<h3 id="excuter-lapplication">Exécuter l’application</h3>
-
-<p>Pour executer ce <code>config.ru</code> on peut utiliser l’outil <code>rackup</code> fourni avec la gem <code>rack</code>:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="err">$</span> <span class="n">gem</span> <span class="n">install</span> <span class="n">rack</span>
-</span><span class="line"><span class="err">$</span> <span class="n">rackup</span> <span class="n">config</span><span class="o">.</span><span class="n">ru</span>
-</span><span class="line"><span class="o">[</span><span class="mi">2015</span><span class="o">-</span><span class="mo">07</span><span class="o">-</span><span class="mi">21</span> <span class="mi">10</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mi">21</span><span class="o">]</span> <span class="no">INFO</span>  <span class="no">WEBrick</span> <span class="mi">1</span><span class="o">.</span><span class="mi">3</span><span class="o">.</span><span class="mi">1</span>
-</span><span class="line"><span class="o">[</span><span class="mi">2015</span><span class="o">-</span><span class="mo">07</span><span class="o">-</span><span class="mi">21</span> <span class="mi">10</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mi">21</span><span class="o">]</span> <span class="no">INFO</span>  <span class="n">ruby</span> <span class="mi">2</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="mi">2</span> <span class="p">(</span><span class="mi">2015</span><span class="o">-</span><span class="mo">04</span><span class="o">-</span><span class="mi">13</span><span class="p">)</span> <span class="o">[</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">]</span>
-</span><span class="line"><span class="o">[</span><span class="mi">2015</span><span class="o">-</span><span class="mo">07</span><span class="o">-</span><span class="mi">21</span> <span class="mi">10</span><span class="p">:</span><span class="mi">54</span><span class="p">:</span><span class="mi">21</span><span class="o">]</span> <span class="no">INFO</span>  <span class="ss">WEBrick</span><span class="p">:</span><span class="ss">:HTTPServer</span><span class="c1">#start: pid=24457 port=9292</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Cette commande va écouter sur le port 9292 et pour chaque requête appeller la méthode <code>#call</code> de l’objet <code>app</code>.</p>
-
-<p>Lorsque l’on apportera es modification à notre code, il faudra bien penser à redémarrer le serveur : <code>CTRL-C</code> pour l’arrêter et le relancer avec la commande que l’on vient de voir.</p>
-
-<h3 id="quy-a-t-il-dans-lenv">Qu’y a-t-il dans l’env</h3>
-
-<p>Pour voir ce qui se trouve dans l’environement je vais utiliser <code>JSON.pretty_generate</code> qui va m’afficher la variable
-<code>env</code> au format JSON.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># ./config.ru</span>
-</span><span class="line">
-</span><span class="line"><span class="nb">require</span> <span class="s2">&quot;json&quot;</span>
-</span><span class="line">
-</span><span class="line"><span class="n">app</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">env</span><span class="o">|</span>
-</span><span class="line">  <span class="nb">puts</span> <span class="no">JSON</span><span class="o">.</span><span class="n">pretty_generate</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span class="line">  <span class="o">[</span>
-</span><span class="line">    <span class="mi">200</span><span class="p">,</span>
-</span><span class="line">    <span class="p">{</span> <span class="s2">&quot;Content-Type&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;text/html&quot;</span> <span class="p">},</span>
-</span><span class="line">    <span class="o">[</span> <span class="s2">&quot;&lt;h1&gt;Hello world&lt;/h1&gt;&quot;</span> <span class="o">]</span>
-</span><span class="line">  <span class="o">]</span>
-</span><span class="line"><span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="n">run</span> <span class="n">app</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Après avoir modifié le <code>config.ru</code>, il faut redémarrer le serveur.</p>
-
-<p>Pour faire une requête, j’utilise <a href="https://github.com/jkbrzt/httpie">httpie</a> qui permet simplement d’envoyer des requêtes HTTP depuis le terminal et qui est équivalent à <code>curl</code> avec de jolies couleurs en plus. Vous pouvez utiliser le client de votre choix bien entendu. Chez moi cela donne :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="err">$</span> <span class="n">http</span> <span class="o">-</span><span class="n">v</span> <span class="ss">localhost</span><span class="p">:</span><span class="mi">9292</span>
-</span><span class="line"><span class="no">GET</span> <span class="o">/</span> <span class="no">HTTP</span><span class="o">/</span><span class="mi">1</span><span class="o">.</span><span class="mi">1</span>
-</span><span class="line"><span class="ss">Accept</span><span class="p">:</span> <span class="o">*/*</span>
-</span><span class="line"><span class="no">Accept</span><span class="o">-</span><span class="ss">Encoding</span><span class="p">:</span> <span class="n">gzip</span><span class="p">,</span> <span class="n">deflate</span>
-</span><span class="line"><span class="ss">Connection</span><span class="p">:</span> <span class="n">keep</span><span class="o">-</span><span class="n">alive</span>
-</span><span class="line"><span class="ss">Host</span><span class="p">:</span> <span class="ss">localhost</span><span class="p">:</span><span class="mi">9292</span>
-</span><span class="line"><span class="no">User</span><span class="o">-</span><span class="ss">Agent</span><span class="p">:</span> <span class="no">HTTPie</span><span class="o">/</span><span class="mi">0</span><span class="o">.</span><span class="mi">9</span><span class="o">.</span><span class="mi">2</span>
-</span><span class="line">
-</span><span class="line">
-</span><span class="line">
-</span><span class="line"><span class="no">HTTP</span><span class="o">/</span><span class="mi">1</span><span class="o">.</span><span class="mi">1</span> <span class="mi">200</span> <span class="no">OK</span>
-</span><span class="line"><span class="ss">Connection</span><span class="p">:</span> <span class="no">Keep</span><span class="o">-</span><span class="no">Alive</span>
-</span><span class="line"><span class="no">Content</span><span class="o">-</span><span class="ss">Type</span><span class="p">:</span> <span class="n">text</span><span class="o">/</span><span class="n">html</span>
-</span><span class="line"><span class="ss">Date</span><span class="p">:</span> <span class="no">Tue</span><span class="p">,</span> <span class="mi">21</span> <span class="no">Jul</span> <span class="mi">2015</span> <span class="mi">11</span><span class="p">:</span><span class="mi">21</span><span class="p">:</span><span class="mi">16</span> <span class="no">GMT</span>
-</span><span class="line"><span class="ss">Server</span><span class="p">:</span> <span class="no">WEBrick</span><span class="o">/</span><span class="mi">1</span><span class="o">.</span><span class="mi">3</span><span class="o">.</span><span class="mi">1</span> <span class="p">(</span><span class="no">Ruby</span><span class="o">/</span><span class="mi">2</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="mi">2</span><span class="o">/</span><span class="mi">2015</span><span class="o">-</span><span class="mo">04</span><span class="o">-</span><span class="mi">13</span><span class="p">)</span>
-</span><span class="line"><span class="no">Transfer</span><span class="o">-</span><span class="ss">Encoding</span><span class="p">:</span> <span class="n">chunked</span>
-</span><span class="line">
-</span><span class="line"><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="no">Hello</span> <span class="n">world</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>À l’issue de cette requête, on a bien le body <code>&lt;h1&gt;Hello world&lt;/h1&gt;</code> qui s’affiche.
-On remarque également que dans le terminal où notre serveur est lancé, on voit s’afficher
-sur la sortie standard :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-</pre></td><td class="code"><pre><code class="javascript"><span class="line"><span class="p">{</span>
-</span><span class="line">  <span class="s2">&quot;GATEWAY_INTERFACE&quot;</span><span class="o">:</span> <span class="s2">&quot;CGI/1.1&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;PATH_INFO&quot;</span><span class="o">:</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;QUERY_STRING&quot;</span><span class="o">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;REMOTE_ADDR&quot;</span><span class="o">:</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;REMOTE_HOST&quot;</span><span class="o">:</span> <span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;REQUEST_METHOD&quot;</span><span class="o">:</span> <span class="s2">&quot;GET&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;REQUEST_URI&quot;</span><span class="o">:</span> <span class="s2">&quot;http://localhost:9292/&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;SCRIPT_NAME&quot;</span><span class="o">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;SERVER_NAME&quot;</span><span class="o">:</span> <span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;SERVER_PORT&quot;</span><span class="o">:</span> <span class="s2">&quot;9292&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;SERVER_PROTOCOL&quot;</span><span class="o">:</span> <span class="s2">&quot;HTTP/1.1&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;SERVER_SOFTWARE&quot;</span><span class="o">:</span> <span class="s2">&quot;WEBrick/1.3.1 (Ruby/2.2.2/2015-04-13)&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;HTTP_HOST&quot;</span><span class="o">:</span> <span class="s2">&quot;localhost:9292&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;HTTP_CONNECTION&quot;</span><span class="o">:</span> <span class="s2">&quot;keep-alive&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;HTTP_ACCEPT_ENCODING&quot;</span><span class="o">:</span> <span class="s2">&quot;gzip, deflate&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;HTTP_ACCEPT&quot;</span><span class="o">:</span> <span class="s2">&quot;*/*&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;HTTP_USER_AGENT&quot;</span><span class="o">:</span> <span class="s2">&quot;HTTPie/0.9.2&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.version&quot;</span><span class="o">:</span> <span class="p">[</span>
-</span><span class="line">    <span class="mi">1</span><span class="p">,</span>
-</span><span class="line">    <span class="mi">3</span>
-</span><span class="line">  <span class="p">],</span>
-</span><span class="line">  <span class="s2">&quot;rack.input&quot;</span><span class="o">:</span> <span class="s2">&quot;#&lt;Rack::Lint::InputWrapper:0x007fcac62086c0&gt;&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.errors&quot;</span><span class="o">:</span> <span class="s2">&quot;#&lt;Rack::Lint::ErrorWrapper:0x007fcac6208698&gt;&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.multithread&quot;</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.multiprocess&quot;</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.run_once&quot;</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.url_scheme&quot;</span><span class="o">:</span> <span class="s2">&quot;http&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.hijack?&quot;</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.hijack&quot;</span><span class="o">:</span> <span class="s2">&quot;#&lt;Proc:0x007fcac6208b70@/home/n25/.gem/ruby/2.2.2/gems/rack-1.6.4/lib/rack/lint.rb:525&gt;&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.hijack_io&quot;</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;HTTP_VERSION&quot;</span><span class="o">:</span> <span class="s2">&quot;HTTP/1.1&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;REQUEST_PATH&quot;</span><span class="o">:</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span>
-</span><span class="line">  <span class="s2">&quot;rack.tempfiles&quot;</span><span class="o">:</span> <span class="p">[</span>
-</span><span class="line">
-</span><span class="line">  <span class="p">]</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>C’est uniquement à partir de cette variable <code>env</code> que notre application devra formuler une réponse Rack !</p>
-
-<h2 id="de-rack-au-frameworks-web">De Rack au frameworks Web</h2>
-
-<p>Dans cette partie, essayons de trouver des solutions a de petits problèmes.
-Bien sûr on n’utilisera que Rack.</p>
-
-<p>Comme support nous nous mettrons dans le cas d’un réseau social très simplifié.</p>
-
-<h3 id="le-routage">Le routage</h3>
-
-<p>Chaque membre de notre réseau social va avoir une page qui lui est propre.
-Pour y accéder nous utilisons le chemin suivant : <code>/members/&lt;id&gt;</code> où <code>&lt;id&gt;</code> sera <em>l’identifiant du membre</em>.</p>
-
-<p>Avec Rack nous pouvons écrire le code suivant pour parvenir à isoler l’identifiant du membre :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">member</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span class="line">  <span class="n">env</span><span class="o">[</span><span class="s2">&quot;PATH_INFO&quot;</span><span class="o">]</span> <span class="o">=~</span> <span class="sr">%r{\A/members/([A-Za-z0-9]+)\z}</span> <span class="o">&amp;&amp;</span> <span class="vg">$1</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Cette méthode va nous permettre d’obtenir l’identifiant du membre en fonction de l’environement Rack.
-On peut introduire ce code dans notre application :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">app</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">env</span><span class="o">|</span>
-</span><span class="line">  <span class="n">member_id</span> <span class="o">=</span> <span class="n">member</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span class="line">  <span class="o">[</span>
-</span><span class="line">    <span class="mi">200</span><span class="p">,</span>
-</span><span class="line">    <span class="p">{</span> <span class="s2">&quot;Content-Type&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;text/html&quot;</span> <span class="p">},</span>
-</span><span class="line">    <span class="o">[</span> <span class="s2">&quot;&lt;h1&gt;Hello </span><span class="si">#{</span><span class="n">member_id</span><span class="si">}</span><span class="s2">&lt;/h1&gt;&quot;</span> <span class="o">]</span>
-</span><span class="line">  <span class="o">]</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Ici on a extrait un paramètre de l’URL. Si on visite <code>/members/Nicolas</code> on verra le texte <em>Hello Nicolas</em> s’afficher.
-Par contre, si on visite <code>/signup</code>, on verra <em>Hello</em> s’afficher seul puisque <code>member_id</code> sera égal à <code>nil</code>.</p>
-
-<p>En pratique, notre réseau social va avoir besoin d’identifier des dixaines voir des centaines d’URLs différentes.
-Avec ce volume, il est nécessaire de s’organiser autrement et d’associer les URLs gérée par notre application avec
-le code responsable de répondre à la requête. Dans le cas ou une URL n’est pas gérée, on souhaite répondre par un code
-d’erreur.</p>
-
-<p>Voici un extrait de code permettant de répondre à cette problématique :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">ShowMember</span>
-</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">match?</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span class="line">    <span class="n">env</span><span class="o">[</span><span class="s2">&quot;PATH_INFO&quot;</span><span class="o">]</span> <span class="o">=~</span> <span class="sr">%r{\A/members/[A-Za-z0-9]+\z}</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">call</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span class="line">    <span class="n">member_id</span> <span class="o">=</span> <span class="n">env</span><span class="o">[</span><span class="s2">&quot;PATH_INFO&quot;</span><span class="o">].</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;/members/&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span class="line">    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;Content-Type&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;text/html&quot;</span> <span class="p">}</span>
-</span><span class="line">    <span class="n">body</span> <span class="o">=</span> <span class="s2">&quot;&lt;h1&gt;Hello </span><span class="si">#{</span><span class="n">member_id</span><span class="si">}</span><span class="s2">&lt;/h1&gt;&quot;</span>
-</span><span class="line">    <span class="o">[</span> <span class="mi">200</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="o">[</span> <span class="n">body</span> <span class="o">]</span> <span class="o">]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="n">actions</span> <span class="o">=</span> <span class="o">[</span> <span class="no">ShowMember</span> <span class="o">]</span>
-</span><span class="line">
-</span><span class="line"><span class="n">app</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">env</span><span class="o">|</span>
-</span><span class="line">  <span class="n">action</span> <span class="o">=</span> <span class="n">actions</span><span class="o">.</span><span class="n">find</span> <span class="p">{</span> <span class="o">|</span><span class="n">action</span><span class="o">|</span> <span class="n">action</span><span class="o">.</span><span class="n">match?</span><span class="p">(</span><span class="n">env</span><span class="p">)</span> <span class="p">}</span>
-</span><span class="line">  <span class="n">action</span> <span class="p">?</span> <span class="n">action</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">env</span><span class="p">)</span> <span class="p">:</span> <span class="o">[</span> <span class="mi">404</span><span class="p">,</span> <span class="p">{},</span> <span class="o">[</span> <span class="s2">&quot;Not Found&quot;</span> <span class="o">]</span> <span class="o">]</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>On voit que j’ai implicitement définit une interface : <code>#match?(env)</code> et <code>call(env)</code> pour les actions que
-l’application peut réaliser. Chaque action est responsable de formuler une réponse Rack lors d’un appel à la
-méthode <code>call</code> et de savoir, via <code>match?</code>, si oui ou non elle doit s’executer.</p>
-
-<p>L’ensemble des frameworks web font un traitement semblable en utilisant une solution que l’on appelle le routage.
-Différentes approches concernant le routage existent, voir <a href="http://roda.jeremyevans.net/">Roda</a>, <a href="http://www.sinatrarb.com/">Sinatra</a> et <a href="http://guides.rubyonrails.org/routing.html">Rails</a>.</p>
-
-<p>Voici par exemple un extrait de code qui utilise Sinatra pour faire exactement ce que nous avons fait :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s2">&quot;sinatra&quot;</span>
-</span><span class="line">
-</span><span class="line"><span class="n">get</span> <span class="s2">&quot;/members/:member_id&quot;</span> <span class="k">do</span>
-</span><span class="line">  <span class="n">member_id</span> <span class="o">=</span> <span class="n">params</span><span class="o">[</span><span class="s2">&quot;member_id&quot;</span><span class="o">]</span>
-</span><span class="line">  <span class="s2">&quot;&lt;h1&gt;Hello </span><span class="si">#{</span><span class="n">member_id</span><span class="si">}</span><span class="s2">&lt;/h1&gt;&quot;</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p><em>Remarque</em> :On voit dans cet exemple que Sinatra permet d’extraire les paramètres de l’URL automatiquement.</p>
-
-<h3 id="les-templates">Les templates</h3>
-
-<p>Lorsque l’on développe une fonctionnalité d’un site web, il est fréquent de le faire en deux phases.
-Une phase de design où l’on va écrire HTML et CSS afin de visualiser le résultat voulu. Une autre phase
-où l’on écrira le code métier qui va injecter les bonnes valeurs dans le HTML en fonction de l’action
-effectuée.</p>
-
-<p>Par exemple dans notre code : <code>"&lt;h1&gt;Hello #{member_id}&lt;/h1&gt;"</code> on injecte la variable <code>member_id</code> dans
-du HTML. De manière générale, le HTML est beaucoup plus volumineux que dans notre exemple.</p>
-
-<p>Dans la vie de tout les jours, il est fréquent qu’une équipe soit en charge de la phase plus visuelle
-(HTML / CSS) et une autre en charge du code métier. Il est donc fréquent de séparer ces deux composantes
-de notre code.</p>
-
-<p>Pour effectuer cette séparation, on a recours à des <em>moteurs de templates</em>. Ces briques logicielles vont
-nous permettre de séparer notre présentation du code métier. Voici un exemple, toujours en utilisant
-Rack :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s2">&quot;erb&quot;</span>
-</span><span class="line"><span class="nb">require</span> <span class="s2">&quot;ostruct&quot;</span>
-</span><span class="line">
-</span><span class="line"><span class="k">module</span> <span class="nn">Template</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">erb</span><span class="p">(</span><span class="n">template_path</span><span class="p">,</span> <span class="n">locals</span><span class="o">=</span><span class="p">{})</span>
-</span><span class="line">    <span class="n">file_content</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">template_path</span><span class="p">)</span>
-</span><span class="line">    <span class="n">context</span> <span class="o">=</span> <span class="no">OpenStruct</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">locals</span><span class="p">)</span><span class="o">.</span><span class="n">instance_eval</span> <span class="p">{</span> <span class="nb">binding</span> <span class="p">}</span>
-</span><span class="line">    <span class="no">ERB</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">file_content</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">class</span> <span class="nc">ShowMember</span>
-</span><span class="line">  <span class="kp">extend</span> <span class="no">Templating</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">call</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span class="line">    <span class="n">member_id</span> <span class="o">=</span> <span class="n">env</span><span class="o">[</span><span class="s2">&quot;PATH_INFO&quot;</span><span class="o">].</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;/members/&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span class="line">    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;Content-Type&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;text/html&quot;</span> <span class="p">}</span>
-</span><span class="line">    <span class="n">body</span> <span class="o">=</span> <span class="no">Template</span><span class="o">.</span><span class="n">erb</span><span class="p">(</span><span class="s2">&quot;template.html.erb&quot;</span><span class="p">,</span> <span class="n">member_id</span><span class="p">:</span> <span class="n">member_id</span><span class="p">)</span>
-</span><span class="line">    <span class="o">[</span> <span class="mi">200</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="o">[</span> <span class="n">body</span> <span class="o">]</span> <span class="o">]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="erb"><span class="line"><span class="x">&lt;h1&gt;Hello </span><span class="cp">&lt;%=</span> <span class="n">member_id</span> <span class="cp">%&gt;</span><span class="x">&lt;/h1&gt;</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Ici, on va utiliser <code>ERB</code> pour charger le fichier <code>template.html.erb</code>. Au sein de ce fichier,
-la variable <code>member_id</code> sera injectée dans le HTML grâce à la notation <code>&lt;%= ... %&gt;</code>.</p>
-
-<p>Les moteurs de templates sont nombreux : <a href="http://ruby-doc.org/stdlib-2.2.2/libdoc/erb/rdoc/ERB.html">erb</a>, <a href="http://haml.info/">haml</a>, <a href="http://slim-lang.com/">slim</a>, <a href="https://github.com/jimweirich/builder">builder</a>,
-<a href="http://www.liquidmarkup.org/">liquid</a> etc. Leur usage va plus loin que la simple séparation du code de présentation et
-du code métier (voir les <a href="http://guides.rubyonrails.org/layouts_and_rendering.html#using-partials">partials</a>, <a href="http://www.rubydoc.info/gems/slim/frames#Control_code_-">stuctures de controle</a>…).</p>
-
-<h3 id="tester-son-application">Tester son application</h3>
-
-<p>Avant de continuer je vais déplacer le code de l’application du fichier <code>config.ru</code> vers <code>app.rb</code>.
-Au passage, j’en profite pour extraire une classe <code>Router</code> ainsi qu’une constante <code>App</code> qui contiendra
-notre application.</p>
-
-<p>Les tests sont indispensables lors du développement d’une application. Tester une application Rack est
-assez aisé grâce aux outils inclus dans la gem <code>rack-test</code>. Voici un exemple d’un fichier de test écrit
-avec minitest :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># ./app_test.rb</span>
-</span><span class="line">
-</span><span class="line"><span class="nb">require</span> <span class="s2">&quot;minitest/autorun&quot;</span>
-</span><span class="line"><span class="nb">require</span> <span class="s2">&quot;rack/test&quot;</span>
-</span><span class="line">
-</span><span class="line"><span class="n">require_relative</span> <span class="s2">&quot;app&quot;</span>
-</span><span class="line">
-</span><span class="line"><span class="n">describe</span> <span class="no">App</span> <span class="k">do</span>
-</span><span class="line">  <span class="kp">include</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Test</span><span class="o">::</span><span class="no">Methods</span>
-</span><span class="line">
-</span><span class="line">  <span class="n">describe</span> <span class="s2">&quot;when the URL match no known action&quot;</span> <span class="k">do</span>
-</span><span class="line">    <span class="n">it</span> <span class="s2">&quot;returns a 404 status code&quot;</span> <span class="k">do</span>
-</span><span class="line">      <span class="n">get</span> <span class="s2">&quot;/unknown/path&quot;</span>
-</span><span class="line">      <span class="n">last_response</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">must_equal</span> <span class="mi">404</span>
-</span><span class="line">    <span class="k">end</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="n">describe</span> <span class="s2">&quot;when the URL match the members&#39;s path&quot;</span> <span class="k">do</span>
-</span><span class="line">    <span class="n">it</span> <span class="s2">&quot;displays the member&#39;s id&quot;</span> <span class="k">do</span>
-</span><span class="line">      <span class="n">get</span> <span class="s2">&quot;/members/Nicolas&quot;</span>
-</span><span class="line">      <span class="n">last_response</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">must_include</span> <span class="s2">&quot;Nicolas&quot;</span>
-</span><span class="line">    <span class="k">end</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">app</span>
-</span><span class="line">    <span class="no">App</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Pour lancer les tests, la commande : <code>bundle exec ruby -Ilib:test *_test.rb --pride</code> suffit.</p>
-
-<p>Le frameworks web tels que Rails instaurent des conventions et des outils par défaut pour le test
-de ses applications. Les outils de tests fonctionnent également hors des frameworks comme le montre
-notre exemple.</p>
-
-<h2 id="pour-finir">Pour finir</h2>
-
-<p>En continuant sur cette lancée, on peut rencontrer d’autres problématiques comme les sessions, la persistance,
-l’organisation du coe métier, le caching et bien d’autres. Il est très facile, avec un peu de recul, de créer
-son propre framework ou d’utiliser un micro-framework puis d’y ajouter ses propres conventions ainsi que les
-outils de son choix.</p>
-
-<p>Même si ce billet s’adresse principalement aux débutants, j’espère qu’il touchera également quelques
-enseignants ou mentors. Peu importe votre profil, n’hésitez pas à partager vos premiers pas avec le
-développement web en Ruby ainsi que la manière dont vous l’aborderiez aujourd’hui.</p>
-
-<h1 id="qui-a-crit-cet-article-">Qui a écrit cet article ?</h1>
-
-<p><img src="https://secure.gravatar.com/avatar/510312aa405bc675fc275fad7648eb1c?s=200" /></p>
-
-<p><strong>Nicolas Zermati</strong><br />
-Software writer, building the backend of Sleekapp.io at Tigerlily</p>
 ]]></content>
   </entry>
   

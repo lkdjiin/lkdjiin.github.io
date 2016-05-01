@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : gosu | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/gosu/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-02-25T12:22:53+01:00</updated>
+  <updated>2016-05-01T11:09:07+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,292 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 7]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/"/>
+    <updated>2016-05-01T09:29:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7</id>
+    <content type="html"><![CDATA[<p>Ça fait plus de 2 mois que je dois terminer ce jeu et cette série d’article, alors au boulot !</p>
+
+<p>Pour cette nouvelle version je voudrais ajouter une musique différente pour le
+game over.  Et aussi pouvoir enfin recommencer une nouvelle partie après
+un <em>game over</em>.</p>
+
+<p><img class="center" src="/images/gosu8.png"></p>
+
+<!-- more -->
+
+<p>La totalité des articles:</p>
+
+<ol>
+  <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
+  <li><a href="/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/">Déplacer le joueur et pluie de smileys</a></li>
+  <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
+  <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
+  <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
+  <li><a href="/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li>Plusieurs musiques et reset de la partie</li>
+</ol>
+
+<h2 id="plusieurs-musiques">Plusieurs musiques</h2>
+
+<p>Nous allons devoir gérer plusieurs musiques. Donnons leur des noms plus simple
+à manipuler que leurs <em>paths</em> :</p>
+
+<p><code>ruby song.rb
+module Song
+  GameOver = "assets/songs/In early time.ogg"
+  Level1   = "assets/songs/Around the Bend.ogg"
+end
+</code></p>
+
+<p>Et avec quoi écoute-t-on de la musique ? Avec un <em>song player</em> :</p>
+
+<p><code>ruby song_player.rb
+class SongPlayer
+  def play(file)
+    @song.stop if @song
+    @song = Gosu::Song.new(file)
+    @song.volume = 0.25
+    @song.play(true)
+  end
+end
+</code></p>
+
+<p>Dans la classe <code>Window</code> on remplace l’ancienne manière de jouer une musique :</p>
+
+<p><code>ruby
+@song = Gosu::Song.new("assets/songs/Around the Bend.ogg")
+@song.volume = 0.25
+@song.play(true)
+</code></p>
+
+<p>par notre nouvelle abstraction :</p>
+
+<p><code>ruby
+@song_player = SongPlayer.new
+@song_player.play(Song::Level1)
+</code></p>
+
+<p>N’oubliez pas d’ajouter les require qui vont bien dans le fichier <code>main.rb</code> :</p>
+
+<p><code>ruby main.rb
+require_relative 'song'
+require_relative 'song_player'
+</code></p>
+
+<p>Trouver un bon endroit où mettre le code pour changer la musique après un
+<em>game over</em> n’est pas si 
+évident que ça. Le moment où l’on capte que le jeu est dans l’état game over est
+la méthode <code>update_player</code> :</p>
+
+<p><code>ruby
+def update_player
+  @player.update(@items)
+  @game_over = true if @player.lives &lt;= 0
+end
+</code></p>
+
+<p>Et il semblerait vraiment bizarre de modifier la musique alors qu’on est
+sensé mettre à jour le joueur. Autrement dit, le code suivant ne me plait pas :</p>
+
+<p><code>ruby
+def update_player
+  @player.update(@items)
+  if @player.lives &lt;= 0
+    @game_over = true
+    @song_player.play(Song::GameOver)
+  end
+end
+</code></p>
+
+<p>À bien y réfléchir, le problème vient d’avant. On ne devrait pas changer l’état
+de <code>@game_over</code> ici, mais plutôt dans la méthode <code>update</code> :</p>
+
+<p>```ruby window.rb
+class Window &lt; Gosu::Window
+  def update
+    return if @game_over</p>
+
+<pre><code>@game_over = true if @player.lives &lt;= 0
+update_items
+update_player   end
+</code></pre>
+
+<p>def update_player
+    @player.update(@items)
+  end
+end
+```</p>
+
+<p>Changer la musique se fera donc de cette manière :</p>
+
+<p>```ruby
+def update
+  return if @game_over</p>
+
+<p>if @player.lives &lt;= 0
+    @game_over = true
+    @song_player.play(Song::GameOver)
+  end</p>
+
+<p>update_items
+  update_player
+end
+```</p>
+
+<p>Après extraction d’une nouvelle méthode, nous obtenons un code plus clair :</p>
+
+<p>```ruby
+def update
+  return if @game_over</p>
+
+<p>update_game_over
+  update_items
+  update_player
+end</p>
+
+<p>def update_game_over
+  return unless @player.lives &lt;= 0</p>
+
+<p>@game_over = true
+  @song_player.play(Song::GameOver)
+end
+```</p>
+
+<h2 id="nouvelle-partie">Nouvelle partie</h2>
+
+<p>Ok, il est temps maintenant de pouvoir jouer une nouvelle partie après un
+game over. Pour cela, il faut regarder si le joueur appuie sur la touche
+espace pendant l’état game over, et dans ce cas faire un reset :</p>
+
+<p>```ruby
+def update
+  reset if @game_over &amp;&amp; Button.space?</p>
+
+<p>return if @game_over</p>
+
+<p>update_game_over
+  update_items
+  update_player
+end
+```</p>
+
+<p>On peut tout de suite extraire une méthode <code>new_game?</code> :</p>
+
+<p>```ruby
+def update
+  reset if new_game?
+  # […]
+end</p>
+
+<p>def new_game?
+  @game_over &amp;&amp; Button.space?
+end
+```</p>
+
+<p>On peut maintenant réfléchir à la méthode <code>reset</code>, qui a son tour appellera
+la méthode <code>reset</code> du joueur. Ces deux méthodes sont évidentes :</p>
+
+<p><code>ruby window.rb
+class Window &lt; Gosu::Window
+  def reset
+    @items = []
+    @player.reset
+    @song_player.play(Song::Level1)
+    @game_over = false
+  end
+end
+</code></p>
+
+<p><code>ruby player.rb
+class Player
+  def reset
+    @score = 0
+    @lives = 3
+    @angle = 0.0
+    @velocity = 0.0
+  end
+end
+</code></p>
+
+<p>Pour terminer cette version, on va ajouter un message «press space to start»
+qui bouge pour attirer l’attention. Pour ça, on varie régulièrement d’une
+petite quantité la coordonnée <strong>y</strong> du message.</p>
+
+<p>```ruby
+class UI
+  # …
+  PressSpaceLow = 210
+  PressSpaceHigh = 270</p>
+
+<p>def initialize
+    # …
+    @y = 240
+    @y_velocity = -0.3
+  end</p>
+
+<p>private</p>
+
+<p>def draw_game_over
+    @big_font.draw_rel(“Game Over”, WindowWidth / 2, WindowHeight / 3,
+                       ZOrder::UI, 0.5, 0.5)
+    @big_font.draw_rel(“Press Space To Start”, WindowWidth / 2, y,
+                       ZOrder::UI, 0.5, 0.5)
+  end</p>
+
+<p>def y
+    @y += y_velocity
+  end</p>
+
+<p>def y_velocity
+    if @y &lt; PressSpaceLow || @y &gt; PressSpaceHigh
+      @y_velocity = -@y_velocity
+    end
+    @y_velocity
+  end
+end
+```</p>
+
+<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
+
+<pre><code>$ tree
+.
+├── assets
+│   ├── fonts
+│   │   └── VT323
+│   │       ├── OFL.txt
+│   │       └── VT323-Regular.ttf
+│   ├── images
+│   │   ├── background.png
+│   │   ├── heart.gif
+│   │   ├── player.png
+│   │   ├── smiley-green.png
+│   │   └── smiley-yellow.png
+│   ├── songs
+│   │   ├── Around the Bend.ogg
+│   │   └── In early time.ogg
+│   └── sound
+│       ├── collect.wav
+│       └── life-lost.wav
+├── button.rb
+├── main.rb
+├── player.rb
+├── smiley.rb
+├── song_player.rb
+├── song.rb
+├── ui.rb
+├── window.rb
+└── z_order.rb
+</code></pre>
+
+<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
+La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.7.0">version 0.7.0</a>.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 6]]></title>
@@ -36,6 +322,7 @@ joueur selon un certain angle, et cet angle sera mis à jour à chaque appel de
   <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li>Affichage selon un angle</li>
+  <li><a href="/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="affichage-selon-un-angle">Affichage selon un angle</h2>
@@ -256,6 +543,7 @@ les vies.</p>
   <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li>Musique et game over</li>
   <li><a href="/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="de-la-musique">De la musique</h2>
@@ -539,6 +827,7 @@ On va les afficher et les perdre.</p>
   <li>On s’occupe des vies</li>
   <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li><a href="/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="sourire--lenvers--autre-son-et-pas-de-points">Sourire à l’envers : autre son et pas de points</h2>
@@ -753,6 +1042,7 @@ un son.</p>
   <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
   <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
   <li><a href="/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
+  <li><a href="/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
 </ol>
 
 <h2 id="beep-et-collecte">Beep et collecte</h2>
@@ -1046,372 +1336,6 @@ qui suivent sont identiques, lequel est le plus simple à lire ?</p>
 
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.3.0">version 0.3.0</a>.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/"/>
-    <updated>2016-02-11T09:40:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2</id>
-    <content type="html"><![CDATA[<p>Aujourd’hui on voit comment déplacer et contrôler le joueur, ainsi que
-comment faire tomber une pluie de smileys.</p>
-
-<p><img class="center" src="/images/gosu3.png"></p>
-
-<!-- more -->
-
-<p>La totalité des articles:</p>
-
-<ol>
-  <li><a href="/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
-  <li>Déplacer le joueur et pluie de smileys</li>
-  <li><a href="/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
-  <li><a href="/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
-  <li><a href="/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
-  <li><a href="/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
-</ol>
-
-<h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
-
-<p>On ajoute la méthode <code>update</code> à la classe <code>Window</code>. À l’instar de <code>draw</code>
-cette méthode vient aussi de <code>Gosu::Window</code> et est appelée régulièrement.
-Dans <code>draw</code> on dessine, on affiche. Dans <code>update</code> on calcule, on met à jour
-les éléments du jeu.</p>
-
-<blockquote>
-  <p><code>update</code> sera appelée 60 fois par seconde quoiqu’il arrive, par contre
-<code>draw</code> pourra être appelée plus ou moins souvent suivant les besoins de
-l’OS. C’est pour cela qu’il est important de séparer le calcul de l’affichage.
-Cette division entre calcul et affichage est d’ailleurs typique d’un framework de jeu,
-ou même GUI, quelque soit le langage utilisé.</p>
-</blockquote>
-
-<p>Le nouveau code de <code>Window</code> est le suivant:</p>
-
-<p>```ruby window.rb
-class Window &lt; Gosu::Window</p>
-
-<p>def initialize(width, height)
-    super
-    self.caption = “Collect The Smile!”</p>
-
-<pre><code>@background_image = Gosu::Image.new("assets/images/background.png")
-
-@player = Player.new   end
-</code></pre>
-
-<p>def update
-    @player.go_left if Gosu::button_down?(Gosu::KbLeft)
-    @player.go_right if Gosu::button_down?(Gosu::KbRight)</p>
-
-<pre><code>@player.move   end
-</code></pre>
-
-<p>def draw
-    @background_image.draw(0, 0, ZOrder::Background)
-    @player.draw
-  end</p>
-
-<p>end
-```</p>
-
-<p>Dans <code>update</code> on utilise la méthode <code>button_down?</code> de Gosu pour tester si le
-joueur appuit sur la touche gauche et/ou la touche droite. L’appui simultané sur
-les deux touches <em>annulera</em> en quelque sorte le déplacement. Et dans tout les cas
-on déplace le joueur avec <code>@player.move</code>.</p>
-
-<p>Voyons maintenant la classe <code>Player</code>, qui a gagné plusieurs nouvelles méthodes
-par rapport au dernier article:</p>
-
-<p>```ruby player.rb
-class Player</p>
-
-<p>Y = 390</p>
-
-<p>def initialize
-    @x = WindowHeight / 2
-    @velocity = 0.0
-    @image = Gosu::Image.new(“assets/images/player.png”)
-  end</p>
-
-<p>def draw
-    @image.draw(@x, Y, ZOrder::Player)
-  end</p>
-
-<p>def go_left
-    @velocity -= 0.5
-  end</p>
-
-<p>def go_right
-    @velocity += 0.5
-  end</p>
-
-<p>def move
-    @x += @velocity
-    @x %= WindowWidth
-    @velocity *= 0.96
-  end</p>
-
-<p>end
-```</p>
-
-<p>Le joueur se déplaçant toujours sur la même ligne, sa coordonnée y ne change
-pas, j’en ai donc fait une constante.</p>
-
-<p>L’idée générale pour le déplacement, c’est qu’il soit <em>smooth</em>, avec une
-accélération progressive et une glisse finale. On a donc un facteur
-d’accélération de 0.5 et un facteur de glisse de 0.96. Prenez le temps de jouer
-avec ces valeurs pour les comprendre, et peut-être pour en trouver d’autres qui vous
-conviennent mieux.</p>
-
-<p>Comme toujours, nous convertirons ces nombres magiques en constantes:</p>
-
-<p>```ruby player.rb
-class Player</p>
-
-<p>Y = 390
-  AccelerationFactor = 0.5
-  SkidingFactor = 0.96</p>
-
-<p># …</p>
-
-<p>def go_left
-    @velocity -= AccelerationFactor
-  end</p>
-
-<p>def go_right
-    @velocity += AccelerationFactor
-  end</p>
-
-<p>def move
-    @x += @velocity
-    @x %= WindowWidth
-    @velocity *= SkidingFactor
-  end</p>
-
-<p>end
-```</p>
-
-<h2 id="une-pluie-de-smileys">Une pluie de smileys</h2>
-
-<p>Il est temps de faire pleuvoir des smileys !</p>
-
-<p>Ajoutez un fichier <code>smiley.rb</code>:</p>
-
-<p>```ruby main.rb
-require ‘gosu’</p>
-
-<p>require_relative ‘z_order’
-require_relative ‘player’
-require_relative ‘smiley’
-require_relative ‘window’</p>
-
-<h1 id="section">…</h1>
-<p>```</p>
-
-<p>Et remplissez le avec le code suivant:</p>
-
-<p>```ruby smiley.rb
-class Smiley
-  attr_reader :y</p>
-
-<p>def initialize(type)
-    @image = if type == :smiley_up
-               Gosu::Image.new(“assets/images/smiley-yellow.png”)
-             elsif type == :smiley_down
-               Gosu::Image.new(“assets/images/smiley-green.png”)
-             end</p>
-
-<pre><code>@velocity = Gosu::random(0.8, 3.3)
-
-@x = rand * (WindowWidth - @image.width)
-@y = 0   end
-</code></pre>
-
-<p>def update
-    @y += @velocity
-  end</p>
-
-<p>def draw
-    @image.draw(@x, @y, ZOrder::Items)
-  end</p>
-
-<p>end
-```</p>
-
-<p>Il n’y a rien de vraiment nouveau par rapport à ce qu’on a vu jusqu’ici.
-Je peux toutefois signaler la méthode <code>Gosu::random(0.8, 3.3)</code>, qui retourne
-un Float entre 0.8 inclus et 3.3 exclus. Et aussi le calcul de <code>@x</code>:</p>
-
-<pre><code>@x = rand * (WindowWidth - @image.width)
-</code></pre>
-
-<p>qui soustrait la largeur du smiley de la largeur de la fenêtre pour s’assurer
-qu’un smiley sera toujours dans les limites de la fenêtre (visible, donc).</p>
-
-<p>Pour intégrer les smileys au jeu, vous devez modifier les méthodes
-<code>initialize</code>, <code>update</code> et <code>draw</code> de la classe Window:</p>
-
-<p>```ruby window.rb
-class Window &lt; Gosu::Window</p>
-
-<p>def initialize(width, height)</p>
-
-<pre><code># ...
-
-@items = []   end
-</code></pre>
-
-<p>def update
-    unless @items.size &gt;= 15
-      r = rand
-      if r &lt; 0.035
-        @items.push(Smiley.new(:smiley_up))
-      elsif r &lt; 0.040
-        @items.push(Smiley.new(:smiley_down))
-      end
-    end
-    @items.each(&amp;:update)
-    @items.reject! {|item| item.y &gt; WindowHeight }</p>
-
-<pre><code># Les 3 lignes suivantes sont décrites dans l'article précédent.
-@player.go_left if Gosu::button_down?(Gosu::KbLeft)
-@player.go_right if Gosu::button_down?(Gosu::KbRight)
-@player.move   end
-</code></pre>
-
-<p>def draw
-    @background_image.draw(0, 0, ZOrder::Background)</p>
-
-<pre><code># Ça c'est la nouvelle ligne:
-@items.each(&amp;:draw)
-
-@player.draw   end
-</code></pre>
-
-<p>end
-```</p>
-
-<p>La nouvelle méthode <code>update</code> mérite bien quelques explications !
-Tout d’abord je veux afficher un maximum de 15 smileys à l’écran:</p>
-
-<p><code>ruby
-  def update
-    if @items.size &lt; 15
-</code></p>
-
-<p>S’il y en a moins de 15, il y a <em>à chaque update</em> 3.5% de chances (0.035)
-de créer un sourire à l’endroit, et 0.5% de chances (0.04 - 0.035) de créer un
-sourire à l’envers:</p>
-
-<p><code>ruby
-      r = rand
-      if r &lt; 0.035
-        @items.push(Smiley.new(:smiley_up))
-      elsif r &lt; 0.040
-        @items.push(Smiley.new(:smiley_down))
-      end
-    end
-</code></p>
-
-<p>Dans tous les cas on met à jour les smileys existants (c’est à dire qu’on change leur
-coordonnée y):</p>
-
-<p><code>ruby
-    @items.each(&amp;:update)
-</code></p>
-
-<p>Et on supprime les smileys qui sont sortit de la fenêtre de jeu (par le bas):</p>
-
-<p><code>ruby
-    @items.reject! {|item| item.y &gt; WindowHeight }
-</code></p>
-
-<p>Ce code est hideux et il faut faire quelque chose pour lui ;)
-On commence le refactoring de la classe Window en extrayant les deux méthodes
-<code>update_items</code> et <code>update_player</code>:</p>
-
-<p>```ruby window.rb
-class Window
-  # …</p>
-
-<p>def update
-    update_items
-    update_player
-  end</p>
-
-<p>private</p>
-
-<p>def update_items
-    unless @items.size &gt;= 15
-      r = rand
-      if r &lt; 0.035
-        @items.push(Smiley.new(:smiley_up))
-      elsif r &lt; 0.040
-        @items.push(Smiley.new(:smiley_down))
-      end
-    end
-    @items.each(&amp;:update)
-    @items.reject! {|item| item.y &gt; WindowHeight }
-  end</p>
-
-<p>def update_player
-    @player.go_left if Gosu::button_down?(Gosu::KbLeft)
-    @player.go_right if Gosu::button_down?(Gosu::KbRight)
-    @player.move
-  end</p>
-
-<p>end
-```</p>
-
-<p>La nouvelle méthode <code>update_items</code> mérite aussi sa petite extraction:</p>
-
-<p>```ruby window.rb
-  def update_items
-    populate_items
-    @items.each(&amp;:update)
-    @items.reject! {|item| item.y &gt; WindowHeight }
-  end</p>
-
-<p>def populate_items
-    return if @items.size &gt;= 15</p>
-
-<pre><code>type = rand
-if type &lt; 0.035
-  @items.push(Smiley.new(:smiley_up))
-elsif type &lt; 0.040
-  @items.push(Smiley.new(:smiley_down))
-end   end ```
-</code></pre>
-
-<p>Maintenant <code>populate_items</code> est toujours moche, et on sent que cette méthode
-risque d’enfler dans l’avenir. Mais je pense que c’est le moment d’arrêter le refactoring
-pour éviter de tomber dans l’<a href="https://en.wikipedia.org/wiki/Overengineering">overengineering</a>
-et aussi parce que
-<a href="http://martinfowler.com/bliki/Yagni.html">YAGNI</a> !.</p>
-
-<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
-
-<pre><code>$ tree
-.
-├── assets
-│   └── images
-│       ├── background.png
-│       ├── player.png
-│       ├── smiley-green.png
-│       └── smiley-yellow.png
-├── main.rb
-├── player.rb
-├── smiley.rb
-├── window.rb
-└── z_order.rb
-</code></pre>
-
-<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
-La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.2.0">version 0.2.0</a>.</p>
 
 <p></p>
 ]]></content>
