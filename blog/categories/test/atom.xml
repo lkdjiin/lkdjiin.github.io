@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : test | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/test/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-08-04T08:46:07+02:00</updated>
+  <updated>2016-11-02T09:47:03+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,730 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Comment écrire un framework de test pour Ruby]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby/"/>
+    <updated>2016-11-02T09:06:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby</id>
+    <content type="html"><![CDATA[<p>Si vous souhaitez comprendre le fonctionnement d’un framework de test, si vous
+voulez écrire votre propre framework et que vous ressentiez le besoin d’un coup
+de pouce, cet article est fait pour vous. Nous verrons étape par étape comment écrire
+une telle chose. Le framework que nous réaliserons tiendra en quelques dizaines de
+lignes de Ruby et pourra être utilisé comme une base pour vos futures
+réalisations.</p>
+
+<p><img class="center" src="/images/colorful-test-tubes.jpg"></p>
+
+<!-- more -->
+
+<h2 id="par-o-commencer-">Par où commencer ?</h2>
+
+<p>Pour ce genre de problématique, je trouve qu’il est plus simple de partir d’un
+exemple concret du <strong>langage</strong>, de l’<strong>API</strong>, que l’on souhaite obtenir. Dans notre
+cas, nous pouvons déjà écrire quelques tests même si nous ne pouvons pas encore
+les faire tourner.</p>
+
+<p>Voici 3 tests pour une classe Rover. Classe qui aura une position x,y et une
+direction :</p>
+
+<p>```ruby
+# fichier test_rover.rb final.</p>
+
+<p>require ‘rover’</p>
+
+<p>class TestRover &lt; Tasty::Unit</p>
+
+<p>def test_it_has_a_position
+    rover = Rover.new(3, 2)
+    assert(rover.position == [3, 2])
+  end</p>
+
+<p>def test_it_has_a_direction_by_default
+    rover = Rover.new(3, 2)
+    assert(rover.direction == ‘north’)
+  end</p>
+
+<p>def test_it_has_a_given_direction
+    rover = Rover.new(3, 2, ‘west’)
+    assert(rover.direction == ‘west’)
+  end</p>
+
+<p>end
+```</p>
+
+<p>J’ai cherché à faire au plus simple. Tout se passe à l’intérieur d’une classe.
+Ça nous permettra d’hériter facilement de certains comportements, comme la
+méthode <code>assert</code> qui sera définit dans la classe <code>Tasty::Unit</code>.</p>
+
+<p>Chaque méthode qui commence par <code>test_</code> représente un test, et <code>assert</code> se
+contente de vérifier si son argument est vrai ou faux.</p>
+
+<p>On lancera le programme avec le nom d’un fichier de test, par exemple
+<code>tasty test_rover.rb</code>. Mais par souci de simplicité, nous nous contenterons
+d’utiliser directement l’interpréteur Ruby de cette manière :
+<code>ruby tasty.rb test_rover.rb</code>.</p>
+
+<p>Voici ce que j’imagine en terme d’affichage :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb
+ok - test_it_has_a_position
+not ok - test_it_has_a_given_direction
+&lt;&lt; ERROR REPORT GOES HERE &gt;&gt;
+ok - test_it_has_a_direction_by_default
+</code></pre>
+
+<p>Le nom d’un test est précédé de “ok” si il a réussi, ou de “not ok” si il a
+échoué. Le rapport d’erreur est affiché aussitôt après une ligne “not ok”.</p>
+
+<h2 id="retrouver-la-classe-de-test">Retrouver la classe de test</h2>
+
+<p>Commençons par le plus simple, définissons une classe Rover dans un fichier
+<code>rover.rb</code> :</p>
+
+<p>```ruby
+# fichier rover.rb</p>
+
+<p>class Rover
+end
+```</p>
+
+<p>Puis définissons notre premier test, dans un fichier <code>test_rover.rb</code>. Ce
+premier test va nous guider pendant un bout de temps :</p>
+
+<p>```ruby
+# fichier test_rover.rb</p>
+
+<p>require_relative ‘rover’</p>
+
+<p>class TestRover &lt; Tasty::Unit</p>
+
+<p>def test_it_has_a_position
+    rover = Rover.new(3, 2)
+    assert(rover.position == [3, 2])
+  end</p>
+
+<p>end
+```</p>
+
+<p>Maintenant, dans un fichier <code>tasty.rb</code>, définissons le namespace Tasty et une
+classe principale. Nous initialiserons cette classe avec le nom de fichier
+passé en argument sur la ligne de commande. Nous afficherons un message
+temporaire pour nous assurer que nous sommes sur la bonne voie :</p>
+
+<p>```ruby
+# fichier tasty.rb</p>
+
+<p>module Tasty</p>
+
+<p>class Main
+    def initialize(filename)
+      puts “Testing #{filename}”
+    end
+  end</p>
+
+<p>end</p>
+
+<p>main = Tasty::Main.new(ARGV[0])
+```</p>
+
+<p>L’essai est concluant :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb
+Testing test_rover.rb
+</code></pre>
+
+<p>Tant qu’on y est, mieux vaut définir tout de suite la classe <code>Tasty::Unit</code>,
+voici à quoi devrait ressembler votre fichier <code>tasty.rb</code> :</p>
+
+<p>```ruby
+# fichier tasty.rb</p>
+
+<p>module Tasty</p>
+
+<p>class Unit
+  end</p>
+
+<p>class Main
+    def initialize(filename)
+      puts “Testing #{filename}”
+    end
+  end</p>
+
+<p>end</p>
+
+<p>main = Tasty::Main.new(ARGV[0])
+```</p>
+
+<p>Passons maintenant au sujet principal de cette section : nous devons retrouver
+le nom de la classe de test, à savoir <code>TestRover</code>, depuis la classe
+<code>Tasty::Main</code>. Pour ce faire nous pourrions écrire un parser qui
+analyserait le contenu du fichier passé en argument. Ou bien nous pouvons
+compter sur les facilités d’introspection du langage Ruby. Je parie volontiers
+sur cette seconde solution. Nous laisserons Ruby charger et parser le fichier de
+test pour nous. Nous chargerons le fichier de la même manière qu’un autre, avec
+un <code>require</code>. Puis nous utilerons <code>Object.constants</code> pour accéder à toutes les
+constantes définies jusqu’ici (une classe est représentée par une constante) :</p>
+
+<p>```ruby
+module Tasty</p>
+
+<p>class Main
+    def initialize(filename)
+      require File.join(Dir.pwd, filename)
+      puts Object.constants
+    end
+  end</p>
+
+<p>end
+```</p>
+
+<p>Si vous lancez ce programme, vous verrez une liste de toutes les constantes
+définies, dont celle que nous cherchons, <code>TestRover</code> :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+Object
+Module
+Class
+BasicObject
+...
+SimpleDelegator
+Tasty
+Rover
+TestRover # &lt;============================
+RUBYGEMS_ACTIVATION_MONITOR
+</code></pre>
+
+<p>Attention, il s’agit d’un tableau de symboles. Vous pouvez vous en convaincre
+en changeant de méthode d’affichage. Remplacez <code>puts</code> par <code>p</code> :</p>
+
+<p><code>ruby
+def initialize(filename)
+  require File.join(Dir.pwd, filename)
+  p Object.constants
+end
+</code></p>
+
+<p>Vous pouvez voir qu’il s’agit de symboles :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+[:Object, :Module, :Class, :BasicObject, :Kernel, :NilClass, :NIL, :Data,
+...
+:SimpleDelegator, :Tasty, :Rover, :TestRover, :RUBYGEMS_ACTIVATION_MONITOR]
+</code></pre>
+
+<p>Nous pouvons sélectionner uniquement les classes commençant par <code>Test</code> :</p>
+
+<p>```ruby
+# fichier tasty.rb</p>
+
+<p>module Tasty</p>
+
+<p>class Unit
+  end</p>
+
+<p>class Main
+    def initialize(filename)
+      require File.join(Dir.pwd, filename)
+      p Object.constants.select { |name| name.to_s.start_with?(‘Test’) }
+    end
+  end</p>
+
+<p>end</p>
+
+<p>main = Tasty::Main.new(ARGV[0])
+```</p>
+
+<p>Nous avons réduit le tableau aux seules classes de test. Nous en avons une
+seule ici, mais nous pourrions très bien en avoir plusieurs :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+[:TestRover]
+</code></pre>
+
+<p>Il y a une convention qui est à l’oeuvre : seule une classe de test peut
+commencer par <code>Test</code>. Ça n’est pas un bien grand sacrifice, et nous pourrions
+y remédier si besoin.</p>
+
+<h2 id="les-mthodes-de-test">Les méthodes de test</h2>
+
+<p>La prochaine étape consistera à récupérer les méthodes qui sont dans la classe
+de test, et à les lancer.</p>
+
+<p>Un peu de recherche, dans une session irb et avec la <a href="http://ruby-doc.org/">documentation Ruby</a>,
+nous montrera que nous pouvons transformer un symbole en une classe, et aussi
+instancier cette classe, à l’aide de <code>Object.const_get</code> :</p>
+
+<p><code>irb
+$ irb
+&gt;&gt; :Module
+:Module
+&gt;&gt; Object.const_get(:Module)
+Module &lt; Object
+&gt;&gt; Object.const_get(:Module).new
+#&lt;Module:0x0055e0036e5580&gt;
+</code>
+On peut donc transformer notre tableau de symboles selon cette méthode :</p>
+
+<p><code>ruby
+class Main
+  def initialize(filename)
+    require File.join(Dir.pwd, filename)
+    classes = Object.constants.select { |name| name.to_s.start_with?('Test') }
+    classes.map! { |name| Object.const_get(name) }
+  end
+end
+</code></p>
+
+<p>Retournons dans une session irb pour voir comment obtenir les méthodes d’une
+classe quelconque.  Définissons une classe <code>C</code> avec une méthode
+<code>method_in_class_c</code> pour les besoins de la cause :</p>
+
+<p><code>irb
+$ irb
+&gt;&gt; class C
+&gt;&gt;   def method_in_class_c; end
+&gt;&gt; end
+</code></p>
+
+<p>La méthode <code>instance_methods</code> appliquée sur une classe liste les méthodes de
+cette classe. Nous retrouvons notre méthode <code>method_in_class_c</code>, parmi plein
+d’autres :</p>
+
+<p><code>irb
+&gt;&gt; puts C.instance_methods
+method_in_class_c # &lt;--------------------
+methods
+singleton_methods
+protected_methods
+private_methods
+public_methods
+instance_of?
+...
+</code></p>
+
+<p>D’où viennent ces autres méthodes ? Ce sont les méthodes héritées ou incluses.
+Pour restreindre les méthodes à celles définies dans la classe C, nous devons
+utiliser un artifice :</p>
+
+<p><code>irb
+&gt;&gt; puts C.instance_methods(false)
+method_in_class_c
+</code></p>
+
+<p>Nous pouvons nous servir de ce nouveau savoir pour lister les méthodes de test :</p>
+
+<p>```ruby
+# fichier tasty.rb</p>
+
+<p>module Tasty</p>
+
+<p>class Unit
+  end</p>
+
+<p>class Main
+    def initialize(filename)
+      require File.join(Dir.pwd, filename)
+      classes = Object.constants.select { |name| name.to_s.start_with?(‘Test’) }
+      classes.map! { |name| Object.const_get(name) }</p>
+
+<pre><code>  classes.each do |c|
+    c.instance_methods(false).each do |m|
+      puts m
+    end
+  end
+end   end
+</code></pre>
+
+<p>end</p>
+
+<p>main = Tasty::Main.new(ARGV[0])
+```</p>
+
+<p>Nous l’avons trouvé :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_it_has_a_position
+</code></pre>
+
+<p>Il reste à lancer chaque test en se servant de la méthode <a href="http://ruby-doc.org/core-2.3.1/Object.html#method-i-send">send</a> sur une
+instance de la classe de test. Nous ferons cela ailleurs que dans le
+constructeur de la classe Tasty::Main. Dans une méthode <code>run</code> par exemple, ça
+sera plus propre :</p>
+
+<p>```ruby
+# fichier tasty.rb</p>
+
+<p>module Tasty</p>
+
+<p>class Unit
+  end</p>
+
+<p>class Main
+    def initialize(filename)
+      require File.join(Dir.pwd, filename)
+      @classes = Object.constants.select { |name| name.to_s.start_with?(‘Test’) }
+      @classes.map! { |name| Object.const_get(name) }
+    end</p>
+
+<pre><code>def run
+  @classes.each do |class_under_test|
+    instance = class_under_test.new
+    class_under_test.instance_methods(false).each do |m|
+      instance.send(m)
+    end
+  end
+end   end
+</code></pre>
+
+<p>end</p>
+
+<p>main = Tasty::Main.new(ARGV[0])
+main.run
+```</p>
+
+<p>Alors, et si on lançait les tests :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:6:in `initialize':
+  wrong number of arguments (given 2, expected 0) (ArgumentError)
+  from test_rover.rb:6:in `new'
+  from test_rover.rb:6:in `test_it_has_a_position'
+</code></pre>
+
+<p>Déçu ? Vous ne devriez pas, ça a parfaitement fonctionné. Le programme nous dit
+qu’en ligne 6 du fichier <code>test_rover.rb</code> nous tentons d’initialiser un rover
+avec 2 arguments alors que la méthode <code>initialize</code> de rover attends 0
+arguments. Voyons cette fameuse ligne 6, dans le test nous cherchons à
+initialiser un rover avec des coordonnées x et y :</p>
+
+<p><code>ruby
+rover = Rover.new(3, 2)
+</code></p>
+
+<p>Et comme notre classe <code>Rover</code> est déséspérement vide, il est normal que Ruby
+crashe.</p>
+
+<h2 id="passons-le-premier-test">Passons le premier test</h2>
+
+<p>Dotons la méthode <code>Rover#initialize</code> de deux arguments, comme attendu :</p>
+
+<p><code>
+# fichier rover.rb
+class Rover
+  def initialize(x, y)
+  end
+end
+</code></p>
+
+<p>Et le programme nous emmène au prochain problème :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:7:in `test_it_has_a_position': undefined method `position'
+for #&lt;Rover:0x0055778cf43a90&gt; (NoMethodError)
+</code></pre>
+
+<p>On en vient facilement à bout en ajoutant la méthode <code>Rover#position</code> :</p>
+
+<p>```
+# fichier rover.rb
+class Rover
+  def initialize(x, y)
+  end</p>
+
+<p>def position
+  end
+end
+```</p>
+
+<p>L’erreur suivante est beaucoup plus intéressante :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:7:in `test_it_has_a_position': undefined method `assert'
+for #&lt;TestRover:0x00558edbe7a828&gt; (NoMethodError)
+</code></pre>
+
+<p>Nous devons coder <code>assert</code> de telle manière qu’elle produise une erreur si son
+argument est différent de <code>true</code>.  Et pour que les classes de test puissent y
+accéder, nous la placerons dans <code>Tasty::Unit</code>. Nous utiliserons aussi une erreur
+custom, <code>AssertionError</code> :</p>
+
+<p>```ruby
+module Tasty</p>
+
+<p>class AssertionError &lt; StandardError
+  end</p>
+
+<p>class Unit
+    def assert(boolean)
+      raise AssertionError unless boolean
+    end
+  end</p>
+
+<p>end
+```</p>
+
+<p>Nous y sommes presque. La méthode <code>assert</code> est codée et produit l’erreur attendue :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+tasty.rb:8:in `assert': Tasty::AssertionError (Tasty::AssertionError)
+  from test_rover.rb:7:in `test_it_has_a_position'
+</code></pre>
+
+<p>Que se passerait-il si nous implémentions <code>Rover</code> de telle manière qu’elle
+passe le test ?</p>
+
+<p>```ruby
+# fichier rover.rb
+class Rover
+  def initialize(x, y)
+    @x = x
+    @y = y
+  end</p>
+
+<p>def position
+    [@x, @y]
+  end
+end
+```</p>
+
+<p>Et bien rien. Il ne se passe rien.</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+$ # &lt;---- Cruelle absence d'affichage
+</code></pre>
+
+<p>En l’occurence, ce rien signifie quand même que nous avons réussi cette
+partie !  Le test est passé ! Ajoutons un petit quelque chose pour être tenu au
+courant :</p>
+
+<p><code>ruby
+module Tasty
+  class Main
+    def run
+      @classes.each do |class_under_test|
+        instance = class_under_test.new
+        class_under_test.instance_methods(false).each do |m|
+          instance.send(m)
+          puts "ok - #{m}" # &lt;---------------
+        end
+      end
+    end
+  end
+end
+</code></p>
+
+<p>Et c’est la victoire :</p>
+
+<p><code>
+$ ruby tasty.rb test_rover.rb 
+ok - test_it_has_a_position
+</code></p>
+
+<h2 id="les-autres-tests">Les autres tests</h2>
+
+<p>Ajoutons le second test, mais plaçons le avant le premier (!) pour observer un
+phénomène curieux :</p>
+
+<p>```ruby
+# fichier test_rover.rb
+require_relative ‘rover’</p>
+
+<p>class TestRover &lt; Tasty::Unit</p>
+
+<p>def test_it_has_a_direction_by_default
+    rover = Rover.new(3, 2)
+    assert(rover.direction == ‘north’)
+  end</p>
+
+<p>def test_it_has_a_position
+    rover = Rover.new(3, 2)
+    assert(rover.position == [3, 2])
+  end</p>
+
+<p>end
+```</p>
+
+<p>Le programme reporte bien le nouveau problème qui se trouve dans la méthode
+<code>test_it_has_a_direction_by_default</code> mais il n’y a aucune mention de
+<code>test_it_has_a_position</code> qui fonctionnait pourtant bien.</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:7:in `test_it_has_a_direction_by_default': undefined method
+`direction' for #&lt;Rover:0x0055a03b444db0 @x=3, @y=2&gt; (NoMethodError)
+</code></pre>
+
+<p>Lorsqu’une erreur se produit dans <code>Tasty::Main#run</code>, le programme s’arrête
+purement et simplement. Ce n’est pas du tout ce que nous voulons. Nous voulons
+qu’une erreur soit rapportée, et que le programme continue en traitant le test
+suivant. Commençons par remanier un peu la méthode <code>run</code> en la splittant en
+deux parties :</p>
+
+<p>```ruby
+class Main
+  def run
+    @classes.each do |under_test|
+      instance = under_test.new
+      under_test.instance_methods(false).each { |m| run_test(instance, m) }
+    end
+  end</p>
+
+<p>def run_test(instance, method)
+    instance.send(method)
+    puts “ok - #{m}”
+  end
+end
+```</p>
+
+<p>Nous pouvons alors <em>attraper</em> les erreurs facilement dans la méthode <code>run_test</code> :</p>
+
+<p><code>ruby
+  def run_test(instance, method)
+    instance.send(method)
+    puts "ok - #{method}"
+  rescue =&gt; ex
+    puts "not ok - #{method}"
+    puts ex.inspect
+    puts ex.backtrace
+  end
+</code></p>
+
+<p>Et voilà le résultat, nous affichons à la fois les tests qui passent et ceux
+qui échouent :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+not ok - test_it_has_a_direction_by_default
+#&lt;NoMethodError: undefined method `direction' for #&lt;Rover:0x0055a7709c03c0 @x=3, @y=2&gt;&gt;
+test_rover.rb:7:in `test_it_has_a_direction_by_default'
+...
+ok - test_it_has_a_position
+</code></pre>
+
+<p>En dotant <code>Rover</code> de la méthode <code>position</code> qui suit, les tests passent :</p>
+
+<p><code>ruby
+def position
+  'north'
+end
+</code></p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+ok - test_it_has_a_direction_by_default
+ok - test_it_has_a_position
+</code></pre>
+
+<p>Faire passer le 3ème test implique seulement d’implémenter la classe <code>Rover</code> de
+façon correcte. Il n’y a rien à ajouter ou à modifier dans notre framework
+<code>Tasty</code>.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Nous venons d’écrire un framework de test en quelques dizaines de lignes de
+code grâce aux facultés d’introspection de Ruby. C’est maintenant à votre tour
+de jouer en l’améliorant.  Voici quelques idées :</p>
+
+<ul>
+  <li>Faire jouer les tests dans un ordre aléatoire</li>
+  <li>Afficher une ligne de résultat final : <code>X tests, Y errors</code></li>
+  <li>La sortie console devrait se faire en couleur, les lignes “ok” en vert, les
+lignes “not ok” en rouges, et le reste en normal</li>
+  <li>Écrire <code>ok - it has a position</code> plutôt que <code>ok - test_it_has_a_position</code></li>
+  <li>Faire en sorte que des classes autres que celles de test puissent commencer par <code>Test</code>.</li>
+  <li>Le must pour un compilateur, c’est d’être écrit dans son langage. Faire
+pareil ici : tester Tasty avec Tasty</li>
+</ul>
+
+<p>Pour finir, voici le code complet :</p>
+
+<p>```ruby
+# fichier rover.rb
+class Rover
+  def initialize(x, y, direction=’north’)
+    @x = x
+    @y = y
+    @direction = direction
+  end</p>
+
+<p>def position
+    [@x, @y]
+  end</p>
+
+<p>attr_reader :direction
+end
+```</p>
+
+<p>```ruby
+# fichier test_rover.rb
+require_relative ‘rover’</p>
+
+<p>class TestRover &lt; Tasty::Unit</p>
+
+<p>def test_it_has_a_direction_by_default
+    rover = Rover.new(3, 2)
+    assert(rover.direction == ‘north’)
+  end</p>
+
+<p>def test_it_has_a_position
+    rover = Rover.new(3, 2)
+    assert(rover.position == [3, 2])
+  end</p>
+
+<p>def test_it_has_a_given_direction
+    rover = Rover.new(3, 2, ‘west’)
+    assert(rover.direction == ‘west’)
+  end</p>
+
+<p>end
+```</p>
+
+<p>```ruby
+# fichier tasty.rb
+module Tasty</p>
+
+<p>class AssertionError &lt; StandardError
+  end</p>
+
+<p>class Unit
+    def assert(boolean)
+      raise AssertionError unless boolean
+    end
+  end</p>
+
+<p>class Main
+    def initialize(filename)
+      require File.join(Dir.pwd, filename)
+      @classes = Object.constants.select { |name| name.to_s.start_with?(‘Test’) }
+      @classes.map! { |name| Object.const_get(name) }
+    end</p>
+
+<pre><code>def run
+  @classes.each do |under_test|
+    instance = under_test.new
+    under_test.instance_methods(false).each { |m| run_test(instance, m) }
+  end
+end
+
+def run_test(instance, method)
+  instance.send(method)
+  puts "ok - #{method}"
+rescue =&gt; ex
+  puts "not ok - #{method}"
+  puts ex.message
+  puts ex.backtrace
+end   end
+</code></pre>
+
+<p>end</p>
+
+<p>main = Tasty::Main.new(ARGV[0])
+main.run
+```</p>
+
+<p>Bons tests ! À plus tard.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Coco version 0.13.0]]></title>
@@ -463,114 +1187,6 @@ la supprimer ainsi:</p>
 trouver du temps une prochaine fois pour jeter un coup
 d’oeil au code de Timecop pour comparer avec le code
 d’aujourd’hui.</p>
-
-<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tester facilement vos dates avec Timecop]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop/"/>
-    <updated>2014-04-01T21:06:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/04/01/tester-facilement-vos-dates-avec-timecop</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p><a href="https://github.com/travisjeffery/timecop">Timecop</a>
-n’est pas une nouvelle gem. Mais je ne la découvre qu’aujourd’hui.
-Ça fait pourtant 4 ans que je travaille quotidiennement avec Ruby
-et/ou Rails… Et je ne me suis jamais sentis très à l’aise pour tester
-les dates. Avec Timecop, ça devient un jeu d’enfant.</p>
-
-<!-- more -->
-
-<p>Pour voir un souci possible, prenons la classe suivante qui représente
-un article:</p>
-
-<p>``` ruby article.rb
-class Article
-  def initialize(name)
-    @name = name
-    @created_at = Time.now
-  end</p>
-
-<p>attr_reader :name, :created_at
-end
-```</p>
-
-<p>Dans le monde réel, ce serait surement un ActiveRecord, mais pour
-l’exemple on se contentera bien de cette classe ;)</p>
-
-<p>Maintenant testons la création d’un article:</p>
-
-<p>``` ruby tc_article.rb
-require_relative “article”
-require “test/unit”</p>
-
-<p>class TestArticle &lt; Test::Unit::TestCase
-  def test_creation
-    article = Article.new(‘Foo’)
-    assert_equal ‘Foo’, article.name
-    assert_equal Time.now, article.created_at
-  end
-end
-```</p>
-
-<p>Et voilà le souci, à quelques nano-secondes près ça pète:</p>
-
-<p>``` bash
-$ ruby tc_article.rb 
-Run options: </p>
-
-<h1 id="running-tests">Running tests:</h1>
-
-<p>[1/1] TestArticle#test_creation = 0.00 s
-  1) Failure:
-TestArticle#test_creation [tc_article.rb:8]:
-&lt;2014-04-01 21:05:10 +0200&gt; (204201[ns]) expected but was
-&lt;2014-04-01 21:05:10 +0200&gt; (176685[ns]).</p>
-
-<p>Finished tests in 0.009979s, 100.2062 tests/s, 200.4125 assertions/s.
-1 tests, 2 assertions, 1 failures, 0 errors, 0 skips
-```</p>
-
-<p>Timecop est la meilleure solution que j’ai vu jusqu’ici pour régler
-ce type de problème. La gem propose tout simplement (entre autres)
-<em>de geler le temps</em>:</p>
-
-<p>``` ruby tc_article.rb
-require_relative “article”
-require “test/unit”
-require “timecop”</p>
-
-<p>class TestArticle &lt; Test::Unit::TestCase
-  def test_creation
-    Timecop.freeze do
-      article = Article.new(‘Foo’)
-      assert_equal ‘Foo’, article.name
-      assert_equal Time.now, article.created_at
-    end
-  end
-end
-```</p>
-
-<p>Et voilà le résultat:</p>
-
-<p>``` bash
-ruby tc_article.rb 
-Run options: </p>
-
-<h1 id="running-tests-1">Running tests:</h1>
-
-<p>Finished tests in 0.010756s, 92.9747 tests/s, 185.9494 assertions/s.
-1 tests, 2 assertions, 0 failures, 0 errors, 0 skips
-```</p>
-
-<p>J’aimerais bien savoir quelles solutions vous avez adoptés pour
-régler ce genre de soucis…</p>
 
 <script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

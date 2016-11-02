@@ -1,0 +1,1320 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Comment écrire un framework de test pour Ruby - Xavier Nayrac</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Si vous souhaitez comprendre le fonctionnement d’un framework de test, si vous
+voulez écrire votre propre framework et que vous ressentiez le besoin &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Xavier Nayrac" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-39286891-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><a href="/">
+  <img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c?s=140"/>
+</a>
+<h1><a href="/">Xavier Nayrac</a></h1>
+<h2>
+  Rubyiste accro au TDD, serial blogger, apprenti data scientist, heureux utilisateur de Vim,
+  accordéoniste.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+</h2>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"><img src="/images/rss.png"></img>
+    RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lkdjiin.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Comment écrire un framework de test pour Ruby</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-11-02T09:06:00+01:00" pubdate data-updated="true">2 novembre 2016</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Si vous souhaitez comprendre le fonctionnement d’un framework de test, si vous
+voulez écrire votre propre framework et que vous ressentiez le besoin d’un coup
+de pouce, cet article est fait pour vous. Nous verrons étape par étape comment écrire
+une telle chose. Le framework que nous réaliserons tiendra en quelques dizaines de
+lignes de Ruby et pourra être utilisé comme une base pour vos futures
+réalisations.</p>
+
+<p><img class="center" src="/images/colorful-test-tubes.jpg" /></p>
+
+<!-- more -->
+
+<h2 id="par-o-commencer-">Par où commencer ?</h2>
+
+<p>Pour ce genre de problématique, je trouve qu’il est plus simple de partir d’un
+exemple concret du <strong>langage</strong>, de l’<strong>API</strong>, que l’on souhaite obtenir. Dans notre
+cas, nous pouvons déjà écrire quelques tests même si nous ne pouvons pas encore
+les faire tourner.</p>
+
+<p>Voici 3 tests pour une classe Rover. Classe qui aura une position x,y et une
+direction :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier test_rover.rb final.</span>
+</span><span class="line">
+</span><span class="line"><span class="nb">require</span> <span class="s1">&#39;rover&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">TestRover</span> <span class="o">&lt;</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Unit</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_position</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_direction_by_default</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;north&#39;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_given_direction</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;west&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;west&#39;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>J’ai cherché à faire au plus simple. Tout se passe à l’intérieur d’une classe.
+Ça nous permettra d’hériter facilement de certains comportements, comme la
+méthode <code>assert</code> qui sera définit dans la classe <code>Tasty::Unit</code>.</p>
+
+<p>Chaque méthode qui commence par <code>test_</code> représente un test, et <code>assert</code> se
+contente de vérifier si son argument est vrai ou faux.</p>
+
+<p>On lancera le programme avec le nom d’un fichier de test, par exemple
+<code>tasty test_rover.rb</code>. Mais par souci de simplicité, nous nous contenterons
+d’utiliser directement l’interpréteur Ruby de cette manière :
+<code>ruby tasty.rb test_rover.rb</code>.</p>
+
+<p>Voici ce que j’imagine en terme d’affichage :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb
+ok - test_it_has_a_position
+not ok - test_it_has_a_given_direction
+&lt;&lt; ERROR REPORT GOES HERE &gt;&gt;
+ok - test_it_has_a_direction_by_default
+</code></pre>
+
+<p>Le nom d’un test est précédé de “ok” si il a réussi, ou de “not ok” si il a
+échoué. Le rapport d’erreur est affiché aussitôt après une ligne “not ok”.</p>
+
+<h2 id="retrouver-la-classe-de-test">Retrouver la classe de test</h2>
+
+<p>Commençons par le plus simple, définissons une classe Rover dans un fichier
+<code>rover.rb</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier rover.rb</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">Rover</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Puis définissons notre premier test, dans un fichier <code>test_rover.rb</code>. Ce
+premier test va nous guider pendant un bout de temps :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier test_rover.rb</span>
+</span><span class="line">
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;rover&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">TestRover</span> <span class="o">&lt;</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Unit</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_position</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Maintenant, dans un fichier <code>tasty.rb</code>, définissons le namespace Tasty et une
+classe principale. Nous initialiserons cette classe avec le nom de fichier
+passé en argument sur la ligne de commande. Nous afficherons un message
+temporaire pour nous assurer que nous sommes sur la bonne voie :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier tasty.rb</span>
+</span><span class="line">
+</span><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="s2">&quot;Testing </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">main</span> <span class="o">=</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Main</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>L’essai est concluant :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb
+Testing test_rover.rb
+</code></pre>
+
+<p>Tant qu’on y est, mieux vaut définir tout de suite la classe <code>Tasty::Unit</code>,
+voici à quoi devrait ressembler votre fichier <code>tasty.rb</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier tasty.rb</span>
+</span><span class="line">
+</span><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Unit</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="s2">&quot;Testing </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">main</span> <span class="o">=</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Main</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Passons maintenant au sujet principal de cette section : nous devons retrouver
+le nom de la classe de test, à savoir <code>TestRover</code>, depuis la classe
+<code>Tasty::Main</code>. Pour ce faire nous pourrions écrire un parser qui
+analyserait le contenu du fichier passé en argument. Ou bien nous pouvons
+compter sur les facilités d’introspection du langage Ruby. Je parie volontiers
+sur cette seconde solution. Nous laisserons Ruby charger et parser le fichier de
+test pour nous. Nous chargerons le fichier de la même manière qu’un autre, avec
+un <code>require</code>. Puis nous utilerons <code>Object.constants</code> pour accéder à toutes les
+constantes définies jusqu’ici (une classe est représentée par une constante) :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="no">Object</span><span class="o">.</span><span class="n">constants</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Si vous lancez ce programme, vous verrez une liste de toutes les constantes
+définies, dont celle que nous cherchons, <code>TestRover</code> :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+Object
+Module
+Class
+BasicObject
+...
+SimpleDelegator
+Tasty
+Rover
+TestRover # &lt;============================
+RUBYGEMS_ACTIVATION_MONITOR
+</code></pre>
+
+<p>Attention, il s’agit d’un tableau de symboles. Vous pouvez vous en convaincre
+en changeant de méthode d’affichage. Remplacez <code>puts</code> par <code>p</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">  <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class="line">  <span class="nb">p</span> <span class="no">Object</span><span class="o">.</span><span class="n">constants</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Vous pouvez voir qu’il s’agit de symboles :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+[:Object, :Module, :Class, :BasicObject, :Kernel, :NilClass, :NIL, :Data,
+...
+:SimpleDelegator, :Tasty, :Rover, :TestRover, :RUBYGEMS_ACTIVATION_MONITOR]
+</code></pre>
+
+<p>Nous pouvons sélectionner uniquement les classes commençant par <code>Test</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier tasty.rb</span>
+</span><span class="line">
+</span><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Unit</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">p</span> <span class="no">Object</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s1">&#39;Test&#39;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">main</span> <span class="o">=</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Main</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Nous avons réduit le tableau aux seules classes de test. Nous en avons une
+seule ici, mais nous pourrions très bien en avoir plusieurs :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+[:TestRover]
+</code></pre>
+
+<p>Il y a une convention qui est à l’oeuvre : seule une classe de test peut
+commencer par <code>Test</code>. Ça n’est pas un bien grand sacrifice, et nous pourrions
+y remédier si besoin.</p>
+
+<h2 id="les-mthodes-de-test">Les méthodes de test</h2>
+
+<p>La prochaine étape consistera à récupérer les méthodes qui sont dans la classe
+de test, et à les lancer.</p>
+
+<p>Un peu de recherche, dans une session irb et avec la <a href="http://ruby-doc.org/">documentation Ruby</a>,
+nous montrera que nous pouvons transformer un symbole en une classe, et aussi
+instancier cette classe, à l’aide de <code>Object.const_get</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="go">$ irb</span>
+</span><span class="line"><span class="gp">&gt;&gt; </span><span class="ss">:Module</span>
+</span><span class="line"><span class="go">:Module</span>
+</span><span class="line"><span class="gp">&gt;&gt; </span><span class="no">Object</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="ss">:Module</span><span class="p">)</span>
+</span><span class="line"><span class="go">Module &lt; Object</span>
+</span><span class="line"><span class="gp">&gt;&gt; </span><span class="no">Object</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="ss">:Module</span><span class="p">)</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line"><span class="go">#&lt;Module:0x0055e0036e5580&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+<p>On peut donc transformer notre tableau de symboles selon cette méthode :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">    <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class="line">    <span class="n">classes</span> <span class="o">=</span> <span class="no">Object</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s1">&#39;Test&#39;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">    <span class="n">classes</span><span class="o">.</span><span class="n">map!</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="no">Object</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Retournons dans une session irb pour voir comment obtenir les méthodes d’une
+classe quelconque.  Définissons une classe <code>C</code> avec une méthode
+<code>method_in_class_c</code> pour les besoins de la cause :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="go">$ irb</span>
+</span><span class="line"><span class="gp">&gt;&gt; </span><span class="k">class</span> <span class="nc">C</span>
+</span><span class="line"><span class="gp">&gt;&gt; </span>  <span class="k">def</span> <span class="nf">method_in_class_c</span><span class="p">;</span> <span class="k">end</span>
+</span><span class="line"><span class="gp">&gt;&gt; </span><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>La méthode <code>instance_methods</code> appliquée sur une classe liste les méthodes de
+cette classe. Nous retrouvons notre méthode <code>method_in_class_c</code>, parmi plein
+d’autres :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">puts</span> <span class="n">C</span><span class="o">.</span><span class="n">instance_methods</span>
+</span><span class="line"><span class="go">method_in_class_c # &lt;--------------------</span>
+</span><span class="line"><span class="go">methods</span>
+</span><span class="line"><span class="go">singleton_methods</span>
+</span><span class="line"><span class="go">protected_methods</span>
+</span><span class="line"><span class="go">private_methods</span>
+</span><span class="line"><span class="go">public_methods</span>
+</span><span class="line"><span class="go">instance_of?</span>
+</span><span class="line"><span class="go">...</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>D’où viennent ces autres méthodes ? Ce sont les méthodes héritées ou incluses.
+Pour restreindre les méthodes à celles définies dans la classe C, nous devons
+utiliser un artifice :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="irb"><span class="line"><span class="gp">&gt;&gt; </span><span class="nb">puts</span> <span class="n">C</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span>
+</span><span class="line"><span class="go">method_in_class_c</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Nous pouvons nous servir de ce nouveau savoir pour lister les méthodes de test :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier tasty.rb</span>
+</span><span class="line">
+</span><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Unit</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="n">classes</span> <span class="o">=</span> <span class="no">Object</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s1">&#39;Test&#39;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">      <span class="n">classes</span><span class="o">.</span><span class="n">map!</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="no">Object</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">
+</span><span class="line">      <span class="n">classes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">c</span><span class="o">|</span>
+</span><span class="line">        <span class="n">c</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">m</span><span class="o">|</span>
+</span><span class="line">          <span class="nb">puts</span> <span class="n">m</span>
+</span><span class="line">        <span class="k">end</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">main</span> <span class="o">=</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Main</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Nous l’avons trouvé :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_it_has_a_position
+</code></pre>
+
+<p>Il reste à lancer chaque test en se servant de la méthode <a href="http://ruby-doc.org/core-2.3.1/Object.html#method-i-send">send</a> sur une
+instance de la classe de test. Nous ferons cela ailleurs que dans le
+constructeur de la classe Tasty::Main. Dans une méthode <code>run</code> par exemple, ça
+sera plus propre :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier tasty.rb</span>
+</span><span class="line">
+</span><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Unit</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="vi">@classes</span> <span class="o">=</span> <span class="no">Object</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s1">&#39;Test&#39;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">      <span class="vi">@classes</span><span class="o">.</span><span class="n">map!</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="no">Object</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nf">run</span>
+</span><span class="line">      <span class="vi">@classes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">class_under_test</span><span class="o">|</span>
+</span><span class="line">        <span class="n">instance</span> <span class="o">=</span> <span class="n">class_under_test</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line">        <span class="n">class_under_test</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">m</span><span class="o">|</span>
+</span><span class="line">          <span class="n">instance</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+</span><span class="line">        <span class="k">end</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">main</span> <span class="o">=</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Main</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span><span class="line"><span class="n">main</span><span class="o">.</span><span class="n">run</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Alors, et si on lançait les tests :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:6:in `initialize':
+  wrong number of arguments (given 2, expected 0) (ArgumentError)
+  from test_rover.rb:6:in `new'
+  from test_rover.rb:6:in `test_it_has_a_position'
+</code></pre>
+
+<p>Déçu ? Vous ne devriez pas, ça a parfaitement fonctionné. Le programme nous dit
+qu’en ligne 6 du fichier <code>test_rover.rb</code> nous tentons d’initialiser un rover
+avec 2 arguments alors que la méthode <code>initialize</code> de rover attends 0
+arguments. Voyons cette fameuse ligne 6, dans le test nous cherchons à
+initialiser un rover avec des coordonnées x et y :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et comme notre classe <code>Rover</code> est déséspérement vide, il est normal que Ruby
+crashe.</p>
+
+<h2 id="passons-le-premier-test">Passons le premier test</h2>
+
+<p>Dotons la méthode <code>Rover#initialize</code> de deux arguments, comme attendu :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier rover.rb</span>
+</span><span class="line"><span class="k">class</span> <span class="nc">Rover</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et le programme nous emmène au prochain problème :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:7:in `test_it_has_a_position': undefined method `position'
+for #&lt;Rover:0x0055778cf43a90&gt; (NoMethodError)
+</code></pre>
+
+<p>On en vient facilement à bout en ajoutant la méthode <code>Rover#position</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier rover.rb</span>
+</span><span class="line"><span class="k">class</span> <span class="nc">Rover</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">position</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>L’erreur suivante est beaucoup plus intéressante :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:7:in `test_it_has_a_position': undefined method `assert'
+for #&lt;TestRover:0x00558edbe7a828&gt; (NoMethodError)
+</code></pre>
+
+<p>Nous devons coder <code>assert</code> de telle manière qu’elle produise une erreur si son
+argument est différent de <code>true</code>.  Et pour que les classes de test puissent y
+accéder, nous la placerons dans <code>Tasty::Unit</code>. Nous utiliserons aussi une erreur
+custom, <code>AssertionError</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">AssertionError</span> <span class="o">&lt;</span> <span class="no">StandardError</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Unit</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">assert</span><span class="p">(</span><span class="n">boolean</span><span class="p">)</span>
+</span><span class="line">      <span class="k">raise</span> <span class="no">AssertionError</span> <span class="k">unless</span> <span class="n">boolean</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Nous y sommes presque. La méthode <code>assert</code> est codée et produit l’erreur attendue :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+tasty.rb:8:in `assert': Tasty::AssertionError (Tasty::AssertionError)
+  from test_rover.rb:7:in `test_it_has_a_position'
+</code></pre>
+
+<p>Que se passerait-il si nous implémentions <code>Rover</code> de telle manière qu’elle
+passe le test ?</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier rover.rb</span>
+</span><span class="line"><span class="k">class</span> <span class="nc">Rover</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class="line">    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">position</span>
+</span><span class="line">    <span class="o">[</span><span class="vi">@x</span><span class="p">,</span> <span class="vi">@y</span><span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et bien rien. Il ne se passe rien.</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+$ # &lt;---- Cruelle absence d'affichage
+</code></pre>
+
+<p>En l’occurence, ce rien signifie quand même que nous avons réussi cette
+partie !  Le test est passé ! Ajoutons un petit quelque chose pour être tenu au
+courant :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">run</span>
+</span><span class="line">      <span class="vi">@classes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">class_under_test</span><span class="o">|</span>
+</span><span class="line">        <span class="n">instance</span> <span class="o">=</span> <span class="n">class_under_test</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line">        <span class="n">class_under_test</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">m</span><span class="o">|</span>
+</span><span class="line">          <span class="n">instance</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+</span><span class="line">          <span class="nb">puts</span> <span class="s2">&quot;ok - </span><span class="si">#{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span> <span class="c1"># &lt;---------------</span>
+</span><span class="line">        <span class="k">end</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et c’est la victoire :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="err">$</span> <span class="n">ruby</span> <span class="n">tasty</span><span class="o">.</span><span class="n">rb</span> <span class="n">test_rover</span><span class="o">.</span><span class="n">rb</span>
+</span><span class="line"><span class="n">ok</span> <span class="o">-</span> <span class="n">test_it_has_a_position</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<h2 id="les-autres-tests">Les autres tests</h2>
+
+<p>Ajoutons le second test, mais plaçons le avant le premier (!) pour observer un
+phénomène curieux :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier test_rover.rb</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;rover&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">TestRover</span> <span class="o">&lt;</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Unit</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_direction_by_default</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;north&#39;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_position</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Le programme reporte bien le nouveau problème qui se trouve dans la méthode
+<code>test_it_has_a_direction_by_default</code> mais il n’y a aucune mention de
+<code>test_it_has_a_position</code> qui fonctionnait pourtant bien.</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+test_rover.rb:7:in `test_it_has_a_direction_by_default': undefined method
+`direction' for #&lt;Rover:0x0055a03b444db0 @x=3, @y=2&gt; (NoMethodError)
+</code></pre>
+
+<p>Lorsqu’une erreur se produit dans <code>Tasty::Main#run</code>, le programme s’arrête
+purement et simplement. Ce n’est pas du tout ce que nous voulons. Nous voulons
+qu’une erreur soit rapportée, et que le programme continue en traitant le test
+suivant. Commençons par remanier un peu la méthode <code>run</code> en la splittant en
+deux parties :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">run</span>
+</span><span class="line">    <span class="vi">@classes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">under_test</span><span class="o">|</span>
+</span><span class="line">      <span class="n">instance</span> <span class="o">=</span> <span class="n">under_test</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line">      <span class="n">under_test</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">m</span><span class="o">|</span> <span class="n">run_test</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">run_test</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="nb">method</span><span class="p">)</span>
+</span><span class="line">    <span class="n">instance</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">method</span><span class="p">)</span>
+</span><span class="line">    <span class="nb">puts</span> <span class="s2">&quot;ok - </span><span class="si">#{</span><span class="n">m</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Nous pouvons alors <em>attraper</em> les erreurs facilement dans la méthode <code>run_test</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">run_test</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="nb">method</span><span class="p">)</span>
+</span><span class="line">    <span class="n">instance</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">method</span><span class="p">)</span>
+</span><span class="line">    <span class="nb">puts</span> <span class="s2">&quot;ok - </span><span class="si">#{</span><span class="nb">method</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">  <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">ex</span>
+</span><span class="line">    <span class="nb">puts</span> <span class="s2">&quot;not ok - </span><span class="si">#{</span><span class="nb">method</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">    <span class="nb">puts</span> <span class="n">ex</span><span class="o">.</span><span class="n">inspect</span>
+</span><span class="line">    <span class="nb">puts</span> <span class="n">ex</span><span class="o">.</span><span class="n">backtrace</span>
+</span><span class="line">  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Et voilà le résultat, nous affichons à la fois les tests qui passent et ceux
+qui échouent :</p>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+not ok - test_it_has_a_direction_by_default
+#&lt;NoMethodError: undefined method `direction' for #&lt;Rover:0x0055a7709c03c0 @x=3, @y=2&gt;&gt;
+test_rover.rb:7:in `test_it_has_a_direction_by_default'
+...
+ok - test_it_has_a_position
+</code></pre>
+
+<p>En dotant <code>Rover</code> de la méthode <code>position</code> qui suit, les tests passent :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">def</span> <span class="nf">position</span>
+</span><span class="line">  <span class="s1">&#39;north&#39;</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<pre><code>$ ruby tasty.rb test_rover.rb 
+ok - test_it_has_a_direction_by_default
+ok - test_it_has_a_position
+</code></pre>
+
+<p>Faire passer le 3ème test implique seulement d’implémenter la classe <code>Rover</code> de
+façon correcte. Il n’y a rien à ajouter ou à modifier dans notre framework
+<code>Tasty</code>.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Nous venons d’écrire un framework de test en quelques dizaines de lignes de
+code grâce aux facultés d’introspection de Ruby. C’est maintenant à votre tour
+de jouer en l’améliorant.  Voici quelques idées :</p>
+
+<ul>
+  <li>Faire jouer les tests dans un ordre aléatoire</li>
+  <li>Afficher une ligne de résultat final : <code>X tests, Y errors</code></li>
+  <li>La sortie console devrait se faire en couleur, les lignes “ok” en vert, les
+lignes “not ok” en rouges, et le reste en normal</li>
+  <li>Écrire <code>ok - it has a position</code> plutôt que <code>ok - test_it_has_a_position</code></li>
+  <li>Faire en sorte que des classes autres que celles de test puissent commencer par <code>Test</code>.</li>
+  <li>Le must pour un compilateur, c’est d’être écrit dans son langage. Faire
+pareil ici : tester Tasty avec Tasty</li>
+</ul>
+
+<p>Pour finir, voici le code complet :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier rover.rb</span>
+</span><span class="line"><span class="k">class</span> <span class="nc">Rover</span>
+</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;north&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="vi">@x</span> <span class="o">=</span> <span class="n">x</span>
+</span><span class="line">    <span class="vi">@y</span> <span class="o">=</span> <span class="n">y</span>
+</span><span class="line">    <span class="vi">@direction</span> <span class="o">=</span> <span class="n">direction</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">position</span>
+</span><span class="line">    <span class="o">[</span><span class="vi">@x</span><span class="p">,</span> <span class="vi">@y</span><span class="o">]</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:direction</span>
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier test_rover.rb</span>
+</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;rover&#39;</span>
+</span><span class="line">
+</span><span class="line"><span class="k">class</span> <span class="nc">TestRover</span> <span class="o">&lt;</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Unit</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_direction_by_default</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;north&#39;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_position</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">position</span> <span class="o">==</span> <span class="o">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="o">]</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">def</span> <span class="nf">test_it_has_a_given_direction</span>
+</span><span class="line">    <span class="n">rover</span> <span class="o">=</span> <span class="no">Rover</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;west&#39;</span><span class="p">)</span>
+</span><span class="line">    <span class="n">assert</span><span class="p">(</span><span class="n">rover</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;west&#39;</span><span class="p">)</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+<span class="line-number">3</span>
+<span class="line-number">4</span>
+<span class="line-number">5</span>
+<span class="line-number">6</span>
+<span class="line-number">7</span>
+<span class="line-number">8</span>
+<span class="line-number">9</span>
+<span class="line-number">10</span>
+<span class="line-number">11</span>
+<span class="line-number">12</span>
+<span class="line-number">13</span>
+<span class="line-number">14</span>
+<span class="line-number">15</span>
+<span class="line-number">16</span>
+<span class="line-number">17</span>
+<span class="line-number">18</span>
+<span class="line-number">19</span>
+<span class="line-number">20</span>
+<span class="line-number">21</span>
+<span class="line-number">22</span>
+<span class="line-number">23</span>
+<span class="line-number">24</span>
+<span class="line-number">25</span>
+<span class="line-number">26</span>
+<span class="line-number">27</span>
+<span class="line-number">28</span>
+<span class="line-number">29</span>
+<span class="line-number">30</span>
+<span class="line-number">31</span>
+<span class="line-number">32</span>
+<span class="line-number">33</span>
+<span class="line-number">34</span>
+<span class="line-number">35</span>
+<span class="line-number">36</span>
+<span class="line-number">37</span>
+<span class="line-number">38</span>
+<span class="line-number">39</span>
+<span class="line-number">40</span>
+</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="c1"># fichier tasty.rb</span>
+</span><span class="line"><span class="k">module</span> <span class="nn">Tasty</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">AssertionError</span> <span class="o">&lt;</span> <span class="no">StandardError</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Unit</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">assert</span><span class="p">(</span><span class="n">boolean</span><span class="p">)</span>
+</span><span class="line">      <span class="k">raise</span> <span class="no">AssertionError</span> <span class="k">unless</span> <span class="n">boolean</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">  <span class="k">class</span> <span class="nc">Main</span>
+</span><span class="line">    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="no">Dir</span><span class="o">.</span><span class="n">pwd</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+</span><span class="line">      <span class="vi">@classes</span> <span class="o">=</span> <span class="no">Object</span><span class="o">.</span><span class="n">constants</span><span class="o">.</span><span class="n">select</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="nb">name</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">start_with?</span><span class="p">(</span><span class="s1">&#39;Test&#39;</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">      <span class="vi">@classes</span><span class="o">.</span><span class="n">map!</span> <span class="p">{</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span> <span class="no">Object</span><span class="o">.</span><span class="n">const_get</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nf">run</span>
+</span><span class="line">      <span class="vi">@classes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">under_test</span><span class="o">|</span>
+</span><span class="line">        <span class="n">instance</span> <span class="o">=</span> <span class="n">under_test</span><span class="o">.</span><span class="n">new</span>
+</span><span class="line">        <span class="n">under_test</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">m</span><span class="o">|</span> <span class="n">run_test</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="p">}</span>
+</span><span class="line">      <span class="k">end</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">
+</span><span class="line">    <span class="k">def</span> <span class="nf">run_test</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="nb">method</span><span class="p">)</span>
+</span><span class="line">      <span class="n">instance</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="nb">method</span><span class="p">)</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="s2">&quot;ok - </span><span class="si">#{</span><span class="nb">method</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">ex</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="s2">&quot;not ok - </span><span class="si">#{</span><span class="nb">method</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="n">ex</span><span class="o">.</span><span class="n">message</span>
+</span><span class="line">      <span class="nb">puts</span> <span class="n">ex</span><span class="o">.</span><span class="n">backtrace</span>
+</span><span class="line">    <span class="k">end</span>
+</span><span class="line">  <span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="k">end</span>
+</span><span class="line">
+</span><span class="line"><span class="n">main</span> <span class="o">=</span> <span class="ss">Tasty</span><span class="p">:</span><span class="ss">:Main</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span><span class="p">)</span>
+</span><span class="line"><span class="n">main</span><span class="o">.</span><span class="n">run</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Bons tests ! À plus tard.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="/blog/2015/09/16/commencer-le-developpement-web-en-ruby/">Commencer le développement web en Ruby</a></li><li><a href="/blog/2015/07/29/coco-version-0-dot-13-dot-0/">Coco version 0.13.0</a></li><li><a href="/blog/2015/06/30/comportement-inattendu-de-rspec/">Comportement inattendu de Rspec</a></li></ul></section>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-11-02T09:06:00+01:00" pubdate data-updated="true">2 novembre 2016</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/framework/'>framework</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>, <a class='category' href='/blog/categories/test/'>test</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://lkdjiin.github.io/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby/" data-via="lkdjiin" data-counturl="http://lkdjiin.github.io/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby/" >Tweet</a>
+  
+  
+  <div class="g-plusone" data-size="medium"></div>
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/08/04/comment-mettre-a-jour-un-package-r/" title="Previous Post: Comment mettre à jour un package R">&laquo; Comment mettre à jour un package R</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Commentaires</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby/">Comment écrire un framework de test pour Ruby</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/08/04/comment-mettre-a-jour-un-package-r/">Comment mettre à jour un package R</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/08/02/12-points-pour-rater-la-conception-dun-mooc/">12 points pour rater la conception d'un MOOC</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/05/08/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-8/">Écrire un jeu en 2d avec Ruby et Gosu - partie 8</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Sur Twitter</h1>
+  <a class="twitter-timeline"  href="https://twitter.com/lkdjiin" data-widget-id="554992534532136960">Tweets de @lkdjiin</a>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+          
+</section>
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2016 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+  <script type="text/javascript">
+    (function() {
+      var script = document.createElement('script'); script.type = 'text/javascript'; script.async = true;
+      script.src = 'https://apis.google.com/js/plusone.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(script, s);
+    })();
+  </script>
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+
+
+</body>
+</html>
