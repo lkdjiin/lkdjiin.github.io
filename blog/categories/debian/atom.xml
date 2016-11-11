@@ -4,7 +4,7 @@
   <title><![CDATA[Catégorie : debian | Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/blog/categories/debian/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-11-02T09:47:03+01:00</updated>
+  <updated>2016-11-11T10:02:26+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,97 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Bug de la version graphique de Vim sur Debian Sid]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/11/11/bug-de-la-version-graphique-de-vim-sur-debian-sid/"/>
+    <updated>2016-11-11T09:46:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/11/11/bug-de-la-version-graphique-de-vim-sur-debian-sid</id>
+    <content type="html"><![CDATA[<p>Depuis une mise à jour récente de la bibliothèque gtk3 un
+bug affecte la version graphique de Vim (<code>gvim</code>) sur Debian Sid. Ce bug est
+important puisqu’il rend <code>gvim</code> tout simplement inutilisable. Lorsqu’on lance
+le programme on obtient le message suivant, qui se répète plusieurs fois :</p>
+
+<pre><code>$ gvim
+
+(gvim:6054): Gtk-CRITICAL **: gtk_widget_set_size_request: assertion 'width &gt;= -1' failed
+*** BUG ***
+In pixman_region32_init_rect: Invalid rectangle passed
+Set a breakpoint on '_pixman_log_error' to debug
+.
+.
+.
+</code></pre>
+
+<p>Des discussions sont en cours pour savoir si le bug est de la responsabilité
+de Vim ou de Gtk3, mais en attendant on fait quoi ?</p>
+
+<!-- more -->
+
+<p>On peut d’abord regarder où est placée la commande <code>gvim</code> :</p>
+
+<p><code>bash
+$ which gvim
+/usr/bin/gvim
+</code></p>
+
+<p>On peut maintenant regarder quel programme est en réalité appelé par cette
+commande (j’ai tronqué la sortie pour laisser seulement ce qui est
+intéressant).  On voit que <code>gvim</code> est un lien symbolique qui pointe sur
+<code>/etc/alternatives/gvim</code> :</p>
+
+<p><code>bash
+$ ls -l /usr/bin/gvim
+[...] /usr/bin/gvim -&gt; /etc/alternatives/gvim*
+</code></p>
+
+<p>Allons voir sur quel programme est <em>branché</em> l’alternative :</p>
+
+<p><code>bash
+$ ls -l /etc/alternatives/gvim
+[...] /etc/alternatives/gvim -&gt; /usr/bin/vim.gtk3*
+</code></p>
+
+<p>Ça fait sens. Regardons quelles <em>versions</em> de vim sont disponibles en tapant
+<code>vim</code> + tab :</p>
+
+<p><code>bash
+$ vim
+vim        vim.basic  vimdiff    vim.gtk    vim.gtk3   vim.tiny   vimtutor 
+</code></p>
+
+<p>L’ancienne version (<code>vim.gtk</code>) m’intéresse. Si vous ne l’avez pas/plus, vous
+pouvez l’installer avec <code>apt-get install vim-gtk</code>.</p>
+
+<h2 id="solution-n1">Solution n°1</h2>
+
+<p>Un tour dans l’aide de <code>vim.gtk</code> montrera qu’on peut le lancer avec l’option <code>-g</code>
+pour avoir l’interface graphique. En attendant que le bug soit réparé on peut
+donc utiliser <code>vim.gtk -g</code> à la place de <code>gvim</code>.</p>
+
+<h2 id="solution-n2">Solution n°2</h2>
+
+<p>Le programme <code>update-alternatives</code> permet de gérer ce genre de problème
+facilement. Utilisez le pour choisir ce que lancera la commande <code>gvim</code> :</p>
+
+<pre><code>$ sudo update-alternatives --config gvim
+[sudo] Mot de passe de xavier : 
+Il existe 2 choix pour l'alternative gvim (qui fournit /usr/bin/gvim).
+
+  Sélection   Chemin             Priorité  État
+------------------------------------------------------------
+* 0            /usr/bin/vim.gtk3   50        mode automatique
+  1            /usr/bin/vim.gtk    50        mode manuel
+  2            /usr/bin/vim.gtk3   50        mode manuel
+
+Appuyez sur &lt;Entrée&gt; pour conserver la valeur par défaut[*] ou choisissez le numéro sélectionné :1
+</code></pre>
+
+<p>Vous pourriez préférer la version graphique <code>galternatives</code>.</p>
+
+<p></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[De Linux (Debian) vers OS X - Supprimer un fichier dans le finder]]></title>
@@ -157,47 +248,6 @@ fonctionnera pas.</p>
 
 <p><a href="/blog/2014/02/13/de-linux-debian-vers-os-x-lauto-completion-dans-irb/">Astuce suivante</a>  <br />
 <a href="/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau/">Astuce précédente</a></p>
-
-<script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
-
-<p>À demain.</p>
-
-<p></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[De Linux (Debian) vers OS X - Raccourcis clavier pour changer de bureau]]></title>
-    <link href="http://lkdjiin.github.io/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau/"/>
-    <updated>2014-02-05T20:28:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2014/02/05/de-linux-debian-vers-os-x-raccourcis-clavier-pour-changer-de-bureau</id>
-    <content type="html"><![CDATA[<p><div class='level-tag level-tag-1'>Niveau : <span>facile</span></div></p>
-
-<p>Aujourd’hui : Comment changer facilement et rapidement de bureau
-virtuel.</p>
-
-<!-- more -->
-
-<h2 id="les-raccourcis-de-mission-control">Les raccourcis de Mission Control</h2>
-
-<p>Pour passer au bureau virtuel de gauche, c’est <code>Control flèche gauche</code>.  <br />
-Pour passer au bureau virtuel de droite, c’est <code>Control flèche droite</code>.</p>
-
-<p>À cause du temps de transition de l’animation entre les changements
-de bureau, il est intéressant de pouvoir accéder directement au
-bureau souhaité. <code>Control 1</code> vous ammène sur le bureau numéro 1,
-<code>Control 2</code> sur le bureau numéro 2, etc. Si ce genre de raccourci
-ne fonctionne pas pour vous, allez voir ici:</p>
-
-<pre><code>Menu pomme &gt; Préférences système &gt; Clavier &gt; Raccourcis
-</code></pre>
-
-<p>Notez au passage qu’il est impossible de désactiver l’animation entre
-les changements de bureau (<em>!!??</em>), ce qui s’avère très pénible
-certains jours…</p>
-
-<p><a href="/blog/2014/02/06/de-linux-debian-vers-os-x-dossier-parent-dans-lexplorateur/">Astuce suivante</a>  <br />
-<a href="/blog/2014/02/04/de-linux-debian-vers-os-x-les-bureaux-virtuels/">Astuce précédente</a></p>
 
 <script id="fb33k8u">(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=lkdjiin&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=62;f.width=55;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('fb33k8u');</script>
 

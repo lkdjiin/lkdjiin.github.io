@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2016-11-02T09:47:03+01:00</updated>
+  <updated>2016-11-11T10:02:26+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,101 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Bug de la version graphique de Vim sur Debian Sid]]></title>
+    <link href="http://lkdjiin.github.io/blog/2016/11/11/bug-de-la-version-graphique-de-vim-sur-debian-sid/"/>
+    <updated>2016-11-11T09:46:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2016/11/11/bug-de-la-version-graphique-de-vim-sur-debian-sid</id>
+    <content type="html"><![CDATA[<p>Depuis une mise à jour récente de la bibliothèque gtk3 un
+bug affecte la version graphique de Vim (<code>gvim</code>) sur Debian Sid. Ce bug est
+important puisqu’il rend <code>gvim</code> tout simplement inutilisable. Lorsqu’on lance
+le programme on obtient le message suivant, qui se répète plusieurs fois :</p>
+
+<pre><code>$ gvim
+
+(gvim:6054): Gtk-CRITICAL **: gtk_widget_set_size_request: assertion 'width &gt;= -1' failed
+*** BUG ***
+In pixman_region32_init_rect: Invalid rectangle passed
+Set a breakpoint on '_pixman_log_error' to debug
+.
+.
+.
+</code></pre>
+
+<p>Des discussions sont en cours pour savoir si le bug est de la responsabilité
+de Vim ou de Gtk3, mais en attendant on fait quoi ?</p>
+
+<!-- more -->
+
+<p>On peut d’abord regarder où est placée la commande <code>gvim</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>which gvim
+</span><span class="line">/usr/bin/gvim
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>On peut maintenant regarder quel programme est en réalité appelé par cette
+commande (j’ai tronqué la sortie pour laisser seulement ce qui est
+intéressant).  On voit que <code>gvim</code> est un lien symbolique qui pointe sur
+<code>/etc/alternatives/gvim</code> :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>ls -l /usr/bin/gvim
+</span><span class="line"><span class="o">[</span>...<span class="o">]</span> /usr/bin/gvim -&gt; /etc/alternatives/gvim*
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Allons voir sur quel programme est <em>branché</em> l’alternative :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>ls -l /etc/alternatives/gvim
+</span><span class="line"><span class="o">[</span>...<span class="o">]</span> /etc/alternatives/gvim -&gt; /usr/bin/vim.gtk3*
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>Ça fait sens. Regardons quelles <em>versions</em> de vim sont disponibles en tapant
+<code>vim</code> + tab :</p>
+
+<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
+<span class="line-number">2</span>
+</pre></td><td class="code"><pre><code class="bash"><span class="line"><span class="nv">$ </span>vim
+</span><span class="line">vim        vim.basic  vimdiff    vim.gtk    vim.gtk3   vim.tiny   vimtutor
+</span></code></pre></td></tr></table></div></figure></notextile></div>
+
+<p>L’ancienne version (<code>vim.gtk</code>) m’intéresse. Si vous ne l’avez pas/plus, vous
+pouvez l’installer avec <code>apt-get install vim-gtk</code>.</p>
+
+<h2 id="solution-n1">Solution n°1</h2>
+
+<p>Un tour dans l’aide de <code>vim.gtk</code> montrera qu’on peut le lancer avec l’option <code>-g</code>
+pour avoir l’interface graphique. En attendant que le bug soit réparé on peut
+donc utiliser <code>vim.gtk -g</code> à la place de <code>gvim</code>.</p>
+
+<h2 id="solution-n2">Solution n°2</h2>
+
+<p>Le programme <code>update-alternatives</code> permet de gérer ce genre de problème
+facilement. Utilisez le pour choisir ce que lancera la commande <code>gvim</code> :</p>
+
+<pre><code>$ sudo update-alternatives --config gvim
+[sudo] Mot de passe de xavier : 
+Il existe 2 choix pour l'alternative gvim (qui fournit /usr/bin/gvim).
+
+  Sélection   Chemin             Priorité  État
+------------------------------------------------------------
+* 0            /usr/bin/vim.gtk3   50        mode automatique
+  1            /usr/bin/vim.gtk    50        mode manuel
+  2            /usr/bin/vim.gtk3   50        mode manuel
+
+Appuyez sur &lt;Entrée&gt; pour conserver la valeur par défaut[*] ou choisissez le numéro sélectionné :1
+</code></pre>
+
+<p>Vous pourriez préférer la version graphique <code>galternatives</code>.</p>
+
+<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2015/04/02/vim-pourquoi-les-touches-hjkl/">Vim : Pourquoi les touches HJKL ?</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/28/un-nouveau-depot-pour-les-plugins-vim/">Un nouveau dépot pour les plugins Vim</a></li><li><a href="http://lkdjiin.github.io/blog/2014/06/08/trois-bibliotheques-de-fonctions-pour-ecrire-vos-plugins-vim/">Trois bibliothèques de fonctions pour écrire vos plugins Vim</a></li></ul></section>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Comment écrire un framework de test pour Ruby]]></title>
@@ -5783,196 +5878,6 @@ mais si au fait, tu peux y faire quelque chose en refusant de voter…</p>
 
 <p>Et allez donc, et pourquoi pas le vote obligatoire !</p>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Fabriquer un sablier à thé électronique 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/"/>
-    <updated>2015-12-12T16:51:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2</id>
-    <content type="html"><![CDATA[<p>Après avoir appris à programmer un ATtiny45 avec l’IDE Arduino, il fallait
-maintenant s’en passer. Pour cela je suis passé du langage Arduino au
-langage C, avec le cross compilateur <code>avr-gcc</code> et l’outil <code>avrdude</code>.</p>
-
-<p>Je vais profiter de vous montrer cela pour comparer la taille d’un même
-programme, écrit une fois en langage Arduino et l’autre en C.</p>
-
-<!-- more -->
-
-<p><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Lire la partie 1</a></p>
-
-<p><a href="http://lkdjiin.github.io/blog/2015/12/12/fabriquer-un-sablier-a-the-electronique-2/">Lire la partie 2</a></p>
-
-<p>Le programme, c’est deux boutons/deux LEDs. Le bouton A s’occupe de la LED A.
-Le bouton B s’occupe de la LED B. Quand un bouton est pressé puis relâché, sa
-LED respective change d’état. Si elle était éteinte elle s’allume, et vice-versa.
-C’était un peu mon <em>hello world!</em></p>
-
-<p>Voilà le programme en langage Arduino:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>sketch/sketch.ino</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
-</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
-</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
-</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
-</span><span class="line">  <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
-</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">INPUT_PULLUP</span><span class="p">);</span>
-</span><span class="line">  <span class="n">pinMode</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">INPUT_PULLUP</span><span class="p">);</span>
-</span><span class="line"><span class="p">}</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
-</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">LOW</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="n">HIGH</span><span class="p">)</span> <span class="p">;</span>
-</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">bitRead</span><span class="p">(</span><span class="n">PORTB</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="o">^</span> <span class="n">HIGH</span><span class="p">);</span>
-</span><span class="line">  <span class="p">}</span>
-</span><span class="line">  <span class="k">if</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">LOW</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">    <span class="k">while</span><span class="p">(</span><span class="n">digitalRead</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">HIGH</span><span class="p">)</span> <span class="p">;</span>
-</span><span class="line">    <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">bitRead</span><span class="p">(</span><span class="n">PORTB</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">^</span> <span class="n">HIGH</span><span class="p">);</span>
-</span><span class="line">  <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Le dossier contient juste deux sous dossiers:</p>
-
-<pre><code>$ dirtree
-.
-├── build
-└── sketch
-</code></pre>
-
-<p>Je compile avec l’IDE (en ligne de commande mais avec l’IDE quand même):</p>
-
-<pre><code>$ ~/local/bin/arduino-1.6.5/arduino --verify sketch/sketch.ino
---pref build.path=build
-Picked up JAVA_TOOL_OPTIONS: 
-Loading configuration...
-Initializing packages...
-Preparing boards...
-Verifying...
-
-Le croquis utilise 972 octets (23%) de l'espace de stockage de programmes.
-Le maximum est de 4 096 octets.
-Les variables globales utilisent 9 octets de mémoire dynamique.
-</code></pre>
-
-<p>La taille du programme a déjà était annoncée, mais on peut la vérifier avec
-<code>avr-size</code>, 972 octets:</p>
-
-<pre><code>$ avr-size -d build/sketch.cpp.hex 
-   text	   data	    bss	    dec	    hex	filename
-      0	    972	      0	    972	    3cc	build/sketch.cpp.hex
-</code></pre>
-
-<p>Maintenant voici le même programme, cette fois directement en C. Donc sans
-toutes les aides et fioritures de l’Arduino:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="cp">#include &lt;avr/io.h&gt;</span>
-</span><span class="line"><span class="cp">#define F_CPU 1000000UL</span>
-</span><span class="line"><span class="cp">#include &lt;util/delay.h&gt;</span>
-</span><span class="line">
-</span><span class="line"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-</span><span class="line"><span class="p">{</span>
-</span><span class="line">  <span class="n">DDRB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">;</span>
-</span><span class="line">  <span class="n">PORTB</span> <span class="o">|=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">;</span>
-</span><span class="line">  <span class="n">DDRB</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class="line">  <span class="n">PORTB</span> <span class="o">|=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">);</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span><span class="p">)))</span> <span class="p">{</span>
-</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">      <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">0</span><span class="p">)))</span> <span class="p">;</span>
-</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">      <span class="n">PORTB</span> <span class="o">^=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)))</span> <span class="p">{</span>
-</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">      <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">PINB</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)))</span> <span class="p">;</span>
-</span><span class="line">      <span class="n">_delay_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
-</span><span class="line">      <span class="n">PORTB</span> <span class="o">^=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">4</span><span class="p">);</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">  <span class="p">}</span>
-</span><span class="line"><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>La chaîne de compilation est cette fois un peu plus longue:</p>
-
-<pre><code>$ avr-gcc -O -mmcu=attiny45 -c main.c
-$ avr-gcc -mmcu=attiny45 -o main.elf main.o
-$ avr-objcopy -O ihex main.elf main.hex
-</code></pre>
-
-<p>Même avec une option d’optimisation au minimum, la différence de taille est… sidérale:</p>
-
-<pre><code>$ avr-size -d main.hex 
-   text	   data	    bss	    dec	    hex	filename
-      0	    158	      0	    158	     9e	main.hex
-</code></pre>
-
-<p>Pour transférer le code vers le micro processeur il n’y a plus besoin de l’IDE
-Arduino. Je place l’ATtiny45 sur le <a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">shield programmateur</a> et j’utilise le
-programme avrdude :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.c</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="c"><span class="line"><span class="n">avrdude</span> <span class="o">-</span><span class="n">p</span> <span class="n">attiny45</span> <span class="o">-</span><span class="n">P</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">ttyUSB0</span> <span class="o">-</span><span class="n">c</span> <span class="n">arduino</span> <span class="o">-</span><span class="n">U</span> <span class="n">flash</span><span class="o">:</span><span class="n">w</span><span class="o">:</span><span class="n">main</span><span class="p">.</span><span class="n">hex</span> <span class="o">-</span><span class="n">b</span> <span class="mi">19200</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Rendez vous une prochaine fois pour le code du sablier électronique avec son
-Makefile et tout et tout.</p>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/02/02/fabriquer-un-sablier-a-the-electronique-3/">Fabriquer un sablier à thé électronique 3</a></li><li><a href="http://lkdjiin.github.io/blog/2015/10/29/fabriquer-un-sablier-a-the-electronique/">Fabriquer un sablier à thé électronique</a></li><li><a href="http://lkdjiin.github.io/blog/2015/08/20/connaitre-la-taille-dun-programme-pour-arduino/">Connaitre la taille d&#8217;un programme pour Arduino</a></li></ul></section>
 ]]></content>
   </entry>
   
