@@ -54,9 +54,10 @@ en plus puissant.
 ## Raccourcis clavier
 
 Pour l'instant je ne retrouve pas tous mes raccourcis (ou astuces).
-Par exemple avec Bash `Esc+.` affiche l'argument de la dernière commande. Ça me
-manque avec Fish. Mais comme un principe de Fish est «*on peut faire tous ce que
-peuvent faire les autres shells*», j'attends de voir.
+<del>Par exemple avec Bash `Esc+.` affiche l'argument de la dernière commande. Ça
+me manque avec Fish.</del> (Edit: à partir de la version 2.3 `Esc+.` fonctionne)
+Mais comme un principe de Fish est «*on peut faire tous ce que peuvent faire
+les autres shells*», j'attends de voir.
 
 ## Ruby
 
