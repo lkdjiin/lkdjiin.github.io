@@ -6,7 +6,9 @@ comments: true
 categories: 
 ---
 
-Je me suis retrouvé dans ce MOOC pour débutant en C par hasard. Je pensais au
+Je me suis retrouvé dans ce MOOC pour débutant en C par hasard
+([Programmer en C](https://www.fun-mooc.fr/courses/MinesTelecom/04020S02/session02/about)).
+ Je pensais au
 départ qu'il serait d'un niveau plus élévé. Malgré tout je suis resté car j'ai
 été surpris par les outils mis en place par l'équipe. On sent que
 ce MOOC a été très bien préparé, ça a bossé dur. Et c'est vraiment réussi.
