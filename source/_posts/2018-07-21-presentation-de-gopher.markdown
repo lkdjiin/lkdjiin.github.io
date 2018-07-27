@@ -15,6 +15,9 @@ je vais prendre le temps de voir comment Gopher fonctionne.
 
 <!-- more -->
 
+- Présentation de Gopher
+- [Gopher : Récupérer le menu principal](/blog/2018/07/27/gopher-recuperer-le-menu-principal/)
+
 Le protocole Gopher est très simple _"by design"_. D'abord un client contacte
 un serveur, qui ne répond rien. Puis le client envoie l'identifiant d'une
 ressource au serveur (un _selecteur_ dans le jargon Gopher), qui envoie en
