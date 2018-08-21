@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Catégorie : locale | Xavier Nayrac]]></title>
+  <link href="http://lkdjiin.github.io/blog/categories/locale/atom.xml" rel="self"/>
+  <link href="http://lkdjiin.github.io/"/>
+  <updated>2018-08-21T13:39:50+02:00</updated>
+  <id>http://lkdjiin.github.io/</id>
+  <author>
+    <name><![CDATA[Xavier Nayrac]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Comment créer votre propre localisation sous Linux]]></title>
+    <link href="http://lkdjiin.github.io/blog/2018/08/21/comment-creer-votre-propre-localisation-sous-linux/"/>
+    <updated>2018-08-21T13:20:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2018/08/21/comment-creer-votre-propre-localisation-sous-linux</id>
+    <content type="html"><![CDATA[<p>Un article récent 
+<a href="https://mayeu.me/blog/configurer-linux-pour-utiliser-une-representation-de-date-logique-iso-8601/">«Configurer Linux pour utiliser une représentation de date logique (ISO 8601)»</a> a retenu mon attention. L’auteur y parle de la configuration des
+variables locales sur Linux. Des variables telles que <code>LANG</code>, <code>LC_NUMERIC</code>, et plus particulièrement <code>LC_TIME</code>.
+Ça m’a fait penser qu’après 21 ans d’utilisation de Linux, je n’avais jamais
+pris le temps de regarder comment fonctionnent ces variables de configuration.
+Quand tu écris <code>LANG=fr_FR</code>, qu’est ce qu’il se passe vraiment ?</p>
+
+<!-- more -->
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Pour celles et ceux qui découvrent ces variables de configuration, voici une
+introduction rapide. Très rapide…</p>
+
+<p>Pour connaitre votre configuration actuelle, utilisez <code>locale</code> :</p>
+
+<pre><code>$ locale
+LANG=fr_FR.UTF-8
+LANGUAGE=
+LC_CTYPE="fr_FR.UTF-8"
+LC_NUMERIC="fr_FR.UTF-8"
+LC_TIME="fr_FR.UTF-8"
+[...]
+</code></pre>
+
+<p>Toutes les variables ne sont pas forcement renseignées, c’est normal.</p>
+
+<p>Pour connaitre les valeurs des <em>locales</em> qui sont à votre disposition,
+utilisez <code>locale -a</code> :</p>
+
+<pre><code>$ locale -a
+C
+C.UTF-8
+en_AG
+en_AG.utf8
+en_AU.utf8
+en_BW.utf8
+en_CA.utf8
+en_DK.utf8
+en_GB.utf8
+[...]
+fr_FR.utf8
+</code></pre>
+
+<p>Ce ne sont pas <strong>toutes les valeurs existantes</strong>, mais seulement celles que
+vous pouvez utiliser tout de suite sans rien compiler. Par exemple, la
+commande <code>date</code> utilise la variable <code>LC_TIME</code> pour savoir ce qu’elle doit afficher.
+Par défaut, c’est la valeur <code>fr_FR</code> qui est utilisée chez moi (voir la
+sortie de <code>locale</code>) :</p>
+
+<pre><code>$ date
+lundi 20 août 2018, 17:20:53 (UTC+0200)
+</code></pre>
+
+<p>Mais je peux utiliser une autre valeur, par exemple <code>en_DK</code>, ou encore
+<code>en_GB</code> :</p>
+
+<pre><code>$ LC_TIME=en_DK.utf8 date
+Mon Aug 20 17:19:16 CEST 2018
+$ LC_TIME=en_GB.utf8 date
+Mon 20 Aug 17:19:47 CEST 2018
+</code></pre>
+
+<p>Pour connaître les autres valeurs de locales auxquelles vous avez droit,
+consulter le fichier <code>/etc/locale.gen</code> :</p>
+
+<pre><code>$ cat /etc/locale.gen
+[...]
+# fr_CH.UTF-8 UTF-8
+# fr_FR ISO-8859-1
+fr_FR.UTF-8 UTF-8
+[...]
+</code></pre>
+
+<p>Les lignes qui débutent par un <code>#</code> sont les valeurs que vous pouvez compiler
+(en utilisant la commande <code>locale-gen</code>).</p>
+
+<h2 id="comment-a-marche-">Comment ça marche ?</h2>
+
+<p>Chaque localisation possède son propre fichier de configuration. Ces fichiers
+se trouvent dans <code>/usr/share/i18n/locales/</code>.</p>
+
+<pre><code>$ cat /usr/share/i18n/locales/fr_FR
+</code></pre>
+
+<p>Dans ces fichiers chaque variable de configuration est décrite dans sa propre section,
+comme <code>LC_TIME</code> à laquelle je m’intéresse ici :</p>
+
+<pre><code>LC_TIME
+[...]
+END LC_TIME
+</code></pre>
+
+<p>À l’intérieur des sections on trouve des chaînes de formatage en Unicode pour
+la libc. Voici la partie du fichier <code>/usr/share/i18n/locales/fr_FR</code> dont se
+servira la commande <code>date</code> :</p>
+
+<pre><code>date_fmt "&lt;U0025&gt;&lt;U0041&gt;&lt;U0020&gt;&lt;U0025&gt;&lt;U002D&gt;&lt;U0065&gt;&lt;U0020&gt;/
+&lt;U0025&gt;&lt;U0042&gt;&lt;U0020&gt;&lt;U0025&gt;&lt;U0059&gt;&lt;U002C&gt;&lt;U0020&gt;/
+&lt;U0025&gt;&lt;U0048&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U004D&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U0053&gt;&lt;U0020&gt;/
+&lt;U0028&gt;&lt;U0055&gt;&lt;U0054&gt;&lt;U0043&gt;&lt;U0025&gt;&lt;U007A&gt;&lt;U0029&gt;"
+</code></pre>
+
+<p>Si on traduit cette chaîne Unicode (voir par ex. <a href="https://unicode-table.com/en/">cette table</a>), on obtient ce qui suit :</p>
+
+<pre><code>%A %-e %B %Y, %H:%M:%S (UTC%z)
+</code></pre>
+
+<p>On retrouve bien le format de la sortie de <code>date</code> (<em>lundi 20 août 2018, 20:26:17 (UTC+0200)</em>).
+Si vous n’êtes pas familier de cette notation, jetez un œil sur la fonction <a href="http://www.faximum.com/manual.d/client.server.d/manpages.23.html">strftime</a>
+du langage C.</p>
+
+<h2 id="je-veux-ma-propre-locale">Je veux ma propre locale</h2>
+
+<p>Plutôt que <em>lundi 20 août 2018, 20:26:17 (UTC+0200)</em>, je veux que la date
+s’affiche sous cette forme : <strong>A:2018 M:08 J:20</strong>.
+Pourquoi ? Simplement parce que c’est possible !</p>
+
+<p>Je pars d’un fichier de configuration existant que je copie dans mon répertoire
+de travail :</p>
+
+<pre><code>$ cp /usr/share/i18n/locales/fr_FR ./fr_FR@test
+</code></pre>
+
+<p>Je l’ai appelé <code>fr_FR@test</code>. J’aurais aussi pu utiliser un des nombreux codes
+de régionalisation réservés pour les utilisateurs, comme <code>AA</code>, <code>OO</code>, <code>XX</code> ou
+<code>ZZ</code> (voir <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2">ISO 3166-1
+alpha-2</a>). Donc j’aurais pu
+nommer mon fichier <code>fr_ZZ</code>.</p>
+
+<p>Pour obtenir une date de la forme <em>A:2018 M:08 J:20</em>, il faut la chaîne de
+formatage suivante : <strong>A:%Y M:%m J:%d</strong>. Traduit (si on peut dire) en Unicode,
+cela donne :</p>
+
+<pre><code>"&lt;U0041&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U0059&gt;&lt;U0020&gt;/
+&lt;U004D&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U006D&gt;&lt;U0020&gt;/
+&lt;U004A&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U0064&gt;"
+</code></pre>
+
+<p>Une fois que j’ai mis ça dans mon fichier <code>fr_FR@test</code>, je l’envoie dans le dossier <code>/usr/share/i18n/locales/</code> :</p>
+
+<pre><code>$ sudo cp fr_FR@foobar /usr/share/i18n/locales/
+</code></pre>
+
+<p>Et je le compile pour qu’il soit utilisable par la libc :</p>
+
+<pre><code>$ sudo localedef -i fr_FR@foobar -c -f UTF-8 fr_FR@test
+</code></pre>
+
+<p>Je peux maintenant utiliser ma propre locale :</p>
+
+<pre><code>$ LANG=fr_FR.utf8@test date
+A:2018 M:08 J:20
+</code></pre>
+
+<p>Et voilà.</p>
+
+<h2 id="quelle-utilit-">Quelle utilité ?</h2>
+
+<p>Comprendre un peu mieux Linux…</p>
+
+<p>Si mon quartier fait sécession et devient un pays autonome, je suis prêt à
+créer une nouvelle traduction…</p>
+
+<p>Si vous avez une autre idée, laissez donc un commentaire…</p>
+]]></content>
+  </entry>
+  
+</feed>

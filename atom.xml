@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2018-07-27T10:52:23+02:00</updated>
+  <updated>2018-08-21T13:39:50+02:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,179 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Comment créer votre propre localisation sous Linux]]></title>
+    <link href="http://lkdjiin.github.io/blog/2018/08/21/comment-creer-votre-propre-localisation-sous-linux/"/>
+    <updated>2018-08-21T13:20:00+02:00</updated>
+    <id>http://lkdjiin.github.io/blog/2018/08/21/comment-creer-votre-propre-localisation-sous-linux</id>
+    <content type="html"><![CDATA[<p>Un article récent 
+<a href="https://mayeu.me/blog/configurer-linux-pour-utiliser-une-representation-de-date-logique-iso-8601/">«Configurer Linux pour utiliser une représentation de date logique (ISO 8601)»</a> a retenu mon attention. L’auteur y parle de la configuration des
+variables locales sur Linux. Des variables telles que <code>LANG</code>, <code>LC_NUMERIC</code>, et plus particulièrement <code>LC_TIME</code>.
+Ça m’a fait penser qu’après 21 ans d’utilisation de Linux, je n’avais jamais
+pris le temps de regarder comment fonctionnent ces variables de configuration.
+Quand tu écris <code>LANG=fr_FR</code>, qu’est ce qu’il se passe vraiment ?</p>
+
+<!-- more -->
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Pour celles et ceux qui découvrent ces variables de configuration, voici une
+introduction rapide. Très rapide…</p>
+
+<p>Pour connaitre votre configuration actuelle, utilisez <code>locale</code> :</p>
+
+<pre><code>$ locale
+LANG=fr_FR.UTF-8
+LANGUAGE=
+LC_CTYPE="fr_FR.UTF-8"
+LC_NUMERIC="fr_FR.UTF-8"
+LC_TIME="fr_FR.UTF-8"
+[...]
+</code></pre>
+
+<p>Toutes les variables ne sont pas forcement renseignées, c’est normal.</p>
+
+<p>Pour connaitre les valeurs des <em>locales</em> qui sont à votre disposition,
+utilisez <code>locale -a</code> :</p>
+
+<pre><code>$ locale -a
+C
+C.UTF-8
+en_AG
+en_AG.utf8
+en_AU.utf8
+en_BW.utf8
+en_CA.utf8
+en_DK.utf8
+en_GB.utf8
+[...]
+fr_FR.utf8
+</code></pre>
+
+<p>Ce ne sont pas <strong>toutes les valeurs existantes</strong>, mais seulement celles que
+vous pouvez utiliser tout de suite sans rien compiler. Par exemple, la
+commande <code>date</code> utilise la variable <code>LC_TIME</code> pour savoir ce qu’elle doit afficher.
+Par défaut, c’est la valeur <code>fr_FR</code> qui est utilisée chez moi (voir la
+sortie de <code>locale</code>) :</p>
+
+<pre><code>$ date
+lundi 20 août 2018, 17:20:53 (UTC+0200)
+</code></pre>
+
+<p>Mais je peux utiliser une autre valeur, par exemple <code>en_DK</code>, ou encore
+<code>en_GB</code> :</p>
+
+<pre><code>$ LC_TIME=en_DK.utf8 date
+Mon Aug 20 17:19:16 CEST 2018
+$ LC_TIME=en_GB.utf8 date
+Mon 20 Aug 17:19:47 CEST 2018
+</code></pre>
+
+<p>Pour connaître les autres valeurs de locales auxquelles vous avez droit,
+consulter le fichier <code>/etc/locale.gen</code> :</p>
+
+<pre><code>$ cat /etc/locale.gen
+[...]
+# fr_CH.UTF-8 UTF-8
+# fr_FR ISO-8859-1
+fr_FR.UTF-8 UTF-8
+[...]
+</code></pre>
+
+<p>Les lignes qui débutent par un <code>#</code> sont les valeurs que vous pouvez compiler
+(en utilisant la commande <code>locale-gen</code>).</p>
+
+<h2 id="comment-a-marche-">Comment ça marche ?</h2>
+
+<p>Chaque localisation possède son propre fichier de configuration. Ces fichiers
+se trouvent dans <code>/usr/share/i18n/locales/</code>.</p>
+
+<pre><code>$ cat /usr/share/i18n/locales/fr_FR
+</code></pre>
+
+<p>Dans ces fichiers chaque variable de configuration est décrite dans sa propre section,
+comme <code>LC_TIME</code> à laquelle je m’intéresse ici :</p>
+
+<pre><code>LC_TIME
+[...]
+END LC_TIME
+</code></pre>
+
+<p>À l’intérieur des sections on trouve des chaînes de formatage en Unicode pour
+la libc. Voici la partie du fichier <code>/usr/share/i18n/locales/fr_FR</code> dont se
+servira la commande <code>date</code> :</p>
+
+<pre><code>date_fmt "&lt;U0025&gt;&lt;U0041&gt;&lt;U0020&gt;&lt;U0025&gt;&lt;U002D&gt;&lt;U0065&gt;&lt;U0020&gt;/
+&lt;U0025&gt;&lt;U0042&gt;&lt;U0020&gt;&lt;U0025&gt;&lt;U0059&gt;&lt;U002C&gt;&lt;U0020&gt;/
+&lt;U0025&gt;&lt;U0048&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U004D&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U0053&gt;&lt;U0020&gt;/
+&lt;U0028&gt;&lt;U0055&gt;&lt;U0054&gt;&lt;U0043&gt;&lt;U0025&gt;&lt;U007A&gt;&lt;U0029&gt;"
+</code></pre>
+
+<p>Si on traduit cette chaîne Unicode (voir par ex. <a href="https://unicode-table.com/en/">cette table</a>), on obtient ce qui suit :</p>
+
+<pre><code>%A %-e %B %Y, %H:%M:%S (UTC%z)
+</code></pre>
+
+<p>On retrouve bien le format de la sortie de <code>date</code> (<em>lundi 20 août 2018, 20:26:17 (UTC+0200)</em>).
+Si vous n’êtes pas familier de cette notation, jetez un œil sur la fonction <a href="http://www.faximum.com/manual.d/client.server.d/manpages.23.html">strftime</a>
+du langage C.</p>
+
+<h2 id="je-veux-ma-propre-locale">Je veux ma propre locale</h2>
+
+<p>Plutôt que <em>lundi 20 août 2018, 20:26:17 (UTC+0200)</em>, je veux que la date
+s’affiche sous cette forme : <strong>A:2018 M:08 J:20</strong>.
+Pourquoi ? Simplement parce que c’est possible !</p>
+
+<p>Je pars d’un fichier de configuration existant que je copie dans mon répertoire
+de travail :</p>
+
+<pre><code>$ cp /usr/share/i18n/locales/fr_FR ./fr_FR@test
+</code></pre>
+
+<p>Je l’ai appelé <code>fr_FR@test</code>. J’aurais aussi pu utiliser un des nombreux codes
+de régionalisation réservés pour les utilisateurs, comme <code>AA</code>, <code>OO</code>, <code>XX</code> ou
+<code>ZZ</code> (voir <a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2">ISO 3166-1
+alpha-2</a>). Donc j’aurais pu
+nommer mon fichier <code>fr_ZZ</code>.</p>
+
+<p>Pour obtenir une date de la forme <em>A:2018 M:08 J:20</em>, il faut la chaîne de
+formatage suivante : <strong>A:%Y M:%m J:%d</strong>. Traduit (si on peut dire) en Unicode,
+cela donne :</p>
+
+<pre><code>"&lt;U0041&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U0059&gt;&lt;U0020&gt;/
+&lt;U004D&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U006D&gt;&lt;U0020&gt;/
+&lt;U004A&gt;&lt;U003A&gt;&lt;U0025&gt;&lt;U0064&gt;"
+</code></pre>
+
+<p>Une fois que j’ai mis ça dans mon fichier <code>fr_FR@test</code>, je l’envoie dans le dossier <code>/usr/share/i18n/locales/</code> :</p>
+
+<pre><code>$ sudo cp fr_FR@foobar /usr/share/i18n/locales/
+</code></pre>
+
+<p>Et je le compile pour qu’il soit utilisable par la libc :</p>
+
+<pre><code>$ sudo localedef -i fr_FR@foobar -c -f UTF-8 fr_FR@test
+</code></pre>
+
+<p>Je peux maintenant utiliser ma propre locale :</p>
+
+<pre><code>$ LANG=fr_FR.utf8@test date
+A:2018 M:08 J:20
+</code></pre>
+
+<p>Et voilà.</p>
+
+<h2 id="quelle-utilit-">Quelle utilité ?</h2>
+
+<p>Comprendre un peu mieux Linux…</p>
+
+<p>Si mon quartier fait sécession et devient un pays autonome, je suis prêt à
+créer une nouvelle traduction…</p>
+
+<p>Si vous avez une autre idée, laissez donc un commentaire…</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Gopher : Récupérer le menu principal]]></title>
@@ -4700,565 +4873,6 @@ qui suivent sont identiques, lequel est le plus simple à lire ?</p>
 
 <p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
 La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.3.0">version 0.3.0</a>.</p>
-
-<section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 2]]></title>
-    <link href="http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2/"/>
-    <updated>2016-02-11T09:40:00+01:00</updated>
-    <id>http://lkdjiin.github.io/blog/2016/02/11/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-2</id>
-    <content type="html"><![CDATA[<p>Aujourd’hui on voit comment déplacer et contrôler le joueur, ainsi que
-comment faire tomber une pluie de smileys.</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/gosu3.png" /></p>
-
-<!-- more -->
-
-<p>La totalité des articles:</p>
-
-<ol>
-  <li><a href="http://lkdjiin.github.io/blog/2016/02/10/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-1/">Installation de Gosu, affichage d’images statiques</a></li>
-  <li>Déplacer le joueur et pluie de smileys</li>
-  <li><a href="http://lkdjiin.github.io/blog/2016/02/12/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-3/">Beep, fonte et collecte des smileys</a></li>
-  <li><a href="http://lkdjiin.github.io/blog/2016/02/13/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-4/">On s’occupe des vies</a></li>
-  <li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Musique et game over</a></li>
-  <li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Affichage selon un angle</a></li>
-  <li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Plusieurs musiques et reset de la partie</a></li>
-</ol>
-
-<h2 id="dplacer-le-joueur">Déplacer le joueur</h2>
-
-<p>On ajoute la méthode <code>update</code> à la classe <code>Window</code>. À l’instar de <code>draw</code>
-cette méthode vient aussi de <code>Gosu::Window</code> et est appelée régulièrement.
-Dans <code>draw</code> on dessine, on affiche. Dans <code>update</code> on calcule, on met à jour
-les éléments du jeu.</p>
-
-<blockquote>
-  <p><code>update</code> sera appelée 60 fois par seconde quoiqu’il arrive, par contre
-<code>draw</code> pourra être appelée plus ou moins souvent suivant les besoins de
-l’OS. C’est pour cela qu’il est important de séparer le calcul de l’affichage.
-Cette division entre calcul et affichage est d’ailleurs typique d’un framework de jeu,
-ou même GUI, quelque soit le langage utilisé.</p>
-</blockquote>
-
-<p>Le nouveau code de <code>Window</code> est le suivant:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
-</span><span class="line">    <span class="k">super</span>
-</span><span class="line">    <span class="nb">self</span><span class="o">.</span><span class="n">caption</span> <span class="o">=</span> <span class="s2">&quot;Collect The Smile!&quot;</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@background_image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/background.png&quot;</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">go_left</span> <span class="k">if</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbLeft</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">go_right</span> <span class="k">if</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbRight</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">move</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
-</span><span class="line">    <span class="vi">@background_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Background</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">draw</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Dans <code>update</code> on utilise la méthode <code>button_down?</code> de Gosu pour tester si le
-joueur appuit sur la touche gauche et/ou la touche droite. L’appui simultané sur
-les deux touches <em>annulera</em> en quelque sorte le déplacement. Et dans tout les cas
-on déplace le joueur avec <code>@player.move</code>.</p>
-
-<p>Voyons maintenant la classe <code>Player</code>, qui a gagné plusieurs nouvelles méthodes
-par rapport au dernier article:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
-</span><span class="line">
-</span><span class="line">  <span class="n">Y</span> <span class="o">=</span> <span class="mi">390</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class="line">    <span class="vi">@x</span> <span class="o">=</span> <span class="no">WindowHeight</span> <span class="o">/</span> <span class="mi">2</span>
-</span><span class="line">    <span class="vi">@velocity</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">0</span>
-</span><span class="line">    <span class="vi">@image</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/player.png&quot;</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
-</span><span class="line">    <span class="vi">@image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="vi">@x</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Player</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">go_left</span>
-</span><span class="line">    <span class="vi">@velocity</span> <span class="o">-=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">5</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">go_right</span>
-</span><span class="line">    <span class="vi">@velocity</span> <span class="o">+=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">5</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">move</span>
-</span><span class="line">    <span class="vi">@x</span> <span class="o">+=</span> <span class="vi">@velocity</span>
-</span><span class="line">    <span class="vi">@x</span> <span class="sx">%= WindowWidth</span>
-</span><span class="line"><span class="sx">    @velocity *=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">96</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Le joueur se déplaçant toujours sur la même ligne, sa coordonnée y ne change
-pas, j’en ai donc fait une constante.</p>
-
-<p>L’idée générale pour le déplacement, c’est qu’il soit <em>smooth</em>, avec une
-accélération progressive et une glisse finale. On a donc un facteur
-d’accélération de 0.5 et un facteur de glisse de 0.96. Prenez le temps de jouer
-avec ces valeurs pour les comprendre, et peut-être pour en trouver d’autres qui vous
-conviennent mieux.</p>
-
-<p>Comme toujours, nous convertirons ces nombres magiques en constantes:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
-</span><span class="line">
-</span><span class="line">  <span class="n">Y</span> <span class="o">=</span> <span class="mi">390</span>
-</span><span class="line">  <span class="no">AccelerationFactor</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">5</span>
-</span><span class="line">  <span class="no">SkidingFactor</span> <span class="o">=</span> <span class="mi">0</span><span class="o">.</span><span class="mi">96</span>
-</span><span class="line">
-</span><span class="line">  <span class="c1"># ...</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">go_left</span>
-</span><span class="line">    <span class="vi">@velocity</span> <span class="o">-=</span> <span class="no">AccelerationFactor</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">go_right</span>
-</span><span class="line">    <span class="vi">@velocity</span> <span class="o">+=</span> <span class="no">AccelerationFactor</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">move</span>
-</span><span class="line">    <span class="vi">@x</span> <span class="o">+=</span> <span class="vi">@velocity</span>
-</span><span class="line">    <span class="vi">@x</span> <span class="sx">%= WindowWidth</span>
-</span><span class="line"><span class="sx">    @velocity *=</span> <span class="no">SkidingFactor</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<h2 id="une-pluie-de-smileys">Une pluie de smileys</h2>
-
-<p>Il est temps de faire pleuvoir des smileys !</p>
-
-<p>Ajoutez un fichier <code>smiley.rb</code>:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>main.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="nb">require</span> <span class="s1">&#39;gosu&#39;</span>
-</span><span class="line">
-</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;z_order&#39;</span>
-</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;player&#39;</span>
-</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;smiley&#39;</span>
-</span><span class="line"><span class="n">require_relative</span> <span class="s1">&#39;window&#39;</span>
-</span><span class="line">
-</span><span class="line"><span class="c1"># ...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Et remplissez le avec le code suivant:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>smiley.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Smiley</span>
-</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:y</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">type</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@image</span> <span class="o">=</span> <span class="k">if</span> <span class="n">type</span> <span class="o">==</span> <span class="ss">:smiley_up</span>
-</span><span class="line">               <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/smiley-yellow.png&quot;</span><span class="p">)</span>
-</span><span class="line">             <span class="k">elsif</span> <span class="n">type</span> <span class="o">==</span> <span class="ss">:smiley_down</span>
-</span><span class="line">               <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/images/smiley-green.png&quot;</span><span class="p">)</span>
-</span><span class="line">             <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@velocity</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:random</span><span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="o">.</span><span class="mi">3</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@x</span> <span class="o">=</span> <span class="nb">rand</span> <span class="o">*</span> <span class="p">(</span><span class="no">WindowWidth</span> <span class="o">-</span> <span class="vi">@image</span><span class="o">.</span><span class="n">width</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@y</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
-</span><span class="line">    <span class="vi">@y</span> <span class="o">+=</span> <span class="vi">@velocity</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
-</span><span class="line">    <span class="vi">@image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="vi">@x</span><span class="p">,</span> <span class="vi">@y</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Items</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Il n’y a rien de vraiment nouveau par rapport à ce qu’on a vu jusqu’ici.
-Je peux toutefois signaler la méthode <code>Gosu::random(0.8, 3.3)</code>, qui retourne
-un Float entre 0.8 inclus et 3.3 exclus. Et aussi le calcul de <code>@x</code>:</p>
-
-<pre><code>@x = rand * (WindowWidth - @image.width)
-</code></pre>
-
-<p>qui soustrait la largeur du smiley de la largeur de la fenêtre pour s’assurer
-qu’un smiley sera toujours dans les limites de la fenêtre (visible, donc).</p>
-
-<p>Pour intégrer les smileys au jeu, vous devez modifier les méthodes
-<code>initialize</code>, <code>update</code> et <code>draw</code> de la classe Window:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@items</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
-</span><span class="line">    <span class="k">unless</span> <span class="vi">@items</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="mi">15</span>
-</span><span class="line">      <span class="n">r</span> <span class="o">=</span> <span class="nb">rand</span>
-</span><span class="line">      <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">035</span>
-</span><span class="line">        <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_up</span><span class="p">))</span>
-</span><span class="line">      <span class="k">elsif</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">040</span>
-</span><span class="line">        <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_down</span><span class="p">))</span>
-</span><span class="line">      <span class="k">end</span>
-</span><span class="line">    <span class="k">end</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:update</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">reject!</span> <span class="p">{</span><span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="no">WindowHeight</span> <span class="p">}</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1"># Les 3 lignes suivantes sont décrites dans l&#39;article précédent.</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">go_left</span> <span class="k">if</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbLeft</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">go_right</span> <span class="k">if</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbRight</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">move</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span>
-</span><span class="line">    <span class="vi">@background_image</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:Background</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="c1"># Ça c&#39;est la nouvelle ligne:</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:draw</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">draw</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>La nouvelle méthode <code>update</code> mérite bien quelques explications !
-Tout d’abord je veux afficher un maximum de 15 smileys à l’écran:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">update</span>
-</span><span class="line">    <span class="k">if</span> <span class="vi">@items</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">15</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>S’il y en a moins de 15, il y a <em>à chaque update</em> 3.5% de chances (0.035)
-de créer un sourire à l’endroit, et 0.5% de chances (0.04 - 0.035) de créer un
-sourire à l’envers:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="n">r</span> <span class="o">=</span> <span class="nb">rand</span>
-</span><span class="line">  <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">035</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_up</span><span class="p">))</span>
-</span><span class="line">  <span class="k">elsif</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">040</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_down</span><span class="p">))</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Dans tous les cas on met à jour les smileys existants (c’est à dire qu’on change leur
-coordonnée y):</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="vi">@items</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:update</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Et on supprime les smileys qui sont sortit de la fenêtre de jeu (par le bas):</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="vi">@items</span><span class="o">.</span><span class="n">reject!</span> <span class="p">{</span><span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="no">WindowHeight</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Ce code est hideux et il faut faire quelque chose pour lui ;)
-On commence le refactoring de la classe Window en extrayant les deux méthodes
-<code>update_items</code> et <code>update_player</code>:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span>
-</span><span class="line">  <span class="c1"># ...</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
-</span><span class="line">    <span class="n">update_items</span>
-</span><span class="line">    <span class="n">update_player</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="kp">private</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update_items</span>
-</span><span class="line">    <span class="k">unless</span> <span class="vi">@items</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="mi">15</span>
-</span><span class="line">      <span class="n">r</span> <span class="o">=</span> <span class="nb">rand</span>
-</span><span class="line">      <span class="k">if</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">035</span>
-</span><span class="line">        <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_up</span><span class="p">))</span>
-</span><span class="line">      <span class="k">elsif</span> <span class="n">r</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">040</span>
-</span><span class="line">        <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_down</span><span class="p">))</span>
-</span><span class="line">      <span class="k">end</span>
-</span><span class="line">    <span class="k">end</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:update</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">reject!</span> <span class="p">{</span><span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="no">WindowHeight</span> <span class="p">}</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update_player</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">go_left</span> <span class="k">if</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbLeft</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">go_right</span> <span class="k">if</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:button_down?</span><span class="p">(</span><span class="ss">Gosu</span><span class="p">:</span><span class="ss">:KbRight</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">move</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>La nouvelle méthode <code>update_items</code> mérite aussi sa petite extraction:</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>window.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line">  <span class="k">def</span> <span class="nf">update_items</span>
-</span><span class="line">    <span class="n">populate_items</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">each</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:update</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@items</span><span class="o">.</span><span class="n">reject!</span> <span class="p">{</span><span class="o">|</span><span class="n">item</span><span class="o">|</span> <span class="n">item</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="no">WindowHeight</span> <span class="p">}</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">populate_items</span>
-</span><span class="line">    <span class="k">return</span> <span class="k">if</span> <span class="vi">@items</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="mi">15</span>
-</span><span class="line">
-</span><span class="line">    <span class="n">type</span> <span class="o">=</span> <span class="nb">rand</span>
-</span><span class="line">    <span class="k">if</span> <span class="n">type</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">035</span>
-</span><span class="line">      <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_up</span><span class="p">))</span>
-</span><span class="line">    <span class="k">elsif</span> <span class="n">type</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">.</span><span class="mo">040</span>
-</span><span class="line">      <span class="vi">@items</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="no">Smiley</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:smiley_down</span><span class="p">))</span>
-</span><span class="line">    <span class="k">end</span>
-</span><span class="line">  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Maintenant <code>populate_items</code> est toujours moche, et on sent que cette méthode
-risque d’enfler dans l’avenir. Mais je pense que c’est le moment d’arrêter le refactoring
-pour éviter de tomber dans l’<a href="https://en.wikipedia.org/wiki/Overengineering">overengineering</a>
-et aussi parce que
-<a href="http://martinfowler.com/bliki/Yagni.html">YAGNI</a> !.</p>
-
-<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
-
-<pre><code>$ tree
-.
-├── assets
-│   └── images
-│       ├── background.png
-│       ├── player.png
-│       ├── smiley-green.png
-│       └── smiley-yellow.png
-├── main.rb
-├── player.rb
-├── smiley.rb
-├── window.rb
-└── z_order.rb
-</code></pre>
-
-<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
-La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.2.0">version 0.2.0</a>.</p>
 
 <section><h1>Articles connexes</h1><ul><li><a href="http://lkdjiin.github.io/blog/2016/05/01/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-7/">Écrire un jeu en 2d avec Ruby et Gosu - partie 7</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/25/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-6/">Écrire un jeu en 2d avec Ruby et Gosu - partie 6</a></li><li><a href="http://lkdjiin.github.io/blog/2016/02/15/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-5/">Écrire un jeu en 2d avec Ruby et Gosu - partie 5</a></li></ul></section>
 ]]></content>
