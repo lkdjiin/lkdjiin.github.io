@@ -1,0 +1,386 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Fonctionnement d'un oscillateur à base de CD40106 - Xavier Nayrac</title>
+  <meta name="author" content="Xavier Nayrac">
+
+  
+  <meta name="description" content="Dernièrement j’ai écrit un article qui montre quelques oscillateurs simples,
+mais sans fournir d’explications sur le fonctionnement. Aujourd’hui je &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://lkdjiin.github.io/blog/2019/12/02/fonctionnement-dun-oscillateur-a-base-de-cd40106">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Xavier Nayrac" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body   >
+  <header role="banner"><a href="/">
+  <img src="http://www.gravatar.com/avatar/f6d0dff2dbb2fdc08fb1318116ea572c?s=140"/>
+</a>
+<h1><a href="/">Xavier Nayrac</a></h1>
+<h2>
+  Accro au TDD, rubyiste mais pas que, maker, heureux utilisateur de Vim.<br/>
+  Si vous vous sentez particulièrement généreux,
+  <a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+</h2>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS"><img src="/images/rss.png"></img>
+    RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="lkdjiin.github.io">
+    <input class="search" type="text" name="q" results="0" placeholder="Chercher"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Fonctionnement d'un oscillateur à base de CD40106</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2019-12-02T20:41:00+01:00" pubdate data-updated="true">2 décembre 2019</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Dernièrement j’ai écrit un article qui montre quelques oscillateurs simples,
+mais sans fournir d’explications sur le fonctionnement.  Aujourd’hui je vais
+tenter d’expliquer ce qu’il se passe, comme j’aurais aimé qu’on m’explique
+quand j’ai débuté l’électronique.</p>
+
+<p>Le CD40106 est un inverseur logique, il applique la fonction NOT. Si le signal
+en entrée est un 1 logique, le signal en sortie sera un 0 logique. Inversement,
+si le signal en entrée est un 0 logique, le signal en sortie sera un 1 logique.</p>
+
+<p>C’est donc du numérique, et ça semble simple.</p>
+
+<p>Mais qu’est ce qu’on entend par 0 et 1 logique ?
+Quand le circuit intégré CD40106 est alimenté par une pile 9
+Volt, le 0 logique en sortie correspond à un signal de 0 Volt et le 1 logique
+correspond, toujours en sortie, à un signal de 9 Volt (à peu près).  Par contre en entrée,
+c’est un peu plus compliqué, parce que l’électronique c’est jamais seulement
+numérique. Mais on y reviendra plus tard.</p>
+
+<p>Voici l’oscillateur dont je parle dans la suite de l’article :</p>
+
+<p><img class="center" src="/images/oscillo-cd40106.png" /></p>
+
+<!-- more -->
+
+<h2 id="le-circuit">Le circuit</h2>
+
+<p>Lorsqu’on branche la pile, le signal au point A est un 0 logique, il n’y a pas
+de tension en entrée. Rien. Zéro. Nada. Donc le circuit intégré produit un 1 logique en sortie, au point B.
+Ce niveau de sortie durera jusqu’à ce que l’entrée s’inverse.</p>
+
+<p><img class="center" src="/images/onde-carree-1.png" /></p>
+
+<p>Une bonne partie des électrons vont se bousculer vers la sortie OUT (un haut-parleur par exemple). Mais comme l’électricité aime
+emprunter tout les chemins possibles, quelques électrons vont retourner au point A, via la résistance R1.
+Arrivé au point A, ces électrons sont attirés par le ground comme des fourmis par le miel.
+Mais ils n’atteindront jamais le ground, car ils vont se retrouver piégé à l’intérieur du condensateur C1.
+Et pendant ce temps, la sortie du circuit intégré est toujours à 9 Volt.</p>
+
+<p>Arrive fatalement le moment où le condensateur C1 est plein et ne peut plus
+accueillir de nouveaux électrons. Mais ils arrivent toujours au point A par
+l’intermédiaire de la résistance. Ils vont alors emprunter l’entrée du circuit
+intégré. Et comme le CD40106 a maintenant un 1 logique en entrée il va produire
+un 0 logique en sortie.</p>
+
+<p><img class="center" src="/images/onde-carree-2.png" /></p>
+
+<p>Les électrons n’arrivent plus vers le point A via R1, puisque la sortie du
+circuit intégré est dorénavant à zéro. Par contre, le condensateur commence
+a libérer ses électrons, ce qui maintient l’entrée du CD40106 au niveau du
+1 logique.</p>
+
+<p>Et puis, quand le condensateur à épuisé toute sa réserve d’électrons, le point A
+passe de nouveau au 0 logique et le cycle peut recommencer. Ce qui produit une
+onde carrée.</p>
+
+<p><img class="center" src="/images/onde-carree-3.png" /></p>
+
+<p>Tout ça est très simplifié, et c’est un peu le monde des bisousnours numériques.
+Malgré tout, c’est un premier niveau de compréhension.</p>
+
+<h2 id="entre-analogique-et-hystrsis">Entrée analogique et hystérésis</h2>
+
+<p>Comme je l’ai laissé entendre dans l’introduction, la grande simplification de
+l’explication précédente est de prétendre que le signal en entrée (point A) est
+numérique. C’est à dire 0 Volt ou 9 Volt. À cause du condensateur (ou grâce à
+lui, c’est selon le point de vue) le signal au point A est une onde de type plus ou moins
+triangulaire.  Pendant une même période de temps, le condensateur en charge
+attire plus d’électrons quand il est vide que quand il est déjà un peu rempli.
+De même, il rejette plus d’électrons au début de sa décharge.</p>
+
+<p>Pour cette raison, l’inverseur logique fonctionne avec un seuil. Quand le signal est
+en dessous du seuil, l’entrée est à 0, et inversement. Mais pour pouvoir
+réaliser un oscillateur, un seul et unique seuil ne va pas être suffisant.
+Sitôt le seuil franchi, l’état va s’inverser. Ce qui fera aussitôt franchir le
+seuil dans le sens inverse, et de nouveau inverser l’état. Etc. Le signal en
+entrée resterait coincé sur le seuil, ni vraiment 0, ni vraiment 1.</p>
+
+<p>Le CD40106 fonctionne grâce au principe
+d’<a href="https://fr.wikipedia.org/wiki/Hyst%C3%A9r%C3%A9sis">hystérésis</a>, ou hystérèse.
+En pratique il y a deux seuils, et seulement l’un de ces seuils est actif à un
+instant donné. Le schéma suivant est extrait du <em>datasheet</em> et j’ai ajouté les
+point en rouge, qui représentent des instants dans le temps.</p>
+
+<p><img class="center" src="/images/hysterisis.png" /></p>
+
+<p>Au premier point rouge, la tension franchit le seuil <em>VT+</em>, qui est actif. Le circuit
+considère donc l’entrée comme un 1 et produit une sortie à 0. À partir de ce
+moment, le seuil <em>VT+</em> devient inactif, et c’est le seuil <em>VT-</em> qui prend le relai et devient actif.</p>
+
+<p>Au second point rouge, bien qu’on ai franchi plusieurs fois le seuil <em>VT+</em> dans
+un sens et dans l’autre rien ne change.</p>
+
+<p>Au troisième et dernier point, le signal franchit <em>VT-</em>, le seuil actif, et
+donc la sortie s’inverse.</p>
+
+<p>C’est ça l’hystérésis, un changement d’état suivant un évènement externe <strong>et</strong> l’état actuel.
+Et c’est bien utile pour faire un oscillateur avec un inverseur.</p>
+
+<p>C’est fini pour aujourd’hui, si vous avez repéré des erreurs dans cet article, n’hésitez pas à le signaler dans un commentaire. Merci et à bientôt.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posté par <span class="fn">Xavier Nayrac</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2019-12-02T20:41:00+01:00" pubdate data-updated="true">2 décembre 2019</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/modulaire/'>modulaire</a>, <a class='category' href='/blog/categories/musique/'>musique</a>, <a class='category' href='/blog/categories/synthese/'>synthèse</a>, <a class='category' href='/blog/categories/synthe/'>synthé</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2019/11/20/quelques-oscillateurs-tres-simples/" title="Previous Post: Quelques oscillateurs très simples">&laquo; Quelques oscillateurs très simples</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Commentaires</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Articles récents</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2019/12/02/fonctionnement-dun-oscillateur-a-base-de-cd40106/">Fonctionnement d'un oscillateur à base de CD40106</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/11/20/quelques-oscillateurs-tres-simples/">Quelques oscillateurs très simples</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/11/10/le-format-eurorack/">Le format Eurorack</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/11/03/100-jours-de-synthe-modulaire/">100 jours de synthé modulaire</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2019/01/23/comparaison-de-deux-experiences-utilisateur/">Comparaison de deux expériences utilisateur</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/08/30/heroku-ovh-les-naked-domains-et-les-dns/">Heroku, OVH, les naked domains, et les DNS</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/08/21/comment-creer-votre-propre-localisation-sous-linux/">Comment créer votre propre localisation sous Linux</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/07/27/gopher-recuperer-le-menu-principal/">Gopher : Récupérer le menu principal</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/07/21/presentation-de-gopher/">Présentation de Gopher</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2018/02/14/lister-un-dossier-tout-en-nettoyant-lecran/">Lister un dossier tout en nettoyant l'écran</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/02/28/fish-completion-puis-execution-en-une-seule-fois/">Fish : complétion puis exécution en une seule fois</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/02/26/clojure-tests-et-couleurs/">Clojure, tests et couleurs</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/01/25/oui-la-documentation-est-utile/">Oui la documentation est utile</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/01/20/retour-sur-le-mooc-programmer-en-c/">Retour sur le MOOC Programmer en C</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/12/20/retour-du-mooc-designer-dans-un-fablab/">Retour du MOOC Designer dans un fablab</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/12/13/changer-de-shell-de-bash-a-fish/">Changer de shell, de Bash à Fish</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/11/11/bug-de-la-version-graphique-de-vim-sur-debian-sid/">Bug de la version graphique de Vim sur Debian Sid</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/11/02/comment-ecrire-un-framework-de-test-pour-ruby/">Comment écrire un framework de test pour Ruby</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/08/04/comment-mettre-a-jour-un-package-r/">Comment mettre à jour un package R</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/08/02/12-points-pour-rater-la-conception-dun-mooc/">12 points pour rater la conception d'un MOOC</a>
+      </li>
+    
+  </ul>
+</section>
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2019 - Xavier Nayrac -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'confessionsdeveloppeur';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://lkdjiin.github.io/blog/2019/12/02/fonctionnement-dun-oscillateur-a-base-de-cd40106/';
+        var disqus_url = 'http://lkdjiin.github.io/blog/2019/12/02/fonctionnement-dun-oscillateur-a-base-de-cd40106/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+<script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+
+
+</body>
+</html>

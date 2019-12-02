@@ -4,7 +4,7 @@
   <title><![CDATA[Xavier Nayrac]]></title>
   <link href="http://lkdjiin.github.io/atom.xml" rel="self"/>
   <link href="http://lkdjiin.github.io/"/>
-  <updated>2019-11-20T17:38:33+01:00</updated>
+  <updated>2019-12-02T21:11:48+01:00</updated>
   <id>http://lkdjiin.github.io/</id>
   <author>
     <name><![CDATA[Xavier Nayrac]]></name>
@@ -12,6 +12,113 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Fonctionnement d'un oscillateur à base de CD40106]]></title>
+    <link href="http://lkdjiin.github.io/blog/2019/12/02/fonctionnement-dun-oscillateur-a-base-de-cd40106/"/>
+    <updated>2019-12-02T20:41:00+01:00</updated>
+    <id>http://lkdjiin.github.io/blog/2019/12/02/fonctionnement-dun-oscillateur-a-base-de-cd40106</id>
+    <content type="html"><![CDATA[<p>Dernièrement j’ai écrit un article qui montre quelques oscillateurs simples,
+mais sans fournir d’explications sur le fonctionnement.  Aujourd’hui je vais
+tenter d’expliquer ce qu’il se passe, comme j’aurais aimé qu’on m’explique
+quand j’ai débuté l’électronique.</p>
+
+<p>Le CD40106 est un inverseur logique, il applique la fonction NOT. Si le signal
+en entrée est un 1 logique, le signal en sortie sera un 0 logique. Inversement,
+si le signal en entrée est un 0 logique, le signal en sortie sera un 1 logique.</p>
+
+<p>C’est donc du numérique, et ça semble simple.</p>
+
+<p>Mais qu’est ce qu’on entend par 0 et 1 logique ?
+Quand le circuit intégré CD40106 est alimenté par une pile 9
+Volt, le 0 logique en sortie correspond à un signal de 0 Volt et le 1 logique
+correspond, toujours en sortie, à un signal de 9 Volt (à peu près).  Par contre en entrée,
+c’est un peu plus compliqué, parce que l’électronique c’est jamais seulement
+numérique. Mais on y reviendra plus tard.</p>
+
+<p>Voici l’oscillateur dont je parle dans la suite de l’article :</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/oscillo-cd40106.png" /></p>
+
+<!-- more -->
+
+<h2 id="le-circuit">Le circuit</h2>
+
+<p>Lorsqu’on branche la pile, le signal au point A est un 0 logique, il n’y a pas
+de tension en entrée. Rien. Zéro. Nada. Donc le circuit intégré produit un 1 logique en sortie, au point B.
+Ce niveau de sortie durera jusqu’à ce que l’entrée s’inverse.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/onde-carree-1.png" /></p>
+
+<p>Une bonne partie des électrons vont se bousculer vers la sortie OUT (un haut-parleur par exemple). Mais comme l’électricité aime
+emprunter tout les chemins possibles, quelques électrons vont retourner au point A, via la résistance R1.
+Arrivé au point A, ces électrons sont attirés par le ground comme des fourmis par le miel.
+Mais ils n’atteindront jamais le ground, car ils vont se retrouver piégé à l’intérieur du condensateur C1.
+Et pendant ce temps, la sortie du circuit intégré est toujours à 9 Volt.</p>
+
+<p>Arrive fatalement le moment où le condensateur C1 est plein et ne peut plus
+accueillir de nouveaux électrons. Mais ils arrivent toujours au point A par
+l’intermédiaire de la résistance. Ils vont alors emprunter l’entrée du circuit
+intégré. Et comme le CD40106 a maintenant un 1 logique en entrée il va produire
+un 0 logique en sortie.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/onde-carree-2.png" /></p>
+
+<p>Les électrons n’arrivent plus vers le point A via R1, puisque la sortie du
+circuit intégré est dorénavant à zéro. Par contre, le condensateur commence
+a libérer ses électrons, ce qui maintient l’entrée du CD40106 au niveau du
+1 logique.</p>
+
+<p>Et puis, quand le condensateur à épuisé toute sa réserve d’électrons, le point A
+passe de nouveau au 0 logique et le cycle peut recommencer. Ce qui produit une
+onde carrée.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/onde-carree-3.png" /></p>
+
+<p>Tout ça est très simplifié, et c’est un peu le monde des bisousnours numériques.
+Malgré tout, c’est un premier niveau de compréhension.</p>
+
+<h2 id="entre-analogique-et-hystrsis">Entrée analogique et hystérésis</h2>
+
+<p>Comme je l’ai laissé entendre dans l’introduction, la grande simplification de
+l’explication précédente est de prétendre que le signal en entrée (point A) est
+numérique. C’est à dire 0 Volt ou 9 Volt. À cause du condensateur (ou grâce à
+lui, c’est selon le point de vue) le signal au point A est une onde de type plus ou moins
+triangulaire.  Pendant une même période de temps, le condensateur en charge
+attire plus d’électrons quand il est vide que quand il est déjà un peu rempli.
+De même, il rejette plus d’électrons au début de sa décharge.</p>
+
+<p>Pour cette raison, l’inverseur logique fonctionne avec un seuil. Quand le signal est
+en dessous du seuil, l’entrée est à 0, et inversement. Mais pour pouvoir
+réaliser un oscillateur, un seul et unique seuil ne va pas être suffisant.
+Sitôt le seuil franchi, l’état va s’inverser. Ce qui fera aussitôt franchir le
+seuil dans le sens inverse, et de nouveau inverser l’état. Etc. Le signal en
+entrée resterait coincé sur le seuil, ni vraiment 0, ni vraiment 1.</p>
+
+<p>Le CD40106 fonctionne grâce au principe
+d’<a href="https://fr.wikipedia.org/wiki/Hyst%C3%A9r%C3%A9sis">hystérésis</a>, ou hystérèse.
+En pratique il y a deux seuils, et seulement l’un de ces seuils est actif à un
+instant donné. Le schéma suivant est extrait du <em>datasheet</em> et j’ai ajouté les
+point en rouge, qui représentent des instants dans le temps.</p>
+
+<p><img class="center" src="http://lkdjiin.github.io/images/hysterisis.png" /></p>
+
+<p>Au premier point rouge, la tension franchit le seuil <em>VT+</em>, qui est actif. Le circuit
+considère donc l’entrée comme un 1 et produit une sortie à 0. À partir de ce
+moment, le seuil <em>VT+</em> devient inactif, et c’est le seuil <em>VT-</em> qui prend le relai et devient actif.</p>
+
+<p>Au second point rouge, bien qu’on ai franchi plusieurs fois le seuil <em>VT+</em> dans
+un sens et dans l’autre rien ne change.</p>
+
+<p>Au troisième et dernier point, le signal franchit <em>VT-</em>, le seuil actif, et
+donc la sortie s’inverse.</p>
+
+<p>C’est ça l’hystérésis, un changement d’état suivant un évènement externe <strong>et</strong> l’état actuel.
+Et c’est bien utile pour faire un oscillateur avec un inverseur.</p>
+
+<p>C’est fini pour aujourd’hui, si vous avez repéré des erreurs dans cet article, n’hésitez pas à le signaler dans un commentaire. Merci et à bientôt.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Quelques oscillateurs très simples]]></title>
@@ -2819,699 +2926,6 @@ ce que leur qualité les rendent illisibles. Et pour parfaire le tout, assurez
 vous qu’on ne puisse pas les télécharger.</p>
   </li>
 </ol>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Écrire un jeu en 2d avec Ruby et Gosu - partie 8]]></title>
-    <link href="http://lkdjiin.github.io/blog/2016/05/08/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-8/"/>
-    <updated>2016-05-08T19:54:00+02:00</updated>
-    <id>http://lkdjiin.github.io/blog/2016/05/08/ecrire-un-jeu-en-2d-avec-ruby-et-gosu-partie-8</id>
-    <content type="html"><![CDATA[<p>Dans ce 8ème article de la série consacrée à la création d’un jeu en 2d avec
-Ruby et Gosu, nous allons mettre en place les niveaux.</p>
-
-<p><img class="center" src="http://lkdjiin.github.io/images/gosu9.png" /></p>
-
-<!-- more -->
-
-<h2 id="juste-la-mcanique">Juste la mécanique</h2>
-
-<p>Dans un premier temps, nous allons mettre en place un mécanisme qui permettra
-d’avoir facilement des niveaux, mais nous garderons le jeu tel qu’il est
-actuellement. J’ai décidé que les niveaux du jeu seraient configurés dans un
-fichier YAML.  Voici donc un fichier de niveaux minimum :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>levels.yaml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="yaml"><span class="line"><span class="p-Indicator">-</span>
-</span><span class="line">  <span class="l-Scalar-Plain">song</span><span class="p-Indicator">:</span> <span class="s">&quot;assets/songs/Around</span><span class="nv"> </span><span class="s">the</span><span class="nv"> </span><span class="s">Bend.ogg&quot;</span>
-</span><span class="line">  <span class="l-Scalar-Plain">goal</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">15</span>
-</span><span class="line">
-</span><span class="line"><span class="p-Indicator">-</span>
-</span><span class="line">  <span class="l-Scalar-Plain">song</span><span class="p-Indicator">:</span> <span class="s">&quot;assets/songs/Catch</span><span class="nv"> </span><span class="s">The</span><span class="nv"> </span><span class="s">Mystery.ogg&quot;</span>
-</span><span class="line">  <span class="l-Scalar-Plain">goal</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">25</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Chaque entrée dans le fichier YAML (donc chaque niveau dans le jeu) comporte
-une musique et un objectif (<em>goal</em>).  Cet objectif est le nombre de sourires à
-collecter pour terminer le niveau. On ajoutera bien sûr un tas d’autres choses
-plus tard, mais c’est tout à fait suffisant pour la mise en place des niveaux
-dans notre jeu.</p>
-
-<p>Le chargement de ces niveaux peut se faire dans une classe <code>Level</code> :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>level.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Level</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class="line">    <span class="vi">@levels</span> <span class="o">=</span> <span class="no">YAML</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;levels.yaml&#39;</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Le fichier de niveaux <code>levels.yaml</code> rend inutile le module <code>Song</code> développé
-dans le dernier article. On peut donc le supprimer :</p>
-
-<pre><code>rm song.rb
-</code></pre>
-
-<blockquote>
-  <p>On voit ici que le développement d’un jeu, comme toute application, n’est pas
-une simple ligne droite. 
-On ne se contente pas d’ajouter du code, on en supprime aussi.
-Une structure (ici notre module Song) peut être rendue obsolète après
-l’introduction d’une nouvelle structure, d’un nouveau design ou d’une
-nouvelle fonctionnalité. Il ne faut pas hésiter à se débarrasser d’un code qui
-n’est plus utile.</p>
-</blockquote>
-
-<p>La musique pour l’état <em>game over</em> ne s’insère pas dans le schéma du fichier de
-niveau. Nous pouvons créer une nouvelle méthode dans la classe SongPlayer et
-l’utiliser là où il faut dans la classe Window :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>song_player.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">SongPlayer</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">play_game_over</span>
-</span><span class="line">    <span class="n">play</span><span class="p">(</span><span class="s2">&quot;assets/songs/In early time.ogg&quot;</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">update_game_over</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play_game_over</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Pour que cela fonctionne, il faut mettre en place notre <code>Level</code> :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@level</span> <span class="o">=</span> <span class="no">Level</span><span class="o">.</span><span class="n">new</span>
-</span><span class="line">    <span class="vi">@song_player</span> <span class="o">=</span> <span class="no">SongPlayer</span><span class="o">.</span><span class="n">new</span>
-</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="vi">@level</span><span class="o">.</span><span class="n">song</span><span class="p">)</span> <span class="c1"># &lt;---- Cette méthode n&#39;existe pas encore !</span>
-</span><span class="line">    <span class="c1">#...</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">reset</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="vi">@level</span><span class="o">.</span><span class="n">song</span><span class="p">)</span> <span class="c1"># &lt;----- Idem !</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Vous notez que j’utilise une méthode <code>Level#song</code> qui n’est pas encore codée.
-Cette méthode devra retourner le nom de la musique du niveau actuel. Comme nous
-n’avons pas encore cette notion de niveau actuel, trichons provisoirement et
-retournons invariablement la musique du premier niveau :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Level</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">song</span>
-</span><span class="line">    <span class="vi">@levels</span><span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="s1">&#39;song&#39;</span><span class="o">]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Voilà, le jeu tourne exactement comme dans la version précédente, pourtant la
-mécanique des niveaux est en place.</p>
-
-<h2 id="affichage-des-sourires-collects">Affichage des sourires collectés</h2>
-
-<p>Un bon premier pas serait de savoir où on en est dans la réalisation de
-l’objectif du niveau. Autrement dit, on veut savoir combien de sourires on a
-collecté depuis le début du niveau.
-Comme première tentative, on peut simplement afficher ce chiffre sur la console à
-chaque update de Gosu. Et quelle classe sera la mieux placée pour connaitre
-le nombre de sourires collectés pendant le niveau actuel ? La classe <code>Level</code>
-bien entendu. Il nous faut deux nouvelles méthodes, <code>collected</code> qui retourne le
-nombre de sourires collectés jusqu’à présent et <code>collect</code>, qui incrémente le
-nombre de sourires collectés :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Level</span>
-</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:collected</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class="line">    <span class="vi">@levels</span> <span class="o">=</span> <span class="no">YAML</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;levels.yaml&#39;</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@collected</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="c1"># ...</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">collect</span>
-</span><span class="line">    <span class="vi">@collected</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>La classe Player a maintenant besoin de pouvoir parler à l’objet de type Level
-pour lui passer le message <code>collect</code> :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Player</span>
-</span><span class="line">  <span class="c1"># ...</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@level</span> <span class="o">=</span> <span class="n">level</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">collision</span><span class="p">(</span><span class="n">type</span><span class="p">)</span>
-</span><span class="line">    <span class="k">case</span> <span class="n">type</span>
-</span><span class="line">    <span class="k">when</span> <span class="ss">:smiley_up</span>
-</span><span class="line">      <span class="c1"># ...</span>
-</span><span class="line">      <span class="vi">@level</span><span class="o">.</span><span class="n">collect</span> <span class="c1"># &lt;------- Un sourire collecté !</span>
-</span><span class="line">    <span class="k">end</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Le code qui précède est quelque chose que je n’aime pas faire. <code>Player</code> a
-désormais connaissance d’un objet de type <code>Level</code> et peut faire ce qu’il veut
-avec. Même si aujourd’hui je <em>sais</em> qu’il ne faut rien faire d’autre que
-<code>@level.collect</code>, dans 6 mois ça sera une toute autre histoire. J’aurais oublié
-tout ça et quand je verrai cet objet <code>@level</code> je penserai sûrement que je peux
-faire ce que je veux avec (<em>c’est à dire modifier tout et n’importe quoi</em>). Et
-tout ce que ça pourra produire, c’est un maximum de confusion.</p>
-
-<p>Il y a plusieurs façons de gérer ça et on va en examiner quelques unes dans un
-petit moment. Mais terminons d’abord ce que nous étions en train de faire,
-c’est à dire l’affichage du nombre de sourires collectés :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@level</span> <span class="o">=</span> <span class="no">Level</span><span class="o">.</span><span class="n">new</span>
-</span><span class="line">    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@level</span><span class="p">)</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="nb">puts</span> <span class="vi">@level</span><span class="o">.</span><span class="n">collected</span> <span class="c1"># &lt;--- On log sur la console pour vérifier</span>
-</span><span class="line">  <span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Si vous lancer le jeu vous verrez le nombre d’objet collectés qui s’affiche à chaque
-update de Gosu.</p>
-
-<p>Maintenant parlons de quelques méthodes possibles pour éviter de se trainer un
-objet de type <code>Level</code> dans la classe <code>Player</code>.</p>
-
-<ol>
-  <li>On pourrait se contenter de mettre un commentaire, encore faudra-t-il le
-  voir, le lire et le maintenir.</li>
-  <li>On pourrait utiliser un <a href="https://en.wikipedia.org/wiki/Observer_pattern">observer</a>, mais je trouve ça un peu trop,
-vu que l’on n’a qu’un seul évènement à déclencher.</li>
-  <li>J’imagine qu’on pourrait aussi utiliser un <a href="https://en.wikipedia.org/wiki/Mediator_pattern">mediator</a> entre les classes
-<code>Player</code> et <code>Level</code>. Mais là encore je trouve ça trop avec seulement deux
-classes.</li>
-</ol>
-
-<p>Alors quoi ? Un <a href="https://en.wikipedia.org/wiki/Proxy_pattern">proxy</a> qui sera restreint à la seule méthode <code>collect</code> :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span>collector_proxy.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">CollectorProxy</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@level</span> <span class="o">=</span> <span class="n">level</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">collect</span>
-</span><span class="line">    <span class="vi">@level</span><span class="o">.</span><span class="n">collect</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@level</span> <span class="o">=</span> <span class="no">Level</span><span class="o">.</span><span class="n">new</span>
-</span><span class="line">    <span class="vi">@player</span> <span class="o">=</span> <span class="no">Player</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">CollectorProxy</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vi">@level</span><span class="p">))</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>De cette manière, un <code>Player</code> ne pourra rien faire d’autre qu’appeler la 
-méthode <code>collect</code> sur ce fameux <code>@level</code>.</p>
-
-<h2 id="visualisation-de-ltat-davancement-du-niveau">Visualisation de l’état d’avancement du niveau</h2>
-
-<p>On va afficher le numéro du niveau en haut à droite, et une petite barre
-d’avancement sous les pieds du joueur pour savoir où on en est dans la collecte
-des sourires.</p>
-
-<p>La majeure partie des modifications se situe dans la classe <code>UI</code>, n’hésitez pas
-à remplacer les nombres magiques restants par des constantes :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">UI</span>
-</span><span class="line">  <span class="no">Yellow</span> <span class="o">=</span> <span class="mh">0xff_ffff00</span>
-</span><span class="line">
-</span><span class="line">  <span class="c1"># ...</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">draw</span><span class="p">(</span><span class="n">game</span><span class="p">)</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="n">draw_level</span><span class="p">(</span><span class="n">game</span><span class="o">[</span><span class="ss">:level</span><span class="o">]</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">draw_level</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
-</span><span class="line">    <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:draw_rect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">477</span><span class="p">,</span> <span class="n">achieved_part</span><span class="p">(</span><span class="n">level</span><span class="p">),</span> <span class="mi">3</span><span class="p">,</span> <span class="no">Yellow</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:UI</span><span class="p">)</span>
-</span><span class="line">
-</span><span class="line">    <span class="vi">@font</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="s2">&quot;Level: </span><span class="si">#{</span><span class="n">level</span><span class="o">[</span><span class="ss">:number</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="mi">550</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="ss">ZOrder</span><span class="p">:</span><span class="ss">:UI</span><span class="p">,</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span>
-</span><span class="line">               <span class="no">Yellow</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">achieved_part</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
-</span><span class="line">    <span class="no">WindowWidth</span> <span class="o">/</span> <span class="n">level</span><span class="o">[</span><span class="ss">:goal</span><span class="o">]</span> <span class="o">*</span> <span class="n">level</span><span class="o">[</span><span class="ss">:collected</span><span class="o">]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Pour pouvoir utiliser le code précédent, il faut ajouter quelques informations
-au <em>game state</em> :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">game_state</span>
-</span><span class="line">    <span class="p">{</span>
-</span><span class="line">      <span class="ss">score</span><span class="p">:</span> <span class="vi">@player</span><span class="o">.</span><span class="n">score</span><span class="p">,</span>
-</span><span class="line">      <span class="ss">lives</span><span class="p">:</span> <span class="vi">@player</span><span class="o">.</span><span class="n">lives</span><span class="p">,</span>
-</span><span class="line">      <span class="n">game_over</span><span class="p">:</span> <span class="vi">@game_over</span><span class="p">,</span>
-</span><span class="line">      <span class="ss">level</span><span class="p">:</span> <span class="p">{</span>
-</span><span class="line">        <span class="ss">goal</span><span class="p">:</span> <span class="vi">@level</span><span class="o">.</span><span class="n">goal</span><span class="p">,</span>
-</span><span class="line">        <span class="ss">number</span><span class="p">:</span> <span class="vi">@level</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
-</span><span class="line">        <span class="ss">collected</span><span class="p">:</span> <span class="vi">@level</span><span class="o">.</span><span class="n">collected</span><span class="p">,</span>
-</span><span class="line">      <span class="p">},</span>
-</span><span class="line">    <span class="p">}</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Et pour tester tout de suite, on triche un peu avec les méthodes <code>Level#goal</code> et
-<code>Level#number</code> pour qu’elles retourne toujours une même chose qu’on contrôle
-bien :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Level</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">goal</span>
-</span><span class="line">    <span class="vi">@levels</span><span class="o">.</span><span class="n">first</span><span class="o">[</span><span class="s1">&#39;goal&#39;</span><span class="o">]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">number</span>
-</span><span class="line">    <span class="s2">&quot;1&quot;</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Vous pouvez tester le jeu maintenant pour voir l’affichage du niveau et de
-son état d’avancement.</p>
-
-<h2 id="des-niveaux-enfin-">Des niveaux, enfin !</h2>
-
-<p>On veut maintenant les faire fonctionner, ces niveaux ! Le gros du travail se
-passe dans la classe <code>Level</code>. Notamment avec les méthodes <code>song</code>, <code>goal</code> et
-<code>number</code> qui doivent désormais retourner des informations pertinentes sur le
-niveau actuel.</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-<span class="line-number">16</span>
-<span class="line-number">17</span>
-<span class="line-number">18</span>
-<span class="line-number">19</span>
-<span class="line-number">20</span>
-<span class="line-number">21</span>
-<span class="line-number">22</span>
-<span class="line-number">23</span>
-<span class="line-number">24</span>
-<span class="line-number">25</span>
-<span class="line-number">26</span>
-<span class="line-number">27</span>
-<span class="line-number">28</span>
-<span class="line-number">29</span>
-<span class="line-number">30</span>
-<span class="line-number">31</span>
-<span class="line-number">32</span>
-<span class="line-number">33</span>
-<span class="line-number">34</span>
-<span class="line-number">35</span>
-<span class="line-number">36</span>
-<span class="line-number">37</span>
-<span class="line-number">38</span>
-<span class="line-number">39</span>
-<span class="line-number">40</span>
-<span class="line-number">41</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Level</span>
-</span><span class="line">  <span class="kp">attr_reader</span> <span class="ss">:collected</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class="line">    <span class="vi">@levels</span> <span class="o">=</span> <span class="no">YAML</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s1">&#39;levels.yaml&#39;</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@collected</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">song</span>
-</span><span class="line">    <span class="n">current</span> <span class="s1">&#39;song&#39;</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">collect</span>
-</span><span class="line">    <span class="vi">@collected</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">goal</span>
-</span><span class="line">    <span class="n">current</span> <span class="s1">&#39;goal&#39;</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">number</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="o">+</span> <span class="mi">1</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">completed?</span>
-</span><span class="line">    <span class="vi">@collected</span> <span class="o">==</span> <span class="n">goal</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">next</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="sx">%= @levels.size</span>
-</span><span class="line"><span class="sx">    @collected =</span> <span class="mi">0</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="kp">private</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">current</span><span class="p">(</span><span class="n">property</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@levels</span><span class="o">[</span><span class="vi">@index</span><span class="o">][</span><span class="n">property</span><span class="o">]</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Dans la méthode <code>Level#next</code>, le modulo permet de boucler sur les niveaux. Pas
-très réaliste, mais ça permet de différer la gestion de la fin du jeu
-(il se passe quoi quand on a terminé tout les niveaux ?).</p>
-
-<p>Voici le code pour passer au niveau suivant :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-<span class="line-number">12</span>
-<span class="line-number">13</span>
-<span class="line-number">14</span>
-<span class="line-number">15</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">update</span>
-</span><span class="line">    <span class="n">reset</span> <span class="k">if</span> <span class="n">new_game?</span>
-</span><span class="line">    <span class="n">next_level</span> <span class="k">if</span> <span class="vi">@level</span><span class="o">.</span><span class="n">completed?</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="kp">private</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">next_level</span>
-</span><span class="line">    <span class="vi">@items</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class="line">    <span class="vi">@level</span><span class="o">.</span><span class="n">next</span>
-</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="vi">@level</span><span class="o">.</span><span class="n">song</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Il faut aussi s’assurer qu’une nouvelle partie débute bien sur le premier
-niveau :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Window</span> <span class="o">&lt;</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Window</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">reset</span>
-</span><span class="line">    <span class="vi">@items</span> <span class="o">=</span> <span class="o">[]</span>
-</span><span class="line">    <span class="vi">@player</span><span class="o">.</span><span class="n">reset</span>
-</span><span class="line">    <span class="vi">@level</span><span class="o">.</span><span class="n">reset</span> <span class="c1"># &lt;----------------- C&#39;est ici que ça se passe !</span>
-</span><span class="line">    <span class="vi">@song_player</span><span class="o">.</span><span class="n">play</span><span class="p">(</span><span class="vi">@level</span><span class="o">.</span><span class="n">song</span><span class="p">)</span>
-</span><span class="line">    <span class="vi">@game_over</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Level</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">reset</span>
-</span><span class="line">    <span class="vi">@collected</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class="line">    <span class="vi">@index</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Puis pour obtenir une transition moins abrupte entre les niveaux, on ajoute un
-petit son :</p>
-
-<div class="bogus-wrapper"><notextile><figure class="code"><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class="line-number">1</span>
-<span class="line-number">2</span>
-<span class="line-number">3</span>
-<span class="line-number">4</span>
-<span class="line-number">5</span>
-<span class="line-number">6</span>
-<span class="line-number">7</span>
-<span class="line-number">8</span>
-<span class="line-number">9</span>
-<span class="line-number">10</span>
-<span class="line-number">11</span>
-</pre></td><td class="code"><pre><code class="ruby"><span class="line"><span class="k">class</span> <span class="nc">Level</span>
-</span><span class="line">  <span class="k">def</span> <span class="nf">initialize</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@sound_next_level</span> <span class="o">=</span> <span class="ss">Gosu</span><span class="p">:</span><span class="ss">:Sample</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;assets/sound/next-level.wav&quot;</span><span class="p">)</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line">
-</span><span class="line">  <span class="k">def</span> <span class="nf">next</span>
-</span><span class="line">    <span class="c1"># ...</span>
-</span><span class="line">    <span class="vi">@sound_next_level</span><span class="o">.</span><span class="n">play</span>
-</span><span class="line">  <span class="k">end</span>
-</span><span class="line"><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure></notextile></div>
-
-<p>Et voilà, nous avons maintenant des niveaux exploitables.
-La prochaine fois nous étofferons ces niveaux, avec des bonus, des malus, etc.</p>
-
-<p>Pour finir, voici le contenu du jeu pour l’instant:</p>
-
-<pre><code>$ tree
-.
-├── assets
-│   ├── fonts
-│   │   └── VT323
-│   │       ├── OFL.txt
-│   │       └── VT323-Regular.ttf
-│   ├── images
-│   │   ├── background.png
-│   │   ├── heart.gif
-│   │   ├── player.png
-│   │   ├── smiley-green.png
-│   │   └── smiley-yellow.png
-│   ├── songs
-│   │   ├── Around the Bend.ogg
-│   │   ├── Catch The Mystery.ogg
-│   │   └── In early time.ogg
-│   └── sound
-│       ├── collect.wav
-│       ├── life-lost.wav
-│       └── next-level.wav
-├── button.rb
-├── collector_proxy.rb
-├── level.rb
-├── levels.yaml
-├── main.rb
-├── player.rb
-├── smiley.rb
-├── song_player.rb
-├── ui.rb
-├── window.rb
-└── z_order.rb
-
-6 directories, 24 files
-</code></pre>
-
-<p>Le code et les assets se trouvent <a href="https://github.com/lkdjiin/collect-the-smiles">sur Github</a>.
-La version précise pour cet article est la <a href="https://github.com/lkdjiin/collect-the-smiles/releases/tag/v0.8.0">version 0.8.0</a>.</p>
-
-<section><h1>Articles connexes</h1><ul /></section>
 ]]></content>
   </entry>
   
