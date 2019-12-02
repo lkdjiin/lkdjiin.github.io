@@ -104,4 +104,4 @@ donc la sortie s'inverse.
 C'est ça l'hystérésis, un changement d'état suivant un évènement externe **et** l'état actuel.
 Et c'est bien utile pour faire un oscillateur avec un inverseur.
 
-C'est fini pour aujourd'hui, si vous avez repéré des erreurs dans cet article, n'hésitez pas à le signaler dans un commentaire. Merci et à bientôt.
+C'est fini pour aujourd'hui. Si vous avez repéré des erreurs dans cet article, n'hésitez pas à le signaler dans un commentaire. Merci et à bientôt.
