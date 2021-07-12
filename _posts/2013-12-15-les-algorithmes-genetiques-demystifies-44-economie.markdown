@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 44: Économie"
 date: 2013-12-15 18:25
 legacy: true
-tags: [algorithme génétique, intermédiaire, ruby, problème du sac à dos, économie, investissement]
+tags: [algorithme génétique, ruby]
 ---
 
 

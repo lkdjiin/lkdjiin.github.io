@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby 11: La gem English"
 date: 2013-12-14 16:59
 legacy: true
-tags: [sed, awk, ruby, débutant, gem]
+tags: [sed, awk, ruby]
 ---
 
 

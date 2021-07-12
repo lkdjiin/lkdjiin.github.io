@@ -3,7 +3,7 @@ layout: post
 title: "Mon patch pour Ruby a été refusé"
 date: 2014-01-02 18:53
 legacy: true
-tags: [ruby, intermédiaire, patch, set]
+tags: [ruby]
 ---
 
 

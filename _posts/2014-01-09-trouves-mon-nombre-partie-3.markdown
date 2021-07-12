@@ -3,7 +3,7 @@ layout: post
 title: "Trouves mon nombre - partie 3"
 date: 2014-01-09 21:00
 legacy: true
-tags: [racket, jeu, débutant]
+tags: [racket, jeu]
 ---
 
 

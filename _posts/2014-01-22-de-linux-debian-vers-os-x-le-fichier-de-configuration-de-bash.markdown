@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X : Le fichier de configuration de Bash"
 date: 2014-01-22 20:56
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags:
 ---
 
 

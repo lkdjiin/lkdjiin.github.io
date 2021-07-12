@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby: Flip flop"
 date: 2013-12-21 18:44
 legacy: true
-tags: [sed, awk, ruby, débutant, flip flop]
+tags: [sed, awk, ruby]
 ---
 
 

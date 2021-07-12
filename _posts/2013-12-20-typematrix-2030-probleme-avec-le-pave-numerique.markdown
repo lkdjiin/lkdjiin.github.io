@@ -3,7 +3,7 @@ layout: post
 title: "Typematrix 2030: Problème avec le pavé numérique"
 date: 2013-12-20 16:06
 legacy: true
-tags: [astuce, typematrix, matériel]
+tags:
 ---
 
 

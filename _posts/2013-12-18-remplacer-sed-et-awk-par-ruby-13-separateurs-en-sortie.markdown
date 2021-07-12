@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby 13: Séparateurs en sortie"
 date: 2013-12-18 18:58
 legacy: true
-tags: [sed, awk, ruby, débutant]
+tags: [sed, awk, ruby]
 ---
 
 

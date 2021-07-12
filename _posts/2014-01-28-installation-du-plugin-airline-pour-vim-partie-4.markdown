@@ -3,7 +3,7 @@ layout: post
 title: "Installation du plugin Airline pour Vim - partie 4"
 date: 2014-01-28 20:42
 legacy: true
-tags: [vim, intermédiaire, plugin, airline, barre de statut]
+tags: [vim]
 ---
 
 

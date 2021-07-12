@@ -3,7 +3,7 @@ layout: post
 title: "Raccourcis clavier pour le terminal"
 date: 2014-01-17 21:06
 legacy: true
-tags: [terminal, linux, os x, raccourcis, débutant]
+tags:
 ---
 
 

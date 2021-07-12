@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 46: Économie, la boucle principale"
 date: 2013-12-19 14:26
 legacy: true
-tags: [algorithme génétique, intermédiaire, ruby, problème du sac à dos, économie, investissement]
+tags: [algorithme génétique, ruby]
 ---
 
 

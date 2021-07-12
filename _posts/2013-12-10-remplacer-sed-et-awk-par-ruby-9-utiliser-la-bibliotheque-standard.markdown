@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby: 9 Utiliser la bibliothèque standard"
 date: 2013-12-10 18:40
 legacy: true
-tags: [sed, awk, ruby, débutant]
+tags: [sed, awk, ruby]
 ---
 
 

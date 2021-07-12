@@ -3,7 +3,7 @@ layout: post
 title: "Premier jour de mon nouveau boulot"
 date: 2014-01-06 21:11
 legacy: true
-tags: [débutant, annonce, os x]
+tags:
 ---
 
 

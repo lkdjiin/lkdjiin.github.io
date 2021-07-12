@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X : Raccourcis claviers de Firefox"
 date: 2014-01-24 21:01
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags:
 ---
 
 

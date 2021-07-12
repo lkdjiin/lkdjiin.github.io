@@ -3,7 +3,7 @@ layout: post
 title: "Vim et les digraphes"
 date: 2014-01-12 11:27
 legacy: true
-tags: [vim, débutant, digraphe]
+tags: [vim]
 ---
 
 

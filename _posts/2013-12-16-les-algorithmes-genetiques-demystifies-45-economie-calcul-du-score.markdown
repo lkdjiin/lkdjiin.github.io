@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 45: Économie, calcul du score"
 date: 2013-12-16 18:15
 legacy: true
-tags: [algorithme génétique, intermédiaire, ruby, problème du sac à dos, économie, investissement]
+tags: [algorithme génétique, ruby]
 ---
 
 

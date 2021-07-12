@@ -3,7 +3,7 @@ layout: post
 title: "Deuxième jour sur OS X"
 date: 2014-01-07 20:52
 legacy: true
-tags: [débutant, os x]
+tags:
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - Afficher tous les fichiers dans l'explorateur"
 date: 2014-01-30 20:42
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags:
 ---
 
 

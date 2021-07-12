@@ -3,7 +3,7 @@ layout: post
 title: "Introduction à Lambda Calculus"
 date: 2013-12-27 14:53
 legacy: true
-tags: [débutant, λ calculus, tutoriel]
+tags: [λ calculus]
 ---
 
 

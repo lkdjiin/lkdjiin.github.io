@@ -3,7 +3,7 @@ layout: post
 title: "Compiler votre Vim sous Linux"
 date: 2014-01-19 12:32
 legacy: true
-tags: [intermédiaire, vim, linux, compilation]
+tags: [vim]
 ---
 
 

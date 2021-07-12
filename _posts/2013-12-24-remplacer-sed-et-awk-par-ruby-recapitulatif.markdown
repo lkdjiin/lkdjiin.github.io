@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby: Récapitulatif"
 date: 2013-12-24 15:16
 legacy: true
-tags: [sed, awk, ruby, débutant]
+tags: [sed, awk, ruby]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "L'auto-complétion programmable en Bash - partie 3"
 date: 2014-01-13 20:50
 legacy: true
-tags: [bash, intermédiaire, unix, auto complétion]
+tags: [bash]
 ---
 
 

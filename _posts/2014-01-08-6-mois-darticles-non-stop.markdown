@@ -3,7 +3,7 @@ layout: post
 title: "6 mois d'articles non-stop"
 date: 2014-01-08 20:55
 legacy: true
-tags: [annonce, bilan, défi]
+tags: [annonce]
 ---
 
 On y est, ceci est l'article des 6 mois. Je ne savais pas si j'allais

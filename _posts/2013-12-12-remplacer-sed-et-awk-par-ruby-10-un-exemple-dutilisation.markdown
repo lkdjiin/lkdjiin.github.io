@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby 10: Un exemple d'utilisation"
 date: 2013-12-12 21:05
 legacy: true
-tags: [sed, awk, ruby, débutant, vim]
+tags: [sed, awk, ruby, vim]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Ruby 2.1: la méthode Array#to_h"
 date: 2013-12-29 11:31
 legacy: true
-tags: [ruby, array, débutant, ruby 2.1]
+tags: [ruby]
 ---
 
 

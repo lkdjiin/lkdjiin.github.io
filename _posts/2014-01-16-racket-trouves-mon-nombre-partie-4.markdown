@@ -3,7 +3,7 @@ layout: post
 title: "Racket: Trouves mon nombre - partie 4"
 date: 2014-01-16 20:47
 legacy: true
-tags: [racket, jeu, débutant]
+tags: [racket, jeu]
 ---
 
 Suite à [l'article précédent](http://lkdjiin.github.io/blog/2014/01/09/trouves-mon-nombre-partie-3/),

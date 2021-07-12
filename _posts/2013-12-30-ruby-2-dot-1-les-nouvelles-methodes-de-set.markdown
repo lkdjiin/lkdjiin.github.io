@@ -3,7 +3,7 @@ layout: post
 title: "Ruby 2.1: Les nouvelles méthodes de Set"
 date: 2013-12-30 19:10
 legacy: true
-tags: [ruby, set, débutant, ruby 2.1]
+tags: [ruby]
 ---
 
 

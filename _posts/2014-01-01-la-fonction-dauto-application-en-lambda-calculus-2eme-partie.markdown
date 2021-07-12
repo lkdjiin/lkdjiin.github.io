@@ -3,7 +3,7 @@ layout: post
 title: "La fonction d'auto-application en Lambda Calculus 2ème partie"
 date: 2014-01-01 17:43
 legacy: true
-tags: [débutant, λ calculus]
+tags: [λ calculus]
 ---
 
 

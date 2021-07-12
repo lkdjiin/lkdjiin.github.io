@@ -3,7 +3,7 @@ layout: post
 title: "Racket: Afficher les tables de multiplication"
 date: 2014-01-03 17:41
 legacy: true
-tags: [racket, débutant]
+tags: [racket]
 ---
 
 

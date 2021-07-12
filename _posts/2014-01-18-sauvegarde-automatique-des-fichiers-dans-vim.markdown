@@ -3,7 +3,7 @@ layout: post
 title: "Sauvegarde automatique des fichiers dans Vim"
 date: 2014-01-18 09:45
 legacy: true
-tags: [vim, débutant]
+tags: [vim]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - Naviguer dans l'explorateur"
 date: 2014-01-31 20:48
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags:
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Remplacer Sed et Awk par Ruby 12: Numéro de ligne"
 date: 2013-12-17 21:52
 legacy: true
-tags: [sed, awk, ruby, débutant]
+tags: [sed, awk, ruby]
 ---
 
 Après avoir vu l'utilité de [la gem English](http://lkdjiin.github.io/blog/2013/12/14/remplacer-sed-et-awk-par-ruby-11-la-gem-english/), on voit aujourd'hui une utilisation

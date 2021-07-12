@@ -160,4 +160,4 @@ gachées (avec `delay(100);`). La prochaine fois on verra un moyen de se
 débarasser de cette attente inutile.
 
 
-
+{% include mathjax.html %}

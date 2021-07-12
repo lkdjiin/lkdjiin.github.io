@@ -3,7 +3,7 @@ layout: post
 title: "La fonction d'identité en lambda calculus"
 date: 2013-12-28 20:49
 legacy: true
-tags: [débutant, λ calculus]
+tags: [λ calculus]
 ---
 
 

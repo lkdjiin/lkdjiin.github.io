@@ -262,4 +262,4 @@ Et de rattraper plusieurs heures de sèche du collège en quelques minutes ;)
 
 À plus tard.
 
-
+{% include mathjax.html %}

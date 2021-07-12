@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) à OS X - Quitter Firefox"
 date: 2014-01-20 20:50
 legacy: true
-tags: [linux, debian, os x, débutant, firefox]
+tags:
 ---
 
 

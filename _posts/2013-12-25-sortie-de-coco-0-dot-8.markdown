@@ -3,7 +3,7 @@ layout: post
 title: "Sortie de coco 0.8"
 date: 2013-12-25 19:23
 legacy: true
-tags: [annonce, ruby, couverture de code, gem]
+tags: [ruby]
 ---
 
 La version 0.8 de la gem coco est sortie il y a quelques jours.

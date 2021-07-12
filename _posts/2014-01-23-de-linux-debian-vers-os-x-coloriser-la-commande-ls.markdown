@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X : Coloriser la commande ls"
 date: 2014-01-23 20:44
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags:
 ---
 
 

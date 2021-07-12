@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) à OS X : Renommer un fichier dans l'explorateur"
 date: 2014-01-21 21:06
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags:
 ---
 
 
