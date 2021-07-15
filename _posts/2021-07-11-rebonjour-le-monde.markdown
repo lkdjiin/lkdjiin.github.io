@@ -12,16 +12,3 @@ J'ai remplacé mon Octopress devenu obsolète et poussif par un Jeckyll tout neu
 
 Maintenant j'ai envie d'une longue série d'articles sur la fabrication d'un ordinateur
 8 bits.
-
-Test:
-
-<form action="https://bonjourcomment.herokuapp.com/sites/1/comments" method="POST">
- <label for="email">Email, ou pseudo, ou rien:</label><br>
- <input type="text" id="email" name="email"><br>
-
- <label for="body">Commentaire:</label><br>
- <textarea id="body" name="body" rows="10" cols="30">
- </textarea> 
-
- <input type="submit" value="Envoyer">
-</form>
