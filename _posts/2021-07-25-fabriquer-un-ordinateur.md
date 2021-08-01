@@ -77,3 +77,5 @@ guide rockets to Mars, play chess |...|.»
 {% endblockquote %}
 
 Rendez-vous prochainement pour la réalisation d'une première porte logique.
+
+{% include serie_001.md %}
