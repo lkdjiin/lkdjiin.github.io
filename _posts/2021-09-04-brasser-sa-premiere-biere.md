@@ -3,7 +3,7 @@ layout: post
 title:  "Brasser sa première bière"
 date:   2021-09-04 13:30:18 +0200
 comments: true
-tags:
+tags: bière
 ---
 
 J'ai décidé d'apprendre à brasser de la bière. Je veux que ce soit simple,
