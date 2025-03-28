@@ -8,16 +8,16 @@ permalink: /about/
 
 Développeur accro au TDD.
 
-Rubyiste mais pas que.
+Brasseur d'appartement.
 
 Musicien.
 
-Créateur d'effets pour guitare.
-
 Maker.
+
+Ex créateur d'effets pour guitare.
 
 Heureux utilisateur de Vim.
 
 Si vous vous sentez particulièrement généreux,
-<a href="https://twitter.com/lkdjiin">suivez moi sur Twitter</a>.
+<a href="https://ruby.social/@lkdjiin">suivez moi sur Mastodon</a>.
 
