@@ -65,3 +65,6 @@ Maintenant je sais que j'ai le matériel nécessaire pour ce que je veux faire.
 1. [Numéros de note MIDI](https://computermusicresource.com/midikeys.html)
 1. [La bibliothèque MIDI](https://github.com/FortySevenEffects/arduino_midi_library)
 1. [Specs d'une prise MIDI](https://midi.org/5-pin-din-electrical-specs)
+
+{% include serie_002.md %}
+
