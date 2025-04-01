@@ -52,7 +52,7 @@ Serial.println(currentValue >> 3);
 ## Références
 
 1. [Le code de cet article est sur github](https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour02)
-1. Le potard est ici utiliser comme un [diviseur de tension](https://fr.wikipedia.org/wiki/Diviseur_de_tension)
+1. Le potard est ici utilisé comme un [diviseur de tension](https://fr.wikipedia.org/wiki/Diviseur_de_tension)
 
 {% include serie_002.md %}
 
