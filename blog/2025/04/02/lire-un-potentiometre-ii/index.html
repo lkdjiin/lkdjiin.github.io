@@ -24,71 +24,61 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Envoyer une note à un synthé par le cable MIDI</h1>
+    <h1 class="post-title p-name" itemprop="name headline">Lire un potentiomètre II</h1>
     <p class="post-meta">
-      <time class="dt-published" datetime="2025-03-31T08:00:00+02:00" itemprop="datePublished">31 March 2025
+      <time class="dt-published" datetime="2025-04-02T08:00:00+02:00" itemprop="datePublished">02 April 2025
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-1">15 jours pour comprendre les contrôleurs MIDI - Jour 1</h2>
+    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-3">15 jours pour comprendre les contrôleurs MIDI - Jour 3</h2>
 
-<p>L’objectif de cette série est de fabriquer un (ou plusieurs) contrôleur MIDI,
-afin de comprendre comment ça marche. Avant de m’y mettre à fond, j’effectue un
-<em>smoke test</em> pour être sûr que mon matériel est fonctionnel. Au lieu de faire
-clignoter la LED de l’arduino, on va faire “clignoter” une note sur un synthé.</p>
+<p>Le <a href="/blog/2025/04/01/lire-un-potentiometre">code précédent</a> affichait la valeur
+du potentiomètre <strong>en continu</strong>. Pour
+éviter de surcharger le récepteur de messages MIDI, je veux afficher la valeur
+du potentiomètre seulement quand elle change.</p>
 
 <!-- more -->
 
-<h2 id="le-circuit">Le circuit</h2>
-
-<p>Attention, la prise DIN est vue de face. Pour ne pas vous planter dans les
-broches, n’hésiter pas à regarder la vidéo qui se trouve dans les références.</p>
-
-<p><img class="center" src="/images/envoyer-note-midi-01.jpg" /></p>
-
 <h2 id="le-code">Le code</h2>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;MIDI.h&gt;
-</span>
-<span class="n">MIDI_CREATE_DEFAULT_INSTANCE</span><span class="p">();</span>
+<p>On garde en mémoire la dernière valeur envoyée (<code class="language-plaintext highlighter-rouge">lastValue</code>). À chaque lecture,
+on affiche la valeur actuelle (<code class="language-plaintext highlighter-rouge">currentValue</code>) seulement si elle diffère de l’ancienne.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">int</span> <span class="n">lastValue</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 
 <span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">MIDI_CHANNEL_OFF</span><span class="p">);</span>
+  <span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="mi">9600</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">sendNoteOn</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">127</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
-  <span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">sendNoteOff</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
-  <span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">currentValue</span> <span class="o">=</span> <span class="n">analogRead</span><span class="p">(</span><span class="n">A0</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">lastValue</span> <span class="o">!=</span> <span class="n">currentValue</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">currentValue</span><span class="p">);</span>
+    <span class="n">lastValue</span> <span class="o">=</span> <span class="n">currentValue</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
 <span class="p">}</span></code></pre></figure>
 
-<p>Y a pas grand chose. <code class="language-plaintext highlighter-rouge">MIDI_CREATE_DEFAULT_INSTANCE()</code> initialise la bibliothèque
-qui nous permet de communiquer en MIDI.</p>
+<h2 id="problème-de-fluctuation">Problème de fluctuation</h2>
 
-<p><code class="language-plaintext highlighter-rouge">MIDI_CHANNEL_OFF</code> c’est pour dire qu’on ne veut pas écouter de messages MIDI.
-Dans cette appli on se contente d’en envoyer.</p>
+<p>J’observe souvent la valeur courante osciller régulièrement entre deux valeurs
+conjointes, par exemple 29, 30, 29, 30, 29, etc.</p>
 
-<p>On déclenche une note avec <code class="language-plaintext highlighter-rouge">sendNoteOn(x, y, z)</code>. x est le numéro de note MIDI.
-y est le volume (de 0 à 127). z est le canal MIDI (1 à 16). Mon synthé est réglé
-pour écouter le canal 2.</p>
+<p>Je pense que c’est du en grande partie à la breaboard qui doit être vieille ou
+de mauvaise qualité, et les connexions sont un peu lâches. Les potards ont aussi
+des pattes un peu grosses pour une breaboard, ce qui n’arrange rien.</p>
 
-<h2 id="la-réalité">La réalité</h2>
-
-<p><img class="center" src="/images/envoyer-note-midi-02.jpg" /></p>
-
-<p>Maintenant je sais que j’ai le matériel nécessaire pour ce que je veux faire.</p>
+<p>Ce problème pourrait se régler de lui-même quand les potards seront soudés. Ceci
+dit il est probable que les fluctuations du courant suffisent à modifier la
+valeur du potard sans qu’on y touche.</p>
 
 <h2 id="références">Références</h2>
 
 <ol>
-  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour01">Le code de cet article est sur github</a></li>
-  <li><a href="https://www.youtube.com/watch?v=rmfAqg9O_os">Je me base sur cette vidéo</a></li>
-  <li><a href="https://en.wikipedia.org/wiki/Smoke_testing_(software)">Smoke test</a></li>
-  <li><a href="https://computermusicresource.com/midikeys.html">Numéros de note MIDI</a></li>
-  <li><a href="https://github.com/FortySevenEffects/arduino_midi_library">La bibliothèque MIDI</a></li>
-  <li><a href="https://midi.org/5-pin-din-electrical-specs">Specs d’une prise MIDI</a></li>
+  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour03">Le code de cet article est sur github</a></li>
 </ol>
 
 <p><em>Cet article fait partie d’une série :</em></p>
@@ -110,10 +100,8 @@ pour écouter le canal 2.</p>
 
   <div style="text-align: center">
     
-      <a href="/blog/2021/09/12/degustation-de-ma-premiere-cuvee/" title="Article précédent: Dégustation de ma première cuvée">&laquo; Dégustation de ma première cuvée</a> ---//---
+      <a href="/blog/2025/04/01/lire-un-potentiometre/" title="Article précédent: Lire un potentiomètre">&laquo; Lire un potentiomètre</a> ---//---
     
-    
-      <a href="/blog/2025/04/01/lire-un-potentiometre/" title="Article suivant: Lire un potentiomètre">Lire un potentiomètre &raquo;</a>
     
   </div>
 
@@ -126,7 +114,7 @@ commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire
 sur </em>
 <a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
 </p>
-<a class="u-url" href="/blog/2025/03/31/envoyer-une-note-par-le-cable-midi/" hidden></a>
+<a class="u-url" href="/blog/2025/04/02/lire-un-potentiometre-ii/" hidden></a>
 </article>
 
       </div>
