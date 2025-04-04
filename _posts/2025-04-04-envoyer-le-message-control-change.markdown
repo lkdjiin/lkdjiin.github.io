@@ -15,7 +15,7 @@ MIDI contrôlé par un potentiomètre à un synthé.
 
 ## Le message MIDI Control Change
 
-Souvent abrégé en CC, ce message sert à modifier en temps réèl un paramètre du
+Souvent abrégé en CC, ce message sert à modifier en temps réel un paramètre du
 son. Ça peut être n'importe quoi et c'est spécifique au synthé. On retrouve
 couramment les paramètres de l'envellope de l'ampli ou des filtres, la fréquence de
 coupure, la fréquence d'un LFO, etc.
@@ -35,7 +35,7 @@ valeur du potentiomètre (`current`) sur le canal 2.
 
 const int FILTER_CUTOFF = 74;
 
-int butlast = 0;
+int penultimate = 0;
 int last = 0;
 
 MIDI_CREATE_DEFAULT_INSTANCE();
@@ -48,9 +48,9 @@ void loop() {
   int current = analogRead(A0) >> 3;
 
   if (last != current) {
-    if (butlast + last != last + current) {
+    if (penultimate + last != last + current) {
       MIDI.sendControlChange(FILTER_CUTOFF, current, 2);
-      butlast = last;
+      penultimate = last;
       last = current;
     }
   }
