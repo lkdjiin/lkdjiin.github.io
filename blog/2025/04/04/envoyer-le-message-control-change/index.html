@@ -24,57 +24,70 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Lire un potentiomètre</h1>
+    <h1 class="post-title p-name" itemprop="name headline">Envoyer le message MIDI Control Change</h1>
     <p class="post-meta">
-      <time class="dt-published" datetime="2025-04-01T10:27:00+02:00" itemprop="datePublished">01 April 2025
+      <time class="dt-published" datetime="2025-04-04T08:00:00+02:00" itemprop="datePublished">04 April 2025
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-2">15 jours pour comprendre les contrôleurs MIDI - Jour 2</h2>
+    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-5">15 jours pour comprendre les contrôleurs MIDI - Jour 5</h2>
 
-<p>Avant de contrôler mon synthé avec plusieurs potentiomètres, je dois déjà
-pouvoir en lire un.</p>
+<p>Je rassemble ce que j’ai appris depuis le début pour enfin envoyer un message
+MIDI contrôlé par un potentiomètre à un synthé.</p>
 
 <!-- more -->
 
-<h2 id="le-montage">Le montage</h2>
+<h2 id="le-message-midi-control-change">Le message MIDI Control Change</h2>
 
-<p>La valeur du potentiomètre n’a aucune importance. 2k, 10k, 100k, 500k,
-utilisez ce que vous avez sous la main.</p>
+<p>Souvent abrégé en CC, ce message sert à modifier en temps réel un paramètre du
+son. Ça peut être n’importe quoi et c’est spécifique au synthé. On retrouve
+couramment les paramètres de l’envellope de l’ampli ou des filtres, la fréquence de
+coupure, la fréquence d’un LFO, etc.</p>
 
-<p><img class="center" src="/images/lire-un-potentiometre.png" /></p>
+<h2 id="le-code">Le code</h2>
 
-<h2 id="lecture-sur-10-bits">Lecture sur 10 bits</h2>
+<p>Je teste avec la fréquence de coupure (<code class="language-plaintext highlighter-rouge">FILTER_CUTOFF</code>). La seule nouveauté
+parmi les codes précédents est la ligne suivante :</p>
 
-<p>Les entrées analogiques de l’ardunio convertissent le voltage (0 à 5 volts)
-en un nombre de 10 bits, soit de 0 à 1023. Le programme suivant affiche la
-valeur du potentiomètre branché sur la broche A0 sur le moniteur série.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  MIDI.sendControlChange(FILTER_CUTOFF, current, 2);
+</code></pre></div></div>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
-  <span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="mi">9600</span><span class="p">);</span>
+<p>Elle indique à la bibliothèque MIDI d’envoyer le message CC numéro 74, avec la
+valeur du potentiomètre (<code class="language-plaintext highlighter-rouge">current</code>) sur le canal 2.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;MIDI.h&gt;
+</span>
+<span class="k">const</span> <span class="kt">int</span> <span class="n">FILTER_CUTOFF</span> <span class="o">=</span> <span class="mi">74</span><span class="p">;</span>
+
+<span class="kt">int</span> <span class="n">penultimate</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">last</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="n">MIDI_CREATE_DEFAULT_INSTANCE</span><span class="p">();</span>
+
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">MIDI</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">MIDI_CHANNEL_OFF</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
-  <span class="kt">int</span> <span class="n">currentValue</span> <span class="o">=</span> <span class="n">analogRead</span><span class="p">(</span><span class="n">A0</span><span class="p">);</span>
-  <span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">currentValue</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">current</span> <span class="o">=</span> <span class="n">analogRead</span><span class="p">(</span><span class="n">A0</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">last</span> <span class="o">!=</span> <span class="n">current</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">penultimate</span> <span class="o">+</span> <span class="n">last</span> <span class="o">!=</span> <span class="n">last</span> <span class="o">+</span> <span class="n">current</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">MIDI</span><span class="p">.</span><span class="n">sendControlChange</span><span class="p">(</span><span class="n">FILTER_CUTOFF</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+      <span class="n">penultimate</span> <span class="o">=</span> <span class="n">last</span><span class="p">;</span>
+      <span class="n">last</span> <span class="o">=</span> <span class="n">current</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
   <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
 <span class="p">}</span></code></pre></figure>
-
-<h2 id="conversion-en-7-bits">Conversion en 7 bits</h2>
-
-<p>Les messages MIDI auront une valeur comprise entre 0 et 127, soit 7 bits.
-Pour passer de 10 bits à 7 bits on peut diviser par 8. (Diviser par 2 revient
-à “retirer” un bit). Ou alors on peut faire plus rapide
-en décalant de 3 bits vers la droite.</p>
-
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="n">currentValue</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span><span class="p">);</span></code></pre></figure>
 
 <h2 id="références">Références</h2>
 
 <ol>
-  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour02">Le code de cet article est sur github</a></li>
-  <li>Le potard est ici utilisé comme un <a href="https://fr.wikipedia.org/wiki/Diviseur_de_tension">diviseur de tension</a></li>
+  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour05">Le code de cet article est sur github</a></li>
+  <li><a href="https://midi.org/midi-1-0-detailed-specification">MIDI 1.0 Detailed Specification</a></li>
 </ol>
 
 <p><em>Cet article fait partie d’une série :</em></p>
@@ -98,10 +111,8 @@ en décalant de 3 bits vers la droite.</p>
 
   <div style="text-align: center">
     
-      <a href="/blog/2025/03/31/envoyer-une-note-par-le-cable-midi/" title="Article précédent: Envoyer une note à un synthé par le cable MIDI">&laquo; Envoyer une note à un synthé par le cable MIDI</a> ---//---
+      <a href="/blog/2025/04/03/regler-le-probleme-de-fluctuation/" title="Article précédent: Régler le problème de fluctuation">&laquo; Régler le problème de fluctuation</a> ---//---
     
-    
-      <a href="/blog/2025/04/02/lire-un-potentiometre-ii/" title="Article suivant: Lire un potentiomètre II">Lire un potentiomètre II &raquo;</a>
     
   </div>
 
@@ -114,7 +125,7 @@ commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire
 sur </em>
 <a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
 </p>
-<a class="u-url" href="/blog/2025/04/01/lire-un-potentiometre/" hidden></a>
+<a class="u-url" href="/blog/2025/04/04/envoyer-le-message-control-change/" hidden></a>
 </article>
 
       </div>
