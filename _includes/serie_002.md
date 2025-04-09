@@ -7,3 +7,4 @@ _Cet article fait partie d'une série :_
 5. [Envoyer le message Control Change](/blog/2025/04/04/envoyer-le-message-control-change)
 6. [Six potentiomètres](/blog/2025/04/07/six-potentiometres)
 7. [Six potentiomètres - Code objet](/blog/2025/04/08/six-potentiometres-code-objet)
+8. [Prototype en carton](/blog/2025/04/09/prototype-en-carton)
