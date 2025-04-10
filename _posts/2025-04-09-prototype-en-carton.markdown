@@ -9,7 +9,7 @@ tags: [ arduino, midi, prototype ]
 ## 15 jours pour comprendre les contrôleurs MIDI - Jour 8
 
 Après une phase de R&D passée à tester différents codes et à tenter de faire tenir des potards
-de qualité douteuse sur des breaboards fatiguées, le moment est venu de sortir
+de qualité douteuse sur des breadboards fatiguées, le moment est venu de sortir
 le fer à souder pour fabriquer un contrôleur MIDI éphémère, mais assez solide.
 
 <!-- more -->

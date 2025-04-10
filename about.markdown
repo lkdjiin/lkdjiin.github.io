@@ -8,7 +8,7 @@ permalink: /about/
 
 Développeur accro au TDD.
 
-Brasseur d'appartement.
+Brasseur de cuisine.
 
 Musicien.
 
