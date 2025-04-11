@@ -24,72 +24,71 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Envoyer une note à un synthé par le cable MIDI</h1>
+    <h1 class="post-title p-name" itemprop="name headline">Une solution hardware au problème de fluctuation ?</h1>
     <p class="post-meta">
-      <time class="dt-published" datetime="2025-03-31T08:00:00+02:00" itemprop="datePublished">31 March 2025
+      <time class="dt-published" datetime="2025-04-11T08:00:00+02:00" itemprop="datePublished">11 April 2025
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-1">15 jours pour comprendre les contrôleurs MIDI - Jour 1</h2>
+    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-10">15 jours pour comprendre les contrôleurs MIDI - Jour 10</h2>
 
-<p>L’objectif de cette série est de fabriquer un (ou plusieurs) contrôleur MIDI,
-afin de comprendre comment ça marche. Avant de m’y mettre à fond, j’effectue un
-<em>smoke test</em> pour être sûr que mon matériel est fonctionnel. Au lieu de faire
-clignoter la LED de l’arduino, on va faire “clignoter” une note sur un synthé.</p>
+<p>Y a t-il une solution hardware au <a href="/blog/2025/04/02/lire-un-potentiometre-ii/">problème de fluctuation</a> de la lecture d’un
+potentiomètre ? Et si oui, cette solution vaut-elle le coup par rapport à une
+solution logicielle ?</p>
 
 <!-- more -->
 
-<h2 id="le-circuit">Le circuit</h2>
+<h2 id="la-solution-logicielle">La solution logicielle</h2>
 
-<p>Attention, la prise DIN est vue de face. Pour ne pas vous planter dans les
-broches, n’hésiter pas à regarder la vidéo qui se trouve dans les références.</p>
+<p>Ma <a href="/blog/2025/04/03/regler-le-probleme-de-fluctuation/">solution logicielle</a> consiste à n’envoyer un nouveau message MIDI que si
+la somme des mesures (M) à l’instant T-2 et T-1 est différente de la somme des
+mesures à l’instant T-1 et T0.</p>
 
-<p><img class="center" src="/images/envoyer-note-midi-01.jpg" /></p>
+\[\begin{align}
 
-<h2 id="le-code">Le code</h2>
+  M_{t-2}+M_{t-1}\neq M_{t-1}+M_{t0}
+\end{align}\]
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;MIDI.h&gt;
-</span>
-<span class="n">MIDI_CREATE_DEFAULT_INSTANCE</span><span class="p">();</span>
+<p>Le graphique montre la comparaison entre la lecture directe sur la broche
+analogique A0 (en bleu), réalisée à chaque itération, et la valeur envoyée au
+synthé (en orange), seulement lorsque l’algorithme considère qu’il y a un réel
+changement.</p>
 
-<span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">MIDI_CHANNEL_OFF</span><span class="p">);</span>
-<span class="p">}</span>
+<p><img class="center" src="/images/solution-hardware-01.png" /></p>
 
-<span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">sendNoteOn</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">127</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
-  <span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">sendNoteOff</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
-  <span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
-<span class="p">}</span></code></pre></figure>
+<p>On voit dans la partie gauche qu’on saute bien les valeurs qui font du va-et-vient.
+Mais ce graphique montre aussi le principal défaut de cette solution : le
+décalage temporel.</p>
 
-<p>Y a pas grand chose. <code class="language-plaintext highlighter-rouge">MIDI_CREATE_DEFAULT_INSTANCE()</code> initialise la bibliothèque
-qui nous permet de communiquer en MIDI.</p>
+<h2 id="la-solution-hardware">La solution hardware</h2>
 
-<p><code class="language-plaintext highlighter-rouge">MIDI_CHANNEL_OFF</code> c’est pour dire qu’on ne veut pas écouter de messages MIDI.
-Dans cette appli on se contente d’en envoyer.</p>
+<p>Une solution électronique aurait l’avantage d’être instantanée (du moins dans
+le sens du langage courant). En branchant un condensateur entre la patte centrale
+du potentiomètre et le ground on peut lisser les fluctuations du courant.
+(<em>Faites toujours bien gaffe au sens de branchement d’un condensateur pour éviter
+les surprises désagréables</em>.)</p>
 
-<p>On déclenche une note avec <code class="language-plaintext highlighter-rouge">sendNoteOn(x, y, z)</code>. x est le numéro de note MIDI.
-y est le volume (de 0 à 127). z est le canal MIDI (1 à 16). Mon synthé est réglé
-pour écouter le canal 2.</p>
+<p><img class="center" src="/images/solution-hardware-02.jpg" /></p>
 
-<h2 id="la-réalité">La réalité</h2>
+<p>Pour tester cette solution je sors un potentiomètre dont les pattes s’insèrent
+très mal dans la breadboard et je prends des mesures sans toucher à rien. Le
+swing est gigantesque, entre 150 et 800 (l’arduino convertit en 10 bits, donc les
+valeurs possibles vont de 0 à 1023) :</p>
 
-<p><img class="center" src="/images/envoyer-note-midi-02.jpg" /></p>
+<p><img class="center" src="/images/solution-hardware-03.png" /></p>
 
-<p>Maintenant je sais que j’ai le matériel nécessaire pour ce que je veux faire.</p>
+<p>Puis j’insère un condensateur de 10uF (comme dans la photo ci-dessus) et je
+reprend des mesures. L’amélioration est spectaculaire. C’est peut-être dur à
+voir sur l’image mais maintenant la lecture est stabilisé entre 584 et 586 !</p>
 
-<h2 id="références">Références</h2>
+<p><img class="center" src="/images/solution-hardware-04.png" /></p>
 
-<ol>
-  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour01">Le code de cet article est sur github</a></li>
-  <li><a href="https://www.youtube.com/watch?v=rmfAqg9O_os">Je me base sur cette vidéo</a></li>
-  <li><a href="https://en.wikipedia.org/wiki/Smoke_testing_(software)">Smoke test</a></li>
-  <li><a href="https://computermusicresource.com/midikeys.html">Numéros de note MIDI</a></li>
-  <li><a href="https://github.com/FortySevenEffects/arduino_midi_library">La bibliothèque MIDI</a></li>
-  <li><a href="https://midi.org/5-pin-din-electrical-specs">Specs d’une prise MIDI</a></li>
-</ol>
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Avec des mauvais potentiomètres, ou des mauvaises connexions, un simple condensateur est une solution
+fantastique. Malheureusement, quand les potentiomètres sont bons et offrent déjà
+une lecture presque stable, le condensateur ne peut pas aider.</p>
 
 <p><em>Cet article fait partie d’une série :</em></p>
 
@@ -106,6 +105,14 @@ pour écouter le canal 2.</p>
   <li><a href="/blog/2025/04/11/une-solution-hardware-au-probleme-de-fluctuation">Une solution hardware au problème de fluctuation ?</a></li>
 </ol>
 
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['\\(','\\)']]}
+});
+</script>
+
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
 
   </div>
 
@@ -117,10 +124,8 @@ pour écouter le canal 2.</p>
 
   <div style="text-align: center">
     
-      <a href="/blog/2021/09/12/degustation-de-ma-premiere-cuvee/" title="Article précédent: Dégustation de ma première cuvée">&laquo; Dégustation de ma première cuvée</a> ---//---
+      <a href="/blog/2025/04/10/surveiller-la-consommation/" title="Article précédent: Surveiller la consommation">&laquo; Surveiller la consommation</a> ---//---
     
-    
-      <a href="/blog/2025/04/01/lire-un-potentiometre/" title="Article suivant: Lire un potentiomètre">Lire un potentiomètre &raquo;</a>
     
   </div>
 
@@ -133,7 +138,7 @@ commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire
 sur </em>
 <a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
 </p>
-<a class="u-url" href="/blog/2025/03/31/envoyer-une-note-par-le-cable-midi/" hidden></a>
+<a class="u-url" href="/blog/2025/04/11/une-solution-hardware-au-probleme-de-fluctuation/" hidden></a>
 </article>
 
       </div>
