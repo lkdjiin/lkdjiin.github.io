@@ -10,3 +10,4 @@ _Cet article fait partie d'une série :_
 8. [Prototype en carton](/blog/2025/04/09/prototype-en-carton)
 9. [Surveiller la consommation](/blog/2025/04/10/surveiller-la-consommation)
 10. [Une solution hardware au problème de fluctuation ?](/blog/2025/04/11/une-solution-hardware-au-probleme-de-fluctuation)
+11. [Multiplexeur](/blog/2025/04/14/multiplexeur)
