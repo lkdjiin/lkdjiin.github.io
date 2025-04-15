@@ -24,62 +24,72 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Multiplexeur</h1>
+    <h1 class="post-title p-name" itemprop="name headline">Multiplexeur II</h1>
     <p class="post-meta">
-      <time class="dt-published" datetime="2025-04-14T08:00:00+02:00" itemprop="datePublished">14 April 2025
+      <time class="dt-published" datetime="2025-04-15T08:00:00+02:00" itemprop="datePublished">15 April 2025
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-11">15 jours pour comprendre les contrôleurs MIDI - Jour 11</h2>
+    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-12">15 jours pour comprendre les contrôleurs MIDI - Jour 12</h2>
 
-<p>Comment faire pour utiliser plus de potentiomètres que votre micro-contrôleur ne possède
-d’entrées analogiques ? En prenant un micro-contrôleur mieux fourni en entrées ?
-Ou en utilisant des multiplexeurs, ce qui vous reviendra moins cher et prendra moins de place.
-En attendant la mise en pratique dans le prochain article, c’est parti pour un
-peu de théorie.</p>
+<p>Aujourd’hui on voit en pratique comment brancher deux potentiomètres sur une
+unique entrée analogique de l’arduino.</p>
 
 <!-- more -->
 
-<h2 id="le-mux">Le mux</h2>
+<h2 id="le-montage">Le montage</h2>
 
-<p>Le multiplexeur, <em>mux</em> en abrégé, est un dispositif électronique très simple,
-et pourtant si utile à notre vie moderne. Sans lui, pas d’ordinateurs.
-Les multiplexeurs sont indispensables, entre autre, pour gérer la mémoire (RAM, registres).
-Ce sont eux qui permettent de sélectionner un octet précis parmi des gigas.</p>
+<p>Les potentiomètres sont branchés aux entrées 0 et 1 du CD4051 (respectivement
+broches 13 et 14).</p>
 
-<p>On peut voir les multiplexeurs comme une boite noire avec plusieurs entrées de données et une
-seule sortie. Et on va pouvoir à tout moment sélectionner quelle entrée spécifique
-sera reproduite sur la sortie.</p>
+<p>La sortie du CD4051 est branchée sur l’entrée analogique A0 de l’arduino.</p>
 
-<p>On trouvera des muxs à 2, 4, 8 ou 16 entrées. La sélection se fait à l’aide de
-quelques bits. Pour un mux à 2 entrées, un seul bit de sélection est suffisant.
-Alors que pour un mux à 4 entrées, deux bits de sélection seront nécessaires, etc.</p>
+<p>Un condensateur de 100 nF relie la broche 16 du CD4051 au ground. Il n’est pas
+indispensable, mais recommandé.</p>
 
-<h2 id="le-cd4051">Le CD4051</h2>
+<p>Comme il n’y a que deux potentiomètres, je n’ai branché qu’une seule ligne de
+sélection : la broche 8 de l’arduino contrôle le bit de sélection A (broche 11)
+du CD4051.</p>
 
-<p>J’utiliserai un CD4051, qui est un mux à 8 entrées.
-J’expliquerai rapidement l’utilisation des 16 broches :</p>
+<p>Les deux autres bits de sélection B et C du CD4051 sont inutilisés dans ce 
+montage et sont donc reliés au ground pour être mis à 0.</p>
 
-<p><img class="center" src="/images/cd4051.png" /></p>
+<p><img class="center" src="/images/multiplexeur-ii-1.png" /></p>
 
-<p>La broche n°16 sera reliée au 5 volts.</p>
+<h2 id="le-code">Le code</h2>
 
-<p>Les broches 6, 7 et 8 seront reliées au ground. La n°6 est la broche d’<em>inhibition</em> ;
-elle permet de n’avoir pas de sortie si besoin et elle n’aura pas d’utilité dans notre cas.</p>
+<p>La broche 8 de l’arduino est utilisée pour contrôler le CD4051 et est donc
+déclarée en <code class="language-plaintext highlighter-rouge">OUTPUT</code>. Je met aussi en route le moniteur série pour pouvoir
+afficher les mesures des deux potards.</p>
 
-<p>La broche n°3 est la sortie.</p>
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">const</span> <span class="kt">int</span> <span class="n">total_pots</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
 
-<p>Les broches 1, 2, 4, 5, 12, 13, 14 et 15 sont les 8 entrées.</p>
+<span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">pinMode</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+  <span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="mi">9600</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
 
-<p>Les broches 9, 10 et 11 sont les 3 bits de sélection.</p>
+<p>Avec <code class="language-plaintext highlighter-rouge">digitalWrite(8, i)</code> on sélectionne tour à tour l’entrée n°13 du mux (quand <code class="language-plaintext highlighter-rouge">i == 0</code>)
+et l’entrée n°14 (quand <code class="language-plaintext highlighter-rouge">i == 1</code>).</p>
 
-<p>C’est tout pour la théorie. À demain pour mettre en pratique la récupéreration de deux potentiomètres sur
-une seule entrée de l’arduino.</p>
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">total_pots</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+    <span class="kt">int</span> <span class="n">value</span> <span class="o">=</span> <span class="n">analogRead</span><span class="p">(</span><span class="n">A0</span><span class="p">);</span>
+    <span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="s">"Pot_"</span> <span class="o">+</span> <span class="n">String</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span>  <span class="s">":"</span> <span class="o">+</span> <span class="n">String</span><span class="p">(</span><span class="n">value</span><span class="p">));</span>
+    <span class="n">delay</span><span class="p">(</span><span class="mi">50</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>On peut maintenant utiliser deux potards sur une seule entrée de l’arduino.</p>
+
+<p><img class="center" src="/images/multiplexeur-ii-2.png" /></p>
 
 <h2 id="références">Références</h2>
 
 <ol>
+  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour12">Le code de cet article est sur github</a></li>
   <li><a href="https://www.ti.com/lit/ds/symlink/cd4051b.pdf">Datasheet CD4051</a></li>
 </ol>
 
@@ -110,10 +120,8 @@ une seule entrée de l’arduino.</p>
 
   <div style="text-align: center">
     
-      <a href="/blog/2025/04/11/une-solution-hardware-au-probleme-de-fluctuation/" title="Article précédent: Une solution hardware au problème de fluctuation ?">&laquo; Une solution hardware au problème de fluctuation ?</a> ---//---
+      <a href="/blog/2025/04/14/multiplexeur/" title="Article précédent: Multiplexeur">&laquo; Multiplexeur</a> ---//---
     
-    
-      <a href="/blog/2025/04/15/multiplexeur-ii/" title="Article suivant: Multiplexeur II">Multiplexeur II &raquo;</a>
     
   </div>
 
@@ -126,7 +134,7 @@ commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire
 sur </em>
 <a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
 </p>
-<a class="u-url" href="/blog/2025/04/14/multiplexeur/" hidden></a>
+<a class="u-url" href="/blog/2025/04/15/multiplexeur-ii/" hidden></a>
 </article>
 
       </div>
