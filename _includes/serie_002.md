@@ -11,3 +11,5 @@ _Cet article fait partie d'une série :_
 9. [Surveiller la consommation](/blog/2025/04/10/surveiller-la-consommation)
 10. [Une solution hardware au problème de fluctuation ?](/blog/2025/04/11/une-solution-hardware-au-probleme-de-fluctuation)
 11. [Multiplexeur](/blog/2025/04/14/multiplexeur)
+12. [Multiplexeur II](/blog/2025/04/15/multiplexeur-ii)
+13. [Multiplexeur III](/blog/2025/04/16/multiplexeur-iii)
