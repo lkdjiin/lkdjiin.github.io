@@ -24,71 +24,70 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">Envoyer une note à un synthé par le cable MIDI</h1>
+    <h1 class="post-title p-name" itemprop="name headline">Multiplexeur III</h1>
     <p class="post-meta">
-      <time class="dt-published" datetime="2025-03-31T08:00:00+02:00" itemprop="datePublished">31 March 2025
+      <time class="dt-published" datetime="2025-04-16T08:00:00+02:00" itemprop="datePublished">16 April 2025
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-1">15 jours pour comprendre les contrôleurs MIDI - Jour 1</h2>
+    <h2 id="15-jours-pour-comprendre-les-contrôleurs-midi---jour-13">15 jours pour comprendre les contrôleurs MIDI - Jour 13</h2>
 
-<p>L’objectif de cette série est de fabriquer un (ou plusieurs) contrôleur MIDI,
-afin de comprendre comment ça marche. Avant de m’y mettre à fond, j’effectue un
-<em>smoke test</em> pour être sûr que mon matériel est fonctionnel. Au lieu de faire
-clignoter la LED de l’arduino, on va faire “clignoter” une note sur un synthé.</p>
+<p>Suite logique de <a href="/blog/2025/04/15/multiplexeur-ii/">l’article d’hier</a>, voyons comment généraliser le contrôle de
+plusieurs potentiomètres sur une seule entrée de l’arduino.</p>
 
 <!-- more -->
 
-<h2 id="le-circuit">Le circuit</h2>
+<h2 id="le-montage">Le montage</h2>
 
-<p>Attention, la prise DIN est vue de face. Pour ne pas vous planter dans les
-broches, n’hésiter pas à regarder la vidéo qui se trouve dans les références.</p>
+<p>C’est <a href="/blog/2025/04/15/multiplexeur-ii/">le même qu’hier</a> mais on ajoute des potards et on utilise tout les bits de
+sélection.</p>
 
-<p><img class="center" src="/images/envoyer-note-midi-01.jpg" /></p>
+<p>Reliez jusqu’à 8 potards au CD4051. Pour ce test je me contente de trois potards
+sur les broches n°13, 14, et 15 du CD4051.</p>
 
-<h2 id="le-code">Le code</h2>
+<p>Pour les bits de sélection, reliez la broche n°8 de l’arduino à la broche n°11 du CD4051 (bit de poid faible), puis la
+broche n°9 de l’arduino à la broche n°10 du CD4051, et enfin la broche n°10 de l’arduino à la
+broche n°9 du CD4051 (bit de poid fort).</p>
 
-<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="cp">#include &lt;MIDI.h&gt;
-</span>
-<span class="n">MIDI_CREATE_DEFAULT_INSTANCE</span><span class="p">();</span>
+<h2 id="sélection-des-potentiomètres">Sélection des potentiomètres</h2>
+
+<p>On pourra penser à plusieurs manière d’allumer/éteindre les bits de sélection du
+CD4051, mais
+l’arduino nous fournit la fonction <code class="language-plaintext highlighter-rouge">bitRead(value, position)</code> qui est idéale
+pour mettre à jour ces trois bits. Cette fonction renvoie la valeur
+du bit (0 ou 1) dans le nombre <em>value</em> qui se trouve à la position <em>position</em>.</p>
+
+<figure class="highlight"><pre><code class="language-cpp" data-lang="cpp"><span class="k">const</span> <span class="kt">int</span> <span class="n">total_pots</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
 
 <span class="kt">void</span> <span class="nf">setup</span><span class="p">()</span> <span class="p">{</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="n">MIDI_CHANNEL_OFF</span><span class="p">);</span>
+  <span class="n">pinMode</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+  <span class="n">pinMode</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+  <span class="n">pinMode</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+  <span class="n">Serial</span><span class="p">.</span><span class="n">begin</span><span class="p">(</span><span class="mi">9600</span><span class="p">);</span>
 <span class="p">}</span>
 
 <span class="kt">void</span> <span class="nf">loop</span><span class="p">()</span> <span class="p">{</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">sendNoteOn</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">127</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
-  <span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
-  <span class="n">MIDI</span><span class="p">.</span><span class="n">sendNoteOff</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
-  <span class="n">delay</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+  <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">total_pots</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">bitRead</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">));</span>
+    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">bitRead</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+    <span class="n">digitalWrite</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">bitRead</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">3</span><span class="p">));</span>
+    <span class="kt">int</span> <span class="n">value</span> <span class="o">=</span> <span class="n">analogRead</span><span class="p">(</span><span class="n">A0</span><span class="p">);</span>
+    <span class="n">Serial</span><span class="p">.</span><span class="n">println</span><span class="p">(</span><span class="s">"Pot_"</span> <span class="o">+</span> <span class="n">String</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span>  <span class="s">":"</span> <span class="o">+</span> <span class="n">String</span><span class="p">(</span><span class="n">value</span><span class="p">));</span>
+    <span class="n">delay</span><span class="p">(</span><span class="mi">500</span><span class="p">);</span>
+  <span class="p">}</span>
 <span class="p">}</span></code></pre></figure>
 
-<p>Y a pas grand chose. <code class="language-plaintext highlighter-rouge">MIDI_CREATE_DEFAULT_INSTANCE()</code> initialise la bibliothèque
-qui nous permet de communiquer en MIDI.</p>
+<p>La lecture des 3 potards en image :</p>
 
-<p><code class="language-plaintext highlighter-rouge">MIDI_CHANNEL_OFF</code> c’est pour dire qu’on ne veut pas écouter de messages MIDI.
-Dans cette appli on se contente d’en envoyer.</p>
-
-<p>On déclenche une note avec <code class="language-plaintext highlighter-rouge">sendNoteOn(x, y, z)</code>. x est le numéro de note MIDI.
-y est le volume (de 0 à 127). z est le canal MIDI (1 à 16). Mon synthé est réglé
-pour écouter le canal 2.</p>
-
-<h2 id="la-réalité">La réalité</h2>
-
-<p><img class="center" src="/images/envoyer-note-midi-02.jpg" /></p>
-
-<p>Maintenant je sais que j’ai le matériel nécessaire pour ce que je veux faire.</p>
+<p><img class="center" src="/images/multiplexeur-iii-1.png" /></p>
 
 <h2 id="références">Références</h2>
 
 <ol>
-  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour01">Le code de cet article est sur github</a></li>
-  <li><a href="https://www.youtube.com/watch?v=rmfAqg9O_os">Je me base sur cette vidéo</a></li>
-  <li><a href="https://en.wikipedia.org/wiki/Smoke_testing_(software)">Smoke test</a></li>
-  <li><a href="https://computermusicresource.com/midikeys.html">Numéros de note MIDI</a></li>
-  <li><a href="https://github.com/FortySevenEffects/arduino_midi_library">La bibliothèque MIDI</a></li>
-  <li><a href="https://midi.org/5-pin-din-electrical-specs">Specs d’une prise MIDI</a></li>
+  <li><a href="https://github.com/lkdjiin/15-jours-pour-comprendre-les-controleurs-MIDI/tree/main/jour13">Le code de cet article est sur github</a></li>
+  <li><a href="https://www.ti.com/lit/ds/symlink/cd4051b.pdf">Datasheet CD4051</a></li>
+  <li><a href="https://docs.arduino.cc/language-reference/">Langage Arduino</a></li>
 </ol>
 
 <p><em>Cet article fait partie d’une série :</em></p>
@@ -120,10 +119,8 @@ pour écouter le canal 2.</p>
 
   <div style="text-align: center">
     
-      <a href="/blog/2021/09/12/degustation-de-ma-premiere-cuvee/" title="Article précédent: Dégustation de ma première cuvée">&laquo; Dégustation de ma première cuvée</a> ---//---
+      <a href="/blog/2025/04/15/multiplexeur-ii/" title="Article précédent: Multiplexeur II">&laquo; Multiplexeur II</a> ---//---
     
-    
-      <a href="/blog/2025/04/01/lire-un-potentiometre/" title="Article suivant: Lire un potentiomètre">Lire un potentiomètre &raquo;</a>
     
   </div>
 
@@ -136,7 +133,7 @@ commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire
 sur </em>
 <a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
 </p>
-<a class="u-url" href="/blog/2025/03/31/envoyer-une-note-par-le-cable-midi/" hidden></a>
+<a class="u-url" href="/blog/2025/04/16/multiplexeur-iii/" hidden></a>
 </article>
 
       </div>
