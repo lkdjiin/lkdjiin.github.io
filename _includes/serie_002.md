@@ -1,3 +1,9 @@
+<br/>
+<br/>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<br/>
+<br/>
+
 _Cet article fait partie d'une série :_
 
 1. [Envoyer une note par le cable MIDI](/blog/2025/03/31/envoyer-une-note-par-le-cable-midi)
@@ -14,3 +20,4 @@ _Cet article fait partie d'une série :_
 12. [Multiplexeur II](/blog/2025/04/15/multiplexeur-ii)
 13. [Multiplexeur III](/blog/2025/04/16/multiplexeur-iii)
 14. [Moniteur MIDI](/blog/2025/04/17/moniteur-midi)
+15. [Le bilan](/blog/2025/04/18/controleur-midi-le-bilan)
