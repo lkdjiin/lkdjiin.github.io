@@ -132,3 +132,5 @@ d'une manette de jeu.
 1. Vous trouverez le code de [Jetpack Hero](https://github.com/lkdjiin/jetpack-hero) sur github
 1. [DragonRuby](https://dragonruby.itch.io/dragonruby-gtk)
 1. [Documentation](https://docs.dragonruby.org/#/) de DragonRuby
+
+{% include serie_003.md %}
