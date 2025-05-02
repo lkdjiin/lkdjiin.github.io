@@ -10,3 +10,4 @@ _Cet article fait partie d'une série :_
 4. [Première animation du personnage](/blog/2025/04/23/jetpack-hero-iv/)
 5. [Ajouter des platformes](/blog/2025/04/28/jetpack-hero-v/)
 6. [Du carburant pour le jetpack](/blog/2025/04/29/jetpack-hero-vi/)
+7. [Collecte de minerai](/blog/2025/05/02/jetpack-hero-vii/)
