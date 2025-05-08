@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Effets sonores (Jetpack Hero)</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-05-08T08:00:00+02:00" itemprop="datePublished">08 May 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Ajouter des effets sonores en <em>one shot</em> est très simple avec DragonRuby.</p>
+
+<!-- more -->
+
+<p>Pour ça on ajoute une entrée dans le hash <code class="language-plaintext highlighter-rouge">args.audio</code>. Le son sera joué
+immédiatement, puis l’entrée dans <code class="language-plaintext highlighter-rouge">args.audio</code> sera supprimée automatiquement
+quand le son arrivera à son terme. Exemple :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">args</span><span class="p">.</span><span class="nf">audio</span><span class="p">[</span><span class="ss">:the_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">input: </span><span class="s2">"sounds/the_sound.wav"</span> <span class="p">}</span></code></pre></figure>
+
+<p>Voici ce que ça donne en contexte. Jouer un petit son quand le personnage
+ramasse un bidon de fuel :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">  <span class="n">args</span><span class="p">.</span><span class="nf">state</span><span class="p">.</span><span class="nf">fuel</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
+    <span class="k">if</span> <span class="n">args</span><span class="p">.</span><span class="nf">state</span><span class="p">.</span><span class="nf">hero</span><span class="p">.</span><span class="nf">intersect_rect?</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+      <span class="n">args</span><span class="p">.</span><span class="nf">state</span><span class="p">.</span><span class="nf">hero</span><span class="p">.</span><span class="nf">jetpack_power</span> <span class="o">+=</span> <span class="mi">20</span>
+      <span class="n">args</span><span class="p">.</span><span class="nf">state</span><span class="p">.</span><span class="nf">hero</span><span class="p">.</span><span class="nf">jetpack_power</span> <span class="o">=</span> <span class="n">args</span><span class="p">.</span><span class="nf">state</span><span class="p">.</span><span class="nf">hero</span><span class="p">.</span><span class="nf">jetpack_power</span><span class="p">.</span><span class="nf">clamp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+      <span class="n">f</span><span class="p">.</span><span class="nf">used</span> <span class="o">=</span> <span class="kp">true</span>
+      <span class="n">args</span><span class="p">.</span><span class="nf">audio</span><span class="p">[</span><span class="ss">:fuel</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">input: </span><span class="s2">"sounds/fuel.mp3"</span> <span class="p">}</span>
+    <span class="k">end</span>
+  <span class="k">end</span></code></pre></figure>
+
+<p>Si on réécrit la même clé dans le hash <code class="language-plaintext highlighter-rouge">args.audio</code> alors que le son n’est pas
+terminé, celui-ci sera rejoué du début. Ça peut-être utile mais parfois ce n’est pas ce qu’on veut.
+Pour éviter de relancer le son si il est toujours en jeu il suffit de tester la
+présence de la clé dans le hash :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">args</span><span class="p">.</span><span class="nf">audio</span><span class="p">[</span><span class="ss">:jetpack</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">input: </span><span class="s2">"sounds/jetpack.wav"</span> <span class="p">}</span> <span class="k">unless</span> <span class="n">args</span><span class="p">.</span><span class="nf">audio</span><span class="p">[</span><span class="ss">:jetpack</span><span class="p">]</span></code></pre></figure>
+
+<p>Pour finir, voici trois sites qui me servent tout le temps pour créer ou obtenir
+des effets sonores :</p>
+
+<p><a href="https://freesound.org/">freesound</a></p>
+
+<p><a href="https://sfbgames.itch.io/chiptone">chiptone</a></p>
+
+<p><a href="https://sfxr.me/">jsfxr</a></p>
+
+<h2 id="références">Références</h2>
+
+<ol>
+  <li>Vous trouverez le code de <a href="https://github.com/lkdjiin/jetpack-hero">Jetpack Hero</a> sur github</li>
+  <li><a href="https://docs.dragonruby.org/#/">Documentation</a> de DragonRuby</li>
+</ol>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2025/04/19/jetpack-hero/">Jetpack Hero</a></li>
+  <li><a href="/blog/2025/04/21/jetpack-hero-ii/">Partie II</a></li>
+  <li><a href="/blog/2025/04/22/jetpack-hero-iii/">Une platforme, des collisions</a></li>
+  <li><a href="/blog/2025/04/23/jetpack-hero-iv/">Première animation du personnage</a></li>
+  <li><a href="/blog/2025/04/28/jetpack-hero-v/">Ajouter des platformes</a></li>
+  <li><a href="/blog/2025/04/29/jetpack-hero-vi/">Du carburant pour le jetpack</a></li>
+  <li><a href="/blog/2025/05/02/jetpack-hero-vii/">Collecte de minerai</a></li>
+  <li><a href="/blog/2025/05/08/jetpack-hero-viii/">Effets sonores</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/05/04/brassin-145-nunsexmonkrock/" title="Article précédent: NunSexMonkRock - Brassin n°145">&laquo; NunSexMonkRock - Brassin n°145</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/05/08/jetpack-hero-viii/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
