@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Effets sonores (Jetpack Hero)"
-date: 2025-05-05 8:00
+date: 2025-05-08 8:00
 comments: true
 tags: [ ruby, dragonruby, jeu ]
 ---
