@@ -11,4 +11,5 @@ _Cet article fait partie d'une série :_
 5. [Ajouter des platformes](/blog/2025/04/28/jetpack-hero-v/)
 6. [Du carburant pour le jetpack](/blog/2025/04/29/jetpack-hero-vi/)
 7. [Collecte de minerai](/blog/2025/05/02/jetpack-hero-vii/)
-7. [Effets sonores](/blog/2025/05/08/jetpack-hero-viii/)
+8. [Effets sonores](/blog/2025/05/08/jetpack-hero-viii/)
+9. [Du rangement avec la classe Game](/blog/2025/05/08/jetpack-hero-ix/)
