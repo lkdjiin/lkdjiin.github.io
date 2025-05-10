@@ -16,14 +16,14 @@ Il est temps d'ajouter des ennemis dans notre jeu. Ce seront des aliens roses. V
 Dans le jeu les aliens peuvent se téléporter en créant des portails. J'aimerai une petite animation
 qui suggererait un portail avant que l'alien apparaisse. Et puis ça laissera le temps au joueur de réagir.
 
-J'ai trouvé ce [pack d'effets graphique](https://bdragon1727.itch.io/super-package-retro-pixel-effects-32x32-pack-2)
+J'ai trouvé ce [pack d'effets graphique](https://bdragon1727.itch.io/super-package-retro-pixel-effects-32x32-pack-2) parfait pour çà.
 
 {% img center /images/jetpack-hero-x-2.png %}
 
 ## Les bases
 
 Je crée un hash `aliens`, vide au départ, qui contiendra les aliens au fur et à
-mesure de leurs _téléportations_.
+mesure de leurs _téléportations_ dans la zone de jeu.
 
 {% highlight ruby %}
     state.aliens ||= []
@@ -69,7 +69,7 @@ Finalement il ne faut pas oublier d'afficher les animations et les aliens.
 
 Dans la 1ère partie de `calc_aliens` chaque alien du _pool_ a une chance sur mille
 de se téléporter (`rand(1_000) == 0`) à chaque frame, si il n'est pas déjà en jeu (`alien.alive == false`).
-Si la chance lui sourit, on crée un portail dans `aliens_apparition`.
+Si la chance lui sourit, on crée un portail aux bonnes coordonnées dans `aliens_apparition`.
 
 {% highlight ruby %}
   def calc_aliens
@@ -93,6 +93,11 @@ fournie par DragonRuby. Et lorsque l'animation est terminée, on la retire du ha
 `state.aliens_apparition` et on ajoute un alien au même endroit de l'écran dans
 le hash `state.aliens`.
 
+Les paramètres de `frame_index(10, 8, false)` sont ici :
+- 10 : le nombre de sprites dans l'animation.
+- 8 : le temps d'affichage de chaque sprite, en nombre de frame.
+- false : c'est un _one shot_, cette animation ne boucle pas.
+
 {% highlight ruby %}
     state.aliens_apparition.each do |portail|
       sprite_index = portail.start_looping_at.frame_index(10, 8, false)
@@ -110,3 +115,10 @@ le hash `state.aliens`.
     state.aliens_apparition.reject!(&:finished)
   end
 {% endhighlight %}
+
+## Références
+
+1. Vous trouverez le code de [Jetpack Hero](https://github.com/lkdjiin/jetpack-hero) sur github
+1. [Documentation](https://docs.dragonruby.org/#/) de DragonRuby
+
+{% include serie_003.md %}
