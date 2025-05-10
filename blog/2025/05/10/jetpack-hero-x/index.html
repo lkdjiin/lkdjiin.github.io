@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Apparition des aliens (Jetpack Hero)</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-05-10T08:00:00+02:00" itemprop="datePublished">10 May 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Il est temps d’ajouter des ennemis dans notre jeu. Ce seront des aliens roses. Vous pouvez voir
+à quel point j’ai fait des progrès en graphisme :D</p>
+
+<p><img class="center" src="/images/jetpack-hero-x-1.png" /></p>
+
+<!-- more -->
+
+<p>Dans le jeu les aliens peuvent se téléporter en créant des portails. J’aimerai une petite animation
+qui suggererait un portail avant que l’alien apparaisse. Et puis ça laissera le temps au joueur de réagir.</p>
+
+<p>J’ai trouvé ce <a href="https://bdragon1727.itch.io/super-package-retro-pixel-effects-32x32-pack-2">pack d’effets graphique</a> parfait pour çà.</p>
+
+<p><img class="center" src="/images/jetpack-hero-x-2.png" /></p>
+
+<h2 id="les-bases">Les bases</h2>
+
+<p>Je crée un hash <code class="language-plaintext highlighter-rouge">aliens</code>, vide au départ, qui contiendra les aliens au fur et à
+mesure de leurs <em>téléportations</em> dans la zone de jeu.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">    <span class="n">state</span><span class="p">.</span><span class="nf">aliens</span> <span class="o">||=</span> <span class="p">[]</span></code></pre></figure>
+
+<p>De même, je crée un hash <code class="language-plaintext highlighter-rouge">aliens_apparition</code> qui contiendra les animations des
+portails.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">    <span class="n">state</span><span class="p">.</span><span class="nf">aliens_apparition</span> <span class="o">||=</span> <span class="p">[]</span></code></pre></figure>
+
+<p>Je crée aussi un <code class="language-plaintext highlighter-rouge">aliens_pool</code>, pour savoir à quels endroits les aliens peuvent
+apparaitrent.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">    <span class="n">state</span><span class="p">.</span><span class="nf">aliens_pool</span> <span class="o">||=</span> <span class="p">[</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">400</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">582</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">80</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">432</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">700</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">432</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">80</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">282</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">900</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">282</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">600</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">142</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span> <span class="p">},</span>
+    <span class="p">]</span></code></pre></figure>
+
+<p>Finalement il ne faut pas oublier d’afficher les animations et les aliens.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">    <span class="n">outputs</span><span class="p">.</span><span class="nf">sprites</span> <span class="o">&lt;&lt;</span> <span class="n">state</span><span class="p">.</span><span class="nf">aliens_apparition</span>
+    <span class="n">outputs</span><span class="p">.</span><span class="nf">sprites</span> <span class="o">&lt;&lt;</span> <span class="n">state</span><span class="p">.</span><span class="nf">aliens</span></code></pre></figure>
+
+<h2 id="animation-des-portails">Animation des portails</h2>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">  <span class="k">def</span> <span class="nf">calc</span>
+    <span class="n">calc_init</span>
+    <span class="n">calc_aliens</span>
+    <span class="c1"># ...</span>
+  <span class="k">end</span></code></pre></figure>
+
+<p>Dans la 1ère partie de <code class="language-plaintext highlighter-rouge">calc_aliens</code> chaque alien du <em>pool</em> a une chance sur mille
+de se téléporter (<code class="language-plaintext highlighter-rouge">rand(1_000) == 0</code>) à chaque frame, si il n’est pas déjà en jeu (<code class="language-plaintext highlighter-rouge">alien.alive == false</code>).
+Si la chance lui sourit, on crée un portail aux bonnes coordonnées dans <code class="language-plaintext highlighter-rouge">aliens_apparition</code>.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">  <span class="k">def</span> <span class="nf">calc_aliens</span>
+    <span class="n">state</span><span class="p">.</span><span class="nf">aliens_pool</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">alien</span><span class="o">|</span>
+      <span class="k">if</span> <span class="n">alien</span><span class="p">.</span><span class="nf">alive</span> <span class="o">==</span> <span class="kp">false</span> <span class="o">&amp;&amp;</span> <span class="nb">rand</span><span class="p">(</span><span class="mi">1_000</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="n">alien</span><span class="p">.</span><span class="nf">alive</span> <span class="o">=</span> <span class="kp">true</span>
+        <span class="n">state</span><span class="p">.</span><span class="nf">aliens_apparition</span> <span class="o">&lt;&lt;</span> <span class="p">{</span>
+          <span class="ss">x: </span><span class="n">alien</span><span class="p">.</span><span class="nf">x</span><span class="p">,</span> <span class="ss">y: </span><span class="n">alien</span><span class="p">.</span><span class="nf">y</span><span class="p">,</span>
+          <span class="ss">w: </span><span class="mi">50</span> <span class="o">*</span> <span class="no">ALIEN_SCALE</span><span class="p">,</span> <span class="ss">h: </span><span class="mi">35</span> <span class="o">*</span> <span class="no">ALIEN_SCALE</span><span class="p">,</span>
+          <span class="ss">start_looping_at: </span><span class="no">Kernel</span><span class="p">.</span><span class="nf">tick_count</span><span class="p">,</span>
+          <span class="ss">finished: </span><span class="kp">false</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">break</span>
+      <span class="k">end</span>
+    <span class="k">end</span></code></pre></figure>
+
+<p>Dans la seconde partie on s’occupe d’animer les portails avec <a href="https://docs.dragonruby.org/#/api/numeric?id=frame_index">la méthode
+utilitaire frame_index</a>
+fournie par DragonRuby. Et lorsque l’animation est terminée, on la retire du hash
+<code class="language-plaintext highlighter-rouge">state.aliens_apparition</code> et on ajoute un alien au même endroit de l’écran dans
+le hash <code class="language-plaintext highlighter-rouge">state.aliens</code>.</p>
+
+<p>Les paramètres de <code class="language-plaintext highlighter-rouge">frame_index(10, 8, false)</code> sont ici :</p>
+<ul>
+  <li>10 : le nombre de sprites dans l’animation.</li>
+  <li>8 : le temps d’affichage de chaque sprite, en nombre de frame.</li>
+  <li>false : c’est un <em>one shot</em>, cette animation ne boucle pas.</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">    <span class="n">state</span><span class="p">.</span><span class="nf">aliens_apparition</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">portail</span><span class="o">|</span>
+      <span class="n">sprite_index</span> <span class="o">=</span> <span class="n">portail</span><span class="p">.</span><span class="nf">start_looping_at</span><span class="p">.</span><span class="nf">frame_index</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="kp">false</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">sprite_index</span>
+        <span class="n">portail</span><span class="p">.</span><span class="nf">path</span> <span class="o">=</span> <span class="s2">"sprites/apparition-</span><span class="si">#{</span><span class="n">sprite_index</span><span class="si">}</span><span class="s2">.png"</span>
+      <span class="k">else</span>
+        <span class="n">portail</span><span class="p">.</span><span class="nf">finished</span> <span class="o">=</span> <span class="kp">true</span>
+        <span class="n">state</span><span class="p">.</span><span class="nf">aliens</span> <span class="o">&lt;&lt;</span> <span class="p">{</span>
+          <span class="ss">x: </span><span class="n">portail</span><span class="p">.</span><span class="nf">x</span><span class="p">,</span> <span class="ss">y: </span><span class="n">portail</span><span class="p">.</span><span class="nf">y</span><span class="p">,</span>
+          <span class="ss">w: </span><span class="mi">50</span> <span class="o">*</span> <span class="no">ALIEN_SCALE</span><span class="p">,</span> <span class="ss">h: </span><span class="mi">35</span> <span class="o">*</span> <span class="no">ALIEN_SCALE</span><span class="p">,</span>
+          <span class="ss">path: </span><span class="s1">'sprites/alien.png'</span><span class="p">,</span>
+        <span class="p">}</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="n">state</span><span class="p">.</span><span class="nf">aliens_apparition</span><span class="p">.</span><span class="nf">reject!</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:finished</span><span class="p">)</span>
+  <span class="k">end</span></code></pre></figure>
+
+<h2 id="références">Références</h2>
+
+<ol>
+  <li>Vous trouverez le code de <a href="https://github.com/lkdjiin/jetpack-hero">Jetpack Hero</a> sur github</li>
+  <li><a href="https://docs.dragonruby.org/#/">Documentation</a> de DragonRuby</li>
+</ol>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2025/04/19/jetpack-hero/">Jetpack Hero</a></li>
+  <li><a href="/blog/2025/04/21/jetpack-hero-ii/">Partie II</a></li>
+  <li><a href="/blog/2025/04/22/jetpack-hero-iii/">Une platforme, des collisions</a></li>
+  <li><a href="/blog/2025/04/23/jetpack-hero-iv/">Première animation du personnage</a></li>
+  <li><a href="/blog/2025/04/28/jetpack-hero-v/">Ajouter des platformes</a></li>
+  <li><a href="/blog/2025/04/29/jetpack-hero-vi/">Du carburant pour le jetpack</a></li>
+  <li><a href="/blog/2025/05/02/jetpack-hero-vii/">Collecte de minerai</a></li>
+  <li><a href="/blog/2025/05/08/jetpack-hero-viii/">Effets sonores</a></li>
+  <li><a href="/blog/2025/05/09/jetpack-hero-ix/">Du rangement avec la classe Game</a></li>
+  <li><a href="/blog/2025/05/10/jetpack-hero-x/">Apparition des aliens</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/05/09/jetpack-hero-ix/" title="Article précédent: Du rangement avec la classe Game (Jetpack Hero)">&laquo; Du rangement avec la classe Game (Jetpack Hero)</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/05/10/jetpack-hero-x/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
