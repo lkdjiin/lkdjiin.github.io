@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tir du personnage"
+title: "Tir du personnage (Jetpack Hero)"
 date: 2025-05-12 8:00
 comments: true
 tags: [ ruby, dragonruby, jeu ]

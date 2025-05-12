@@ -15,3 +15,4 @@ _Cet article fait partie d'une série :_
 9. [Du rangement avec la classe Game](/blog/2025/05/09/jetpack-hero-ix/)
 10. [Apparition des aliens](/blog/2025/05/10/jetpack-hero-x/)
 11. [Tir du personnage](/blog/2025/05/12/jetpack-hero-xi/)
+12. [On dégomme de l'alien](/blog/2025/05/12/jetpack-hero-xii/)
