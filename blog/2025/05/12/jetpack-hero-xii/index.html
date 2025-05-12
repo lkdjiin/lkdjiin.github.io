@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">On dégomme de l&#39;alien (Jetpack Hero)</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-05-12T12:00:00+02:00" itemprop="datePublished">12 May 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Maintenant que le personnage tire des salves laser, il est temps de faire des
+cartons. Ce sera un tout petit article puisqu’on a déjà toutes les connaissances
+nécessaires.</p>
+
+<!-- more -->
+
+<h2 id="mort-dun-alien">Mort d’un alien</h2>
+
+<p>Pour gérer la vie et la mort d’un alien nous avons besoin d’un nouvel état, <code class="language-plaintext highlighter-rouge">dead</code>.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">state</span><span class="p">.</span><span class="nf">aliens</span> <span class="o">&lt;&lt;</span> <span class="p">{</span>
+  <span class="ss">x: </span><span class="n">alien</span><span class="p">.</span><span class="nf">x</span><span class="p">,</span> <span class="ss">y: </span><span class="n">alien</span><span class="p">.</span><span class="nf">y</span><span class="p">,</span>
+  <span class="ss">w: </span><span class="mi">50</span> <span class="o">*</span> <span class="no">ALIEN_SCALE</span><span class="p">,</span> <span class="ss">h: </span><span class="mi">35</span> <span class="o">*</span> <span class="no">ALIEN_SCALE</span><span class="p">,</span>
+  <span class="ss">path: </span><span class="s1">'sprites/alien.png'</span><span class="p">,</span>
+  <span class="ss">dead: </span><span class="kp">false</span><span class="p">,</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>On peut ainsi supprimer facilement les aliens décédés.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">  <span class="k">def</span> <span class="nf">calc_aliens</span>
+    <span class="c1"># ...</span>
+    <span class="n">state</span><span class="p">.</span><span class="nf">aliens</span><span class="p">.</span><span class="nf">reject!</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:dead</span><span class="p">)</span>
+  <span class="k">end</span></code></pre></figure>
+
+<p>Un alien meurt quand il y a collision entre lui et un tir laser.
+Dans ce cas on n’oublie pas de faire disparaitre aussi le laser.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">  <span class="k">def</span> <span class="nf">calc_shot</span>
+    <span class="c1"># ...</span>
+    <span class="n">state</span><span class="p">.</span><span class="nf">shots</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">shot</span><span class="o">|</span>
+      <span class="c1"># ...</span>
+      <span class="n">state</span><span class="p">.</span><span class="nf">aliens</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">a</span><span class="o">|</span>
+        <span class="k">if</span> <span class="n">shot</span><span class="p">.</span><span class="nf">intersect_rect?</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+          <span class="n">shot</span><span class="p">.</span><span class="nf">dead</span> <span class="o">=</span> <span class="kp">true</span>
+          <span class="n">a</span><span class="p">.</span><span class="nf">dead</span> <span class="o">=</span> <span class="kp">true</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+    <span class="n">state</span><span class="p">.</span><span class="nf">shots</span><span class="p">.</span><span class="nf">reject!</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:dead</span><span class="p">)</span>
+  <span class="k">end</span></code></pre></figure>
+
+<h2 id="et-réapparition">Et réapparition</h2>
+
+<p>Pour qu’un alien mort puisse réapparaitre il faut que son état <code class="language-plaintext highlighter-rouge">alive</code> repasse à <code class="language-plaintext highlighter-rouge">false</code>,
+ce qui est une condition pour pouvoir être sélectionné (voir <a href="/blog/2025/05/10/jetpack-hero-x/">Apparition des aliens</a>).
+Pour faciliter cela j’ajoute un ID à chaque alien.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">    <span class="n">state</span><span class="p">.</span><span class="nf">aliens_pool</span> <span class="o">||=</span> <span class="p">[</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">400</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">582</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span><span class="p">,</span> <span class="ss">id: </span><span class="mi">0</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">80</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">432</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span><span class="p">,</span> <span class="ss">id: </span><span class="mi">1</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">700</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">432</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span><span class="p">,</span> <span class="ss">id: </span><span class="mi">2</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">80</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">282</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span><span class="p">,</span> <span class="ss">id: </span><span class="mi">3</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">900</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">282</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span><span class="p">,</span> <span class="ss">id: </span><span class="mi">4</span> <span class="p">},</span>
+      <span class="p">{</span> <span class="n">x</span><span class="p">:</span><span class="mi">600</span><span class="p">,</span> <span class="ss">y: </span><span class="mi">142</span><span class="p">,</span> <span class="ss">alive: </span><span class="kp">false</span><span class="p">,</span> <span class="ss">id: </span><span class="mi">5</span> <span class="p">},</span>
+    <span class="p">]</span></code></pre></figure>
+
+<p>Ce qui me permet de faire le lien entre <code class="language-plaintext highlighter-rouge">aliens</code> et <code class="language-plaintext highlighter-rouge">aliens_pool</code> lors de la
+mort d’un alien.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">      <span class="n">state</span><span class="p">.</span><span class="nf">aliens</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">a</span><span class="o">|</span>
+        <span class="k">if</span> <span class="n">shoot</span><span class="p">.</span><span class="nf">intersect_rect?</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+          <span class="n">shoot</span><span class="p">.</span><span class="nf">dead</span> <span class="o">=</span> <span class="kp">true</span>
+          <span class="n">a</span><span class="p">.</span><span class="nf">dead</span> <span class="o">=</span> <span class="kp">true</span>
+          <span class="n">state</span><span class="p">.</span><span class="nf">aliens_pool</span><span class="p">[</span><span class="n">a</span><span class="p">.</span><span class="nf">id</span><span class="p">].</span><span class="nf">alive</span> <span class="o">=</span> <span class="kp">false</span>
+        <span class="k">end</span>
+      <span class="k">end</span></code></pre></figure>
+
+<h2 id="références">Références</h2>
+
+<ol>
+  <li>Vous trouverez le code de <a href="https://github.com/lkdjiin/jetpack-hero">Jetpack Hero</a> sur github</li>
+  <li><a href="https://docs.dragonruby.org/#/">Documentation</a> de DragonRuby</li>
+</ol>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2025/04/19/jetpack-hero/">Jetpack Hero</a></li>
+  <li><a href="/blog/2025/04/21/jetpack-hero-ii/">Partie II</a></li>
+  <li><a href="/blog/2025/04/22/jetpack-hero-iii/">Une platforme, des collisions</a></li>
+  <li><a href="/blog/2025/04/23/jetpack-hero-iv/">Première animation du personnage</a></li>
+  <li><a href="/blog/2025/04/28/jetpack-hero-v/">Ajouter des platformes</a></li>
+  <li><a href="/blog/2025/04/29/jetpack-hero-vi/">Du carburant pour le jetpack</a></li>
+  <li><a href="/blog/2025/05/02/jetpack-hero-vii/">Collecte de minerai</a></li>
+  <li><a href="/blog/2025/05/08/jetpack-hero-viii/">Effets sonores</a></li>
+  <li><a href="/blog/2025/05/09/jetpack-hero-ix/">Du rangement avec la classe Game</a></li>
+  <li><a href="/blog/2025/05/10/jetpack-hero-x/">Apparition des aliens</a></li>
+  <li><a href="/blog/2025/05/12/jetpack-hero-xi/">Tir du personnage</a></li>
+  <li><a href="/blog/2025/05/12/jetpack-hero-xii/">On dégomme de l’alien</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/05/12/jetpack-hero-xi/" title="Article précédent: Tir du personnage (Jetpack Hero)">&laquo; Tir du personnage (Jetpack Hero)</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/05/12/jetpack-hero-xii/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
