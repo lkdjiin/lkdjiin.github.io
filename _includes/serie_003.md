@@ -14,3 +14,4 @@ _Cet article fait partie d'une série :_
 8. [Effets sonores](/blog/2025/05/08/jetpack-hero-viii/)
 9. [Du rangement avec la classe Game](/blog/2025/05/09/jetpack-hero-ix/)
 10. [Apparition des aliens](/blog/2025/05/10/jetpack-hero-x/)
+11. [Tir du personnage](/blog/2025/05/12/jetpack-hero-xi/)
