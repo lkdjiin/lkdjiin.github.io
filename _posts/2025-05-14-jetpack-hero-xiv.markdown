@@ -35,3 +35,40 @@ Et on inverse la direction quand une limite est atteinte.
       end
     end
 {% endhighlight %}
+
+
+Je vais aussi faire une petite animation quand ils marchent. Elle va
+simplement consister à inverser le sens du sprite en boucle.
+Pour cela on utilise la propriété `flip_horizontally` d'un sprite.
+
+{% highlight ruby %}
+ALIEN_ANIMATION = 15
+
+state.aliens << alien.dup.merge({
+  path: 'sprites/alien.png',
+  dead: false,
+  flip_horizontally: false,
+  animation_counter: ALIEN_ANIMATION,
+})
+{% endhighlight %}
+
+Et donc on inverse le sprite dans le sens horizontal toutes les 15 frames.
+Une animation du pauvre en quelque sorte.
+
+{% highlight ruby %}
+state.aliens.each do |alien|
+  # ...
+  alien.animation_counter -= 1
+  if alien.animation_counter == 0
+    alien.animation_counter = ALIEN_ANIMATION
+    alien.flip_horizontally = !alien.flip_horizontally
+  end
+end
+{% endhighlight %}
+
+## Références
+
+1. Vous trouverez le code de [Jetpack Hero](https://github.com/lkdjiin/jetpack-hero) sur github
+1. [Documentation](https://docs.dragonruby.org/#/) de DragonRuby
+
+{% include serie_003.md %}

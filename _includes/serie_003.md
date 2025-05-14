@@ -17,3 +17,4 @@ _Cet article fait partie d'une série :_
 11. [Tir du personnage](/blog/2025/05/12/jetpack-hero-xi/)
 12. [On dégomme de l'alien](/blog/2025/05/12/jetpack-hero-xii/)
 13. [GAME OVER](/blog/2025/05/13/jetpack-hero-xiii/)
+14. [Les aliens bougent enfin](/blog/2025/05/14/jetpack-hero-xiv/)
