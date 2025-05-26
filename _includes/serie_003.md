@@ -19,3 +19,4 @@ _Cet article fait partie d'une série :_
 13. [GAME OVER](/blog/2025/05/13/jetpack-hero-xiii/)
 14. [Les aliens bougent enfin](/blog/2025/05/14/jetpack-hero-xiv/)
 15. [Plusieurs petites animations](/blog/2025/05/25/jetpack-hero-xv/)
+16. [Un score et des vies](/blog/2025/05/26/jetpack-hero-xvi/)
