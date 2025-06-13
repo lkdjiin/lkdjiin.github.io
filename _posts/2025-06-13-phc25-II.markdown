@@ -1,0 +1,57 @@
+---
+layout: post
+title: "Utiliser l'émulateur pour PHC-25"
+date: 2025-06-13 8:00
+comments: true
+tags: [ phc25, retro, 8bits ]
+---
+
+Autant être aussi clair que possible : [l'émulateur](/blog/2025/06/12/quinze-jours-pour-comprendre-le-phc-25/) est inutilisable en direct.
+Du moins sur Linux, je ne sais pas ce qu'il en est sur Windows.
+La faute au clavier, je n'ai pas accès à certaines touches (`7`, `8`, `(`, etc).
+Impossible de programmer sans les parenthèses !
+
+De toutes manières, personne n'aura envie de taper des centaines de lignes
+là-dedans. Mais pour des petits tests, ou des corrections à chaud, c'est bien dommage.
+
+<!-- more -->
+
+## Passage obligé : la K7
+
+On va créer nos programmes BASIC en dehors de l'émulateur, dans notre éditeur de
+texte préféré. Mais l'émulateur n'accepte pas les fichiers texte, on va devoir
+lui donner à manger une K7 virtuelle. Sur le site dédié au PHC-25, l'utilitaire
+`txt2bas` est fourni dans l'archive de l'émulateur. Il s'agit encore d'un programme Windows,
+mais les sources sont portables et on peut même trouver une version pour Linux (malheureusement j'ai oublié où).
+
+Si j'ai un programme BASIC `test.bas`, j'utiliserai la commande
+
+    ./txt2bas test.bas test.phc
+
+pour fabriquer une K7 pour l'émulateur (extension .phc).
+
+Ensuite on déplace ce fichier `*.phc` à coté de l'émulateur, là où `wine` peut
+lire/écrire et où il sera plus rapide d'aller le chercher depuis l'interface de
+l'émulateur.
+
+Un petit script en ruby (ou en ce que vous voulez) fera ça très bien :
+
+{% highlight ruby %}
+#!/usr/bin/env ruby
+
+filename = ARGV.first
+abort("Error! Need a basic file") if filename.nil?
+
+%x( rm -f #{filename}.phc )
+%x( ./txt2bas #{filename}.bas #{filename}.phc )
+abort("Error! K7 not created") unless File.exist?("#{filename}.phc")
+
+%x( mv -f #{filename}.phc '/home/xavier/.wine/drive_c/Program Files (x86)/phc25/' )
+{% endhighlight %}
+
+Une fois la K7 créée et mise au bon endroit il reste quelques
+manipulations à faire dans l'émulateur :
+
+1. Lui indiquer la K7 à utiliser (touche de raccourci `F9`)
+2. Charger le programme (commande BASIC `cload`)
+3. Lancer le programme (command BASIC `run`)
