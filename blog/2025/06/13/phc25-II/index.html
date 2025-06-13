@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Utiliser l&#39;émulateur pour PHC-25</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-06-13T08:00:00+02:00" itemprop="datePublished">13 June 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Autant être aussi clair que possible : <a href="/blog/2025/06/12/quinze-jours-pour-comprendre-le-phc-25/">l’émulateur</a> est inutilisable en direct.
+Du moins sur Linux, je ne sais pas ce qu’il en est sur Windows.
+La faute au clavier, je n’ai pas accès à certaines touches (<code class="language-plaintext highlighter-rouge">7</code>, <code class="language-plaintext highlighter-rouge">8</code>, <code class="language-plaintext highlighter-rouge">(</code>, etc).
+Impossible de programmer sans les parenthèses !</p>
+
+<p>De toutes manières, personne n’aura envie de taper des centaines de lignes
+là-dedans. Mais pour des petits tests, ou des corrections à chaud, c’est bien dommage.</p>
+
+<!-- more -->
+
+<h2 id="passage-obligé--la-k7">Passage obligé : la K7</h2>
+
+<p>On va créer nos programmes BASIC en dehors de l’émulateur, dans notre éditeur de
+texte préféré. Mais l’émulateur n’accepte pas les fichiers texte, on va devoir
+lui donner à manger une K7 virtuelle. Sur le site dédié au PHC-25, l’utilitaire
+<code class="language-plaintext highlighter-rouge">txt2bas</code> est fourni dans l’archive de l’émulateur. Il s’agit encore d’un programme Windows,
+mais les sources sont portables et on peut même trouver une version pour Linux (malheureusement j’ai oublié où).</p>
+
+<p>Si j’ai un programme BASIC <code class="language-plaintext highlighter-rouge">test.bas</code>, j’utiliserai la commande</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./txt2bas test.bas test.phc
+</code></pre></div></div>
+
+<p>pour fabriquer une K7 pour l’émulateur (extension .phc).</p>
+
+<p>Ensuite on déplace ce fichier <code class="language-plaintext highlighter-rouge">*.phc</code> à coté de l’émulateur, là où <code class="language-plaintext highlighter-rouge">wine</code> peut
+lire/écrire et où il sera plus rapide d’aller le chercher depuis l’interface de
+l’émulateur.</p>
+
+<p>Un petit script en ruby (ou en ce que vous voulez) fera ça très bien :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="n">filename</span> <span class="o">=</span> <span class="no">ARGV</span><span class="p">.</span><span class="nf">first</span>
+<span class="nb">abort</span><span class="p">(</span><span class="s2">"Error! Need a basic file"</span><span class="p">)</span> <span class="k">if</span> <span class="n">filename</span><span class="p">.</span><span class="nf">nil?</span>
+
+<span class="sx">%x( rm -f </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="sx">.phc )</span>
+<span class="sx">%x( ./txt2bas </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="sx">.bas </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="sx">.phc )</span>
+<span class="nb">abort</span><span class="p">(</span><span class="s2">"Error! K7 not created"</span><span class="p">)</span> <span class="k">unless</span> <span class="no">File</span><span class="p">.</span><span class="nf">exist?</span><span class="p">(</span><span class="s2">"</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">.phc"</span><span class="p">)</span>
+
+<span class="sx">%x( mv -f </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="sx">.phc '/home/xavier/.wine/drive_c/Program Files (x86)/phc25/' )</span></code></pre></figure>
+
+<p>Une fois la K7 créée et mise au bon endroit il reste quelques
+manipulations à faire dans l’émulateur :</p>
+
+<ol>
+  <li>Lui indiquer la K7 à utiliser (touche de raccourci <code class="language-plaintext highlighter-rouge">F9</code>)</li>
+  <li>Charger le programme (commande BASIC <code class="language-plaintext highlighter-rouge">cload</code>)</li>
+  <li>Lancer le programme (command BASIC <code class="language-plaintext highlighter-rouge">run</code>)</li>
+</ol>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/06/12/quinze-jours-pour-comprendre-le-phc-25/" title="Article précédent: 15 jours pour comprendre le PHC-25">&laquo; 15 jours pour comprendre le PHC-25</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/06/13/phc25-II/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
