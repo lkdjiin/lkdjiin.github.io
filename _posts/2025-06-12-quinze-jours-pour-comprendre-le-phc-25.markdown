@@ -43,3 +43,5 @@ On se quitte avec un classique _hello world_ :
 
 - [Site dédié au PHC-25](http://www.phc25.com/index.htm)
 - [La vidéo qui m'a fait découvrir le PHC-25](https://www.youtube.com/watch?v=B97-ilAeYUk)
+
+{% include serie_phc25.md %}
