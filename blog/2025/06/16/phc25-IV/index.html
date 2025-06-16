@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Portage du jeu Blitz pour le PHC-25</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-06-16T08:00:00+02:00" itemprop="datePublished">16 June 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Pour me familiariser avec le PHC-25 et son basic, je vais porter le jeu <strong>Blitz</strong>
+qui figurait dans le livre «MO5 jeux d’action» de 1984. Voici quelques extraits
+qui me paraissent intéressants pour découvrir le jeu et la machine.</p>
+
+<!-- more -->
+
+<p>Tout d’abord un screenshot de la version MO5 :</p>
+
+<p><img class="center" src="/images/phc25-iv-1.png" /></p>
+
+<p>Puis le portage en mode texte pour le PHC-25 :</p>
+
+<p><img class="center" src="/images/phc25-iv-2.png" /></p>
+
+<h2 id="construction-de-la-ville">Construction de la ville</h2>
+
+<p>Contrairement au MO5, le PHC-25 n’offre pas la possibilité de définir ses
+propres caractères. Dommage car c’est une fonctionnalité formidable pour créer
+des jeux en mode texte. Par contre le PHC-25 possède une quinzaine de caractères
+semi-graphiques, ce qui va m’éviter de construire la ville avec des <code class="language-plaintext highlighter-rouge">#</code>.</p>
+
+<p>Ligne 20 : c’est la façon d’initialiser le générateur de nombres pseudo-alétoires.
+Il faut passer un nombre négatif. Si on ne fait pas ça, il y aura toujours les
+mêmes nombres à chaque démarrage de l’ordi.</p>
+
+<p>Ligne 50 : c’est le tirage au sort d’un caractère semi-graphique pour une
+colonne de la ville. <code class="language-plaintext highlighter-rouge">c</code> vaudra 19, 20 ou 21, ce qui correspond au code des
+caractères qui m’intéressent (et qu’on trouve dans le manuel).</p>
+
+<p>Ligne 60 : chaque colonne de la ville aura une longueur différente. L’affichage
+commence par la ligne écran n° 15 (celle du bas, l’écran texte faisant 32x16 caractères).
+Comme l’affichage est lent en basic, commencer par le bas permet de voir la
+ville «surgir» de terre :D</p>
+
+<p>Ligne 70 : impossible d’écrire un caractère semi-graphique avec un <code class="language-plaintext highlighter-rouge">PRINT</code>, il
+faut passer par une écriture en mémoire vidéo avec <code class="language-plaintext highlighter-rouge">POKE</code>. 24576 est l’adresse
+en RAM du caractère en haut à gauche. Adresse à laquelle on ajoute <code class="language-plaintext highlighter-rouge">x+y*32</code> caractères
+pour se positionner à l’endroit voulu (un caractère == un octet).</p>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    20 i=rnd(-1)
+    30 cls
+    40 for x=8 to 23
+    50 c=int(rnd(1)*3)+19
+    60 for y=15 to int(rnd(1)*6)+9 step -1
+    70 poke 24576+x+y*32,c
+    80 next y
+    90 next x
+    </code></pre></figure>
+
+<h2 id="la-bombe">La bombe</h2>
+
+<p>Cette routine efface la bombe de son ancienne position et l’affiche à sa nouvelle position. Elle
+fait aussi entendre un effet sonore quand la bombe arrive au sol.</p>
+
+<p>Ligne 3020 : on positionne le curseur. <code class="language-plaintext highlighter-rouge">bx</code> contient la coordonnée x de la bombe et
+<code class="language-plaintext highlighter-rouge">b1</code> contient son ancienne coordonnée y (la fameuse <a href="/blog/2025/06/14/phc25-III/">limitation des 2 caractères</a>).
+On efface en affichant un espace.</p>
+
+<p>Ligne 3050 : on affiche le caractère semi-graphique 133 (un cercle plein)
+à l’aide de la même formule que dans l’affichage de la ville.</p>
+
+<p>Ligne 3060 : Quand la bombe atteint le bas de l’écran, je fais entendre un bruit
+blanc (qui rappelle vaguement une explosion). <code class="language-plaintext highlighter-rouge">sound 6,30</code> indique la fréquence du bruit.
+<code class="language-plaintext highlighter-rouge">sound 7,28</code> pour dire que le bruit est sur la 3ème voix. Et <code class="language-plaintext highlighter-rouge">sound 10,10</code> pour ouvrir le volume de la 3ème voix à 10 (sur un
+maximum de 15). La commande <code class="language-plaintext highlighter-rouge">sound</code> est tout sauf intuitive, mais elle fait le boulot.</p>
+
+<p>Ligne 3070 : coupe le volume du bruit blanc.</p>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    3000 rem --- display bomb
+    3010 if by&gt;15 then by=0
+    3020 locate bx,b1:print " ";
+    3040 b1=by
+    3050 if by&lt;&gt;0 then poke 24576+bx+by*32,133:by=by+1
+    3060 if by=15 then sound 6,30:sound 7,28:sound 10,10
+    3070 if by=0 then sound 10,0
+    3080 return
+    </code></pre></figure>
+
+<h2 id="le-score">Le score</h2>
+
+<p>La formule utilisée pour calculer le score (<code class="language-plaintext highlighter-rouge">s</code>) est exactement la même que celle pour
+l’affichage de la bombe ou d’un caractère de la ville. Ce qui donne 1 point pour
+chaque «caractère parcouru» par l’avion.</p>
+
+<figure class="highlight"><pre><code class="language-bas" data-lang="bas">280 s=s+32*hy+hx</code></pre></figure>
+
+<h2 id="lavion">L’avion</h2>
+
+<p>Aucun caractère semi-graphique ne convient pour représenter l’avion. Je suis
+obligé de me contenter de &gt;=, alterné avec &gt;- pour donner une vague
+impression de mouvement. Ce qui est notable, c’est que l’utilisation d’un
+espace au début de la chaîne (<code class="language-plaintext highlighter-rouge">" &gt;="</code>) permet d’effacer l’ancienne position et
+d’afficher la nouvelle en un seul <code class="language-plaintext highlighter-rouge">PRINT</code>.</p>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">1010 dim a$(1)
+1020 a$(0) = " &gt;="
+1030 a$(1) = " &gt;-"</code></pre></figure>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/06/14/phc25-III/" title="Article précédent: Quelques réflexions sur le BASIC du PHC-25">&laquo; Quelques réflexions sur le BASIC du PHC-25</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/06/16/phc25-IV/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
