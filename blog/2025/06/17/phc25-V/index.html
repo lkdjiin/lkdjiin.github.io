@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Le mode graphique 2 du PHC-25</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-06-17T08:00:00+02:00" itemprop="datePublished">17 June 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>On passe en mode graphique n°2 sur le PHC-25 avec l’instruction <code class="language-plaintext highlighter-rouge">screen 2</code>.
+L’écran a maintenant une résolution de 64x48 pixels. Et on a accès à
+8 couleurs (9 en comptant le fond, obligatoirement noir). L’espace occupé en
+mode texte par un caractère est maintenant découpé en 6 gros pixels (2 en largeur, 3 en hauteur).
+Chaque bloc de 6 pixels ne peut prendre qu’une seule couleur (en plus du noir).</p>
+
+<!-- more -->
+
+<h2 id="lencodage">L’encodage</h2>
+
+<p>Chaque bloc de 6 pixels en mode graphique n°2 tient la même place qu’un caractère
+en mode texte, soit un octet. Les six bits de 0 à 5 codent chacun un pixel suivant
+ce pattern :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>54
+32
+10
+</code></pre></div></div>
+
+<p>Les deux autres bits, 6 et 7, encodent la couleur.</p>
+
+<h2 id="un-exemple">Un exemple</h2>
+
+<p>Voyons un exemple tiré du jeu Blitz en mode graphique n°2.</p>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    120 poke pp,0:poke pp+1,0:rem erase plane
+    130 pp=24576+hx+hy*32:rem plane position
+    140 poke pp,173:poke pp+1,174:rem draw plane</code></pre></figure>
+
+<p>Avec un petit effort d’imagination, ce qui suit est un avion :</p>
+
+<p><img class="center" src="/images/phc25-v-1.png" /></p>
+
+<p>Il est constitué de deux «caractères»/blocs. Celui de gauche :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#
+##
+ #
+</code></pre></div></div>
+
+<p>Et celui de droite :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#
+##
+#
+</code></pre></div></div>
+
+<h3 id="effacement">Effacement</h3>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    120 poke pp,0:poke pp+1,0</code></pre></figure>
+
+<p>La variable <code class="language-plaintext highlighter-rouge">pp</code> contient l’ancienne position du «caractère» de gauche de l’avion
+dans la mémoire vidéo. En écrivant 0 à cette adresse, on notifie le PHC-25
+d’éteindre tout les pixels à cette position de l’écran. On fait ensuite pareil
+à droite avec <code class="language-plaintext highlighter-rouge">pp+1</code>, l’avion mesurant deux «caractères» de long.</p>
+
+<p>Notez que la couleur 0 correspond au vert, et non pas au noir. Comme ici on n’allume pas de pixels, on
+pourrait mettre la couleur qu’on veut et ça reviendrait au même.</p>
+
+<h3 id="calcul-de-la-nouvelle-position">Calcul de la nouvelle position</h3>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    130 pp=24576+hx+hy*32</code></pre></figure>
+
+<p>C’est le même <a href="/blog/2025/mm/dd/titre-du-lien/">algo déjà vu</a> dans Blitz en mode texte.</p>
+
+<h3 id="affichage">Affichage</h3>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    140 poke pp,173:poke pp+1,174</code></pre></figure>
+
+<p>173 s’écrit <code class="language-plaintext highlighter-rouge">10101101</code> en binaire. Comme expliqué plus, les deux bits de gauche (<code class="language-plaintext highlighter-rouge">10</code>)
+encodent la couleur. Ici on a du bleu. Les six octets restants (<code class="language-plaintext highlighter-rouge">101101</code>) encodent la «forme» :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10
+11
+01
+</code></pre></div></div>
+
+<p>Je vous laisse vérifier que le même raisonnement s’applique avec la valeur 174 ;)</p>
+
+<h2 id="références">Référence(s)</h2>
+
+<p><a href="https://gitlab.com/mokona/phc25_tools/-/blob/main/documentation/phc25-tech-information.md?ref_type=heads#semigraphic-6-mode-4">Documentation de Sylvain Glaize</a></p>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2025/06/12/quinze-jours-pour-comprendre-le-phc-25/">15 jours pour comprendre le PHC-25</a></li>
+  <li><a href="/blog/2025/06/13/phc25-II/">Utiliser l’émulateur pour PHC-25</a></li>
+  <li><a href="/blog/2025/06/14/phc25-III/">Quelques réflexions sur le BASIC du PHC-25</a></li>
+  <li><a href="/blog/2025/06/16/phc25-IV/">Portage du jeu Blitz sur le PHC-25</a></li>
+  <li><a href="/blog/2025/06/17/phc25-V/">Le mode graphique 2 du PHC-25</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/06/16/phc25-IV/" title="Article précédent: Portage du jeu Blitz sur le PHC-25">&laquo; Portage du jeu Blitz sur le PHC-25</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/06/17/phc25-V/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
