@@ -1,0 +1,98 @@
+---
+layout: post
+title: "Le mode graphique 2 du PHC-25"
+date: 2025-06-17 8:00
+comments: true
+tags: [ phc25, retro, 8bits, basic ]
+---
+
+On passe en mode graphique n°2 sur le PHC-25 avec l'instruction `screen 2`.
+L'écran a maintenant une résolution de 64x48 pixels. Et on a accès à
+8 couleurs (9 en comptant le fond, obligatoirement noir). L'espace occupé en
+mode texte par un caractère est maintenant découpé en 6 gros pixels (2 en largeur, 3 en hauteur).
+Chaque bloc de 6 pixels ne peut prendre qu'une seule couleur (en plus du noir).
+
+<!-- more -->
+
+## L'encodage
+
+Chaque bloc de 6 pixels en mode graphique n°2 tient la même place qu'un caractère
+en mode texte, soit un octet. Les six bits de 0 à 5 codent chacun un pixel suivant
+ce pattern :
+
+    54
+    32
+    10
+
+Les deux autres bits, 6 et 7, encodent la couleur.
+
+## Un exemple
+
+Voyons un exemple tiré du jeu Blitz en mode graphique n°2.
+
+{% highlight basic %}
+    120 poke pp,0:poke pp+1,0:rem erase plane
+    130 pp=24576+hx+hy*32:rem plane position
+    140 poke pp,173:poke pp+1,174:rem draw plane
+{% endhighlight %}
+
+Avec un petit effort d'imagination, ce qui suit est un avion :
+
+{% img center /images/phc25-v-1.png %}
+
+Il est constitué de deux «caractères»/blocs. Celui de gauche :
+
+    #
+    ##
+     #
+
+Et celui de droite :
+
+    #
+    ##
+    #
+
+### Effacement
+
+{% highlight basic %}
+    120 poke pp,0:poke pp+1,0
+{% endhighlight %}
+
+La variable `pp` contient l'ancienne position du «caractère» de gauche de l'avion
+dans la mémoire vidéo. En écrivant 0 à cette adresse, on notifie le PHC-25
+d'éteindre tout les pixels à cette position de l'écran. On fait ensuite pareil
+à droite avec `pp+1`, l'avion mesurant deux «caractères» de long.
+
+Notez que la couleur 0 correspond au vert, et non pas au noir. Comme ici on n'allume pas de pixels, on
+pourrait mettre la couleur qu'on veut et ça reviendrait au même.
+
+### Calcul de la nouvelle position
+
+{% highlight basic %}
+    130 pp=24576+hx+hy*32
+{% endhighlight %}
+
+C'est le même [algo déjà vu](/blog/2025/mm/dd/titre-du-lien/) dans Blitz en mode texte.
+
+
+### Affichage
+
+{% highlight basic %}
+    140 poke pp,173:poke pp+1,174
+{% endhighlight %}
+
+173 s'écrit `10101101` en binaire. Comme expliqué plus, les deux bits de gauche (`10`)
+encodent la couleur. Ici on a du bleu. Les six octets restants (`101101`) encodent la «forme» :
+
+    10
+    11
+    01
+
+Je vous laisse vérifier que le même raisonnement s'applique avec la valeur 174 ;)
+
+
+## Référence(s)
+
+[Documentation de Sylvain Glaize](https://gitlab.com/mokona/phc25_tools/-/blob/main/documentation/phc25-tech-information.md?ref_type=heads#semigraphic-6-mode-4)
+
+{% include serie_phc25.md %}
