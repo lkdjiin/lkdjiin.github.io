@@ -1,0 +1,74 @@
+---
+layout: post
+title: "Palettes de couleur du PHC-25 en mode graphique 2"
+date: 2025-06-18 8:00
+comments: true
+tags: [ jeu, retro, basic, phc25 ]
+---
+
+Le mode graphique n°2 du PHC-25 fournit 8 couleurs, en plus du fond noir.
+Mais la couleur de chaque emplacement à l'écran est encodé sur 2 bits, ce qui
+fait seulement 4 valeurs différentes. Alors, comment c'est possible ?
+
+<!-- more -->
+
+Sur le screenshot suivant on voit l'usage de 5 couleurs. Quatre pour les batiments de
+la ville et une cinquième pour l'avion.
+
+{% img center /images/phc25-vi-1.png %}
+
+Pour chaque colonne `c` de la ville (ligne 2090) on tire au sort une forme et une couleur.
+
+{% highlight basic %}
+    2060 sh(0)=53:sh(1)=58:rem 2 shapes
+    2070 co(0)=0:co(1)=64:co(2)=128:co(3)=192:rem 4 colors
+    2090 c=co(int(rnd(1)*4))+sh(int(rnd(1)*2))
+{% endhighlight %}
+
+La forme 53 correspond à :
+
+    11
+    01
+    01
+
+Et la forme 58 correspond à :
+
+    11
+    10
+    10
+
+Les couleurs étant codées sur les deux bits de poids fort d'un octet, on a ceci :
+
+| décimal | binaire | couleur |
+|-----:|---------|---------|
+|   0  | **00**000000 | vert
+|  64  | **01**000000 | jaune
+| 128  | **10**000000 | bleu foncé
+| 192  | **11**000000 | rouge
+
+
+Voir l'[article précédent](/blog/2025/06/17/phc25-V/) pour l'explication de l'encodage des formes et des couleurs.
+
+Sur l'image ci-dessus on voit que la ville est blanche, bleu ciel, rose, et orange.
+Pour obtenir ces quatre autres couleurs, il faut positionner à `1` le bit d'attribut de palette.
+Les attributs se trouve à partir de l'adresse mémoire 26624 et on a un octet par coordonnée d'écran.
+Donc les attributs du bloc (0,0) se trouvent en 26624, ceux du bloc (1,0) se trouvent en 26625, etc.
+
+Dans un octet d'attribut le bit 1 s'occupe du mode graphique (0 pour texte et 1 pour semi-graphique) et
+le bit 2 represente la palette de couleur (0 pour vert-rouge et 1 pour blanc-orange).
+Comme nous sommes en mode n°2/semi-graphique (bit 1 activé) il n'y a que deux possibilités pour un attribut :
+
+00000**01**0 = première palette de couleur
+
+00000**11**0 = seconde palette de couleur
+
+
+{% highlight basic %}
+    2110 mem=24576+x+y*32:attr=26624+x+y*32
+    2120 poke mem,c:poke attr,6
+{% endhighlight %}
+
+## Référence(s)
+[Code source de Blitz en mode graphique 2](https://github.com/lkdjiin/PHC-25/blob/main/basic/blitz2.bas)
+
+{% include serie_phc25.md %}
