@@ -24,50 +24,98 @@
         <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title p-name" itemprop="name headline">15 jours pour comprendre le PHC-25</h1>
+    <h1 class="post-title p-name" itemprop="name headline">Palettes de couleur du PHC-25 en mode graphique 2</h1>
     <p class="post-meta">
-      <time class="dt-published" datetime="2025-06-12T08:00:00+02:00" itemprop="datePublished">12 June 2025
+      <time class="dt-published" datetime="2025-06-18T08:00:00+02:00" itemprop="datePublished">18 June 2025
       </time></p>
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p>Le PHC-25 est un micro-ordinateur 8 bits du début des années 1980 qui
-m’était totalement inconnu.
-Je viens de le découvrir suite à <a href="https://www.youtube.com/watch?v=B97-ilAeYUk">l’organisation d’une game jam</a>
-pour cet ordi par les
-«Retro Programmers United for Obscure Systems» (oui ça existe pour de vrai :D ).</p>
-
-<p>D’après ce que j’ai compris, le principal problème de cet ordinateur est la documentation : spartiate et éronnée. Je me donne 15 jours pour voir si je peux écrire un jeu modeste.</p>
+    <p>Le mode graphique n°2 du PHC-25 fournit 8 couleurs, en plus du fond noir.
+Mais la couleur de chaque emplacement à l’écran est encodé sur 2 bits, ce qui
+fait seulement 4 valeurs différentes. Alors, comment c’est possible ?</p>
 
 <!-- more -->
 
-<h2 id="installation-de-lémulateur">Installation de l’émulateur</h2>
+<p>Sur le screenshot suivant on voit l’usage de 5 couleurs. Quatre pour les batiments de
+la ville et une cinquième pour l’avion.</p>
 
-<p>Il existe deux émulateurs, un pour <a href="https://www.mamedev.org/">MAME</a> et l’autre
-pour Windows. Je suis sur Linux, mais je n’ai pas envie d’installer MAME sur
-l’ordi où je code. J’opte donc pour l’émulateur Windows, que j’utiliserai à
-l’aide de <code class="language-plaintext highlighter-rouge">wine</code>.</p>
+<p><img class="center" src="/images/phc25-vi-1.png" /></p>
 
-<p>Je récupère l’émulateur sur www.phc25.com. Il semble exister une version plus
-récente <a href="https://github.com/hitchhikr/phc25">ici</a> mais je ne l’ai pas essayé.</p>
+<p>Pour chaque colonne <code class="language-plaintext highlighter-rouge">c</code> de la ville (ligne 2090) on tire au sort une forme et une couleur.</p>
 
-<p>Je place l’executable et la rom dans <code class="language-plaintext highlighter-rouge">~/.wine/drive_c/Program\ Files\ \(x86\)/phc25/</code>
-et je peux maintenant lancer l’émulateur avec la commande <code class="language-plaintext highlighter-rouge">wine ./phc25.exe</code>.</p>
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    2060 sh(0)=53:sh(1)=58:rem 2 shapes
+    2070 co(0)=0:co(1)=64:co(2)=128:co(3)=192:rem 4 colors
+    2090 c=co(int(rnd(1)*4))+sh(int(rnd(1)*2))</code></pre></figure>
 
-<h2 id="hello-world">Hello world</h2>
+<p>La forme 53 correspond à :</p>
 
-<p>On se quitte avec un classique <em>hello world</em> :</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>11
+01
+01
+</code></pre></div></div>
 
-<figure class="highlight"><pre><code class="language-basic" data-lang="basic">10 print "Bonjour"</code></pre></figure>
+<p>Et la forme 58 correspond à :</p>
 
-<p><img class="center" src="/images/phc25-1-1.png" /></p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>11
+10
+10
+</code></pre></div></div>
 
-<h2 id="réferences">Réferences</h2>
+<p>Les couleurs étant codées sur les deux bits de poids fort d’un octet, on a ceci :</p>
 
-<ul>
-  <li><a href="http://www.phc25.com/index.htm">Site dédié au PHC-25</a></li>
-  <li><a href="https://www.youtube.com/watch?v=B97-ilAeYUk">La vidéo qui m’a fait découvrir le PHC-25</a></li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: right">décimal</th>
+      <th>binaire</th>
+      <th>couleur</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">0</td>
+      <td><strong>00</strong>000000</td>
+      <td>vert</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">64</td>
+      <td><strong>01</strong>000000</td>
+      <td>jaune</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">128</td>
+      <td><strong>10</strong>000000</td>
+      <td>bleu foncé</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">192</td>
+      <td><strong>11</strong>000000</td>
+      <td>rouge</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Voir l’<a href="/blog/2025/06/17/phc25-V/">article précédent</a> pour l’explication de l’encodage des formes et des couleurs.</p>
+
+<p>Sur l’image ci-dessus on voit que la ville est blanche, bleu ciel, rose, et orange.
+Pour obtenir ces quatre autres couleurs, il faut positionner à <code class="language-plaintext highlighter-rouge">1</code> le bit d’attribut de palette.
+Les attributs se trouve à partir de l’adresse mémoire 26624 et on a un octet par coordonnée d’écran.
+Donc les attributs du bloc (0,0) se trouvent en 26624, ceux du bloc (1,0) se trouvent en 26625, etc.</p>
+
+<p>Dans un octet d’attribut le bit 1 s’occupe du mode graphique (0 pour texte et 1 pour semi-graphique) et
+le bit 2 represente la palette de couleur (0 pour vert-rouge et 1 pour blanc-orange).
+Comme nous sommes en mode n°2/semi-graphique (bit 1 activé) il n’y a que deux possibilités pour un attribut :</p>
+
+<p>00000<strong>01</strong>0 = première palette de couleur</p>
+
+<p>00000<strong>11</strong>0 = seconde palette de couleur</p>
+
+<figure class="highlight"><pre><code class="language-basic" data-lang="basic">    2110 mem=24576+x+y*32:attr=26624+x+y*32
+    2120 poke mem,c:poke attr,6</code></pre></figure>
+
+<h2 id="références">Référence(s)</h2>
+<p><a href="https://github.com/lkdjiin/PHC-25/blob/main/basic/blitz2.bas">Code source de Blitz en mode graphique 2</a></p>
 
 <p><br /></p>
 <div style="text-align: center">/ / / / / / / / / /</div>
@@ -95,10 +143,8 @@ et je peux maintenant lancer l’émulateur avec la commande <code class="langua
 
   <div style="text-align: center">
     
-      <a href="/blog/2025/06/01/brassin-148-belgian-american-ipa/" title="Article précédent: Belgian American IPA - Brassin n°148">&laquo; Belgian American IPA - Brassin n°148</a> ---//---
+      <a href="/blog/2025/06/17/phc25-V/" title="Article précédent: Le mode graphique 2 du PHC-25">&laquo; Le mode graphique 2 du PHC-25</a> ---//---
     
-    
-      <a href="/blog/2025/06/13/phc25-II/" title="Article suivant: Utiliser l'émulateur pour PHC-25">Utiliser l'émulateur pour PHC-25 &raquo;</a>
     
   </div>
 
@@ -111,7 +157,7 @@ commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire
 sur </em>
 <a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
 </p>
-<a class="u-url" href="/blog/2025/06/12/quinze-jours-pour-comprendre-le-phc-25/" hidden></a>
+<a class="u-url" href="/blog/2025/06/18/phc25-VI/" hidden></a>
 </article>
 
       </div>
