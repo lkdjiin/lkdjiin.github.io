@@ -1,0 +1,180 @@
+---
+layout: post
+title: "L'assembleur sur le PHC-25"
+date: 2025-06-19 8:00
+comments: true
+tags: [ assembleur, retro, phc25, 8bits ]
+---
+
+Dans les années 80, programmer en assembleur pour des ordinateurs 8 bits signifiait
+généralement :
+
+1. Écrire le programme avec papier et stylo
+1. L'assembler à la main
+1. Insérer les codes machines ainsi obtenus un par un en mémoire depuis un programme BASIC
+
+Aujourd'hui c'est un peu plus simple. Mais seulement un petit peu…
+
+<!-- more -->
+
+L'objectif de cet article est de fournir les outils nécessaires pour lancer un
+_hello world_ écrit en assembleur sur le PHC-25.
+
+## Le programme hello.asm
+
+Le PHC-25 utilise un micro-processeur Z80, comme les ZX-81, ZX Spectrum,
+Amstrad CPC, et la console Master System, pour ne citer qu'eux.
+
+Voici à quoi ressemble notre programme assembleur pour PHC-25 qui va écrire BONJOUR en haut à gauche de
+l'écran :
+
+{% highlight nasm %}
+ld a, "B"
+ld ($6000), a
+ld a, "O"
+ld ($6001), a
+ld a, "N"
+ld ($6002), a
+ld a, "J"
+ld ($6003), a
+ld a, "O"
+ld ($6004), a
+ld a, "U"
+ld ($6005), a
+ld a, "R"
+ld ($6006), a
+ret
+{% endhighlight %}
+
+À la première ligne (`ld a, "B"`) on charge le registre `a` avec la lettre/valeur `B`.
+**ld** est l'abreviation de _load_ (charger en anglais). Un **registre** est une case mémoire, en
+dehors de la RAM, et très rapidement accessible par le micro-processeur. La **lettre B** est vu
+par l'assembleur comme le code ASCII 66. C'est seulement plus pratique pour nous,
+les êtres humains, d'écrire "B" plutôt que 66.
+
+À la seconde ligne (`ld ($6000), a`) on charge à l'adresse mémoire $6000 ce qui
+est contenu dans le registre a (autrement dit la valeur de la lettre B, vous suivez toujours ?).
+**$6000** est la façon d'écrire le nombre 24576 en hexadécimal.
+Il n'y a pas d'obligation à utiliser l'hexadécimal, c'est seulement plus pratique parfois.
+Les parenthèses autour de $6000 sont ici obligatoires, et viennent souligner le fait
+qu'on accède (en lecture ou en écriture) au _contenu_ à l'adresse $6000, et pas au
+nombre $6000 lui-même. Ici ça peut sembler redondant et ça l'est, car «écrire dans le nombre $6000»
+n'a aucun sens. Mais c'est comme ça avec l'assembleur Z80.
+
+**$6000** c'est aussi l'adresse de début de la mémoire vidéo en mode texte. Nos
+deux premières lignes affichent donc la lettre "B" en haut à gauche de l'écran.
+
+Les douze lignes suivantes font la même chose avec le reste des lettres du mot "BONJOUR".
+
+La dernière ligne (`ret`) est l'abréviation de _return_ qui signale la fin d'une fonction, d'une routine.
+Elle est nécessaire car quand nous appelerons cette routine depuis un programme en BASIC, nous voudrons
+que la main soit rendue au programme BASIC à la fin de la routine assembleur.
+
+Vous allez me dire mais pourquoi ne pas faire directement `ld ($6000), "B"` au lieu
+de le faire en deux fois ? D'abord `ld a, "B"` puis `ld ($6000), a` ? Et bien
+simplement parce que le micro-processeur Z80 ne sait pas faire ça.
+
+## L'assemblage
+L'assemblage est la transformation d'une suite d'instructions assembleur (compréhensible par nous les humains) en une
+suite d'instructions en langage machine (seul truc compréhensible par le micro-processeur).
+En gros c'est la même chose que la phase de compilation en C, ou autres, mais là on appelle ça l'assemblage.
+
+Pour l'assemblage Z80 sur Linux, j'utilise [z80asm](https://www.nongnu.org/z80asm/index.html) parce qu'il est disponible
+dans mon gestionnaire de paquet. Et même s'il est daté, je n'ai pas de problèmes avec.
+
+La ligne de commande `z80asm hello.asm` va produire un fichier `a.bin` qui contient le programme en langage machine.
+Si on pouvait mettre le contenu de ce fichier directement dans la mémoire du PHC-25 à partir de
+l'adresse $6000, on verrait s'afficher BONJOUR sur l'écran. Mais on ne peut pas faire
+ça. Encore un peu de patience…
+
+## Visualiser les codes machine
+Pour pouvoir incorporer les codes machine du fichier `a.bin` dans un programme
+en BASIC, on peut commencer par les afficher. J'utilise pour cela la commande
+`xxd` qui devrait être disponible sur toutes les distributions Linux.
+
+Par défaut il affiche les adresses, les codes machine en hexa groupés par 2 et
+une représentation ASCII de ces codes. Souvent très utile, mais là c'est pas du
+tout ce qu'on veut :
+
+    $ xxd a.bin
+    00000000: 3e42 3200 603e 4f32 0160 3e4e 3202 603e  >B2.`>O2.`>N2.`>
+    00000010: 4a32 0360 3e4f 3204 603e 5532 0560 3e52  J2.`>O2.`>U2.`>R
+    00000020: 3206 60c9                                2.`.
+
+Avec l'option qui va bien il ne va afficher que le code machine en hexa :
+
+    $ xxd -ps a.bin
+    3e423200603e4f3201603e4e3202603e4a3203603e4f3204603e55320560
+    3e52320660c9
+
+Mais je préfère afficher un octet par ligne :
+
+    $ xxd -c 1 -ps a.bin
+    3e
+    42
+    32
+    00
+    60
+    [...]
+    c9
+
+## Comprendre le langage machine
+Mais qu'est ce que signifie cette suite de nombres hexadécimaux ? C'est une suite d'instructions
+directement exécutable par un micro-processeur Z80.
+
+Les deux premiers nombres, 3e 42, correspondent à la première ligne de notre programme : `ld a, "B"`.
+**3e** est le code pour dire «charger l'octet suivant dans le registre a».
+**42** est le code ASCII de la lettre B en hexa.
+
+
+Les trois nombres suivants, 32 00 60, correspondent à la ligne assembleur `ld ($6000), a`.
+**32** est le code pour dire «charger le contenu de a dans l'emplacement mémoire qui suit».
+**00 60** est le nombre hexa 6000, mais écrit en _little endian_. Donc en gros, écrit à l'envers.
+
+Et ainsi de suite jusqu'au dernier nombre, **C9**, qui est le code machine pour l'instruction assembleur `ret`.
+
+## Le programme final
+
+Voici le programme BASIC qui va charger notre programme en langage machine dans la mémoire du PHC-25 et l'appeller.
+
+{% highlight visualbasic %}
+10 clear 100,&hf000
+20 for k=1 to 36
+30 read a$
+40 poke &hf000+(k-1),val("&h"+a$)
+50 next k
+60 cls
+70 exec &hf000
+80 r$=inkey$:if r$="" then 80
+90 end
+100 data 3e,42,32,00,60,3e,4f,32,01,60,3e,4e,32,02,60,3e,4a,32,03,60
+110 data 3e,4f,32,04,60,3e,55,32,05,60,3e,52,32,06,60,c9
+{% endhighlight %}
+
+Quelques explications :
+
+Ligne 10 : dit au BASIC que ce qui se passe à partir de l'adresse hexa F000 ne
+le regarde plus. Il n'a plus le droit de s'en servir. On va pouvoir y mettre notre
+routine en langage machine.
+
+Ligne 20 : on boucle sur les 36 octets de notre code machine.
+
+Ligne 30 : on lit un octet (dans les données pointées par `data`).
+
+Ligne 40 : on envoie cet octet en mémoire. Après substitution c'est comme si on avait `poke &hf000,&h3e`.
+
+Ligne 50 : on recommence avec l'octet suivant (dans les `data`).
+
+Ligne 70 : on saute à l'adresse f000 qui est le début de notre programme en langage machine.
+
+Ligne 80 : une fois le programme machine terminé, la main revient au BASIC juste ici, après l'instruction `exec`. Cette
+ligne 80 attend l'appui sur une touche, vous permettant ainsi de voir l'affichage de BONJOUR avant qu'il soit écrasé
+par le message «Ready» du PHC-25.
+
+Lignes 100 et 110 : L'instruction `data` est comme une mini banque de données ;)
+
+## Référence(s)
+
+- [Zilog Z80 CPU user manual](https://map.grauw.nl/resources/cpu/z80.pdf)
+
+{% include serie_phc25.md %}

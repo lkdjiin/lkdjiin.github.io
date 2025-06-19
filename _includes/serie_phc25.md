@@ -10,3 +10,4 @@ _Cet article fait partie d'une série :_
 4. [Portage du jeu Blitz sur le PHC-25](/blog/2025/06/16/phc25-IV/)
 5. [Le mode graphique 2 du PHC-25](/blog/2025/06/17/phc25-V/)
 6. [Palettes de couleur du PHC-25 en mode graphique 2](/blog/2025/06/18/phc25-VI/)
+7. [L'assembleur sur le PHC-25](/blog/2025/06/19/phc25-VII/)

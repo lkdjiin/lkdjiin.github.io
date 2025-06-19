@@ -1,0 +1,117 @@
+---
+layout: post
+title: "L'assembleur Z80 plus en détail"
+date: 2025-06-21 8:00
+comments: true
+tags: [ tag1, tag2, etc ]
+---
+
+Le [premier source assembleur]() nous a été utile pour valider la chaîne d'outils.
+Mais il répétait la même instruction encore et encore. Il est temps maintenant d'en voir un peu plus.
+
+<!-- more -->
+
+C'est le même programme, l'affichage de BONJOUR en haut à gauche de l'écran, mais
+cette fois-ci il fait appel à plus de fonctionnalités et d'instructions.
+
+{% highlight visualbasic %}
+org $f000
+
+  ld de, bonjour
+  ld b, 7
+  ld hl, $6000
+loop:
+  ld a, (de)
+  ld (hl), a
+  inc hl
+  inc de
+  djnz loop
+  ret
+
+bonjour:
+  db "BONJOUR"
+{% endhighlight %}
+
+Je vais disséquer chaque ligne.
+
+    org $f000
+
+`org` indique l'**or**i**g**ine en mémoire du programme. C'est à dire l'adresse
+à laquelle il débute. C'est une directive qui est destinée à l'assembleur (le
+programme qui transforme notre source). Une directive n'est pas traduite en
+instruction. Ici nous informons l'assembleur que le programme débute à l'adresse
+$F000.
+
+    ld de, bonjour
+
+`de` est un registre 16 bits. Il est chargé avec une adresse mémoire. Cette
+adresse est symbolisée par `bonjour`. Lorsque l'assembleur transformera le code
+source en code machine, il substitura le symbole `bonjour` par son adresse effective.
+On verra plus tard dans le programme ce qu'est cette adresse.
+
+    ld b, 7
+
+Encore un nouveau registre. Cette fois il se nomme `b` et il pèse 8 bits. On le
+charge avec le nombre 7, qui est le nombre de lettres dans le mot "BONJOUR".
+
+    ld hl, $6000
+
+Et encore un nouveau registre. Il s'agit de `hl` et il fait 16 bits. On le charge
+avec le nombre (hexadécimal) $6000 qui est le début de la mémoire vidéo du
+PHC-25 en mode texte.
+
+    loop:
+
+Nous avons la déclaration d'un label nommé `loop`. Un label n'est pas transformé
+en une instruction Z80, mais est utilisé par l'assembleur. Un label représente
+une adresse. Quelle adresse ? Et bien $F000 + X. Où $F000 est l'origine que nous
+avons déclaré au tout début du source. Et où X est le nombre d'octets de tout
+les codes machine qui précède le `loop`. Nous n'avons pas à nous préoccuper du
+nombre exact ; si on utilise un assembleur c'est bien pour qu'il fasse ce
+travail à notre place.
+
+    ld a, (de)
+
+Les parenthèses autour de `de` précisent qu'on ne s'intéresse pas au contenu du
+registre `de` lui-même, mais à la valeur de la case mémoire _pointée par_ la
+valeur dans `de`. Concrètement si `de` contient le nombre 16 bits 12345 et si l'emplacement mémoire n° 12345 contient
+le nombre 8 bits 56, l'instruction `ld a, (de)` chargera le registre `a` avec le nombre 56.
+
+    ld (hl), a
+
+Toujours le même principe, le nombre 8 bits contenu dans le registre `a` est
+placé à l'emplacement mémoire pointé par le contenu du registre `hl`.
+
+    inc hl
+
+On **inc**rémente le contenu du registre `hl`. S'il valait 123 avant cette
+instruction, il vaut maintenant 124.
+
+    inc de
+
+On **inc**rémente le contenu du registre `de`.
+
+    djnz loop
+
+**djnz**, ça c'est de la mnémonique ! Cela signifie _**d**ecrement and **j**ump
+if **n**on **z**ero_. Le registre `c` est décrémenté. Si le contenu de `c` n'est
+pas égal à zéro, on saute à l'adresse qui suit le `djnz`. Ici l'adresse est
+symbolisée par `loop`.
+
+    ret
+
+Rien de nouveau, c'est la fin du programme. On rend la main au basic.
+
+    bonjour:
+
+C'est la déclaration du label `bonjour`. Il symbolise l'adresse mémoire à cette position précise du programme.
+Il a était utilisé dans la première instruction de ce source.
+
+    db "BONJOUR"
+
+`db` veut dire _declare bytes_, ou _define bytes_, c'est pareil. Ce qui suit sera
+intégré directement dans le programme binaire créé par l'assembleur. On peut se
+représenter cela comme le contenu initial des variables dans les autres langages.
+
+Bien, je suis prêt à écrire le jeu Blitz en assembleur. Est-ce que je vais y
+arriver ? J'en sais rien. Mais je suis prêt à essayer ;)

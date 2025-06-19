@@ -1,0 +1,58 @@
+---
+layout: post
+title: "Un script ruby pour passer de l'assembleur au basic pour le PHC-25"
+date: 2025-06-20 8:00
+comments: true
+tags: [ ruby, assembleur, basic, phc25 ]
+---
+
+Dans [un article précédent]()
+je montrais comment dévelloper en assembleur pour le PHC-25. Et c'est peu dire
+que le processus pour passer du programme assembleur au programme basic qui va
+charger le code machine en mémoire est fastidieux !
+On peut améliorer les choses en écrivant un script pour produire en une seule
+commande les lignes `data` à partir du code source assembleur.
+
+<!-- more -->
+
+Et voici ce script :
+
+{% highlight ruby %}
+    #!/usr/bin/env ruby
+
+    asm_file = ARGV.first
+    abort("Error! Need an assembly file") if asm_file.nil?
+
+    # Assembly
+    %x( rm -f a.bin )
+    %x( z80asm #{asm_file} )
+    abort("Error! No a.bin file found") unless File.exist?('a.bin')
+
+    # To hexadecimal
+    hexa = %x( xxd -c 1 -ps a.bin )
+    hexa = hexa.split("\n")
+    puts "#{hexa.size} hex values\n\n"
+
+    # BASIC data lines
+    line_num = 9000
+    hexa.each_slice(20).to_a.each do |values|
+      puts "#{line_num} data #{values.join(',')}"
+      line_num += 1
+    end
+{% endhighlight %}
+
+Une fois enregistré dans un fichier `asm2data`, et après lui avoir fourni les
+droits d'exécution, il ne reste plus qu'a lui donner le nom du fichier source :
+
+~~~
+36 hex values
+
+9000 data 3e,42,32,00,60,3e,4f,32,01,60,3e,4e,32,02,60,3e,4a,32,03,60
+9001 data 3e,4f,32,04,60,3e,55,32,05,60,3e,52,32,06,60,c9
+~~~
+
+On peut alors copier/coller les lignes `data` dans un fichier basic.
+On peut même les insérer automatiquement dans vim quand on est en train d'éditer
+le fichier :
+
+    :r!./asm2data hello.asm
