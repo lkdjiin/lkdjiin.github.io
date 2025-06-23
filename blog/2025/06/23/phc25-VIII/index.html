@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Un script ruby pour passer de l&#39;assembleur au basic pour le PHC-25</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-06-23T08:00:00+02:00" itemprop="datePublished">23 June 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Dans <a href="/blog/2025/06/19/phc25-VII/">un article précédent</a>
+je montrais comment développer en assembleur pour le PHC-25. Et c’est peu dire
+que le processus pour passer du programme assembleur au programme basic qui va
+charger le code machine en mémoire est fastidieux !
+On peut améliorer les choses en écrivant un script pour produire en une seule
+commande les lignes <code class="language-plaintext highlighter-rouge">data</code> à partir du code source assembleur.</p>
+
+<!-- more -->
+
+<p>Voici ce bout de code qui m’est bien utile :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby">    <span class="c1">#!/usr/bin/env ruby</span>
+
+    <span class="n">asm_file</span> <span class="o">=</span> <span class="no">ARGV</span><span class="p">.</span><span class="nf">first</span>
+    <span class="nb">abort</span><span class="p">(</span><span class="s2">"Error! Need an assembly file"</span><span class="p">)</span> <span class="k">if</span> <span class="n">asm_file</span><span class="p">.</span><span class="nf">nil?</span>
+
+    <span class="c1"># Assembly</span>
+    <span class="sx">%x( rm -f a.bin )</span>
+    <span class="sx">%x( z80asm </span><span class="si">#{</span><span class="n">asm_file</span><span class="si">}</span><span class="sx"> )</span>
+    <span class="nb">abort</span><span class="p">(</span><span class="s2">"Error! No a.bin file found"</span><span class="p">)</span> <span class="k">unless</span> <span class="no">File</span><span class="p">.</span><span class="nf">exist?</span><span class="p">(</span><span class="s1">'a.bin'</span><span class="p">)</span>
+
+    <span class="c1"># To hexadecimal</span>
+    <span class="n">hexa</span> <span class="o">=</span> <span class="sx">%x( xxd -c 1 -ps a.bin )</span>
+    <span class="n">hexa</span> <span class="o">=</span> <span class="n">hexa</span><span class="p">.</span><span class="nf">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="n">hexa</span><span class="p">.</span><span class="nf">size</span><span class="si">}</span><span class="s2"> hex values</span><span class="se">\n\n</span><span class="s2">"</span>
+
+    <span class="c1"># BASIC data lines</span>
+    <span class="n">line_num</span> <span class="o">=</span> <span class="mi">9000</span>
+    <span class="n">hexa</span><span class="p">.</span><span class="nf">each_slice</span><span class="p">(</span><span class="mi">20</span><span class="p">).</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">values</span><span class="o">|</span>
+      <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="n">line_num</span><span class="si">}</span><span class="s2"> data </span><span class="si">#{</span><span class="n">values</span><span class="p">.</span><span class="nf">join</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+      <span class="n">line_num</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">end</span></code></pre></figure>
+
+<p>Une fois enregistré dans un fichier <code class="language-plaintext highlighter-rouge">asm2data</code>, et après lui avoir fourni les
+droits d’exécution, il ne reste plus qu’a lui donner le nom du fichier source :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ./asm2data hello.asm
+36 hex values
+
+9000 data 3e,42,32,00,60,3e,4f,32,01,60,3e,4e,32,02,60,3e,4a,32,03,60
+9001 data 3e,4f,32,04,60,3e,55,32,05,60,3e,52,32,06,60,c9
+</code></pre></div></div>
+
+<p>On peut alors copier/coller les lignes <code class="language-plaintext highlighter-rouge">data</code> dans un fichier basic.
+On peut même les insérer automatiquement dans vim quand on est en train d’éditer
+le fichier :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>:r!./asm2data hello.asm
+</code></pre></div></div>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2025/06/12/quinze-jours-pour-comprendre-le-phc-25/">15 jours pour comprendre le PHC-25</a></li>
+  <li><a href="/blog/2025/06/13/phc25-II/">Utiliser l’émulateur pour PHC-25</a></li>
+  <li><a href="/blog/2025/06/14/phc25-III/">Quelques réflexions sur le BASIC du PHC-25</a></li>
+  <li><a href="/blog/2025/06/16/phc25-IV/">Portage du jeu Blitz sur le PHC-25</a></li>
+  <li><a href="/blog/2025/06/17/phc25-V/">Le mode graphique 2 du PHC-25</a></li>
+  <li><a href="/blog/2025/06/18/phc25-VI/">Palettes de couleur du PHC-25 en mode graphique 2</a></li>
+  <li><a href="/blog/2025/06/19/phc25-VII/">L’assembleur sur le PHC-25</a></li>
+  <li><a href="/blog/2025/06/23/phc25-VIII/">Un script ruby pour passer de l’assembleur au basic pour le PHC-25</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/06/19/phc25-VII/" title="Article précédent: L'assembleur sur le PHC-25">&laquo; L'assembleur sur le PHC-25</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/06/23/phc25-VIII/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
