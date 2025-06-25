@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">L&#39;assembleur Z80 plus en détail</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-06-24T08:00:00+02:00" itemprop="datePublished">24 June 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Le <a href="/blog/2025/06/19/phc25-VII/">premier source assembleur</a> nous a été utile pour valider la chaîne d’outils.
+Mais il répétait la même instruction encore et encore. Il est temps maintenant d’en voir un peu plus.</p>
+
+<!-- more -->
+
+<p>C’est le même programme, l’affichage de BONJOUR en haut à gauche de l’écran, mais
+cette fois-ci il fait appel à plus de fonctionnalités de l’assembleur et à plus d’instructions du Z80.</p>
+
+<figure class="highlight"><pre><code class="language-visualbasic" data-lang="visualbasic"><span class="n">org</span> <span class="err">$</span><span class="n">f000</span>
+
+  <span class="n">ld</span> <span class="n">de</span><span class="p">,</span> <span class="n">bonjour</span>
+  <span class="n">ld</span> <span class="n">b</span><span class="p">,</span> <span class="mi">7</span>
+  <span class="n">ld</span> <span class="n">hl</span><span class="p">,</span> <span class="err">$</span><span class="mi">6000</span>
+<span class="n">loop</span><span class="p">:</span>
+  <span class="n">ld</span> <span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="n">de</span><span class="p">)</span>
+  <span class="n">ld</span> <span class="p">(</span><span class="n">hl</span><span class="p">),</span> <span class="n">a</span>
+  <span class="n">inc</span> <span class="n">hl</span>
+  <span class="n">inc</span> <span class="n">de</span>
+  <span class="n">djnz</span> <span class="n">loop</span>
+  <span class="n">ret</span>
+
+<span class="n">bonjour</span><span class="p">:</span>
+  <span class="n">db</span> <span class="s">"BONJOUR"</span></code></pre></figure>
+
+<p>Je vais disséquer chaque ligne.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>org $f000
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">org</code> indique l’<strong>or</strong>i<strong>g</strong>ine en mémoire du programme. C’est à dire l’adresse
+à laquelle il débute. C’est une directive qui est destinée à l’assembleur (le
+programme qui transforme notre source). Une directive n’est pas traduite en
+instruction. Ici nous informons l’assembleur que le programme débute à l’adresse
+$F000. Ce sera l’adresse physique dans la mémoire de votre ordinateur cible.
+Parfois on aura différents choix concernant l’emplacement en mémoire de notre
+programme, parfois on n’aura pas le choix. Mais dans tout les cas, l’assembleur
+doit connaître cette adresse de départ pour pouvoir calculer pour nous les sauts
+relatifs et pour remplacer les labels par les bonnes adresses physiques.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld de, bonjour
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">de</code> est un registre 16 bits. Il est chargé avec une adresse mémoire. Cette
+adresse est symbolisée par <code class="language-plaintext highlighter-rouge">bonjour</code>. Lorsque l’assembleur transformera le code
+source en code machine, il substitura le symbole <code class="language-plaintext highlighter-rouge">bonjour</code> par son adresse effective.
+On verra plus tard dans le programme ce qu’est cette adresse.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld b, 7
+</code></pre></div></div>
+
+<p>Encore un nouveau registre. Cette fois il se nomme <code class="language-plaintext highlighter-rouge">b</code> et il pèse 8 bits. On le
+charge avec le nombre 7, qui est le nombre de lettres dans le mot “BONJOUR”.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld hl, $6000
+</code></pre></div></div>
+
+<p>Et encore un nouveau registre. Il s’agit de <code class="language-plaintext highlighter-rouge">hl</code> et il fait 16 bits. On le charge
+avec le nombre (hexadécimal) $6000 qui est le début de la mémoire vidéo du
+PHC-25 en mode texte.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>loop:
+</code></pre></div></div>
+
+<p>Nous avons la déclaration d’un label nommé <code class="language-plaintext highlighter-rouge">loop</code>. Un label n’est pas transformé
+en une instruction Z80, mais est utilisé par l’assembleur. Un label représente
+une adresse. Quelle adresse ? Et bien $F000 + X. Où $F000 est l’origine que nous
+avons déclaré au tout début du source. Et où X est le nombre d’octets de tout
+les codes machine qui précède le <code class="language-plaintext highlighter-rouge">loop</code>. Nous n’avons pas à nous préoccuper du
+nombre exact ; si on utilise un assembleur c’est bien pour qu’il fasse ce
+travail à notre place.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld a, (de)
+</code></pre></div></div>
+
+<p>Les parenthèses autour de <code class="language-plaintext highlighter-rouge">de</code> précisent qu’on ne s’intéresse pas au contenu du
+registre <code class="language-plaintext highlighter-rouge">de</code> lui-même, mais à la valeur de la case mémoire <em>pointée par</em> la
+valeur dans <code class="language-plaintext highlighter-rouge">de</code>. Concrètement si <code class="language-plaintext highlighter-rouge">de</code> contient le nombre 16 bits 12345 et si l’emplacement mémoire n° 12345 contient
+le nombre 8 bits 56, l’instruction <code class="language-plaintext highlighter-rouge">ld a, (de)</code> chargera le registre <code class="language-plaintext highlighter-rouge">a</code> avec le nombre 56.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ld (hl), a
+</code></pre></div></div>
+
+<p>Toujours le même principe, le nombre 8 bits contenu dans le registre <code class="language-plaintext highlighter-rouge">a</code> est
+placé à l’emplacement mémoire pointé par le contenu du registre <code class="language-plaintext highlighter-rouge">hl</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>inc hl
+</code></pre></div></div>
+
+<p>On <strong>inc</strong>rémente le contenu du registre <code class="language-plaintext highlighter-rouge">hl</code>. S’il valait 123 avant cette
+instruction, il vaut maintenant 124.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>inc de
+</code></pre></div></div>
+
+<p>On <strong>inc</strong>rémente le contenu du registre <code class="language-plaintext highlighter-rouge">de</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>djnz loop
+</code></pre></div></div>
+
+<p><strong>djnz</strong>, ça c’est de la mnémonique ! Cela signifie <em><strong>d</strong>ecrement and <strong>j</strong>ump
+if <strong>n</strong>on <strong>z</strong>ero</em>. Le registre <code class="language-plaintext highlighter-rouge">b</code> est décrémenté. Si le contenu de <code class="language-plaintext highlighter-rouge">b</code> n’est
+pas égal à zéro, on saute à l’adresse qui suit le <code class="language-plaintext highlighter-rouge">djnz</code>. Ici l’adresse est
+symbolisée par <code class="language-plaintext highlighter-rouge">loop</code>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ret
+</code></pre></div></div>
+
+<p>Rien de nouveau, c’est la fin du programme. On rend la main au basic.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>bonjour:
+</code></pre></div></div>
+
+<p>C’est la déclaration du label <code class="language-plaintext highlighter-rouge">bonjour</code>. Il symbolise l’adresse mémoire à cette position précise du programme.
+Il a était utilisé dans la première instruction de ce source.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>db "BONJOUR"
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">db</code> veut dire <em>declare bytes</em>, ou <em>define bytes</em>, c’est pareil. Ce qui suit sera
+intégré directement dans le programme binaire créé par l’assembleur. On peut se
+représenter cela comme le contenu initial des variables dans les autres langages.</p>
+
+<p>Si on inspecte le contenu du fichier binaire produit par l’assembleur on peut
+voir, par exemple, l’intégration du mot “BONJOUR” à la fin du programme :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ xxd a.bin
+00000000: 110f f006 0721 0060 1a77 2313 10fa c942  .....!.`.w#....B
+00000010: 4f4e 4a4f 5552                           ONJOUR
+</code></pre></div></div>
+
+<p>Bien, je suis prêt à écrire le jeu Blitz en assembleur. Est-ce que je vais y
+arriver ? J’en sais rien. Mais je suis prêt à essayer ;)</p>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2025/06/12/quinze-jours-pour-comprendre-le-phc-25/">15 jours pour comprendre le PHC-25</a></li>
+  <li><a href="/blog/2025/06/13/phc25-II/">Utiliser l’émulateur pour PHC-25</a></li>
+  <li><a href="/blog/2025/06/14/phc25-III/">Quelques réflexions sur le BASIC du PHC-25</a></li>
+  <li><a href="/blog/2025/06/16/phc25-IV/">Portage du jeu Blitz sur le PHC-25</a></li>
+  <li><a href="/blog/2025/06/17/phc25-V/">Le mode graphique 2 du PHC-25</a></li>
+  <li><a href="/blog/2025/06/18/phc25-VI/">Palettes de couleur du PHC-25 en mode graphique 2</a></li>
+  <li><a href="/blog/2025/06/19/phc25-VII/">L’assembleur sur le PHC-25</a></li>
+  <li><a href="/blog/2025/06/23/phc25-VIII/">Un script ruby pour passer de l’assembleur au basic pour le PHC-25</a></li>
+  <li><a href="/blog/2025/06/24/phc25-IX/">L’assembleur Z80 plus en détail</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/06/23/phc25-VIII/" title="Article précédent: Un script ruby pour passer de l'assembleur au basic pour le PHC-25">&laquo; Un script ruby pour passer de l'assembleur au basic pour le PHC-25</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/06/24/phc25-IX/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
