@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Nombres aléatoires en assembleur sur le Commodore 64</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2025-12-20T08:00:00+01:00" itemprop="datePublished">20 December 2025
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Comment obtenir un nombre aléatoire en assembleur sur une machine rétro 8 bits ?
+En l’occurence ici, un Commodore 64 et son processeur 6510.
+Et aléatoire ou pseudo-aléatoire ? C’est quoi la différence ?</p>
+
+<p>Certaines des méthodes abordées seront spécifiques au C64, d’autres s’appliqueront à
+tout les systèmes à base de 6502/6510.</p>
+
+<h2 id="aléatoire-et-pseudo-aléatoire">Aléatoire et pseudo-aléatoire</h2>
+
+<p>La différence existe.</p>
+
+<p>Aléatoire : l’image classique est la radio-activité. On n’a aucun moyen de
+prédire quand un atome se désintègrera. On sait seulement que ça arrivera.
+Il n’y a pas de relation entre deux désintegrations successives.</p>
+
+<p>Pseudo-aléatoire : on veut que ça ressemble le plus possible à de l’aléatoire.
+Mais ce serait bien aussi si c’était reproductible, parce que c’est utile pour
+débuguer ou mettre au point des programmes. Une même «graine» produira toujours
+la même suite de nombres. Cette suite semblera aléatoire pour nous autres
+humains. Mais si on connait l’algorithme, on trouve le nombre suivant.</p>
+
+<!-- more -->
+
+<h2 id="critères">Critères</h2>
+
+<p>Je vais donner une note aux méthodes que je présenterais. Mais gardez en tête
+que je ne suis pas du tout expert dans ce domaine. Je peux me tromper, alors
+n’hésitez pas à me corriger si nécessaire.</p>
+
+<p>Pour rappel, je ne m’intéresse qu’à la production de nombres 8 bits.</p>
+
+<p><strong>Vitesse (Nombre de cycles pour obtenir un nombre)</strong></p>
+
+<p>Les ordinateurs 8 bits sont lents. Pour écrire des jeux d’actions on a besoin de
+résultats rapides.</p>
+
+<p><strong>Taille (Nombre d’octets en mémoire de la routine)</strong></p>
+
+<p>L’ordinateur sur lequel j’écris ces lignes possède 524 288 fois plus de RAM que
+le Commodore 64. Et le C64 était bien fourni en comparaison d’autres machines
+de son époque. Quand certains ordinateurs n’affichait que quelques kilo-octets,
+on pouvait dire que «chaque octet compte».</p>
+
+<p><strong>Qualité</strong></p>
+
+<p>C’est sur la qualité que j’aurai le plus de mal à juger. Est-ce qu’une suite de
+nombre me semble aléatoire ou pas. Il y aura une part de subjectivité, mais je
+ferai avec.</p>
+
+<p>Vitesse, taille, et qualité, seront notées sur 5, pour une note globale sur 15.
+Parce que, pourquoi pas ;)</p>
+
+<p>Pour alléger les listings, je vais omettre systématiquement les 4 premières lignes :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BasicUpstart2(start)
+.const LINPRT = $bdcd // X - Low byte // A - High byte
+.const CHROUT = $ffd2
+counter: .byte 10
+</code></pre></div></div>
+
+<p>Explications :</p>
+
+<p><code class="language-plaintext highlighter-rouge">BasicUpstart2(start)</code> — C’est une macro fournit par l’assembleur KickAssembler
+et qui permet de sortir un programme directement utilisable par le C64.</p>
+
+<p><code class="language-plaintext highlighter-rouge">LINPRT</code> — C’est une fonction du BASIC du C64 qui affiche un nombre 16 bits (il
+n’y a rien pour afficher un nombre 8 bits). Il faut donner l’octet de poid fort
+dans le registre A et l’octet de poid faible dans le registre X.</p>
+
+<p><code class="language-plaintext highlighter-rouge">CHROUT</code> — Une autre fonction du BASIC. Celle-ci affiche un caractère donné dans
+le registre A. On l’utiliser avec le caractère n°13, le retour à la ligne.</p>
+
+<p><code class="language-plaintext highlighter-rouge">counter</code> — Il sera utilisé pour afficher 10 nombres dans une boucle.</p>
+
+<h2 id="lecture-du-registre-jiffy">Lecture du registre Jiffy</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Vitesse : 5
+Taille  : 5
+Qualité : 0
+Total   : 10
+</code></pre></div></div>
+
+<p>Le jiffy est une horloge du C64 qui compte le temps qui passe. Donc pour que ça
+semble aléatoire, on repassera.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start:
+  lda #0
+  ldx $a2    // JIFFY
+
+  jsr LINPRT
+  lda #13
+  jsr CHROUT
+  dec counter
+  bne start
+  rts
+</code></pre></div></div>
+
+<p><strong>Résultat : 68, 69, 69, 70, 70, 71, 71, 72, 73, 73</strong></p>
+
+<p>Si vous avez besoin d’un nombre aléatoire toutes les quelques minutes, pourquoi
+pas.</p>
+
+<h2 id="lecture-du-registre-raster">Lecture du registre Raster</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Vitesse : 5
+Taille  : 5
+Qualité : 0
+Total   : 10
+</code></pre></div></div>
+
+<p>Sur le Commodore 64 une interruption est générée chaque fois que le matériel a
+affiché une ligne de pixel sur l’écran. Il y a 256 lignes, et le tout est fait
+50 ou 60 fois par minute.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start:
+  lda #0
+  ldx $d012  // RASTER LINE
+
+  jsr LINPRT
+  lda #13
+  jsr CHROUT
+  dec counter
+  bne start
+  rts
+</code></pre></div></div>
+
+<p><strong>Résultat : 5, 154, 40, 128, 22, 109, 4, 95, 244, 70</strong></p>
+
+<p>Pourquoi 0 en qualité alors que ça semble bien ? Parce que dans un
+programme réel on lira souvent le registre <em>raster</em> depuis une interruption.
+Alors même que cette interruption aura était générée quand le <em>raster</em> a
+atteint un nombre précis. On risque alors d’obtenir des nombres aléatoires qui
+seront toujours plus ou moins les mêmes.</p>
+
+<h2 id="kernal-rnd">Kernal RND</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Vitesse : 0
+Taille  : 5
+Qualité : 5
+Total   : 10
+</code></pre></div></div>
+
+<p>La fonction BASIC qui génère un nombre aléatoire se trouve à l’adresse <code class="language-plaintext highlighter-rouge">$e097</code>
+et on peut tout à fait l’utiliser en assembleur.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start:
+  jsr $e097 // RND
+  lda #0
+  ldx $008e // Une partie du résultat est ici
+
+  jsr LINPRT
+  lda #13
+  jsr CHROUT
+  dec counter
+  bne start
+  rts
+</code></pre></div></div>
+
+<p><strong>Résultat : 126, 200, 4, 11, 29, 163, 179, 16, 54, 151</strong></p>
+
+<p>Je ne suis pas (encore) parvenu à changer la graine de l’algo. J’ai donc encore et toujours
+la même série de nombre qui sort.
+Mais le vrai point noir c’est la vitesse. J’ai voulu m’en servir sur un petit jeu sur
+lequel je travaille et cela le ralentissait trop. Et en fait c’est normal, la
+fonction BASIC fait beaucoup de choses. C’est un nombre à virgule qu’elle produit ;
+elle s’occupe aussi de la gestion d’erreurs. Voir <a href="https://www.pagetable.com/c64ref/c64disasm/#E097">RND()</a>.
+Il faut aussi penser qu’on
+n’a pas toujours accès au BASIC. On peut l’avoir désactiver pour récupérer la
+RAM.</p>
+
+<h2 id="sid-voix-3">SID voix 3</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Vitesse : 5
+Taille  : 5
+Qualité : 5
+Total   : 15
+</code></pre></div></div>
+
+<p>Le SID est le processeur qui génère de la musique sur le Commodore 64.
+On peut se servir d’un générateur de bruit blanc sur la 3ème voix —
+<em>la seule accessible en lecture</em> — pour obtenir un générateur de nombre rapide
+et de qualité.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start:
+  lda #$ff
+  sta $d40f // Voix 3 : octet MSB de la fréquence
+  lda #$80
+  sta $d412 // Activer le bruit blanc
+
+loop:
+  lda #0
+  ldx $d41b // Sortie de l'oscillateur
+  jsr LINPRT
+  lda #13
+  jsr CHROUT
+  dec counter
+  bne loop
+  rts
+</code></pre></div></div>
+
+<p><strong>Résultat : 254, 201, 31, 151, 184, 62, 254, 16, 143, 177</strong></p>
+
+<p>Il est malheureusement impossible de reproduire la même série puisque
+l’oscillateur produit constamment.
+Et surtout, il est quand même très dommage de se priver d’une des trois voix
+musicales.</p>
+
+<h2 id="générateur-de-galois">Générateur de Galois</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Vitesse : 4
+Taille  : 5
+Qualité : 1
+Total   : 10
+</code></pre></div></div>
+
+<p>C’est une méthode bien connue sur les processeurs 8 bits, mais vraiment pas
+terrible niveau qualité. Vous trouverez les détails ici
+<a href="https://fr.wikipedia.org/wiki/Registre_%C3%A0_d%C3%A9calage_%C3%A0_r%C3%A9troaction_lin%C3%A9aire">registre à décalage à rétroaction linéaire</a>
+et là <a href="http://www.6502.org/users/mycorner/6502/code/prng.html">6502 8 bit PRNG</a></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start:
+  jsr rand_8
+  tax
+  lda #0
+
+  jsr LINPRT
+  lda #13
+  jsr CHROUT
+  dec counter
+  bne start
+  rts
+
+rand_8:
+  lda r_seed // get seed
+  asl        // shift byte
+  bcc no_eor // branch if no carry
+  eor #$cf   // else EOR with $cf
+no_eor:
+  sta r_seed // save number as next seed
+  rts
+
+r_seed: .byte 123 // prng seed byte, must not be zero
+</code></pre></div></div>
+
+<p><strong>Résultat : 246, 35, 70, 140, 215, 97, 194, 75, 150, 22700</strong></p>
+
+<p>Cet algo a son utilité si on dispose de très peu de place.
+Notez qu’on ne peut jamais obtenir 0.</p>
+
+<h2 id="micrornd">Micrornd</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Vitesse : 4
+Taille  : 4
+Qualité : 4
+Total   : 12
+</code></pre></div></div>
+
+<p>Cette autre méthode me convient très bien avec sa balance entre vitesse, taille
+et qualité. Vous pouvez lire les explications ici si vous le souhaitez
+<a href="https://inglorion.net/software/micrornd/">Micrornd</a>.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start:
+  jsr micrornd
+  ldx micrornd_state
+  lda #0
+
+  jsr LINPRT
+  lda #13
+  jsr CHROUT
+  dec counter
+  bne start
+  rts
+
+micrornd:
+  lda micrornd_state + 1
+  eor micrornd_state + 3
+  sta micrornd_state + 1
+  inc micrornd_state + 3
+  lda micrornd_state + 1
+  asl
+  eor #$d5
+  adc micrornd_state + 2
+  sta micrornd_state + 1
+  lda micrornd_state + 2
+  adc #1
+  sta micrornd_state + 2
+  lda micrornd_state
+  adc micrornd_state + 1
+  sta micrornd_state
+  rts
+
+micrornd_state: .byte 0, 1, 2, 3
+</code></pre></div></div>
+
+<p><strong>Résultat : 211, 82, 119, 15, 1, 42, 199, 204, 160, 18</strong></p>
+
+<p>C’est la méthode que j’utilise maintenant par défaut.</p>
+
+<h2 id="tables-pré-calculées">Tables pré-calculées</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Vitesse : 5
+Taille  : 0
+Qualité : 4
+Total   : 9
+</code></pre></div></div>
+
+<p>Si on dispose de place, on peut utiliser avantageusement des tables pré-calculées.
+On remplit une table de 256 valeurs aléatoires. Puis on va simplement les
+chercher dans l’ordre. Quand l’index arrive au bout, à 256, il revient à 0 grâce
+à la magie du binaire.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>start:
+  ldy index
+  ldx table,y
+  inc index
+  lda #0
+
+  jsr LINPRT
+  lda #13
+  jsr CHROUT
+  dec counter
+  bne start
+  rts
+
+index: .byte 0
+table: .byte 34, 65, 33, 98, 0, 127, 76, 12, 20, 245 // etc, 256 valeurs
+</code></pre></div></div>
+
+<p>L’inconvénient, bien sûr, est qu’il faut de la mémoire. Peut-être beaucoup
+de mémoire car on voudra
+parfois disposer de plusieurs tables différentes. La qualité n’est que de 4,
+parce qu’arrivé au bout des 256 nombres, on recommence avec les même.</p>
+
+<p>Le gros avantage de cette méthode est la rapidité. Non seulement on obtient une
+valeur très vite, mais en plus on peut pré-calculer absolument tout
+ce qu’on veut. On n’est pas obligé de s’arrêter aux nombres aléatoires eux-mêmes ;
+on peut aussi s’occuper des traitements qui suivent presque toujours.
+Par exemple si on veut simuler un lancer de dé, on pourra stocker
+uniquement des valeurs de 1 à 6.</p>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/06/24/phc25-IX/" title="Article précédent: L'assembleur Z80 plus en détail">&laquo; L'assembleur Z80 plus en détail</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2025/12/20/nombres-aleatoires-sur-commodore/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2025
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
