@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Exemple d&#39;optimisation assembleur sur Commodore 64</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-01-19T08:00:00+01:00" itemprop="datePublished">19 January 2026
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>En cherchant des bouts de code à propos de tout et de rien pour Commodore 64, je suis tombé sur un tutoriel
+montrant l’effet <em>color wash</em>. Je ne sais pas si c’est le nom usuel, ni même si
+cet effet à un nom spécial, mais c’est comme ça que l’auteur du tutoriel l’appelle.
+C’est donc comme ça que je vais l’appeler.</p>
+
+<p>Vous pouvez voir l’effet en question sur youtube : https://www.youtube.com/watch?v=iUVFHxnvabM
+Et vous trouverez le code original sur github :
+https://github.com/actraiser/dust-tutorial-c64-first-intro/blob/master/code/sub_colorwash.asm</p>
+
+<p>Je voulais étudier cet effet en détail, mais la lecture du code ne m’a
+pas été très utile pour comprendre du mieux possible comment ça fonctionnait.
+J’ai donc chercher à le refaire par moi-même et ensuite à l’optimiser si possible.
+Et ça a été possible ;)</p>
+
+<p>Mon code sur github (seulement l’effet visuel, pas de musique) : <a href="https://github.com/lkdjiin/short-c64-demos/blob/main/colorwash.asm">colorwash</a></p>
+
+<!-- more -->
+
+<h2 id="dans-un-sens">Dans un sens…</h2>
+
+<p>Dans un premier temps je me concentre sur une seule ligne de texte, l’effet se déplaçant
+de droite à gauche. Pour comprendre ce qu’il faut faire, je trouve
+souvent qu’un peu de pseudo-code m’est d’une grande aide.
+On a donc un tableau rempli de <strong>N</strong> couleurs. On a aussi <strong>LIGNE</strong>, qui est l’adresse
+du texte dans la <em>color RAM</em> du C64 :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>couleur = [1,1,2,9,7,2,...,N]
+</code></pre></div></div>
+
+<p>Le but est de faire une rotation de chaque case du tableau couleur, et une
+rotation identique en <em>color RAM</em> :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>temp = couleur[0]
+pour i = 1 à N-1
+    c = lire couleur[i]
+    couleur[i-1] = LIGNE[i-1] = c
+couleur[N-1] = temp
+</code></pre></div></div>
+
+<p>Après m’être convaincu que ça marche en faisant tourner ce pseudo-code dans ma tête,
+je le transforme en assembleur 6502 :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  lda color
+  sta temp
+  ldx #0
+loop:
+  lda color+1,x
+  sta color,x
+  sta COLOR_LINE_1,x
+  inx
+  cpx #39
+  bne loop
+  lda temp
+  sta color+39
+</code></pre></div></div>
+
+<p>Pour bien comprendre, sachez que <code class="language-plaintext highlighter-rouge">COLOR_LINE_1</code> est l’adresse de la première
+ligne de texte en <em>color RAM</em>, et que <code class="language-plaintext highlighter-rouge">color</code> est le tableau de 40 couleurs :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.const COLOR_LINE_1 = $d990
+
+color:
+.byte 9,9,2,2,8,8,10,10,15,15,7,7,1,1,1,1,1,1,1,1
+.byte 1,1,1,1,1,1,1,1,7,7,15,15,10,10,8,8,2,2,9,9
+</code></pre></div></div>
+
+<h2 id="puis-dans-lautre">…puis dans l’autre</h2>
+
+<p>Maintenant je travaille sur l’effet de gauche à droite.
+L’idée est de faire l’inverse du premier algo.
+Voici le pseudo-code :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>longueur = longueur du tableau de couleur
+temp = couleur[39]
+pour i = longueur-1 à 1
+    c = lire couleur[i-1]
+    couleur[i] = LIGNE[i] = c
+couleur[0] = temp
+</code></pre></div></div>
+
+<p>Et le voici en assembleur :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  lda color2+39
+  sta temp2
+  ldx #39
+first_line:
+  lda color2-1,x
+  sta color2,x
+  sta COLOR_LINE_2,x
+  dex
+  cpx #0 // inutile, mais fait le parallèle avec l'autre
+  bne first_line
+  lda temp2
+  sta color2
+</code></pre></div></div>
+
+<p>Techniquement l’instruction <code class="language-plaintext highlighter-rouge">cpx #0</code> est inutile dans ce sens de rotation. Mais
+je la fait apparaître pour accentuer la similarité des deux algorithmes.</p>
+
+<p>J’ai donc fini par obtenir plus ou moins la même chose que le code original. J’ai
+le même nombre d’instructions, même si j’utilise deux variables temporaires qui
+ne sont pas nécessaire dans la version d’origine de l’auteur. Mais j’avais ma petite idée derrière la
+tête pour faire cela et on va le voir tout de suite.</p>
+
+<h2 id="maintenant-je-vais-tenter-de-combiner-les-deux-boucles">Maintenant je vais tenter de combiner les deux boucles</h2>
+
+<p>Les deux algos n’utilisent que deux registres du 6502. On pourrait donc remplacer
+le registre X par le registre Y dans l’un ou l’autre des algos, ce qui
+va grandement faciliter la combinaison.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  lda color+39
+  sta temp
+  lda color2
+  sta temp2
+
+  ldy #39
+  ldx #0
+lines:
+  lda color-1,y
+  sta color,y
+  sta COLOR_LINE_1,y
+  lda color2+1,x
+  sta color2,x
+  sta COLOR_LINE_2,x
+  inx
+  dey
+  bne lines
+
+  lda temp
+  sta color
+  lda temp2
+  sta color2+39
+</code></pre></div></div>
+
+<p>On a gagné 2 ou 3 instructions, mais surtout, on a économisé pas mal de temps de
+boucle.</p>
+
+<h2 id="finalement-on-utilise-directement-la-color-ram">Finalement on utilise directement la COLOR RAM</h2>
+
+<p>Plutôt que d’utiliser des tables pour faire la rotation des couleurs, ne pourrait-on
+pas faire tourner ces couleurs directement dans la <em>color ram</em> ?
+Histoire de gratter encore quelques instructions.</p>
+
+<p>D’abord on initialise la <em>color ram</em>. On a toujours besoin d’une table pour cette
+initialisation (mais une seule, non plus deux) :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  ldx #0
+lines:
+  lda color,x
+  sta COLOR_LINE_1,x
+  sta COLOR_LINE_2,x
+  inx
+  cpx #40
+  bne lines
+</code></pre></div></div>
+
+<p>Une fois cette mise en couleur initiale du texte, on peut alors intervenir
+directement dans la mémoire couleur en faisant l’économie de deux instructions au passage :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  lda COLOR_LINE_1+39
+  sta temp
+  lda COLOR_LINE_2
+  sta temp2
+
+  ldy #39
+  ldx #0
+lines:
+  lda COLOR_LINE_1-1,y
+  sta COLOR_LINE_1,y
+  lda COLOR_LINE_2+1,x
+  sta COLOR_LINE_2,x
+  inx
+  dey
+  bne lines
+
+  lda temp
+  sta COLOR_LINE_1
+  lda temp2
+  sta COLOR_LINE_2+39
+</code></pre></div></div>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Comme je ne me suis pas tapé tout ça juste pour le “ressenti” que c’est
+effectivement optimisé, je compte les cycles utilisés dans chaque version pour
+avoir une mesure objective.</p>
+
+<p>Dans la version initiale on compte 836 cycles dans un sens et 758 dans l’autre
+sens (car il y a un <code class="language-plaintext highlighter-rouge">cpx</code> en moins), pour un total de <strong>1594 cycles</strong>.</p>
+
+<p>Dans ma version finale je compte seulement <strong>1012 cycles</strong>. Pas mal ;)</p>
+
+<p>Si vous trouvez comment faire encore plus rapide, surtout n’hésitez pas à me contacter.</p>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2025/12/20/nombres-aleatoires-sur-commodore/" title="Article précédent: Nombres aléatoires en assembleur sur le Commodore 64">&laquo; Nombres aléatoires en assembleur sur le Commodore 64</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/01/19/exemple-optimisation-commodore-64/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
