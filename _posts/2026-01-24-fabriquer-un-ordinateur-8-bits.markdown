@@ -27,3 +27,5 @@ voici quelques jours plus tard, prêt à commencer.
 
 Est-ce que cette fois j'irai au bout du projet ? Est-ce que ça va me prendre des
 semaines ou des mois ? La réponse dans les prochains articles.
+
+{% include serie_ordi_8bits.md %}
