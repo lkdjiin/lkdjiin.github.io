@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Un champ d'étoile sans nombres aléatoires"
+title: "Un champ d'étoiles sans nombres aléatoires"
 date: 2026-01-26 10:00
 comments: true
 tags: [ commodore, c64, assembleur, 6502 ]
