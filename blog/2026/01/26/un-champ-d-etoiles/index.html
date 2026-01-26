@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Un champ d&#39;étoile sans nombres aléatoires</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-01-26T10:00:00+01:00" itemprop="datePublished">26 January 2026
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>S’il y a bien un truc où j’aurai parier devoir utiliser des nombres aléatoires
+en veut-tu en voilà, c’est bien pour la réalisation d’un <em>star field</em>.
+Vous savez, les petites étoiles qui défilent en arrière-plan dans les vieux
+<em>shoot them up</em> du style Galaga.
+Et pourtant, en lisant le bouquin «retro game dev» de Derek Morris je me suis
+aperçu qu’on pouvait faire un champ d’étoiles sans tirer un seul
+nombre au hasard (ou presque).</p>
+
+<p>J’en ai déjà réalisé des <em>star fields</em>. En BASIC, en C, en Java, en Ruby, etc.
+Si on m’avait demandé comment faire ça il y a 3 jours, j’aurais sûrement répondu
+à peu près ceci :</p>
+
+<ul>
+  <li>on tire une position X au hasard</li>
+  <li>on tire une couleur au hasard</li>
+  <li>on tire une vitesse au hasard</li>
+  <li>en on fait bouger cette étoile de haut en bas de l’écran</li>
+  <li>finalement on recommence</li>
+</ul>
+
+<p>Mais on peut faire sans l’intervention du hasard.</p>
+
+<p>Vous trouverez <a href="https://github.com/lkdjiin/short-c64-demos/blob/main/starfield.asm">le code sur github</a>.</p>
+
+<!-- more -->
+
+<h2 id="une-étoile">Une étoile</h2>
+
+<p>Tout d’abord il me faut des caractères qui représenterons les étoiles.
+Une étoile sera tout bonnement un pixel. Comme les caractères du Commodore 64 ont
+une taille de 8x8 pixels, on utilisera 8 caractères, chacun à une hauteur
+différente. Autrement dit il y aura un premier caractère comme ceci :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>...x....
+........
+........
+........
+........
+........
+........
+........
+</code></pre></div></div>
+
+<p>Un second comme celui-là :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>........
+...x....
+........
+........
+........
+........
+........
+........
+</code></pre></div></div>
+
+<p>Et ainsi de suite jusqu’au huitième :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>........
+........
+........
+........
+........
+........
+........
+...x....
+</code></pre></div></div>
+
+<p>Ainsi on pourra enchaîner les 8 caractères au même endroit de l’écran avant de
+passer à la rangée inférieure. On pourra de cette manière faire passer une étoile
+sur chaque pixels de haut en bas de l’écran.</p>
+
+<p>Mais j’ai la flemme de créer un jeu
+de caractères complet. Je vais donc aller au plus rapide en créant seulement les 8 <em>frames</em> des étoiles, plus l’espace.
+Les 8 caractères pour l’étoile seront aux 8 premières places du jeu de caractères.
+Et l’espace sera à sa place standard (la 32ème) pour pouvoir utiliser la
+routine CLS du système (effacement de l’écran).</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
+
+BasicUpstart2(start)
+
+start:
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jsr CLS
+
+  // Ça c'est pour dire où trouver le jeu de caractère.
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
+
+  // Pour l'exemple, j'affiche les 8 caractères étoile en haut à
+  // gauche.
+  ldx #0
+loop:
+  txa
+  sta VRAM,x
+  inx
+  cpx #8
+  bne loop
+
+  jmp *
+
+// Les 8 caractères sont ici, à partir de l'adresse $3000
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+// Et l'espace est ici
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+</code></pre></div></div>
+
+<p><img class="center" src="/images/starfield01.png" /></p>
+
+<h2 id="une-étoile-animée">Une étoile animée</h2>
+
+<p>Je vais faire défiler les 8 <em>frames</em>, en restant toujours sur le
+caractère en haut à gauche de l’écran. C’est histoire de s’assurer que mon
+“animation” est bonne. Comme c’est de l’assembleur, il y a tout de suite
+beaucoup trop de code.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BasicUpstart2(start)
+
+.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
+
+.const OFFSET_MAX = 8
+.const SPEED = 10
+
+star_x: .byte 0
+star_y: .byte 0
+star_offset: .byte 0
+star_speed: .byte SPEED // plus c'est petit, plus c'est lent
+
+start:
+  jsr init_screen
+  jsr init_characters
+
+loop:
+  Wait()
+speed:
+  dec star_speed
+  bne loop
+  lda #SPEED
+  sta star_speed
+calculate:
+  inc star_offset
+  lda star_offset
+  cmp #OFFSET_MAX
+  bne display
+  lda #0
+  sta star_offset
+display:
+  ldx star_x
+  sta VRAM,x
+
+  jmp loop
+
+// ---------------------------------------------------------------------
+init_screen: {
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jmp CLS // jsr CLS ; rts
+}
+
+// ---------------------------------------------------------------------
+init_characters: {
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
+  rts
+}
+
+// ---------------------------------------------------------------------
+.macro Wait() {
+wait:
+  lda #255
+  cmp $d012 // RASTER_LINE
+  bne wait
+}
+
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+</code></pre></div></div>
+
+<p><img class="center" src="/images/starfield02.gif" /></p>
+
+<h2 id="une-étoile-qui-bouge-de-haut-en-bas">Une étoile qui bouge de haut en bas</h2>
+
+<p>On peut maintenant s’occuper de faire tomber une seule étoile. Le code n’est pas
+du tout optimisé, mais ce n’est pas son propos puisqu’il est seulement un
+“passage” vers la suite.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BasicUpstart2(start)
+
+.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
+
+.const SPACE_CHAR = 32
+.const OFFSET_MAX = 8
+.const SPEED = 2
+
+screen_rows_lsb:
+  .byte &lt;VRAM, &lt;VRAM+40, &lt;VRAM+80, &lt;VRAM+120, &lt;VRAM+160, &lt;VRAM+200
+  .byte &lt;VRAM+240, &lt;VRAM+280, &lt;VRAM+320, &lt;VRAM+360, &lt;VRAM+400, &lt;VRAM+440
+  .byte &lt;VRAM+480, &lt;VRAM+520, &lt;VRAM+560, &lt;VRAM+600, &lt;VRAM+640, &lt;VRAM+680
+  .byte &lt;VRAM+720, &lt;VRAM+760, &lt;VRAM+800, &lt;VRAM+840, &lt;VRAM+880, &lt;VRAM+920
+  .byte &lt;VRAM+960
+screen_rows_msb:
+  .byte &gt;VRAM, &gt;VRAM+40, &gt;VRAM+80, &gt;VRAM+120, &gt;VRAM+160, &gt;VRAM+200
+  .byte &gt;VRAM+240, &gt;VRAM+280, &gt;VRAM+320, &gt;VRAM+360, &gt;VRAM+400, &gt;VRAM+440
+  .byte &gt;VRAM+480, &gt;VRAM+520, &gt;VRAM+560, &gt;VRAM+600, &gt;VRAM+640, &gt;VRAM+680
+  .byte &gt;VRAM+720, &gt;VRAM+760, &gt;VRAM+800, &gt;VRAM+840, &gt;VRAM+880, &gt;VRAM+920
+  .byte &gt;VRAM+960
+
+.const STAR_PTR = $f0
+star_x: .byte 0
+star_y: .byte 0
+star_offset: .byte 0
+star_speed: .byte SPEED
+
+start:
+  jsr init_screen
+  jsr init_characters
+
+loop:
+  Wait()
+speed:
+  dec star_speed
+  bne loop
+  lda #SPEED
+  sta star_speed
+calculate:
+  inc star_offset
+  lda star_offset
+  cmp #OFFSET_MAX
+  bne display
+delete:
+  ldx star_y
+  lda screen_rows_lsb,x
+  sta STAR_PTR
+  lda screen_rows_msb,x
+  sta STAR_PTR+1
+  ldy star_x
+  lda #SPACE_CHAR
+  sta (STAR_PTR),y
+reset_offset:
+  lda #0
+  sta star_offset
+  inc star_y
+  lda star_y
+  cmp #25
+  bne display
+  lda #0
+  sta star_y
+display:
+  ldx star_y
+  lda screen_rows_lsb,x
+  sta STAR_PTR
+  lda screen_rows_msb,x
+  sta STAR_PTR+1
+  ldy star_x
+  lda star_offset
+  sta (STAR_PTR),y
+
+  jmp loop
+
+// ---------------------------------------------------------------------
+init_screen: {
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jmp CLS // jsr CLS ; rts
+}
+
+// ---------------------------------------------------------------------
+init_characters: {
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
+  rts
+}
+
+// ---------------------------------------------------------------------
+.macro Wait() {
+wait:
+  lda #255
+  cmp $d012 // RASTER_LINE
+  bne wait
+}
+
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+</code></pre></div></div>
+
+<p><img class="center" src="/images/starfield03.gif" /></p>
+
+<h2 id="40-étoiles-qui-tombent-en-même-temps">40 étoiles qui tombent en même temps</h2>
+
+<p>Le bouquin nous dit d’afficher une étoile dans chaque colonne. Quand j’ai lu ça
+je me suis dit que c’était impossible que ça semble aléatoire. Et pourtant ça
+le fera très bien par la suite, quand nous nous serons occupé d’avoir
+différentes vitesses, couleurs, et positions de départ.</p>
+
+<p>En attendant on va faire ça sans trop réfléchir : 40 étoiles, une par colonne.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>BasicUpstart2(start)
+
+.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
+
+.const SPACE_CHAR = 32
+.const OFFSET_MAX = 8
+.const SPEED = 1
+.const STAR_PTR = $f0
+.const TOTAL_OF_STARS = 40
+
+screen_rows_lsb:
+  .byte &lt;VRAM, &lt;VRAM+40, &lt;VRAM+80, &lt;VRAM+120, &lt;VRAM+160, &lt;VRAM+200
+  .byte &lt;VRAM+240, &lt;VRAM+280, &lt;VRAM+320, &lt;VRAM+360, &lt;VRAM+400, &lt;VRAM+440
+  .byte &lt;VRAM+480, &lt;VRAM+520, &lt;VRAM+560, &lt;VRAM+600, &lt;VRAM+640, &lt;VRAM+680
+  .byte &lt;VRAM+720, &lt;VRAM+760, &lt;VRAM+800, &lt;VRAM+840, &lt;VRAM+880, &lt;VRAM+920
+  .byte &lt;VRAM+960
+screen_rows_msb:
+  .byte &gt;VRAM, &gt;VRAM+40, &gt;VRAM+80, &gt;VRAM+120, &gt;VRAM+160, &gt;VRAM+200
+  .byte &gt;VRAM+240, &gt;VRAM+280, &gt;VRAM+320, &gt;VRAM+360, &gt;VRAM+400, &gt;VRAM+440
+  .byte &gt;VRAM+480, &gt;VRAM+520, &gt;VRAM+560, &gt;VRAM+600, &gt;VRAM+640, &gt;VRAM+680
+  .byte &gt;VRAM+720, &gt;VRAM+760, &gt;VRAM+800, &gt;VRAM+840, &gt;VRAM+880, &gt;VRAM+920
+  .byte &gt;VRAM+960
+
+star_current: .byte 0
+stars_row: .fill TOTAL_OF_STARS, 0
+stars_column: .fill TOTAL_OF_STARS, i
+stars_offset: .fill TOTAL_OF_STARS, 0
+// higher is slower
+stars_speed: .fill TOTAL_OF_STARS, SPEED
+
+start:
+  jsr init_screen
+  jsr init_characters
+
+main_loop:
+  Wait()
+star_loop:
+  // X will hold current star index throughout the algorithm.
+  ldx star_current
+speed:
+  dec stars_speed,x
+  bne next_star
+  lda #SPEED
+  sta stars_speed,x
+calculate:
+  inc stars_offset,x
+  lda stars_offset,x
+  cmp #OFFSET_MAX
+  bne display
+delete:
+  ldy stars_row,x
+  lda screen_rows_lsb,y
+  sta STAR_PTR
+  lda screen_rows_msb,y
+  sta STAR_PTR+1
+  ldy stars_column,x
+  lda #SPACE_CHAR
+  sta (STAR_PTR),y
+reset_offset:
+  lda #0
+  sta stars_offset,x
+  inc stars_row,x
+  lda stars_row,x
+  cmp #25
+  bne display
+  lda #0
+  sta stars_row,x
+display:
+  ldy stars_row,x
+  lda screen_rows_lsb,y
+  sta STAR_PTR
+  lda screen_rows_msb,y
+  sta STAR_PTR+1
+  ldy stars_column,x
+  lda stars_offset,x
+  sta (STAR_PTR),y
+next_star:
+  inc star_current
+  lda star_current
+  cmp #TOTAL_OF_STARS
+  bne star_loop
+  lda #0
+  sta star_current
+
+  jmp main_loop
+
+// ---------------------------------------------------------------------
+init_screen: {
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jmp CLS // jsr CLS ; rts
+}
+
+// ---------------------------------------------------------------------
+init_characters: {
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
+  rts
+}
+
+// ---------------------------------------------------------------------
+.macro Wait() {
+wait:
+  lda #255
+  cmp $d012 // RASTER_LINE
+  bne wait
+}
+
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+</code></pre></div></div>
+
+<p><img class="center" src="/images/starfield04.gif" /></p>
+
+<h2 id="des-nombres-aléatoires-quand-même-">Des nombres aléatoires quand même …</h2>
+
+<p>… Oui, mais dans une table ;) On va mettre des positions de départ différentes
+pour chaque étoile. Soit vous le faites sans outils, mais il faut bien être
+conscient que le cerveau humain est très mauvais pour produire de l’aléatoire.
+Soit vous utilisez un langage quelconque pour sortir 40 nombres compris entre 0 et 24.
+Voici par exemple un <em>one liner</em> en ruby :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="mi">40</span><span class="p">.</span><span class="nf">times</span> <span class="p">{</span> <span class="nb">print</span> <span class="s2">"</span><span class="si">#{</span><span class="p">(</span><span class="mi">0</span><span class="o">..</span><span class="mi">24</span><span class="p">).</span><span class="nf">to_a</span><span class="p">.</span><span class="nf">sample</span><span class="si">}</span><span class="s2">,"</span><span class="p">}</span></code></pre></figure>
+
+<p>Et notre table conservant les rangées des 40 étoiles devient :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>stars_row: .byte 2,20,22,23,0,14,3,7,8,22,18,15,15,17,19,14,15,0,2,7,8,5,15,3,13,15,8,13,1,21,2,0,11,5,9,22,17,13,2,2
+</code></pre></div></div>
+
+<p>Ça devient intéressant à l’écran, même si on repère facilement des patterns qui reviennent.</p>
+
+<p><img class="center" src="/images/starfield05.gif" /></p>
+
+<h2 id="les-dernières-touches">Les dernières touches</h2>
+
+<p>Ce qui m’a achevé dans ce bouquin, c’est la manière de gérer la vitesse et la couleur
+des étoiles. D’abord, c’est la même chose. Un même nombre (de 1 à 4) représente <strong>et</strong> la
+couleur, <strong>et</strong> la vitesse. C’est simple. C’est intelligent. C’est pratique.
+Et à chaque tour, la vitesse/couleur est modifiée avec un simple incrément.
+Encore une fois je me suis dit en lisant ça qu’il était <em>impossible</em> que ça
+paraisse aléatoire. Et pourtant, dans le feu de l’action, quand vous devez
+exploser les vaisseaux ennemis, ça fonctionne parfaitement.</p>
+
+<p>D’abord des vitesses différentes :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// higher is slower
+stars_speed: .byte 2,3,1,1,2,4,2,4,2,1,2,4,4,1,2,4,3,4,3,3,4,2,3,1,4,4,1,4,1,1,4,2,4,1,4,4,4,4,2,3
+stars_delay: .byte 2,3,1,1,2,4,2,4,2,1,2,4,4,1,2,4,3,4,3,3,4,2,3,1,4,4,1,4,1,1,4,2,4,1,4,4,4,4,2,3
+
+speed:
+  dec stars_delay,x
+  bne next_star
+  lda stars_speed,x
+  sta stars_delay,x
+</code></pre></div></div>
+
+<p><img class="center" src="/images/starfield06.gif" /></p>
+
+<p>Puis on ajoute la couleur :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>display:
+  [ ... ]
+  // Ajouter $d4 pour mémoire couleur
+  clc
+  lda STAR_PTR+1
+  adc #$d4
+  sta STAR_PTR+1
+  // Écrire la couleur
+  lda stars_speed,x
+  sta (STAR_PTR),y
+next_star:
+</code></pre></div></div>
+
+<p><img class="center" src="/images/starfield07.gif" /></p>
+
+<p>Et finalement on fait varier à chaque tour :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>.const SPEED_MIN = 1
+.const SPEED_MAX = 4
+
+reset_offset:
+  [ ... ]
+  inc stars_speed,x
+  lda stars_speed,x
+  cmp #(SPEED_MAX+1)
+  bne no_speed_reset
+  lda #SPEED_MIN
+no_speed_reset:
+  sta stars_speed,x
+display:
+</code></pre></div></div>
+
+<p>Avec un rendu plus proche des écrans CRT d’époque :</p>
+
+<p><img class="center" src="/images/starfield08.gif" /></p>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/01/26/une-horloge-reglable/" title="Article précédent: Une horloge réglable">&laquo; Une horloge réglable</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre Commentaire 
+sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/01/26/un-champ-d-etoiles/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
