@@ -19,5 +19,6 @@ Ex créateur d'effets pour guitare.
 Heureux utilisateur de Vim.
 
 Si vous vous sentez particulièrement généreux,
-<a href="https://ruby.social/@lkdjiin">suivez moi sur Mastodon</a>.
+<a href="https://ruby.social/@lkdjiin">suivez moi sur Mastodon</a>
+ou bien <a href="https://x.com/lkdjiin">sur Twitter</a>.
 
