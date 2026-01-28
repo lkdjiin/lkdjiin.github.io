@@ -8,3 +8,4 @@ _Cet article fait partie d'une série :_
 2. [Clignote !](/blog/2026/01/25/clignote/)
 3. [Une horloge réglable](/blog/2026/01/26/une-horloge-reglable/)
 4. [Horloge manuelle et sélecteur](/blog/2026/01/27/horloge-manuelle/)
+5. [La logique de l'horloge](/blog/2026/01/28/la-logique-de-l-horloge/)
