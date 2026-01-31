@@ -1,0 +1,206 @@
+---
+layout: post
+title: "La stack du processeur 6502"
+date: 2026-01-31 8:00
+comments: true
+tags: [ assembleur, 6502 ]
+---
+
+La _stack_ (sans anglicisme : la pile) est un endroit particulier de la mémoire.
+Le processeur s'en sert tout seul comme un grand pour y ranger l'adresse de
+retour lorsque vous appelez une sous routine. _Sous routine_ c'est le nom qu'on
+donne aux fonctions quand on fait de l'assembleur, mais à part dans la
+littérature, je ne connais personne qui parle comme ça ;)
+On peut aussi utilisez cette _stack_ explicitement, pour y déposer ou retirer
+des octets.
+
+<!-- more -->
+
+On appelle ça une pile parce que ça fonctionne comme une pile d'assiette.
+Pour faire une pile vous déposez les assiettes les unes au dessus des autres.
+Et pour les retirer, vous commençez par celle qui est au-dessus de la pile.
+Pour être précis il s'agit d'une pile _last in, first out_, en français :
+dernier entré, premier sorti.
+
+Le processeur 6502 possède une _stack_ de 256 octets.
+Elle se situe entre les adresses $100 et $1ff.
+Le registre de _stack_, nommé **SP** (_stack pointer_), fait 8 bits. Ce qui explique pourquoi la pile ne fait que 256 octets.
+Matériellement, le 6502 ajoute un **'1'** devant la valeur contenue dans SP pour atteindre une adresse entre
+$100 et $1ff. Par exemple, si SP contient $ab le 6502 utilisera en réalité
+l'adresse $1ab.
+La _stack_ fonctionne "à l'envers", le 1er emplacement est à $1ff, le second
+est à $1fe, et ainsi de suite jusqu'à $100, qui est le dernier emplacement.
+
+Une _stack_ de seulement 256 octets peut paraître bien maigre de prime abord.
+Mais d'après des sources qui semblent bien informées, c'est largement suffisant.
+Et je dois dire que je n'ai jamais eu de problème de ce côté là.
+
+## État initial au lancement d'un programme
+
+Lançons un programme sur Commodore 64 pour voir dans quel état est notre _stack_.
+
+    BasicUpstart2(start)
+    start:
+      nop
+      .break
+      nop
+
+Dans le débuggeur de VICE j'affiche le contenu des registres. SP contient la valeur $f6.
+Ce qui signifie que la prochaine valeur sera déposée en $1f6 (ou retirée de $1f6).
+
+    (C:$080f) r
+      ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+    .;080f 00 00 00 f6 2f 37 00100000 271 001    3063754
+                    ^^
+
+L'affichage de la zone mémoire de la _stack_ donne ce qui suit :
+
+    (C:$080f) m 100 1ff
+    >C:0100  33 38 39 31  31 00 30 30  30 30 ff ff  ff ff 00 00
+    >C:0110  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:0120  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:0130  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:0140  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:0150  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 10 00
+    >C:0160  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:0170  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:0180  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:0190  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:01a0  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:01b0  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:01c0  00 00 ff ff  fe ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:01d0  00 00 ff ff  ff ff 00 00  00 00 ff ff  ff ff 00 00
+    >C:01e0  00 00 ff 7d  ea 7d ea 00  61 00 22 0e  bc 81 64 b8
+    >C:01f0  0c bd ba b7  bc 03 00 46  e1 e9 a7 a7  79 a6 9c e3
+
+Que la _stack_ ne soit pas vide ne devrait pas nous surprendre. Il s'est passé
+un tas de chose avant le lancement de notre programme.
+
+## Push Pull
+
+En assembleur, on _push_ (pousse) des données sur la pile, ou on _pull_ (tire)
+des données de la pile. Le processeur 6502 a une instruction `pha` qui envoie
+sur la pile le contenu du registre A. Il a aussi une instruction `pla` qui
+retire une donnée de la pile pour la placer dans le registre A.
+
+Étudions le petit programme suivant qui va placer la valeur 5 sur la pile, puis
+la retirer.
+
+    BasicUpstart2(start)
+    start:
+      .break
+      lda #5
+      pha
+      pla
+      rts
+
+Comme précedemment, le haut de la pile est initialement placé à l'adresse $1f6 :
+
+    (C:$080e) r
+      ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+    .;080e 00 00 00 f6 2f 37 00100000 068 019    3070639
+                    ^^
+
+Cette adresse mémoire contient pour l'instant la valeur 0 :
+
+    (C:$080e) m 1f0 1ff
+    >C:01f0  0c bd ba b7  bc 03 00 46  e1 e9 a7 a7  79 a6 9c e3
+                                ^^
+
+L'instruction `pha` va donc placer la valeur 5 à l'adresse $1f6 et décrementer
+le registre SP.
+Après l'execution de l'instruction `pha` le haut de la pile est maintenant à
+l'adresse $1f5 et l'emplacement mémoire $1f6 contient bien la valeur 5 :
+
+    (C:$0811) r
+      ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+    .;0811 05 00 00 f5 2f 37 00100000 068 024    3070644
+                    ^^
+
+    (C:$0811) m 1f0 1ff
+    >C:01f0  0c bd ba b7  bc 03 05 46  e1 e9 a7 a7  79 a6 9c e3
+                                ^^
+L'instruction `pla` fait l'inverse. Elle incrémente le registre SP et copie la
+valeur du haut de la pile dans le registre A. Notez que le contenu de $1f6 n'a
+pas été modifié. C'est toujours 5. Le processeur n'a aucun moyen de savoir ce qu'il
+contenait avant le `pha`.
+
+    (C:$0812) r
+      ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+    .;0812 05 00 00 f6 2f 37 00100000 068 028    3070648
+           ^^       ^^
+
+    (C:$0812) m 1f0 1ff
+    >C:01f0  0c bd ba b7  bc 03 05 46  e1 e9 a7 a7  79 a6 9c e3
+                                ^^
+## Saut vers une routine et retour
+
+Sur le 6502 on appelle une routine avec l'instruction `jsr` (_Jump to SubRoutine_).
+À la fin de la routine on revient au programme principal à l'aide de l'instruction
+`rts` (_ReTurn from Subroutine_). Ces deux instructions utilisent la pile.
+Voyons comment avec le programme suivant :
+
+    BasicUpstart2(start)
+
+    start:
+      .break
+      jsr my_routine
+      nop
+      rts
+
+    my_routine:
+      nop
+      nop
+      rts
+
+Dans le débuggeur je le désassemble pour connaître les adresses des instructions.
+On voit que la routine `my_routine` débute à l'adresse $0813 :
+
+    (C:$080e) d
+    .C:080e   .start:
+    .C:080e  20 13 08    JSR .my_routine
+    .C:0811  EA          NOP
+    .C:0812  60          RTS
+    .C:0813   .my_routine:
+    .C:0813  EA          NOP
+    .C:0814  EA          NOP
+    .C:0815  60          RTS
+
+Affichons les registres et le contenu de la pile avant l'instruction `jsr`.
+C'est toujours la même chose, la pile pointe en $1f6 :
+
+    (C:$080e) r
+      ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+    .;080e 00 00 00 f6 2f 37 00100000 008 003    3165123
+    (C:$080e) m 1f0 1ff
+    >C:01f0  0c bd ba b7  bc 03 00 46  e1 e9 a7 a7  79 a6 9c e3
+
+Lançons la routine. On voit qu'après le passage de l'instruction `jsr` la pile
+a été décrementée deux fois et pointe maintenant en $1f4. Les emplacements
+$1f5 et $1f6 contiennent le nombre $0810 (inversé, au format _big endian_) qui
+est l'adresse de retour de la routine. Ou plus précisement, qui est l'adresse
+que contenait le PC (_Program Counter_) à la fin du traitement de l'instruction `jsr`
+par le processeur. (Dans le listing désassemblé on voit bien que c'est à l'adresse
+$0811 que devra revenir la routine.
+
+    (C:$0200) z
+    .C:0813  EA          NOP            - A:00 X:00 Y:00 SP:f4
+    (C:$0813) r
+      ADDR A  X  Y  SP 00 01 NV-BDIZC LIN CYC  STOPWATCH
+    .;0813 00 00 00 f4 2f 37 00100000 008 009    3165129
+                    ^^
+    (C:$0813) m 1f0 1ff
+    >C:01f0  0c bd ba b7  bc 10 08 46  e1 e9 a7 a7  79 a6 9c e3
+                             ^^^^^
+
+Confirmons maintenant ce raisonnement en regardant ce qu'il se passe avec
+l'instruction `rts`. Elle saute à l'adresse contenue en haut de pile (plus 1).
+Ici on atterrit donc à l'adresse $0811. De plus elle décremente **SP** deux fois :
+
+    .C:0815  60          RTS            - A:00 X:00 Y:00 SP:f4
+    (C:$0815) n
+    .C:0811  EA          NOP            - A:00 X:00 Y:00 SP:f6
+    (C:$0811) m 1f0 1ff
+    >C:01f0  0c bd ba b7  bc 10 08 46  e1 e9 a7 a7  79 a6 9c e3
+
+Voilà comment fonctionne la _stack_ du processeur 6502.
