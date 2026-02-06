@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Utiliser une EEPROM</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-02-06T08:00:00+01:00" itemprop="datePublished">06 February 2026
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Le moment est venu de connecter une ROM au processeur 6502 dans l’espoir de lui
+faire faire quelque chose.</p>
+
+<!-- more -->
+
+<h2 id="rom--prom--eprom--eeprom-">ROM ? PROM ? EPROM ? EEPROM ?</h2>
+
+<p>Je n’avais jamais cherché à comprendre ces différents termes. Je me suis dit que
+c’était le bon moment pour faire un peu de recherche.</p>
+
+<h3 id="read-only-memory">Read Only Memory</h3>
+
+<p>Une ROM est écrite une fois pour toute lors de sa fabrication.</p>
+
+<h3 id="programmable-read-only-memory">Programmable Read Only Memory</h3>
+
+<p>Une PROM peut-être écrite une seule fois, car elle est à base de fusibles.</p>
+
+<h3 id="erasable-programmable-read-only-memory">Erasable Programmable Read Only Memory</h3>
+
+<p>Une EPROM peut-être effacée et ré-écrite plusieurs fois. L’effacement est réalisé avec des rayons UV,
+pas super pratique à la maison ;)</p>
+
+<h3 id="electrically-erasable-programmable-read-only-memory">Electrically Erasable Programmable Read Only Memory</h3>
+
+<p>Une EEPROM peut-être effacée et ré-écrite plusieurs fois, avec des appareils électriques
+assez communs et bon-marché.
+J’en ai même déjà fabriqué avec un simple arduino pour programmer certains petits micro-contrôleurs.</p>
+
+<p>On utilisera ici une EEPROM modèle AT28C256.
+Elle fait 256Kb (bits), soit 32Ko (octets).</p>
+
+<h2 id="connexions">Connexions</h2>
+
+<p>On va relier le processeur directement à la ROM mais déjà une interrogation se
+pose : le bus de données du processeur fait 16 bits (soit 64Ko) alors que celui de la
+ROM fait seulement 15 bits (soit 32Ko).
+Si on branche la ROM en $0000-$7fff (première moitié de l’espace d’adressage du
+processeur) que va-t-il se passer lorsque le processeur tentera de lire une
+adresse entre $8000 et $ffff ?
+Et bien comme le bit de poid fort (le 16ème bit) du bus d’adresse n’est
+pas relié à la ROM, ce serait comme si la ROM était “en miroir”.  Elle
+apparaîtrait deux fois. Une fois en $0000-$7fff et une seconde fois en
+$8000-8ffff.</p>
+
+<p>On voudrait plutôt que les 32Ko de ROM soit vu une seule fois, pour pouvoir
+utiliser plus tard l’autre moitié en tant que RAM. Il y a un <em>pin</em> “enable” sur
+la ROM. Elle ne produit de sortie que lorsque ce <em>pin</em> est à 0.  Donc, en reliant
+le bit d’adresse de poid fort (le 16ème) du processeur sur le <em>pin</em> “enable” de la ROM nous
+laissons la plage $8000-$ffff libre pour la future RAM. Pourquoi ? Parce que
+quand le processeur émet une adresse à partir de $8000 et au-dessus, le bit de
+poid fort est à 1. Le nombre hexadécimal $8000 correspond au binaire <code class="language-plaintext highlighter-rouge">1000000000000000</code>.
+Comme ce bit est relié au <em>pin</em> “enable” de la ROM, celle-ci devient indisponible.</p>
+
+<p>Le problème est que (comme vu dans l’article précédent) la séquence de boot/reset va
+lire l’adresse de début du programme en $fffc et $fffd. Nous avons donc besoin
+de l’inverse. On veut que la future RAM utilise la plage $0000-7fff et que la ROM soit
+accessible en $8000-$ffff.  L’astuce consiste simplement à mettre une porte logique NOT
+entre le bit d’adresse de poid fort du processeur et le <em>pin</em> “enable” de la ROM.</p>
+
+<p>Voici le cablage dont je prends plus soin que d’habitude à réaliser, car il va falloir désinstaller
+et réinstaller l’EEPROM plusieurs fois pour la programmer.</p>
+
+<p><img class="center" src="/images/ordi8bits-003.jpg" /></p>
+
+<h2 id="programmation-de-la-rom">Programmation de la ROM</h2>
+
+<p>Pour écrire dans la ROM, j’utilise un programmeur T48 avec le logiciel
+<a href="https://gitlab.com/DavidGriffith/minipro">minipro</a>.</p>
+
+<p><img class="center" src="/images/ordi8bits-004.jpg" /></p>
+
+<p>La première ROM est remplie d’instructions NOP. J’utilise Ruby pour la créer.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">rom</span> <span class="o">=</span> <span class="no">Array</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">32_768</span><span class="p">,</span> <span class="mh">0xea</span><span class="p">)</span>
+
+<span class="no">File</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="s2">"rom.bin"</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+  <span class="n">file</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="n">rom</span><span class="p">.</span><span class="nf">pack</span><span class="p">(</span><span class="s2">"C*"</span><span class="p">))</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>On peut vérifier le contenu du fichier <code class="language-plaintext highlighter-rouge">rom.bin</code> avec la commande <code class="language-plaintext highlighter-rouge">hexdump</code>.
+On voit qu’il est bien rempli d’instructions NOP (opcode $ea) :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ hexdump -C rom.bin
+00000000  ea ea ea ea ea ea ea ea  ea ea ea ea ea ea ea ea  |................|
+*
+00008000
+</code></pre></div></div>
+
+<p>Une fois la ROM programmée et remise en place, je recable l’arduino Mega sur le processeur pour lire
+les valeurs du bus d’adresse et du bus de données.  Il y a tellement de cables
+qu’on ne voit même plus le processeur :D</p>
+
+<p><img class="center" src="/images/ordi8bits-005.jpg" /></p>
+
+<p>En monitorant à l’aide de l’arduino, on voit que la communication processeur/ROM se
+fait correctement :</p>
+
+<table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th>Address</th>
+      <th>R/W</th>
+      <th>Data</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td>ea15</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>ea15</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>@</td>
+      <td>ffff</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>@</td>
+      <td>ea15</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>@</td>
+      <td>01ff</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>@</td>
+      <td>01fe</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>@</td>
+      <td>01fd</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>@</td>
+      <td>fffc</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>@</td>
+      <td>fffd</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td>!</td>
+      <td>eaea</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>eaeb</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>eaeb</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>eaec</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>eaec</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>eaed</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+    <tr>
+      <td> </td>
+      <td>eaed</td>
+      <td>R</td>
+      <td>ea</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>La colonne <em>Address</em> correspond à ce qui circule sur le bus d’adresse du 6502.
+La colonne <em>R/W</em> indique si le processeur est en mode lecture (R) ou écriture (W).
+La colonne <em>Data</em> correspond à ce qui circule sur le bus de données.</p>
+
+<p>On voit que le processeur est constamment en mode lecture.
+Les 7 lignes identifiées par un “@” sont les 7 cycles de la séquence de
+reset. Cette séquence se termine par la lecture de l’adresse du début de programme aux adresses $fffc et $fffd.
+Comme la ROM est remplie de $ea, le processeur saute donc à l’adresse $eaea
+(identifié par la ligne qui commence avec “!”).
+Le processeur va y lire la valeur $ea, qui correspond à l’instruction NOP (NO Operation).
+Il va donc avancer à l’adresse suivante qui contiendra aussi un NOP, et ainsi de suite.</p>
+
+<p>Il est normal de voir deux fois les adresses pour l’instruction NOP car elle
+demande 2 cycles pour être exécutée.</p>
+
+<p>J’ai deux questions qui restent en suspens : que fait exactement la séquence de
+reset (et accessoirement est-ce important) ? Et pourquoi le premier NOP (ligne “!”) ne consomme qu’un seul cycle ?
+On verra si j’obtiens les réponses bientôt ;)</p>
+
+<h2 id="notes">Notes</h2>
+
+<p>J’essaye d’utiliser dans la mesure du possible les unités de mesure comme suit :</p>
+
+<ul>
+  <li><strong>ko</strong> pour kilo octet décimal – 1000 octets</li>
+  <li><strong>Ko</strong> pour kilo octet binaire – 1024 octets</li>
+  <li><strong>kb</strong> pour kilo bit décimal – 1000 bits</li>
+  <li><strong>Kb</strong> pour kilo bit binaire – 1024 bits
+<br /></li>
+</ul>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2026/01/24/fabriquer-un-ordinateur-8-bits/">Fabriquer un ordinateur 8 bits</a></li>
+  <li><a href="/blog/2026/01/25/clignote/">Clignote !</a></li>
+  <li><a href="/blog/2026/01/26/une-horloge-reglable/">Une horloge réglable</a></li>
+  <li><a href="/blog/2026/01/27/horloge-manuelle/">Horloge manuelle et sélecteur</a></li>
+  <li><a href="/blog/2026/01/28/la-logique-de-l-horloge/">La logique de l’horloge</a></li>
+  <li><a href="/blog/2026/02/02/premieres-connexions/">Premières connexions sur le 65C02</a></li>
+  <li><a href="/blog/2026/02/06/utiliser-une-eeprom/">Utiliser une EEPROM</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/02/02/premieres-connexions/" title="Article précédent: Premières connexions sur le 65C02">&laquo; Premières connexions sur le 65C02</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/02/06/utiliser-une-eeprom/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
