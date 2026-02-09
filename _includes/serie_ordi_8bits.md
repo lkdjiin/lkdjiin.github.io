@@ -11,3 +11,4 @@ _Cet article fait partie d'une série :_
 5. [La logique de l'horloge](/blog/2026/01/28/la-logique-de-l-horloge/)
 6. [Premières connexions sur le 65C02](/blog/2026/02/02/premieres-connexions/)
 7. [Utiliser une EEPROM](/blog/2026/02/06/utiliser-une-eeprom/)
+8. [Premières instructions](/blog/2026/02/09/premieres-instructions/)
