@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Premières instructions</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-02-09T08:00:00+01:00" itemprop="datePublished">09 February 2026
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Suite à l’expérience du dernier article je sais maintenant un peu mieux ce que
+fait le processeur 6502 au démarrage. Il va chercher l’adresse mémoire de début
+d’un programme. Cette adresse est rangée aux adresses <code class="language-plaintext highlighter-rouge">$fffc</code> et <code class="language-plaintext highlighter-rouge">$fffd</code>. On va
+écrire ce programme dans la ROM, pour qu’il soit exécuté à chaque démarrage/reset.</p>
+
+<!-- more -->
+
+<p>Une petite mise en garde avant de commencer : pour écrire un nombre hexadécimal
+j’utilise indifféremment la notation <code class="language-plaintext highlighter-rouge">0x12ab</code> et <code class="language-plaintext highlighter-rouge">$12ab</code>.</p>
+
+<h2 id="démarrer-en-8000">Démarrer en $8000</h2>
+
+<p>Programmons la ROM pour qu’elle contienne une adresse de début de programme.</p>
+
+<p>Ça pourrait faire mal au crâne. Voici quelques rappels :</p>
+<ul>
+  <li>Le processeur possède un espace d’adressage de 64Ko.</li>
+  <li>La ROM fait 32Ko. La dernière fois je l’ai mappée dans l’espace d’adressage du processeur aux adresses <code class="language-plaintext highlighter-rouge">$8000</code> à <code class="language-plaintext highlighter-rouge">$ffff</code>.</li>
+</ul>
+
+<p>Notre programme devra débuter à l’adresse <code class="language-plaintext highlighter-rouge">$8000</code> :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">rom</span><span class="p">[</span><span class="mh">0x7ffc</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">rom</span><span class="p">[</span><span class="mh">0x7ffd</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x80</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">0x7ffc</code> et <code class="language-plaintext highlighter-rouge">0x7ffd</code> sont les adresses
+dans la ROM physique. Elles seront accessibles aux adresses <code class="language-plaintext highlighter-rouge">$fffc</code> et
+<code class="language-plaintext highlighter-rouge">$fffd</code> pour le processeur (puisque la ROM est mappée sur les 32Ko supérieurs).
+Pour <code class="language-plaintext highlighter-rouge">0x00</code> et <code class="language-plaintext highlighter-rouge">0x80</code>, il ne faut pas oublier que le 6502 fonctionne en little-endian
+et c’est donc bien le nombre <code class="language-plaintext highlighter-rouge">$8000</code>.</p>
+
+<p>Je produis la ROM :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ruby make_rom.rb
+</code></pre></div></div>
+
+<p>Et je confirme ce qu’elle contient :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ hexdump -C rom.bin
+00000000  ea ea ea ea ea ea ea ea  ea ea ea ea ea ea ea ea  |................|
+*
+00007ff0  ea ea ea ea ea ea ea ea  ea ea ea ea 00 80 ea ea  |................|
+00008000
+</code></pre></div></div>
+
+<p>Si on replace la ROM, on doit maintenant voir le processeur démarrer à l’adresse <code class="language-plaintext highlighter-rouge">$8000</code> après un reset.</p>
+
+<h2 id="deux-instructions">Deux instructions</h2>
+
+<p>On veut placer ce programme assembleur dans la ROM :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>lda $42   // Charger la valeur $42 dans le registre A
+sta $6000 // Placer le contenu de A à l'adresse $6000
+</code></pre></div></div>
+
+<p>On se retrouve a tout faire à la main comme les pionniers ;) Il faut l’assembler
+manuellement.
+D’abord on doit trouver à quels opcodes correspondent ces instructions.
+On peut regarder dans la datasheet du processeur, ou <a href="https://llx.com/Neil/a2/opcodes.html">en ligne</a>.</p>
+
+<p>Le programme ruby pour produire la ROM devient alors :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">LDA_IMM</span> <span class="o">=</span> <span class="mh">0xa9</span>
+<span class="no">STA_ABS</span> <span class="o">=</span> <span class="mh">0x8d</span>
+
+<span class="n">rom</span> <span class="o">=</span> <span class="no">Array</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="mi">32_768</span><span class="p">,</span> <span class="mh">0xea</span><span class="p">)</span>
+
+<span class="n">rom</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="no">LDA_IMM</span> <span class="c1"># Opcode de l'instruction lda avec adressage immédiat.</span>
+<span class="n">rom</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x42</span>    <span class="c1"># Opérande de lda.</span>
+<span class="n">rom</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="no">STA_ABS</span> <span class="c1"># Opcode de l'instruction sta avec adressage absolu.</span>
+<span class="n">rom</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x00</span>    <span class="c1"># Opérande de sta, octet de poid faible.</span>
+<span class="n">rom</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x60</span>    <span class="c1"># Opérande de sta, octet de poid fort.</span>
+<span class="n">rom</span><span class="p">[</span><span class="mh">0x7ffc</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">rom</span><span class="p">[</span><span class="mh">0x7ffd</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x80</span>
+
+<span class="no">File</span><span class="p">.</span><span class="nf">open</span><span class="p">(</span><span class="s2">"rom.bin"</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+  <span class="n">file</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="n">rom</span><span class="p">.</span><span class="nf">pack</span><span class="p">(</span><span class="s2">"C*"</span><span class="p">))</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>Je montre le <em>dump</em> pour qu’on comprenne bien comment c’est agencé dans la ROM :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ hexdump -C rom.bin
+00000000  a9 42 8d 00 60 ea ea ea  ea ea ea ea ea ea ea ea  |.B..`...........|
+00000010  ea ea ea ea ea ea ea ea  ea ea ea ea ea ea ea ea  |................|
+*
+00007ff0  ea ea ea ea ea ea ea ea  ea ea ea ea 00 80 ea ea  |................|
+00008000
+</code></pre></div></div>
+
+<p>Je rebranche tout et je monitore le processeur avec l’arduino.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Adresse (B)</th>
+      <th>Données (B)</th>
+      <th>A</th>
+      <th>R/W</th>
+      <th>D</th>
+      <th>Commentaire</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1111111111111111</td>
+      <td>11101010</td>
+      <td>ffff</td>
+      <td>R</td>
+      <td>ea</td>
+      <td>Début du reset</td>
+    </tr>
+    <tr>
+      <td>1110101100000111</td>
+      <td>11101010</td>
+      <td>eb07</td>
+      <td>R</td>
+      <td>ea</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>0000000111111010</td>
+      <td>11101010</td>
+      <td>01fa</td>
+      <td>R</td>
+      <td>ea</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>0000000111111001</td>
+      <td>11101010</td>
+      <td>01f9</td>
+      <td>R</td>
+      <td>ea</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>0000000111111000</td>
+      <td>11101010</td>
+      <td>01f8</td>
+      <td>R</td>
+      <td>ea</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>1111111111111100</td>
+      <td>00000000</td>
+      <td>fffc</td>
+      <td>R</td>
+      <td>00</td>
+      <td>Lecture adresse programme</td>
+    </tr>
+    <tr>
+      <td>1111111111111101</td>
+      <td>10000000</td>
+      <td>fffd</td>
+      <td>R</td>
+      <td>80</td>
+      <td>Lecture adresse programme</td>
+    </tr>
+    <tr>
+      <td>1000000000000000</td>
+      <td>10101001</td>
+      <td>8000</td>
+      <td>R</td>
+      <td>a9</td>
+      <td> Instruction <code class="language-plaintext highlighter-rouge">lda</code></td>
+    </tr>
+    <tr>
+      <td>1000000000000001</td>
+      <td>01000010</td>
+      <td>8001</td>
+      <td>R</td>
+      <td>42</td>
+      <td>Opérande</td>
+    </tr>
+    <tr>
+      <td>1000000000000010</td>
+      <td>10001101</td>
+      <td>8002</td>
+      <td>R</td>
+      <td>8d</td>
+      <td>Instruction <code class="language-plaintext highlighter-rouge">sta</code></td>
+    </tr>
+    <tr>
+      <td>1000000000000011</td>
+      <td>00000000</td>
+      <td>8003</td>
+      <td>R</td>
+      <td>00</td>
+      <td>Opérande</td>
+    </tr>
+    <tr>
+      <td>1000000000000100</td>
+      <td>01100000</td>
+      <td>8004</td>
+      <td>R</td>
+      <td>60</td>
+      <td>Opérande</td>
+    </tr>
+    <tr>
+      <td>0110000000000000</td>
+      <td>01000010</td>
+      <td>6000</td>
+      <td>W</td>
+      <td>42</td>
+      <td>Écriture $42 à l’adresse $6000</td>
+    </tr>
+    <tr>
+      <td>1000000000000101</td>
+      <td>11101010</td>
+      <td>8005</td>
+      <td>R</td>
+      <td>ea</td>
+      <td>Instruction <code class="language-plaintext highlighter-rouge">nop</code></td>
+    </tr>
+    <tr>
+      <td>1000000000000110</td>
+      <td>11101010</td>
+      <td>8006</td>
+      <td>R</td>
+      <td>ea</td>
+      <td>Instruction <code class="language-plaintext highlighter-rouge">nop</code></td>
+    </tr>
+    <tr>
+      <td>1000000000000110</td>
+      <td>11101010</td>
+      <td>8006</td>
+      <td>R</td>
+      <td>ea</td>
+      <td>Instruction <code class="language-plaintext highlighter-rouge">nop</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>Adresse (B) =&gt; Contenu du bus d’adresse, en binaire</li>
+  <li>Données (B) =&gt; Contenu du bus de données, en binaire</li>
+  <li>A =&gt; Contenu du bus d’adresse, en hexadécimal</li>
+  <li>R/W =&gt; Mode lecture (R) ou écriture (W)</li>
+  <li>D =&gt; Contenu du bus de données, en hexadécimal</li>
+</ul>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>C’était un premier programme. Il ne fait peut-être pas grand chose, mais il le
+fait ! Et comme rien n’a explosé ou grillé, je trouve ça très encourageant ;)</p>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ol>
+  <li><a href="/blog/2026/01/24/fabriquer-un-ordinateur-8-bits/">Fabriquer un ordinateur 8 bits</a></li>
+  <li><a href="/blog/2026/01/25/clignote/">Clignote !</a></li>
+  <li><a href="/blog/2026/01/26/une-horloge-reglable/">Une horloge réglable</a></li>
+  <li><a href="/blog/2026/01/27/horloge-manuelle/">Horloge manuelle et sélecteur</a></li>
+  <li><a href="/blog/2026/01/28/la-logique-de-l-horloge/">La logique de l’horloge</a></li>
+  <li><a href="/blog/2026/02/02/premieres-connexions/">Premières connexions sur le 65C02</a></li>
+  <li><a href="/blog/2026/02/06/utiliser-une-eeprom/">Utiliser une EEPROM</a></li>
+  <li><a href="/blog/2026/02/09/premieres-instructions/">Premières instructions</a></li>
+</ol>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/02/06/utiliser-une-eeprom/" title="Article précédent: Utiliser une EEPROM">&laquo; Utiliser une EEPROM</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/02/09/premieres-instructions/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
