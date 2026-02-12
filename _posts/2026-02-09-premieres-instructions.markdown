@@ -55,7 +55,7 @@ Si on replace la ROM, on doit maintenant voir le processeur démarrer à l'adres
 
 On veut placer ce programme assembleur dans la ROM :
 
-    lda $42   // Charger la valeur $42 dans le registre A
+    lda #$42  // Charger la valeur $42 dans le registre A
     sta $6000 // Placer le contenu de A à l'adresse $6000
 
 On se retrouve a tout faire à la main comme les pionniers ;) Il faut l'assembler
