@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Utiliser une API météo avec Ruby</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-02-12T08:00:00+01:00" itemprop="datePublished">12 February 2026
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><em>Tutoriel pour écrire de A à Z une commande de prévision météo, en Ruby,
+intégré dans votre shell Fish, utilisant une API gratuite au format Json et les
+capacités de mise en forme des outils Unix</em></p>
+
+<p>C’est le titre auquel j’avais pensé en premier lieu, mais c’était un peu trop long ;)</p>
+
+<p>Pourtant c’est exactement ce que je vous propose de faire aujourd’hui.
+Taper <code class="language-plaintext highlighter-rouge">météo</code> dans votre terminal et obtenir la température, la probabilité de
+pluie et une description du temps pour chaque heure de la journée :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ météo
+ 0h  12°  70%  Pluie légère
+ 1h  12°  58%
+ 2h  12°  38%  Couvert
+ 3h  12°  20%  Couvert
+ 4h  12°  20%  Couvert
+ 5h  11°  25%  Couvert
+ 6h  11°  18%  
+ 7h  11°  43%  
+ 8h  12°  25%  
+ 9h  12°  33%  Couvert
+10h  12°  38%  
+11h  12°  30%  
+12h  13°  23%  Nuageux
+13h  13°   8%  
+14h  14°  13%  Couvert
+15h  14°  13%  Couvert
+16h  14°   8%  Nuageux
+17h  13°   0%  Couvert
+18h  13°  20%  Couvert
+19h  12°  30%  
+20h  11°  60%  
+21h  11°  85%  Pluie légère
+22h  11°  95%  Pluie forte
+23h  12°  93%  Pluie forte
+</code></pre></div></div>
+
+<p>Et si dans ce tutoriel je me contenterai de quelques prévisions pour la journée,
+vous pourrez bien sûr l’adapter à vos envies et à vos besoins.</p>
+
+<!-- more -->
+
+<h2 id="une-api">Une API</h2>
+
+<p>L’idée m’a pris en utilisant <a href="https://wttr.in/">wttr.in</a>. En creusant un peu j’ai compris que
+cette application utilise une API gratuite de prévision météorologique et qu’il en existe beaucoup.
+Donc il m’a fallu en choisir une.</p>
+
+<p>J’en ai testé trois ou quatre, et j’ai retenu <a href="https://open-meteo.com/">Open Meteo</a>.
+Gratuit, pas de compte à créer, pas besoin de clé API, pas besoin de fournir sa carte bancaire, pas de surprises.
+Mais vous pourrez en choisir une autre selon vos besoins, elles fonctionnent toutes plus ou moins de la
+même manière. En guise d’exemple rapide, l’appel suivant récupère les prévisions de température pour chaque heures sur les 7 prochains jours aux coordonnées GPS de la tour Eiffel :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl https://api.open-meteo.com/v1/forecast?latitude=48.85&amp;longitude=2.29&amp;hourly=temperature_2m
+</code></pre></div></div>
+
+<p>Pour la petite histoire j’avais prévu initialement d’utiliser l’API de météo France.
+Mais c’était avant de comprendre dans la douleur qu’il fallait
+un bac+42 en météorologie pour pouvoir en tirer quelque chose.</p>
+
+<h2 id="récupérer-le-json-avec-ruby">Récupérer le Json avec Ruby</h2>
+
+<p>Pas besoin d’en faire des tonnes. On veut seulement les
+prévisons pour notre ville, les mêmes jours après jours.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1"># fichier meteo-get.rb</span>
+
+<span class="c1"># L'url de base, avec vos coordonnées GPS</span>
+<span class="n">api</span> <span class="o">=</span> <span class="s1">'https://api.open-meteo.com/v1/forecast?latitude=48.85&amp;longitude=2.29'</span>
+
+<span class="c1"># Les données horaires à obtenir</span>
+<span class="n">hourly</span> <span class="o">=</span> <span class="s1">'&amp;hourly=temperature_2m,precipitation_probability,weather_code'</span>
+
+<span class="c1"># Ne nous préoccupons pas de la time zone</span>
+<span class="n">tz</span> <span class="o">=</span> <span class="s1">'&amp;timezone=auto'</span>
+
+<span class="c1"># Les données du jour uniquement</span>
+<span class="n">forecast</span> <span class="o">=</span> <span class="s1">'&amp;forecast_days=1'</span>
+
+<span class="n">url</span> <span class="o">=</span> <span class="s2">"</span><span class="si">#{</span><span class="n">api</span><span class="si">}#{</span><span class="n">hourly</span><span class="si">}#{</span><span class="n">tz</span><span class="si">}#{</span><span class="n">forecast</span><span class="si">}</span><span class="s2">"</span>
+
+<span class="c1"># Vous voudrez peut-être enlever l'option no-progress-meter pendant la</span>
+<span class="c1"># mise au point ou le débug</span>
+<span class="n">command</span> <span class="o">=</span> <span class="s2">"curl --no-progress-meter '</span><span class="si">#{</span><span class="n">url</span><span class="si">}</span><span class="s2">' &gt; data.json"</span>
+
+<span class="nb">system</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></code></pre></figure>
+
+<p>Vous utiliserez ce script avec <code class="language-plaintext highlighter-rouge">ruby meteo-get.rb</code>.</p>
+
+<p>Une fois que vous avez mis au point la requête et que vous récupérez les données
+dont vous avez besoin dans un fichier Json, on passe à la suite.</p>
+
+<h2 id="exploitation-du-json">Exploitation du Json</h2>
+
+<p>Avoir deux fichiers source Ruby, un pour obtenir les données et un autre pour les traiter,
+vous donnera plus de flexibilité sans effort.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1"># Fichier meteo-parse.rb</span>
+
+<span class="nb">require</span> <span class="s1">'json'</span>
+
+<span class="c1"># Vous pouvez définir les descriptions que vous voulez.</span>
+<span class="no">WEATHER_CODE</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s1">'0'</span> <span class="o">=&gt;</span> <span class="s1">'Ciel clair'</span><span class="p">,</span>
+  <span class="s1">'1'</span> <span class="o">=&gt;</span> <span class="s1">'Dégagé'</span><span class="p">,</span>
+  <span class="s1">'2'</span> <span class="o">=&gt;</span> <span class="s1">'Nuageux'</span><span class="p">,</span>
+  <span class="s1">'3'</span> <span class="o">=&gt;</span> <span class="s1">'Ciel couvert'</span><span class="p">,</span>
+  <span class="s1">'51'</span> <span class="o">=&gt;</span> <span class="s1">'Pluie'</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># Cette classe s'occupe de fournir les données.</span>
+<span class="k">class</span> <span class="nc">MeteoData</span>
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="vi">@data</span> <span class="o">=</span> <span class="no">JSON</span><span class="p">.</span><span class="nf">load_file</span><span class="p">(</span><span class="s1">'data.json'</span><span class="p">)</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">temperature</span><span class="p">(</span><span class="n">hour</span><span class="p">)</span>
+    <span class="n">hourly</span><span class="p">[</span><span class="s1">'temperature_2m'</span><span class="p">][</span><span class="n">hour</span><span class="p">].</span><span class="nf">round</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">precipitation</span><span class="p">(</span><span class="n">hour</span><span class="p">)</span>
+    <span class="n">hourly</span><span class="p">[</span><span class="s1">'precipitation_probability'</span><span class="p">][</span><span class="n">hour</span><span class="p">]</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="n">hour</span><span class="p">)</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">hourly</span><span class="p">[</span><span class="s1">'weather_code'</span><span class="p">][</span><span class="n">hour</span><span class="p">].</span><span class="nf">to_s</span>
+    <span class="no">WEATHER_CODE</span><span class="p">[</span><span class="n">desc</span><span class="p">]</span>
+  <span class="k">end</span>
+
+  <span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">hourly</span>
+    <span class="vi">@data</span><span class="p">[</span><span class="s1">'hourly'</span><span class="p">]</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="c1"># Cette classe affiche les données groupées.</span>
+<span class="k">class</span> <span class="nc">Printer</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="vi">@data</span> <span class="o">=</span> <span class="n">data</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">display</span>
+    <span class="mi">0</span><span class="p">.</span><span class="nf">upto</span><span class="p">(</span><span class="mi">23</span><span class="p">).</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">hour</span><span class="o">|</span>
+      <span class="n">t</span> <span class="o">=</span> <span class="vi">@data</span><span class="p">.</span><span class="nf">temperature</span><span class="p">(</span><span class="n">hour</span><span class="p">)</span>
+      <span class="nb">p</span> <span class="o">=</span> <span class="vi">@data</span><span class="p">.</span><span class="nf">precipitation</span><span class="p">(</span><span class="n">hour</span><span class="p">)</span>
+      <span class="n">d</span> <span class="o">=</span> <span class="vi">@data</span><span class="p">.</span><span class="nf">description</span><span class="p">(</span><span class="n">hour</span><span class="p">)</span>
+      <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="n">hour</span><span class="si">}</span><span class="s2">h </span><span class="si">#{</span><span class="n">t</span><span class="si">}</span><span class="s2">° </span><span class="si">#{</span><span class="nb">p</span><span class="si">}</span><span class="s2">% </span><span class="si">#{</span><span class="n">d</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="n">printer</span> <span class="o">=</span> <span class="no">Printer</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="no">MeteoData</span><span class="p">.</span><span class="nf">new</span><span class="p">)</span>
+<span class="n">printer</span><span class="p">.</span><span class="nf">display</span></code></pre></figure>
+
+<p>Et un extrait de la sortie obtenue avec <code class="language-plaintext highlighter-rouge">ruby meteo-parse.rb</code> :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>8h 9° 25%
+9h 12° 33% Ciel couvert
+10h 12° 38% Ciel couvert
+11h 12° 30% Ciel couvert
+12h 13° 23% Ciel couvert
+13h 14° 8% Ciel couvert
+14h 14° 13% Ciel couvert
+15h 14° 13% Ciel couvert
+16h 14° 8% Nuageux
+17h 13° 0% Ciel couvert
+18h 13° 20% Ciel couvert
+</code></pre></div></div>
+
+<h2 id="mise-en-forme-du-texte">Mise en forme du texte</h2>
+
+<p>Bien sûr on pourrait gérer la mise en forme directement avec Ruby dans le fichier
+<code class="language-plaintext highlighter-rouge">meteo-parse.rb</code>, mais pourquoi se compliquer la vie ? L’utilitaire <code class="language-plaintext highlighter-rouge">column</code> va
+nous faire ça en 2 secondes. Option <code class="language-plaintext highlighter-rouge">-t</code> pour afficher les données sous forme de
+tableau et option <code class="language-plaintext highlighter-rouge">-R</code> pour aligner sur la droite les colonnes 1, 2 et 3.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ruby meteo-parse.rb | column -t -R 1,2,3
+</code></pre></div></div>
+
+<p>Le même extrait que précédemment avec la mise en forme de <code class="language-plaintext highlighter-rouge">column</code> :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> 8h  9° 25%
+ 9h 12° 33% Ciel couvert
+10h 12° 38% Ciel couvert
+11h 12° 30% Ciel couvert
+12h 13° 23% Ciel couvert
+13h 14°  8% Ciel couvert
+14h 14° 13% Ciel couvert
+15h 14° 13% Ciel couvert
+16h 14°  8% Nuageux
+17h 13°  0% Ciel couvert
+18h 13° 20% Ciel couvert
+</code></pre></div></div>
+
+<h2 id="réunion-des-deux-fichiers-ruby">Réunion des deux fichiers Ruby</h2>
+
+<p>On enchaîne les fichiers <code class="language-plaintext highlighter-rouge">meteo-get.rb</code> et <code class="language-plaintext highlighter-rouge">meteo-parse.rb</code> simplement en les
+chargeants. Vous aurez peut-être besoin à un moment donné d’une logique plus
+complexe, par exemple pour gérer les erreurs dues à une API inaccessible. Mais
+pour l’instant ça fera l’affaire :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1"># Fichier meteo.rb</span>
+
+<span class="nb">require_relative</span> <span class="s1">'meteo-get.rb'</span>
+<span class="nb">require_relative</span> <span class="s1">'meteo-parse.rb'</span></code></pre></figure>
+
+<p>On peut alors utiliser une seule ligne de commande :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ ruby meteo.rb | column -t -R 1,2,3
+</code></pre></div></div>
+
+<p>Mais vous conservez toujours la possibilité d’utiliser <code class="language-plaintext highlighter-rouge">meteo-get.rb</code> et/ou <code class="language-plaintext highlighter-rouge">meteo-parse.rb</code>
+pour effectuer de la mise au point, de la maintenance, des tests, etc…</p>
+
+<h2 id="fonction-fish">Fonction Fish</h2>
+
+<p>Voyons maintenant un moyen parmi d’autres pour utiliser une commande
+<code class="language-plaintext highlighter-rouge">météo</code> dans le terminal, où que vous soyez. J’utilise le shell <a href="https://fishshell.com/">Fish</a>
+mais vous trouverez certainement une manière de faire la même chose si vous
+utiliser un autre shell.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># Fichier météo.fish</span>
+<span class="k">function </span>météo <span class="nt">--description</span> <span class="s1">'Display weather report'</span>
+  <span class="nb">set </span>d <span class="o">(</span><span class="nb">pwd</span><span class="o">)</span>                        <span class="c"># (1)</span>
+  <span class="nb">cd</span> ~/Apps/meteo/                   <span class="c"># (2)</span>
+  ruby meteo.rb | column <span class="nt">-t</span> <span class="nt">-R</span> 1,2,3 <span class="c"># (3)</span>
+  <span class="nb">cd</span> <span class="nv">$d</span>                              <span class="c"># (4)</span>
+end</code></pre></figure>
+
+<ol>
+  <li>Se souvenir du dossier en cours</li>
+  <li>Aller là où se trouve votre application</li>
+  <li>Lancer l’application (plus tard il faudra sûrement gérer les possibles erreurs)</li>
+  <li>Revenir au dossier initial</li>
+</ol>
+
+<h2 id="installation">Installation</h2>
+
+<p>C’est la dernière étape. On range la fonction fish à sa place :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ cp météo.fish ~/.config/fish/functions/
+</code></pre></div></div>
+
+<p>Puis les fichiers Ruby à la leur. Ici c’est <code class="language-plaintext highlighter-rouge">Apps/meteo/</code> mais ça peut-être où
+vous voulez :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mkdir ~/Apps/meteo/
+cp meteo*.rb ~/Apps/meteo/
+</code></pre></div></div>
+
+<p>Et voilà, vous disposez désormais de la commande <code class="language-plaintext highlighter-rouge">météo</code> dans votre terminal.</p>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/02/09/premieres-instructions/" title="Article précédent: Premières instructions">&laquo; Premières instructions</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/02/12/utiliser-une-api-meteo-avec-ruby/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
