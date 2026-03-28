@@ -39,7 +39,7 @@ vous choisissez. La recette est la suivante :
 
 Je démarre par quelques constantes.
 
-{% highlight asm %}
+{% highlight kickass %}
 .const SOURCE = $f7
 .const DEST = $f9
 .const VRAM = $0400
@@ -60,7 +60,7 @@ l'appui sur une touche pour démarrer l'effet. La routine `wait` est un timer.
 adresses VRAM de chaque début de ligne, respectivement octet de poid faible et
 octet de poid fort (**l**east **s**ignificant **b**yte, **m**ost **s**ignificant **b**yte).
 
-{% highlight asm %}
+{% highlight kickass %}
 // Gravity 1 - Single column -------------------------------------------
 start:
   jsr init_text
@@ -113,7 +113,7 @@ Les 40 colonnes descendent d'un rang à chaque itération.
 Il suffit d'ajuster la colonne en cours après l'effacement du caractère du haut
 pour faire les 40 colonnes à la suite.
 
-{% highlight asm %}
+{% highlight kickass %}
   inc current_column
   lda current_column
   cmp #SCREEN_WIDTH
@@ -139,7 +139,7 @@ contient plus que des espaces et ne doit plus être mise à jour pour ne pas
 ralentir l'animation. Ainsi on travaille toujours sur une fenêtre/largeur de 24
 colonnes au maximum.
 
-{% highlight asm %}
+{% highlight kickass %}
   inc current_column
   lda current_column
   cmp width
@@ -192,7 +192,7 @@ voudra déplacer les caractères par 4 ou par 8.
 Cette fois on ne copie pas le caractère à la ligne suivante, mais deux lignes
 plus bas :
 
-{% highlight asm %}
+{% highlight kickass %}
 // ---------------------------------------------------------------------
 // X - screen row (0-24)
 // Y - current column
@@ -223,7 +223,7 @@ Dans les tables précalculées `rows_lsb` et `rows_msb` je fais comme si la 26è
 ligne existait. Mais sa valeur est de zéro, ce qui me fait beaucoup penser au pointeur
 nul du langage C.
 
-{% highlight asm %}
+{% highlight kickass %}
 rows_msb:
 .byte >VRAM+40*0, >VRAM+40*1, >VRAM+40*2, >VRAM+40*3, >VRAM+40*4, >VRAM+40*5
 .byte >VRAM+40*6, >VRAM+40*7, >VRAM+40*8, >VRAM+40*9, >VRAM+40*10, >VRAM+40*11
@@ -244,7 +244,7 @@ Pour finir il faut trouver le moyen de généraliser des parties du code pour ac
 une gravité de 1, 2, 4, ou 8.
 Et enfin on pourra mettre en oeuvre un pattern de gravité :
 
-{% highlight asm %}
+{% highlight kickass %}
 pattern: .byte 1, 2, 4, 8, 8, 2
 columns_gravity_index:
 .byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
