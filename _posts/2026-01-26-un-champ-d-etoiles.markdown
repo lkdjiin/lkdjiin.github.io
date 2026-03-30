@@ -38,36 +38,42 @@ Une étoile sera tout bonnement un pixel. Comme les caractères du Commodore 64 
 une taille de 8x8 pixels, on utilisera 8 caractères, chacun à une hauteur
 différente. Autrement dit il y aura un premier caractère comme ceci :
 
-    ...x....
-    ........
-    ........
-    ........
-    ........
-    ........
-    ........
-    ........
+{% highlight bash %}
+...x....
+........
+........
+........
+........
+........
+........
+........
+{% endhighlight %}
 
 Un second comme celui-là :
 
-    ........
-    ...x....
-    ........
-    ........
-    ........
-    ........
-    ........
-    ........
+{% highlight raw %}
+........
+...x....
+........
+........
+........
+........
+........
+........
+{% endhighlight %}
 
 Et ainsi de suite jusqu'au huitième :
 
-    ........
-    ........
-    ........
-    ........
-    ........
-    ........
-    ........
-    ...x....
+{% highlight raw %}
+........
+........
+........
+........
+........
+........
+........
+...x....
+{% endhighlight %}
 
 Ainsi on pourra enchaîner les 8 caractères au même endroit de l'écran avant de
 passer à la rangée inférieure. On pourra de cette manière faire passer une étoile
@@ -80,54 +86,56 @@ Et l'espace sera à sa place standard (la 32ème) pour pouvoir utiliser la
 routine CLS du système (effacement de l'écran).
 
 
-    .const MEMORY_SETUP = $d018
-    .const VRAM = $0400
-    .const BORDER = $d020
-    .const BACKGROUND = $d021
-    .const COLOR = $286
-    .const CLS = $e544
+{% highlight kickass %}
+.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
 
-    BasicUpstart2(start)
+BasicUpstart2(start)
 
-    start:
-      lda #BLACK
-      sta BACKGROUND
-      sta BORDER
-      lda #WHITE
-      sta COLOR
-      jsr CLS
+start:
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jsr CLS
 
-      // Ça c'est pour dire où trouver le jeu de caractère.
-      lda MEMORY_SETUP
-      and #%11110000
-      ora #%00001100
-      sta MEMORY_SETUP
+  // Ça c'est pour dire où trouver le jeu de caractère.
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
 
-      // Pour l'exemple, j'affiche les 8 caractères étoile en haut à
-      // gauche.
-      ldx #0
-    loop:
-      txa
-      sta VRAM,x
-      inx
-      cpx #8
-      bne loop
+  // Pour l'exemple, j'affiche les 8 caractères étoile en haut à
+  // gauche.
+  ldx #0
+loop:
+  txa
+  sta VRAM,x
+  inx
+  cpx #8
+  bne loop
 
-      jmp *
+  jmp *
 
-    // Les 8 caractères sont ici, à partir de l'adresse $3000
-    *=$3000
-    .byte %00010000,0,0,0,0,0,0,0
-    .byte 0,%00010000,0,0,0,0,0,0
-    .byte 0,0,%00010000,0,0,0,0,0
-    .byte 0,0,0,%00010000,0,0,0,0
-    .byte 0,0,0,0,%00010000,0,0,0
-    .byte 0,0,0,0,0,%00010000,0,0
-    .byte 0,0,0,0,0,0,%00010000,0
-    .byte 0,0,0,0,0,0,0,%00010000
-    // Et l'espace est ici
-    *=$3000+32*8
-    .byte 0,0,0,0,0,0,0,0
+// Les 8 caractères sont ici, à partir de l'adresse $3000
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+// Et l'espace est ici
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+{% endhighlight %}
 
 {% img center /images/starfield01.png %}
 
@@ -139,85 +147,87 @@ caractère en haut à gauche de l'écran. C'est histoire de s'assurer que mon
 beaucoup trop de code.
 
 
-    BasicUpstart2(start)
+{% highlight kickass %}
+BasicUpstart2(start)
 
-    .const MEMORY_SETUP = $d018
-    .const VRAM = $0400
-    .const BORDER = $d020
-    .const BACKGROUND = $d021
-    .const COLOR = $286
-    .const CLS = $e544
+.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
 
-    .const OFFSET_MAX = 8
-    .const SPEED = 10
+.const OFFSET_MAX = 8
+.const SPEED = 10
 
-    star_x: .byte 0
-    star_y: .byte 0
-    star_offset: .byte 0
-    star_speed: .byte SPEED // plus c'est petit, plus c'est lent
+star_x: .byte 0
+star_y: .byte 0
+star_offset: .byte 0
+star_speed: .byte SPEED // plus c'est petit, plus c'est lent
 
-    start:
-      jsr init_screen
-      jsr init_characters
+start:
+  jsr init_screen
+  jsr init_characters
 
-    loop:
-      Wait()
-    speed:
-      dec star_speed
-      bne loop
-      lda #SPEED
-      sta star_speed
-    calculate:
-      inc star_offset
-      lda star_offset
-      cmp #OFFSET_MAX
-      bne display
-      lda #0
-      sta star_offset
-    display:
-      ldx star_x
-      sta VRAM,x
+loop:
+  Wait()
+speed:
+  dec star_speed
+  bne loop
+  lda #SPEED
+  sta star_speed
+calculate:
+  inc star_offset
+  lda star_offset
+  cmp #OFFSET_MAX
+  bne display
+  lda #0
+  sta star_offset
+display:
+  ldx star_x
+  sta VRAM,x
 
-      jmp loop
+  jmp loop
 
-    // ---------------------------------------------------------------------
-    init_screen: {
-      lda #BLACK
-      sta BACKGROUND
-      sta BORDER
-      lda #WHITE
-      sta COLOR
-      jmp CLS // jsr CLS ; rts
-    }
+// ---------------------------------------------------------------------
+init_screen: {
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jmp CLS // jsr CLS ; rts
+}
 
-    // ---------------------------------------------------------------------
-    init_characters: {
-      lda MEMORY_SETUP
-      and #%11110000
-      ora #%00001100
-      sta MEMORY_SETUP
-      rts
-    }
+// ---------------------------------------------------------------------
+init_characters: {
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
+  rts
+}
 
-    // ---------------------------------------------------------------------
-    .macro Wait() {
-    wait:
-      lda #255
-      cmp $d012 // RASTER_LINE
-      bne wait
-    }
+// ---------------------------------------------------------------------
+.macro Wait() {
+wait:
+  lda #255
+  cmp $d012 // RASTER_LINE
+  bne wait
+}
 
-    *=$3000
-    .byte %00010000,0,0,0,0,0,0,0
-    .byte 0,%00010000,0,0,0,0,0,0
-    .byte 0,0,%00010000,0,0,0,0,0
-    .byte 0,0,0,%00010000,0,0,0,0
-    .byte 0,0,0,0,%00010000,0,0,0
-    .byte 0,0,0,0,0,%00010000,0,0
-    .byte 0,0,0,0,0,0,%00010000,0
-    .byte 0,0,0,0,0,0,0,%00010000
-    *=$3000+32*8
-    .byte 0,0,0,0,0,0,0,0
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+{% endhighlight %}
 
 {% img center /images/starfield02.gif %}
 
@@ -228,122 +238,124 @@ du tout optimisé, mais ce n'est pas son propos puisqu'il est seulement un
 "passage" vers la suite.
 
 
-    BasicUpstart2(start)
+{% highlight kickass %}
+BasicUpstart2(start)
 
-    .const MEMORY_SETUP = $d018
-    .const VRAM = $0400
-    .const BORDER = $d020
-    .const BACKGROUND = $d021
-    .const COLOR = $286
-    .const CLS = $e544
+.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
 
-    .const SPACE_CHAR = 32
-    .const OFFSET_MAX = 8
-    .const SPEED = 2
+.const SPACE_CHAR = 32
+.const OFFSET_MAX = 8
+.const SPEED = 2
 
-    screen_rows_lsb:
-      .byte <VRAM, <VRAM+40, <VRAM+80, <VRAM+120, <VRAM+160, <VRAM+200
-      .byte <VRAM+240, <VRAM+280, <VRAM+320, <VRAM+360, <VRAM+400, <VRAM+440
-      .byte <VRAM+480, <VRAM+520, <VRAM+560, <VRAM+600, <VRAM+640, <VRAM+680
-      .byte <VRAM+720, <VRAM+760, <VRAM+800, <VRAM+840, <VRAM+880, <VRAM+920
-      .byte <VRAM+960
-    screen_rows_msb:
-      .byte >VRAM, >VRAM+40, >VRAM+80, >VRAM+120, >VRAM+160, >VRAM+200
-      .byte >VRAM+240, >VRAM+280, >VRAM+320, >VRAM+360, >VRAM+400, >VRAM+440
-      .byte >VRAM+480, >VRAM+520, >VRAM+560, >VRAM+600, >VRAM+640, >VRAM+680
-      .byte >VRAM+720, >VRAM+760, >VRAM+800, >VRAM+840, >VRAM+880, >VRAM+920
-      .byte >VRAM+960
+screen_rows_lsb:
+  .byte <VRAM, <VRAM+40, <VRAM+80, <VRAM+120, <VRAM+160, <VRAM+200
+  .byte <VRAM+240, <VRAM+280, <VRAM+320, <VRAM+360, <VRAM+400, <VRAM+440
+  .byte <VRAM+480, <VRAM+520, <VRAM+560, <VRAM+600, <VRAM+640, <VRAM+680
+  .byte <VRAM+720, <VRAM+760, <VRAM+800, <VRAM+840, <VRAM+880, <VRAM+920
+  .byte <VRAM+960
+screen_rows_msb:
+  .byte >VRAM, >VRAM+40, >VRAM+80, >VRAM+120, >VRAM+160, >VRAM+200
+  .byte >VRAM+240, >VRAM+280, >VRAM+320, >VRAM+360, >VRAM+400, >VRAM+440
+  .byte >VRAM+480, >VRAM+520, >VRAM+560, >VRAM+600, >VRAM+640, >VRAM+680
+  .byte >VRAM+720, >VRAM+760, >VRAM+800, >VRAM+840, >VRAM+880, >VRAM+920
+  .byte >VRAM+960
 
-    .const STAR_PTR = $f0
-    star_x: .byte 0
-    star_y: .byte 0
-    star_offset: .byte 0
-    star_speed: .byte SPEED
+.const STAR_PTR = $f0
+star_x: .byte 0
+star_y: .byte 0
+star_offset: .byte 0
+star_speed: .byte SPEED
 
-    start:
-      jsr init_screen
-      jsr init_characters
+start:
+  jsr init_screen
+  jsr init_characters
 
-    loop:
-      Wait()
-    speed:
-      dec star_speed
-      bne loop
-      lda #SPEED
-      sta star_speed
-    calculate:
-      inc star_offset
-      lda star_offset
-      cmp #OFFSET_MAX
-      bne display
-    delete:
-      ldx star_y
-      lda screen_rows_lsb,x
-      sta STAR_PTR
-      lda screen_rows_msb,x
-      sta STAR_PTR+1
-      ldy star_x
-      lda #SPACE_CHAR
-      sta (STAR_PTR),y
-    reset_offset:
-      lda #0
-      sta star_offset
-      inc star_y
-      lda star_y
-      cmp #25
-      bne display
-      lda #0
-      sta star_y
-    display:
-      ldx star_y
-      lda screen_rows_lsb,x
-      sta STAR_PTR
-      lda screen_rows_msb,x
-      sta STAR_PTR+1
-      ldy star_x
-      lda star_offset
-      sta (STAR_PTR),y
+loop:
+  Wait()
+speed:
+  dec star_speed
+  bne loop
+  lda #SPEED
+  sta star_speed
+calculate:
+  inc star_offset
+  lda star_offset
+  cmp #OFFSET_MAX
+  bne display
+delete:
+  ldx star_y
+  lda screen_rows_lsb,x
+  sta STAR_PTR
+  lda screen_rows_msb,x
+  sta STAR_PTR+1
+  ldy star_x
+  lda #SPACE_CHAR
+  sta (STAR_PTR),y
+reset_offset:
+  lda #0
+  sta star_offset
+  inc star_y
+  lda star_y
+  cmp #25
+  bne display
+  lda #0
+  sta star_y
+display:
+  ldx star_y
+  lda screen_rows_lsb,x
+  sta STAR_PTR
+  lda screen_rows_msb,x
+  sta STAR_PTR+1
+  ldy star_x
+  lda star_offset
+  sta (STAR_PTR),y
 
-      jmp loop
+  jmp loop
 
-    // ---------------------------------------------------------------------
-    init_screen: {
-      lda #BLACK
-      sta BACKGROUND
-      sta BORDER
-      lda #WHITE
-      sta COLOR
-      jmp CLS // jsr CLS ; rts
-    }
+// ---------------------------------------------------------------------
+init_screen: {
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jmp CLS // jsr CLS ; rts
+}
 
-    // ---------------------------------------------------------------------
-    init_characters: {
-      lda MEMORY_SETUP
-      and #%11110000
-      ora #%00001100
-      sta MEMORY_SETUP
-      rts
-    }
+// ---------------------------------------------------------------------
+init_characters: {
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
+  rts
+}
 
-    // ---------------------------------------------------------------------
-    .macro Wait() {
-    wait:
-      lda #255
-      cmp $d012 // RASTER_LINE
-      bne wait
-    }
+// ---------------------------------------------------------------------
+.macro Wait() {
+wait:
+  lda #255
+  cmp $d012 // RASTER_LINE
+  bne wait
+}
 
-    *=$3000
-    .byte %00010000,0,0,0,0,0,0,0
-    .byte 0,%00010000,0,0,0,0,0,0
-    .byte 0,0,%00010000,0,0,0,0,0
-    .byte 0,0,0,%00010000,0,0,0,0
-    .byte 0,0,0,0,%00010000,0,0,0
-    .byte 0,0,0,0,0,%00010000,0,0
-    .byte 0,0,0,0,0,0,%00010000,0
-    .byte 0,0,0,0,0,0,0,%00010000
-    *=$3000+32*8
-    .byte 0,0,0,0,0,0,0,0
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+{% endhighlight %}
 
 {% img center /images/starfield03.gif %}
 
@@ -357,135 +369,137 @@ différentes vitesses, couleurs, et positions de départ.
 En attendant on va faire ça sans trop réfléchir : 40 étoiles, une par colonne.
 
 
-    BasicUpstart2(start)
+{% highlight kickass %}
+BasicUpstart2(start)
 
-    .const MEMORY_SETUP = $d018
-    .const VRAM = $0400
-    .const BORDER = $d020
-    .const BACKGROUND = $d021
-    .const COLOR = $286
-    .const CLS = $e544
+.const MEMORY_SETUP = $d018
+.const VRAM = $0400
+.const BORDER = $d020
+.const BACKGROUND = $d021
+.const COLOR = $286
+.const CLS = $e544
 
-    .const SPACE_CHAR = 32
-    .const OFFSET_MAX = 8
-    .const SPEED = 1
-    .const STAR_PTR = $f0
-    .const TOTAL_OF_STARS = 40
+.const SPACE_CHAR = 32
+.const OFFSET_MAX = 8
+.const SPEED = 1
+.const STAR_PTR = $f0
+.const TOTAL_OF_STARS = 40
 
-    screen_rows_lsb:
-      .byte <VRAM, <VRAM+40, <VRAM+80, <VRAM+120, <VRAM+160, <VRAM+200
-      .byte <VRAM+240, <VRAM+280, <VRAM+320, <VRAM+360, <VRAM+400, <VRAM+440
-      .byte <VRAM+480, <VRAM+520, <VRAM+560, <VRAM+600, <VRAM+640, <VRAM+680
-      .byte <VRAM+720, <VRAM+760, <VRAM+800, <VRAM+840, <VRAM+880, <VRAM+920
-      .byte <VRAM+960
-    screen_rows_msb:
-      .byte >VRAM, >VRAM+40, >VRAM+80, >VRAM+120, >VRAM+160, >VRAM+200
-      .byte >VRAM+240, >VRAM+280, >VRAM+320, >VRAM+360, >VRAM+400, >VRAM+440
-      .byte >VRAM+480, >VRAM+520, >VRAM+560, >VRAM+600, >VRAM+640, >VRAM+680
-      .byte >VRAM+720, >VRAM+760, >VRAM+800, >VRAM+840, >VRAM+880, >VRAM+920
-      .byte >VRAM+960
+screen_rows_lsb:
+  .byte <VRAM, <VRAM+40, <VRAM+80, <VRAM+120, <VRAM+160, <VRAM+200
+  .byte <VRAM+240, <VRAM+280, <VRAM+320, <VRAM+360, <VRAM+400, <VRAM+440
+  .byte <VRAM+480, <VRAM+520, <VRAM+560, <VRAM+600, <VRAM+640, <VRAM+680
+  .byte <VRAM+720, <VRAM+760, <VRAM+800, <VRAM+840, <VRAM+880, <VRAM+920
+  .byte <VRAM+960
+screen_rows_msb:
+  .byte >VRAM, >VRAM+40, >VRAM+80, >VRAM+120, >VRAM+160, >VRAM+200
+  .byte >VRAM+240, >VRAM+280, >VRAM+320, >VRAM+360, >VRAM+400, >VRAM+440
+  .byte >VRAM+480, >VRAM+520, >VRAM+560, >VRAM+600, >VRAM+640, >VRAM+680
+  .byte >VRAM+720, >VRAM+760, >VRAM+800, >VRAM+840, >VRAM+880, >VRAM+920
+  .byte >VRAM+960
 
-    star_current: .byte 0
-    stars_row: .fill TOTAL_OF_STARS, 0
-    stars_column: .fill TOTAL_OF_STARS, i
-    stars_offset: .fill TOTAL_OF_STARS, 0
-    // higher is slower
-    stars_speed: .fill TOTAL_OF_STARS, SPEED
+star_current: .byte 0
+stars_row: .fill TOTAL_OF_STARS, 0
+stars_column: .fill TOTAL_OF_STARS, i
+stars_offset: .fill TOTAL_OF_STARS, 0
+// higher is slower
+stars_speed: .fill TOTAL_OF_STARS, SPEED
 
-    start:
-      jsr init_screen
-      jsr init_characters
+start:
+  jsr init_screen
+  jsr init_characters
 
-    main_loop:
-      Wait()
-    star_loop:
-      // X will hold current star index throughout the algorithm.
-      ldx star_current
-    speed:
-      dec stars_speed,x
-      bne next_star
-      lda #SPEED
-      sta stars_speed,x
-    calculate:
-      inc stars_offset,x
-      lda stars_offset,x
-      cmp #OFFSET_MAX
-      bne display
-    delete:
-      ldy stars_row,x
-      lda screen_rows_lsb,y
-      sta STAR_PTR
-      lda screen_rows_msb,y
-      sta STAR_PTR+1
-      ldy stars_column,x
-      lda #SPACE_CHAR
-      sta (STAR_PTR),y
-    reset_offset:
-      lda #0
-      sta stars_offset,x
-      inc stars_row,x
-      lda stars_row,x
-      cmp #25
-      bne display
-      lda #0
-      sta stars_row,x
-    display:
-      ldy stars_row,x
-      lda screen_rows_lsb,y
-      sta STAR_PTR
-      lda screen_rows_msb,y
-      sta STAR_PTR+1
-      ldy stars_column,x
-      lda stars_offset,x
-      sta (STAR_PTR),y
-    next_star:
-      inc star_current
-      lda star_current
-      cmp #TOTAL_OF_STARS
-      bne star_loop
-      lda #0
-      sta star_current
+main_loop:
+  Wait()
+star_loop:
+  // X will hold current star index throughout the algorithm.
+  ldx star_current
+speed:
+  dec stars_speed,x
+  bne next_star
+  lda #SPEED
+  sta stars_speed,x
+calculate:
+  inc stars_offset,x
+  lda stars_offset,x
+  cmp #OFFSET_MAX
+  bne display
+delete:
+  ldy stars_row,x
+  lda screen_rows_lsb,y
+  sta STAR_PTR
+  lda screen_rows_msb,y
+  sta STAR_PTR+1
+  ldy stars_column,x
+  lda #SPACE_CHAR
+  sta (STAR_PTR),y
+reset_offset:
+  lda #0
+  sta stars_offset,x
+  inc stars_row,x
+  lda stars_row,x
+  cmp #25
+  bne display
+  lda #0
+  sta stars_row,x
+display:
+  ldy stars_row,x
+  lda screen_rows_lsb,y
+  sta STAR_PTR
+  lda screen_rows_msb,y
+  sta STAR_PTR+1
+  ldy stars_column,x
+  lda stars_offset,x
+  sta (STAR_PTR),y
+next_star:
+  inc star_current
+  lda star_current
+  cmp #TOTAL_OF_STARS
+  bne star_loop
+  lda #0
+  sta star_current
 
-      jmp main_loop
+  jmp main_loop
 
-    // ---------------------------------------------------------------------
-    init_screen: {
-      lda #BLACK
-      sta BACKGROUND
-      sta BORDER
-      lda #WHITE
-      sta COLOR
-      jmp CLS // jsr CLS ; rts
-    }
+// ---------------------------------------------------------------------
+init_screen: {
+  lda #BLACK
+  sta BACKGROUND
+  sta BORDER
+  lda #WHITE
+  sta COLOR
+  jmp CLS // jsr CLS ; rts
+}
 
-    // ---------------------------------------------------------------------
-    init_characters: {
-      lda MEMORY_SETUP
-      and #%11110000
-      ora #%00001100
-      sta MEMORY_SETUP
-      rts
-    }
+// ---------------------------------------------------------------------
+init_characters: {
+  lda MEMORY_SETUP
+  and #%11110000
+  ora #%00001100
+  sta MEMORY_SETUP
+  rts
+}
 
-    // ---------------------------------------------------------------------
-    .macro Wait() {
-    wait:
-      lda #255
-      cmp $d012 // RASTER_LINE
-      bne wait
-    }
+// ---------------------------------------------------------------------
+.macro Wait() {
+wait:
+  lda #255
+  cmp $d012 // RASTER_LINE
+  bne wait
+}
 
-    *=$3000
-    .byte %00010000,0,0,0,0,0,0,0
-    .byte 0,%00010000,0,0,0,0,0,0
-    .byte 0,0,%00010000,0,0,0,0,0
-    .byte 0,0,0,%00010000,0,0,0,0
-    .byte 0,0,0,0,%00010000,0,0,0
-    .byte 0,0,0,0,0,%00010000,0,0
-    .byte 0,0,0,0,0,0,%00010000,0
-    .byte 0,0,0,0,0,0,0,%00010000
-    *=$3000+32*8
-    .byte 0,0,0,0,0,0,0,0
+*=$3000
+.byte %00010000,0,0,0,0,0,0,0
+.byte 0,%00010000,0,0,0,0,0,0
+.byte 0,0,%00010000,0,0,0,0,0
+.byte 0,0,0,%00010000,0,0,0,0
+.byte 0,0,0,0,%00010000,0,0,0
+.byte 0,0,0,0,0,%00010000,0,0
+.byte 0,0,0,0,0,0,%00010000,0
+.byte 0,0,0,0,0,0,0,%00010000
+*=$3000+32*8
+.byte 0,0,0,0,0,0,0,0
+{% endhighlight %}
 
 {% img center /images/starfield04.gif %}
 
@@ -503,7 +517,9 @@ Voici par exemple un _one liner_ en ruby :
 
 Et notre table conservant les rangées des 40 étoiles devient :
 
-    stars_row: .byte 2,20,22,23,0,14,3,7,8,22,18,15,15,17,19,14,15,0,2,7,8,5,15,3,13,15,8,13,1,21,2,0,11,5,9,22,17,13,2,2
+{% highlight kickass %}
+stars_row: .byte 2,20,22,23,0,14,3,7,8,22,18,15,15,17,19,14,15,0,2,7,8,5,15,3,13,15,8,13,1,21,2,0,11,5,9,22,17,13,2,2
+{% endhighlight %}
 
 Ça devient intéressant à l'écran, même si on repère facilement des patterns qui reviennent.
 
@@ -523,51 +539,57 @@ exploser les vaisseaux ennemis, ça fonctionne parfaitement.
 
 D'abord des vitesses différentes :
 
-    // higher is slower
-    stars_speed: .byte 2,3,1,1,2,4,2,4,2,1,2,4,4,1,2,4,3,4,3,3,4,2,3,1,4,4,1,4,1,1,4,2,4,1,4,4,4,4,2,3
-    stars_delay: .byte 2,3,1,1,2,4,2,4,2,1,2,4,4,1,2,4,3,4,3,3,4,2,3,1,4,4,1,4,1,1,4,2,4,1,4,4,4,4,2,3
+{% highlight kickass %}
+// higher is slower
+stars_speed: .byte 2,3,1,1,2,4,2,4,2,1,2,4,4,1,2,4,3,4,3,3,4,2,3,1,4,4,1,4,1,1,4,2,4,1,4,4,4,4,2,3
+stars_delay: .byte 2,3,1,1,2,4,2,4,2,1,2,4,4,1,2,4,3,4,3,3,4,2,3,1,4,4,1,4,1,1,4,2,4,1,4,4,4,4,2,3
 
-    speed:
-      dec stars_delay,x
-      bne next_star
-      lda stars_speed,x
-      sta stars_delay,x
+speed:
+  dec stars_delay,x
+  bne next_star
+  lda stars_speed,x
+  sta stars_delay,x
+{% endhighlight %}
 
 {% img center /images/starfield06.gif %}
 
 
 Puis on ajoute la couleur :
 
-    display:
-      [ ... ]
-      // Ajouter $d4 pour mémoire couleur
-      clc
-      lda STAR_PTR+1
-      adc #$d4
-      sta STAR_PTR+1
-      // Écrire la couleur
-      lda stars_speed,x
-      sta (STAR_PTR),y
-    next_star:
+{% highlight kickass %}
+display:
+  [ ... ]
+  // Ajouter $d4 pour mémoire couleur
+  clc
+  lda STAR_PTR+1
+  adc #$d4
+  sta STAR_PTR+1
+  // Écrire la couleur
+  lda stars_speed,x
+  sta (STAR_PTR),y
+next_star:
+{% endhighlight %}
 
 {% img center /images/starfield07.gif %}
 
 Et finalement on fait varier à chaque tour :
 
 
-    .const SPEED_MIN = 1
-    .const SPEED_MAX = 4
+{% highlight kickass %}
+.const SPEED_MIN = 1
+.const SPEED_MAX = 4
 
-    reset_offset:
-      [ ... ]
-      inc stars_speed,x
-      lda stars_speed,x
-      cmp #(SPEED_MAX+1)
-      bne no_speed_reset
-      lda #SPEED_MIN
-    no_speed_reset:
-      sta stars_speed,x
-    display:
+reset_offset:
+  [ ... ]
+  inc stars_speed,x
+  lda stars_speed,x
+  cmp #(SPEED_MAX+1)
+  bne no_speed_reset
+  lda #SPEED_MIN
+no_speed_reset:
+  sta stars_speed,x
+display:
+{% endhighlight %}
 
 Avec un rendu plus proche des écrans CRT d'époque :
 

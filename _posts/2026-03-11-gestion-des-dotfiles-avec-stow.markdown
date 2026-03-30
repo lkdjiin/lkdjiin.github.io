@@ -22,30 +22,40 @@ Stow réplique une structure de fichiers d'un répertoire enfant dans son
 répertoire parent en créant des liens symboliques. Voici un exemple basique
 pour mieux comprendre :
 
+{% highlight bash %}
     parent/
     └── enfant/
         └── config.txt
+{% endhighlight %}
 
 Je me place dans le répertoire enfant et j'active stow :
 
+{% highlight bash %}
     cd parent/enfant
     stow .
+{% endhighlight %}
 
 Un lien symbolique est créé dans le répertoire parent :
 
+{% highlight bash %}
     parent/
     ├── config.txt@ -> enfant/config.txt
     └── enfant/
         └── config.txt
+{% endhighlight %}
 
 On peut supprimer les liens créés si besoin :
 
+{% highlight bash %}
     cd parent/enfant
     stow -D .
+{% endhighlight %}
 
+{% highlight bash %}
     parent/
     └── enfant/
         └── config.txt
+{% endhighlight %}
 
 Bien sûr cet exemple n'est pas très impressionnant, mais dans la réalité c'est
 aussi facile avec 100 fichiers disséminés dans plusieurs niveaux de sous-dossiers.
