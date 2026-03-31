@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - Dossier parent dans l'explorateur"
 date: 2014-02-06 20:28
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags: [ ]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Comment réduire les erreurs de frappe dans la console"
 date: 2014-04-06 20:52
 legacy: true
-tags: [bash, débutant, alias]
+tags: [bash]
 ---
 
 

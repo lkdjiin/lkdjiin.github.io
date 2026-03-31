@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 3"
 date: 2013-08-30 09:52
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

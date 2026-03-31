@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 40: Ajout d'élitisme"
 date: 2013-11-18 17:39
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

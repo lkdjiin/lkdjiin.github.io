@@ -3,7 +3,7 @@ layout: post
 title: "Mon générateur d'ombres CSS"
 date: 2013-08-25 20:43
 legacy: true
-tags: [css, sass]
+tags: [ ]
 ---
 
 Il y a quelques années, j'ai écrit un générateur d'ombres portées pour CSS.

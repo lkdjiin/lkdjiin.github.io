@@ -3,7 +3,7 @@ layout: post
 title: "Pourcentage des issues par langages sur Github"
 date: 2013-11-23 20:44
 legacy: true
-tags: [statistique]
+tags: [ ]
 ---
 
 Sur hubReports, on peut avoir plusieurs statistiques concernants les dépots de

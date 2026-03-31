@@ -3,7 +3,7 @@ layout: post
 title: "Mapper la souris dans Vim : pour quel usage ?"
 date: 2014-04-17 21:10
 legacy: true
-tags: [vim, intermédiaire]
+tags: [vim]
 ---
 
 

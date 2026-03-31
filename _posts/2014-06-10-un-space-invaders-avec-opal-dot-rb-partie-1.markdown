@@ -3,7 +3,7 @@ layout: post
 title: "Un space invaders avec Opal.rb - partie 1"
 date: 2014-06-10 21:25
 legacy: true
-tags: [intermédiaire, opal.rb, ruby, javascript, space invaders, jeu]
+tags: [ opal, ruby, javascript, space invaders, jeu]
 ---
 
 

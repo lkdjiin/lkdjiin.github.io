@@ -3,7 +3,7 @@ layout: post
 title: "Ruby CSV tests et quelques questions"
 date: 2014-07-03 21:31
 legacy: true
-tags: [ruby, csv, test]
+tags: [ruby]
 ---
 
 Ça fait une semaine que je travaille sur des exports de statisques au format

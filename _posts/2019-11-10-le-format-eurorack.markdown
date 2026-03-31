@@ -3,7 +3,7 @@ layout: post
 title: "Le format Eurorack"
 date: 2019-11-10 10:52
 legacy: true
-tags: [musique, synthèse, synthé, modulaire]
+tags: [musique, synthé modulaire]
 ---
 
 Eurorack est actuellement le format le plus populaire pour les synthétiseurs

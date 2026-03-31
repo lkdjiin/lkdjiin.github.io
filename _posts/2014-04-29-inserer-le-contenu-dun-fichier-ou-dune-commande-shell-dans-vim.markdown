@@ -3,7 +3,7 @@ layout: post
 title: "Insérer le contenu d'un fichier ou d'une commande shell dans Vim"
 date: 2014-04-29 21:49
 legacy: true
-tags: [vim, débutant, astuce]
+tags: [vim]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Curses et ncurses en Ruby"
 date: 2014-02-16 14:29
 legacy: true
-tags: [ruby, intermédiaire, terminal, curses, ncurses]
+tags: [ruby, terminal, curses, ncurses]
 ---
 
 

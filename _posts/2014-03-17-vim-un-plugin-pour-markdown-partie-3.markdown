@@ -3,7 +3,7 @@ layout: post
 title: "Vim - un plugin pour markdown - partie 3"
 date: 2014-03-17 21:05
 legacy: true
-tags: [vim, débutant, markdown, plugin, bépo]
+tags: [vim, markdown, plugin, bépo]
 ---
 
 

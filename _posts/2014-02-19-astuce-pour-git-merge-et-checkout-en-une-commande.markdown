@@ -3,7 +3,7 @@ layout: post
 title: "Astuce pour Git - merge et checkout en une commande"
 date: 2014-02-19 20:49
 legacy: true
-tags: [git, astuce, intermédiaire, bash]
+tags: [bash]
 ---
 
 

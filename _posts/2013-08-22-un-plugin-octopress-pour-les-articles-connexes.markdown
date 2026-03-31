@@ -3,7 +3,7 @@ layout: post
 title: "Un plugin Octopress pour les articles connexes"
 date: 2013-08-22 15:56
 legacy: true
-tags: [octopress, ruby]
+tags: [ ruby]
 ---
 
 

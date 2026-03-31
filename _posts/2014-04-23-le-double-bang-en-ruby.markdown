@@ -3,7 +3,7 @@ layout: post
 title: "Le double bang en Ruby"
 date: 2014-04-23 20:59
 legacy: true
-tags: [ruby, débutant, bang]
+tags: [ruby]
 ---
 
 

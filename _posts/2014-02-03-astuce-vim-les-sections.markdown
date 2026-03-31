@@ -3,7 +3,7 @@ layout: post
 title: "Astuce Vim - Les sections"
 date: 2014-02-03 20:39
 legacy: true
-tags: [vim, débutant, mouvement]
+tags: [vim]
 ---
 
 

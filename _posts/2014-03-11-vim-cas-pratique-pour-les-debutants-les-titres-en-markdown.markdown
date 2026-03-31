@@ -3,7 +3,7 @@ layout: post
 title: "Vim - Cas pratique pour les débutants : les titres en markdown"
 date: 2014-03-11 21:09
 legacy: true
-tags: [vim, débutant, markdown]
+tags: [vim, markdown]
 ---
 
 

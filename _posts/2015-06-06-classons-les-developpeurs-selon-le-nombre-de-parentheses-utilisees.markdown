@@ -3,7 +3,7 @@ layout: post
 title: "Classons les développeurs selon le nombre de parenthèses utilisées"
 date: 2015-06-06 10:25
 legacy: true
-tags: [humour, classement]
+tags: [ ]
 ---
 
 Depuis quelques mois je vois passer ici et là plusieurs «classements des

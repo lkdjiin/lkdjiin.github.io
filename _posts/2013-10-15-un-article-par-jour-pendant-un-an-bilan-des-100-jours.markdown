@@ -3,7 +3,7 @@ layout: post
 title: "Un article par jour pendant un an: Bilan des 100 jours"
 date: 2013-10-15 11:37
 legacy: true
-tags: [annonce]
+tags: []
 ---
 
 Comme certains d'entre vous le savent, j'écris un article par jour pendant

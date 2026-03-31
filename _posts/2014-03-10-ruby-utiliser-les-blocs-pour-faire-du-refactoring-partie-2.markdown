@@ -3,7 +3,7 @@ layout: post
 title: "Ruby - Utiliser les blocs pour faire du refactoring - partie 2"
 date: 2014-03-10 15:58
 legacy: true
-tags: [ruby, refactoring, bloc, débutant]
+tags: [ruby]
 ---
 
 

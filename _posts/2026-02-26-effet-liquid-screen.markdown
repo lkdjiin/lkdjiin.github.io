@@ -3,7 +3,7 @@ layout: post
 title: "L'effet liquid screen sur Commodore 64"
 date: 2026-02-26 8:00
 comments: true
-tags: [ assembleur, 6502, C64 ]
+tags: [ assembleur, 6502, c64 ]
 ---
 
 {% img center /images/liquid-screen0.gif %}

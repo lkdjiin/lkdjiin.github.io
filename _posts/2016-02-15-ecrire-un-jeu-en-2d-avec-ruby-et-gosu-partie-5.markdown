@@ -3,7 +3,7 @@ layout: post
 title: "Écrire un jeu en 2d avec Ruby et Gosu - partie 5"
 date: 2016-02-15 09:12
 legacy: true
-tags: [ruby, gosu, jeu, 2d]
+tags: [ruby, gosu, jeu]
 ---
 
 Aujourd'hui on ajoute de la musique de fond, on s'intéresse à ce qui se passe

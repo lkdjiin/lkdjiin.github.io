@@ -3,7 +3,7 @@ layout: post
 title: "Afficher l'arborescence d'un dossier dans le terminal"
 date: 2014-02-17 20:56
 legacy: true
-tags: [terminal, bash, linux, os x, débutant]
+tags: [terminal, bash ]
 ---
 
 Pour comprendre l'arborescence des dossiers d'un projet, rien de mieux

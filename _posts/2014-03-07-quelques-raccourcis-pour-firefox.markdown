@@ -3,7 +3,7 @@ layout: post
 title: "Quelques raccourcis pour Firefox"
 date: 2014-03-07 20:50
 legacy: true
-tags: [firefox, débutant, linux, os x, raccourcis clavier]
+tags: [ ]
 ---
 
 

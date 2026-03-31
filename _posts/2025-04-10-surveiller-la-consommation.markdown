@@ -3,7 +3,7 @@ layout: post
 title: "Surveiller la consommation"
 date: 2025-04-10 8:00
 comments: true
-tags: [ arduino, électronique ]
+tags: [ arduino ]
 ---
 
 ## 15 jours pour comprendre les contrôleurs MIDI - Jour 9

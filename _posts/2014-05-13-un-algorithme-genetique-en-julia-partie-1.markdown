@@ -3,7 +3,7 @@ layout: post
 title: "Un algorithme génétique en Julia - partie 1"
 date: 2014-05-13 21:09
 legacy: true
-tags: [intermédiaire, julia, programmation fonctionnelle, algorithme génétique]
+tags: [ julia fonctionnelle génétique]
 ---
 
 

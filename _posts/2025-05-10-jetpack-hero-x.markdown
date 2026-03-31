@@ -3,7 +3,7 @@ layout: post
 title: "Apparition des aliens (Jetpack Hero)"
 date: 2025-05-10 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Il est temps d'ajouter des ennemis dans notre jeu. Ce seront des aliens roses. Vous pouvez voir

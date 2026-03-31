@@ -3,7 +3,7 @@ layout: post
 title: "Une machine de Turing en Ruby - Une bande de données infinie"
 date: 2015-02-05 18:13
 legacy: true
-tags: [ruby, débutant, turing]
+tags: [ruby, turing]
 ---
 
 

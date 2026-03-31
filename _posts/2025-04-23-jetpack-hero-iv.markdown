@@ -3,7 +3,7 @@ layout: post
 title: "Jetpack Hero IV - Première animation du personnage"
 date: 2025-04-23 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 On donne un peu de vie au personnage en l'orientant à droite ou à gauche et en
 le modifiant légèrement quand il vole.

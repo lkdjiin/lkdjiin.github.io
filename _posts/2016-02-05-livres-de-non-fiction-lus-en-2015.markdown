@@ -3,7 +3,7 @@ layout: post
 title: "Livres de non-fiction lus en 2015"
 date: 2016-02-05 17:06
 legacy: true
-tags: [livre]
+tags: []
 ---
 
 J'ai lu beaucoup d'ouvrage de non-fiction l'année dernière (2015). Bien plus

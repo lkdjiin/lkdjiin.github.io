@@ -3,7 +3,7 @@ layout: post
 title: "Ruby - Et si on écrivait un ORM ? - partie 6"
 date: 2014-04-20 12:53
 legacy: true
-tags: [ruby, intermédiaire, orm, base de données, sqlite]
+tags: [ruby]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Du carburant pour le jetpack"
 date: 2025-04-29 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Le carburant n'est pas infini. Chaque fois qu'on actionne le jetpack il

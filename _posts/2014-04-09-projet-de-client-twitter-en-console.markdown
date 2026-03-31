@@ -3,7 +3,7 @@ layout: post
 title: "Projet de client Twitter en console"
 date: 2014-04-09 21:02
 legacy: true
-tags: [annonce, projet, twitter, console]
+tags: [   ]
 ---
 
 J'ai envie d'écrire un client Twitter qui tournerait sur la

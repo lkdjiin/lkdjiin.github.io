@@ -3,7 +3,7 @@ layout: post
 title: "Pas de logique dans les vues Rails"
 date: 2015-03-28 09:10
 legacy: true
-tags: [débutant, ruby, rails, vue, helper]
+tags: [ ruby]
 ---
 
 

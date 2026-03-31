@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés"
 date: 2013-08-28 09:49
 legacy: true
-tags: [algorithme génétique]
+tags: [ génétique]
 ---
 
 

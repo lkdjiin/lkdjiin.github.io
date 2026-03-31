@@ -3,7 +3,7 @@ layout: post
 title: "Redis - Comment supprimer un ensemble de clés"
 date: 2014-03-21 21:44
 legacy: true
-tags: [redis, intermédiaire, base de données, bash]
+tags: [  bash]
 ---
 
 

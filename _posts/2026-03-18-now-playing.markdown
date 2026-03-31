@@ -3,7 +3,7 @@ layout: post
 title: "\"Now playing\" dans le terminal"
 date: 2026-03-18 8:00
 comments: true
-tags: [ fish, chafa, playerctl, musique ]
+tags: [ fish, musique ]
 ---
 
 Aujourd'hui un petit script totalement inutile. Donc comme on dit, rigoureusement

@@ -3,7 +3,7 @@ layout: post
 title: "Un article par jour pendant un an ! C'est terminé..."
 date: 2014-07-08 20:55
 legacy: true
-tags: [annonce, défi]
+tags: [ ]
 ---
 
 Il y a un an, le [8 juillet 2013](http://lkdjiin.github.io/blog/2013/07/08/nouveau-defi-un-article-par-jour-pendant-un-an/),

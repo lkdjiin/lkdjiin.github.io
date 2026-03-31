@@ -3,7 +3,7 @@ layout: post
 title: "Affichage de toutes les tâches rake"
 date: 2014-06-25 20:54
 legacy: true
-tags: [débutant, ruby, rake, astuce]
+tags: [ ruby]
 ---
 
 

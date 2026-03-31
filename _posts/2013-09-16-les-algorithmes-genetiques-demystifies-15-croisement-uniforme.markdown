@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 15: croisement uniforme"
 date: 2013-09-16 13:19
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

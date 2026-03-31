@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques 39: Resolution du sac à dos"
 date: 2013-11-16 10:06
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

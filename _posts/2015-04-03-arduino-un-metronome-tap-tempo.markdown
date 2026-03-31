@@ -3,7 +3,7 @@ layout: post
 title: "Arduino : Un métronome tap tempo"
 date: 2015-04-03 18:35
 legacy: true
-tags: [débutant, arduino, musique, éléctronique]
+tags: [ arduino, musique]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Vim : Pourquoi les touches HJKL ?"
 date: 2015-04-02 11:46
 legacy: true
-tags: [vim, débutant, clavier]
+tags: [vim]
 ---
 
 

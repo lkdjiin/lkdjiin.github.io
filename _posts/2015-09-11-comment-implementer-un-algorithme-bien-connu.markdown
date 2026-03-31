@@ -3,7 +3,7 @@ layout: post
 title: "Comment implémenter un algorithme bien connu"
 date: 2015-09-11 14:49
 legacy: true
-tags: [algorithme]
+tags: []
 ---
 
 Quand tu implémentes un algorithme «bien connu», tu as tout intérêt à suivre

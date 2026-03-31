@@ -3,7 +3,7 @@ layout: post
 title: "Ce que je n'ai pas fait cette semaine - 2"
 date: 2015-03-29 15:38
 legacy: true
-tags: [opinion, livre, ruby, physique, processing]
+tags: [  ruby]
 ---
 
 Je n'ai pas acheté le livre [Ruby Performance Optimization: Why Ruby Is Slow, and How to Fix It](https://pragprog.com/book/adrpo/ruby-performance-optimization).

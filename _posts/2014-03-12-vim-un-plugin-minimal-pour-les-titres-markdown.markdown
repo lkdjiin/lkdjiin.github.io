@@ -3,7 +3,7 @@ layout: post
 title: "Vim - Un plugin minimal pour les titres markdown"
 date: 2014-03-12 21:32
 legacy: true
-tags: [vim, débutant, markdown, plugin]
+tags: [vim, markdown, plugin]
 ---
 
 

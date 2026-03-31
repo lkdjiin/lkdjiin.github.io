@@ -3,7 +3,7 @@ layout: post
 title: "Un quine en R"
 date: 2015-10-10 18:11
 legacy: true
-tags: [R, quine, répliquant]
+tags: [R, quine]
 ---
 
 J'ai lu récemment l'article [generating Quines in Ruby](http://blog.chaps.io/2015/10/01/generating-quines-in-ruby.html) qui m'a beaucoup plu. Et j'ai eu envie d'en faire un dans le langage R.

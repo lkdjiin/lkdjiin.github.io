@@ -3,7 +3,7 @@ layout: post
 title: "Un plugin Vim pour replier/folder les commentaires"
 date: 2013-12-02 18:27
 legacy: true
-tags: [vim, annonce]
+tags: [vim]
 ---
 
 Dans un [article précédent](http://lkdjiin.github.io/blog/2013/11/28/vim-plier-folder-les-commentaires-de-style-unix/), je montrai comment écrire une fonction pour

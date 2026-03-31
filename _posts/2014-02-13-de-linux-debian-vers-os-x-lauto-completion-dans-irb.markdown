@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - L'auto-complétion dans Irb"
 date: 2014-02-13 20:39
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags: [ ]
 ---
 
 

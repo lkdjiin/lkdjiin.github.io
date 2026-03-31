@@ -3,7 +3,7 @@ layout: post
 title: "ActiveRecord - Executer une commande SQL quelconque"
 date: 2014-03-27 20:59
 legacy: true
-tags: [ruby, activerecord, sql, intermédiaire]
+tags: [ruby]
 ---
 
 

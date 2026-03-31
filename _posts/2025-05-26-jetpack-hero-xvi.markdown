@@ -3,7 +3,7 @@ layout: post
 title: "Un score et des vies (Jetpack Hero)"
 date: 2025-05-26 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 On arrive doucement vers la fin et on se rapproche d'un jeu complet en ajoutant un score et des vies.

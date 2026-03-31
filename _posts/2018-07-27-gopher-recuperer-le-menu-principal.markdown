@@ -3,7 +3,7 @@ layout: post
 title: "Gopher : Récupérer le menu principal"
 date: 2018-07-27 10:27
 legacy: true
-tags: [ gopher, protocole, internet, ruby, d ]
+tags: [ gopher, ruby, d ]
 ---
 
 Pour aller plus loin dans la compréhension du protocole Gopher nous pouvons écrire un

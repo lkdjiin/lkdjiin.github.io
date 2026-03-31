@@ -3,7 +3,7 @@ layout: post
 title: "3 réglages pour le langage R"
 date: 2015-04-23 15:17
 legacy: true
-tags: [R, débutant, réglage, prompt, console, terminal]
+ts: [R, réglage, prompt, terminal]
 ---
 
 

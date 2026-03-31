@@ -3,7 +3,7 @@ layout: post
 title: "Vim - Sauvegarder et quitter les fichiers"
 date: 2014-02-01 20:12
 legacy: true
-tags: [vim, intermédiaire, fichier]
+tags: [vim]
 ---
 
 

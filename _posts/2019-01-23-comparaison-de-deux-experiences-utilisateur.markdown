@@ -3,7 +3,7 @@ layout: post
 title: "Comparaison de deux expériences utilisateur"
 date: 2019-01-23 12:49
 legacy: true
-tags: ux
+tags: 
 ---
 
 Mercredi 9 janvier était le premier jour des soldes d'hiver. J'ai acheté plusieurs schcromlungues

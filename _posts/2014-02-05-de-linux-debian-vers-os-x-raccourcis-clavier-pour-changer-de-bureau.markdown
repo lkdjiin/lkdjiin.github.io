@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - Raccourcis clavier pour changer de bureau"
 date: 2014-02-05 20:28
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags: [ ]
 ---
 
 

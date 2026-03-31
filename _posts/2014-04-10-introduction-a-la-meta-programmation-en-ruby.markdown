@@ -3,7 +3,7 @@ layout: post
 title: "Introduction à la meta-programmation en Ruby"
 date: 2014-04-10 21:15
 legacy: true
-tags: [ruby, intermédiaire, meta, programmation]
+tags: [ruby]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Un désassembleur pour Chip8"
 date: 2016-01-31 10:25
 legacy: true
-tags: [ruby, jruby, chip8, émulateur, assembleur]
+tags: [ruby, jruby, chip8, assembleur]
 ---
 
 En ce moment je bricole un émulateur pour

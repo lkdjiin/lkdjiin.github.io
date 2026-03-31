@@ -3,7 +3,7 @@ layout: post
 title: "Prototype en carton"
 date: 2025-04-09 8:00
 comments: true
-tags: [ arduino, midi, prototype ]
+tags: [ arduino, midi ]
 ---
 
 ## 15 jours pour comprendre les contrôleurs MIDI - Jour 8

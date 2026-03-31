@@ -3,7 +3,7 @@ layout: post
 title: "Fabriquer un sablier à thé électronique 3"
 date: 2016-02-02 15:05
 legacy: true
-tags: [arduino, maker]
+tags: [arduino]
 ---
 
 Comme promis, voici le code de mon *sablier à thé électronique*. C'est le

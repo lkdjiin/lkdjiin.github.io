@@ -3,7 +3,7 @@ layout: post
 title: "Introduction à l'introspection en Ruby"
 date: 2014-04-08 21:23
 legacy: true
-tags: [ruby, débutant, introspection]
+tags: [ruby]
 ---
 
 

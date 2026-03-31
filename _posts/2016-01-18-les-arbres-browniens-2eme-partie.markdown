@@ -3,7 +3,7 @@ layout: post
 title: "Les arbres browniens - 2ème partie"
 date: 2016-01-18 09:54
 legacy: true
-tags: [ruby, jruby, brownian tree, arbre, mouvement brownien]
+tags: [ruby, jruby, arbre brownien]
 ---
 
 Dans [le dernier article](/blog/2016/01/17/les-arbres-browniens/), je présentais un code de base en JRuby

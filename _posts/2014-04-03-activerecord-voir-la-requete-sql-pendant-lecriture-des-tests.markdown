@@ -3,7 +3,7 @@ layout: post
 title: "ActiveRecord - Voir la requête SQL pendant l'écriture des tests"
 date: 2014-04-03 20:58
 legacy: true
-tags: [ruby, débutant, activerecord, sql]
+tags: [ruby]
 ---
 
 

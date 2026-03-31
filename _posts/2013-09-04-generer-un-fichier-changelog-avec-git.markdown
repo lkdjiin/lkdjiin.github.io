@@ -3,7 +3,7 @@ layout: post
 title: "Générer un fichier Changelog avec Git"
 date: 2013-09-04 11:23
 legacy: true
-tags: [git, ruby]
+tags: []
 ---
 
 

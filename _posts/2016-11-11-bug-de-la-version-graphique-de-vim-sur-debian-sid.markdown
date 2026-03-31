@@ -3,7 +3,7 @@ layout: post
 title: "Bug de la version graphique de Vim sur Debian Sid"
 date: 2016-11-11 09:46
 legacy: true
-tags: [vim, debian, gtk, gtk3, bug, update-alternatives]
+tags: [vim ]
 ---
 
 Depuis une mise à jour récente de la bibliothèque gtk3 un

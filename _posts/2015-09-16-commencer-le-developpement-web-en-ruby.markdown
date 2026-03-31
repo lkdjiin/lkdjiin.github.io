@@ -3,7 +3,7 @@ layout: post
 title: "Commencer le développement web en Ruby"
 date: 2015-09-16 15:10
 legacy: true
-tags: [guest, ruby, web, framework, rack]
+tags: [ ruby, r]
 ---
 
 ## `{ Guest Post }`

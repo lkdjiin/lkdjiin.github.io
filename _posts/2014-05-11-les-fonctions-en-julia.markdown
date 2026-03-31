@@ -3,7 +3,7 @@ layout: post
 title: "Les fonctions en Julia"
 date: 2014-05-11 18:49
 legacy: true
-tags: [intermédiaire, julia, programmation fonctionnelle]
+tags: [ julia, programmation fonctionnelle]
 ---
 
 

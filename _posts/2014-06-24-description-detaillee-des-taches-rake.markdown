@@ -3,7 +3,7 @@ layout: post
 title: "Description détaillée des tâches rake"
 date: 2014-06-24 21:15
 legacy: true
-tags: [débutant, ruby, rake, astuce]
+tags: [ ruby]
 ---
 
 

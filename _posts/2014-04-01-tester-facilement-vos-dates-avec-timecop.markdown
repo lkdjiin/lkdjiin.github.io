@@ -3,7 +3,7 @@ layout: post
 title: "Tester facilement vos dates avec Timecop"
 date: 2014-04-01 21:06
 legacy: true
-tags: [ruby, test, date, time, débutant]
+tags: [ruby]
 ---
 
 

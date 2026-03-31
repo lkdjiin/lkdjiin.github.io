@@ -3,7 +3,7 @@ layout: post
 title: "R : rep vs replicate"
 date: 2015-06-08 15:45
 legacy: true
-tags: [R, débutant, hasard, data science]
+tags: [R]
 ---
 
 

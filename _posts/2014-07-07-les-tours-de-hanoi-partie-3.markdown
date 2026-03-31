@@ -3,7 +3,7 @@ layout: post
 title: "Les tours de Hanoi - partie 3"
 date: 2014-07-07 21:13
 legacy: true
-tags: [algorithme génétique, intermédiaire, ruby, opal]
+tags: [ génétique, ruby, opal]
 ---
 
 

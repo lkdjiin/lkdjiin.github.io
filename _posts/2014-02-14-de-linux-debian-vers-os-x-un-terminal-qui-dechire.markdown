@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - Un terminal qui déchire"
 date: 2014-02-14 20:42
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags: [ ]
 ---
 
 

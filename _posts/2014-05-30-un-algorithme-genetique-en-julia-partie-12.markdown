@@ -3,7 +3,7 @@ layout: post
 title: "Un algorithme génétique en Julia - partie 12"
 date: 2014-05-30 21:11
 legacy: true
-tags: [intermédiaire, julia, algorithme génétique]
+tags: [ julia génétique]
 ---
 
 

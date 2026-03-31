@@ -3,7 +3,7 @@ layout: post
 title: "Un champ d'étoiles sans nombres aléatoires"
 date: 2026-01-26 10:00
 comments: true
-tags: [ commodore, c64, assembleur, 6502 ]
+tags: [ c64, assembleur, 6502 ]
 ---
 
 S'il y a bien un truc où j'aurai parier devoir utiliser des nombres aléatoires

@@ -3,7 +3,7 @@ layout: post
 title: "De meilleurs alias avec zsh"
 date: 2015-07-20 13:12
 legacy: true
-tags: [alias, shell, zsh]
+tags: [ shell]
 ---
 
 ## `{ Guest Post }`

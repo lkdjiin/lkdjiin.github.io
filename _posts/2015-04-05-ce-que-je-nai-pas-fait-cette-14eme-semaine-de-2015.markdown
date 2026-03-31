@@ -3,7 +3,7 @@ layout: post
 title: "Ce que je n'ai pas fait cette 14ème semaine de 2015"
 date: 2015-04-05 20:15
 legacy: true
-tags: [opinion, livre, ruby, javascript, blog, sed, rake]
+tags: [ ]
 ---
 
 Je n'ai pas commencé à bloguer en anglais, mais ça ne saurait tarder. Il me

@@ -3,7 +3,7 @@ layout: post
 title: "Ce que je n'ai pas fait cette semaine"
 date: 2015-03-22 15:18
 legacy: true
-tags: [opinion, livre, arduino, ruby, labyrinthe]
+tags: [  arduino, ruby]
 ---
 
 *Premier article d'une série récurente que je posterai chaque dimanche, voici

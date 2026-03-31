@@ -3,7 +3,7 @@ layout: post
 title: "Ruby vs Crystal"
 date: 2016-01-19 09:23
 legacy: true
-tags: [ruby, crystal, benchmark]
+tags: [ruby, crystal]
 ---
 
 Après avoir produit [quelques variations](/blog/2016/01/18/les-arbres-browniens-2eme-partie/) sur le thème des 

@@ -3,7 +3,7 @@ layout: post
 title: "Les aliens bougent enfin (Jetpack Hero)"
 date: 2025-05-14 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Il est plus que temps de faire se déplacer les aliens.

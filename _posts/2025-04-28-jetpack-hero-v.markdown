@@ -3,7 +3,7 @@ layout: post
 title: "Jetpack Hero V : Ajouter des plateformes"
 date: 2025-04-28 8:00
 comments: true
-tags: [ jeu, ruby, dragonruby ]
+ts: [ jeu, ruby, dragonruby ]
 ---
 
 Notre personnage doit pouvoir évoluer sur plusieurs plateformes. Sinon quelle serait

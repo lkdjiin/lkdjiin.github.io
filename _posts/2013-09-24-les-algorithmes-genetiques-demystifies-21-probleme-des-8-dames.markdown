@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 21: Problème des 8 dames"
 date: 2013-09-24 10:04
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

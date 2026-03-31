@@ -3,7 +3,7 @@ layout: post
 title: "Comment mieux apprendre : La technique du rappel"
 date: 2015-04-21 19:45
 legacy: true
-tags: [débutant, apprentissage]
+ts: [ apprentissage]
 ---
 
 

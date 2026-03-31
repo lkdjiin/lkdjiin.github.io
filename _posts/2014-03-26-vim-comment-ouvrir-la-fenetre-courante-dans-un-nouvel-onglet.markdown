@@ -3,7 +3,7 @@ layout: post
 title: "Vim - Comment ouvrir la fenêtre courante dans un nouvel onglet"
 date: 2014-03-26 21:09
 legacy: true
-tags: [vim, débutant, truc, astuce]
+tags: [vim]
 ---
 
 

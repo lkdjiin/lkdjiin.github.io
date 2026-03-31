@@ -3,7 +3,7 @@ layout: post
 title: "Un jeu de Simon - Étape 1"
 date: 2015-03-01 21:00
 legacy: true
-tags: [arduino, jeu, c, éléctronique, matériel, débutant]
+tags: [ arduino, jeu ]
 ---
 
 

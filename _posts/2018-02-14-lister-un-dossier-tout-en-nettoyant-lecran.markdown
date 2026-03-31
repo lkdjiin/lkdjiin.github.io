@@ -3,7 +3,7 @@ layout: post
 title: "Lister un dossier tout en nettoyant l'écran"
 date: 2018-02-14 10:28
 legacy: true
-tags: [fish, bash, shell, alias]
+tags: [fish, bash, shell]
 ---
 
 Deux ou trois fois dans l'année j'analyse mon usage du clavier pour tenter

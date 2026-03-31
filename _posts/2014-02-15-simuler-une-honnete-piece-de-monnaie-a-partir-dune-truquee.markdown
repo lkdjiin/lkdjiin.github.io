@@ -3,7 +3,7 @@ layout: post
 title: "Simuler une honnête pièce de monnaie à partir d'une truquée"
 date: 2014-02-15 12:20
 legacy: true
-tags: [intermédiaire, traduction, ruby, python, probabilité]
+tags: [  ruby, python]
 ---
 
 

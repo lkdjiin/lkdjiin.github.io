@@ -3,7 +3,7 @@ layout: post
 title: "Ruby 2.2 - Une sélection des nouvelles méthodes"
 date: 2014-12-27 15:40
 legacy: true
-tags: [ruby, débutant, ruby 2.2]
+tags: [ruby]
 ---
 
 

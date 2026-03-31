@@ -3,7 +3,7 @@ layout: post
 title: "Git et les alias: la suite"
 date: 2013-07-16 09:10
 legacy: true
-tags: [git]
+tags: []
 ---
 
 

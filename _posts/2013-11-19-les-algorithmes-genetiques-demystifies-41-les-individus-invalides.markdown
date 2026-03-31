@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 41: Les individus invalides"
 date: 2013-11-19 20:56
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

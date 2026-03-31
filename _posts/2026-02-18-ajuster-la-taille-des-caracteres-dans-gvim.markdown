@@ -3,7 +3,7 @@ layout: post
 title: "Ajuster la taille des caractères dans gVim"
 date: 2026-02-18 8:00
 comments: true
-tags: [ vim, gvim ]
+tags: [ vim ]
 ---
 
 Ça fait trop longtemps que je n'ai pas consacré un peu de temps à rendre mon

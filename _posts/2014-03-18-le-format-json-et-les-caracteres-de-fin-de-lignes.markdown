@@ -3,7 +3,7 @@ layout: post
 title: "Le format JSON et les caractères de fin de lignes"
 date: 2014-03-18 21:28
 legacy: true
-tags: [json, ruby, parsing, débutant]
+tags: [ ruby]
 ---
 
 

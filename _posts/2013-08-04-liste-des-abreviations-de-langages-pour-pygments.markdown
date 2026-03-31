@@ -3,7 +3,7 @@ layout: post
 title: "Liste des abréviations de langages pour Pygments"
 date: 2013-08-04 09:26
 legacy: true
-tags: [ruby, pygments]
+tags: [ruby]
 ---
 La bibliothèque [pygments.rb](https://github.com/tmm1/pygments.rb)
 est un *wrapper* Ruby pour

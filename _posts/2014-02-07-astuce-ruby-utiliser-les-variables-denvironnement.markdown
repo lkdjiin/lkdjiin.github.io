@@ -3,7 +3,7 @@ layout: post
 title: "Astuce Ruby - Utiliser les variables d'environnement"
 date: 2014-02-07 20:47
 legacy: true
-tags: [ruby, débutant, astuce, environnement]
+tags: [ruby]
 ---
 
 

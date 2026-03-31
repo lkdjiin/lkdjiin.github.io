@@ -3,7 +3,7 @@ layout: post
 title:  "Rebonjour le monde !"
 date:   2021-07-11 18:42:18 +0200
 comments: true
-tags: annonce
+tags: 
 ---
 Rebonjour le monde ! Ça fait un an et demi que je n'ai rien posté ici.
 Je voudrais que ça change.

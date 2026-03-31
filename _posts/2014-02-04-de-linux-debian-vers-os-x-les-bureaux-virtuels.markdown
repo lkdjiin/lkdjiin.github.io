@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - Les bureaux virtuels"
 date: 2014-02-04 20:41
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags: [ ]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Ruby est un peu paresseux"
 date: 2015-07-02 17:17
 legacy: true
-tags: [ruby, intermédiaire, optimisation]
+tags: [ruby]
 ---
 
 

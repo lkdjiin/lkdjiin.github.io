@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 16: Le Hill-Climbing"
 date: 2013-09-17 10:50
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

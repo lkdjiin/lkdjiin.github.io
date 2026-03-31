@@ -3,7 +3,7 @@ layout: post
 title: "Coco version 0.13.0"
 date: 2015-07-29 10:50
 legacy: true
-tags: [annonce, ruby, gem, coco, couverture de code, test]
+tags: [ ruby, coco]
 ---
 
 Je me rend compte que j'ai sorti la version 0.13.0 de

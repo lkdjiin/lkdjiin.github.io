@@ -3,7 +3,7 @@ layout: post
 title: "Jetpack Hero"
 date: 2025-04-19 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 C'est la toute première partie d'une série consacrée à l'écriture d'un jeu avec

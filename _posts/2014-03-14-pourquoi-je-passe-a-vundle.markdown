@@ -3,7 +3,7 @@ layout: post
 title: "Pourquoi je passe à Vundle"
 date: 2014-03-14 20:53
 legacy: true
-tags: [vim, vundle, pathogen]
+tags: [vim]
 ---
 
 Je suis (j'étais) un utilisateur de [Pathogen](https://github.com/tpope/vim-pathogen), le plugin Vim pour gérer

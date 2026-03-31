@@ -3,7 +3,7 @@ layout: post
 title: "Une machine de Turing en Ruby"
 date: 2015-02-01 10:11
 legacy: true
-tags: [ruby, intermédiaire, turing]
+tags: [ruby, turing]
 ---
 
 

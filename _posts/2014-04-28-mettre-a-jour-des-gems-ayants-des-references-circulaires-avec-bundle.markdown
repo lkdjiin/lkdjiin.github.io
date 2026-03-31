@@ -3,7 +3,7 @@ layout: post
 title: "Mettre à jour des gems ayants des références circulaires avec Bundle"
 date: 2014-04-28 21:25
 legacy: true
-tags: [ruby, bundle, débutant, gem, gemfile]
+tags: [ruby]
 ---
 
 

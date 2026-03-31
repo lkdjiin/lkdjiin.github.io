@@ -3,7 +3,7 @@ layout: post
 title: "Clojure, tests et couleurs"
 date: 2017-02-26 10:53
 legacy: true
-tags: [clojure, tdd, test, couleur]
+tags: [clojure]
 ---
 
 En ce moment je regarde le langage Clojure de plus près.  J'utilise Leiningen

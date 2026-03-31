@@ -3,7 +3,7 @@ layout: post
 title: "Combien de fois par jour est-ce-que je m'assois à mon bureau"
 date: 2015-10-06 12:50
 legacy: true
-tags: [data science, projet]
+tags: []
 ---
 
 Depuis le 21 septembre j'enregistre chaque jour les moments où je suis assis à

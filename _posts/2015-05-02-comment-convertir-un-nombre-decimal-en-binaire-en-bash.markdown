@@ -3,7 +3,7 @@ layout: post
 title: "Comment convertir un nombre décimal en binaire en Bash ?"
 date: 2015-05-02 12:20
 legacy: true
-tags: [bash, débutant, binaire, hexadécimal, ruby, one liner]
+tags: [bash, ruby]
 ---
 
 

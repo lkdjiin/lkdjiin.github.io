@@ -3,7 +3,7 @@ layout: post
 title: "Vim - Débarassez vous des buffers inutilisés"
 date: 2014-03-08 20:37
 legacy: true
-tags: [vim, intermédiaire, buffer, onglet, fenêtre]
+tags: [vim]
 ---
 
 

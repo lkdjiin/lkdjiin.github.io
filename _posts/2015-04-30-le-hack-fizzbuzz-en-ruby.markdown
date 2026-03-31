@@ -3,7 +3,7 @@ layout: post
 title: "Le hack FizzBuzz en Ruby"
 date: 2015-04-30 17:07
 legacy: true
-tags: [ruby, intermédiaire, one liner]
+tags: [ruby]
 ---
 
 

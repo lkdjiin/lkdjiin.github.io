@@ -3,7 +3,7 @@ layout: post
 title: "Les maths derrière V=RI"
 date: 2015-02-11 11:22
 legacy: true
-tags: [math, débutant, arduino]
+tags: [ arduino]
 ---
 
 

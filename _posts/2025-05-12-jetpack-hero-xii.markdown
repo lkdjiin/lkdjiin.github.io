@@ -3,7 +3,7 @@ layout: post
 title: "On dégomme de l'alien (Jetpack Hero)"
 date: 2025-05-12 12:00
 comments: true
-tags: [ dragonruby, ruby, jeu ]
+ts: [ dragonruby, ruby, jeu ]
 ---
 
 Maintenant que le personnage tire des salves laser, il est temps de faire des

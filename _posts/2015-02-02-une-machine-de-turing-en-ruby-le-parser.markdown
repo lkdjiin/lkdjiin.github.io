@@ -3,7 +3,7 @@ layout: post
 title: "Une machine de Turing en Ruby - Le parser"
 date: 2015-02-02 18:04
 legacy: true
-tags: [ruby, débutant, turing, parser]
+tags: [ruby, turing]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Je veux mon blog Octopress en français"
 date: 2013-07-13 07:19
 legacy: true
-tags: [octopress, ruby]
+tags: [ ruby]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Utiliser Enumerable en Ruby"
 date: 2014-06-09 16:47
 legacy: true
-tags: [intermédiaire, ruby, module, enumerable]
+tags: [ ruby]
 ---
 
 

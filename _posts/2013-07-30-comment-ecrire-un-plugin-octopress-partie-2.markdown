@@ -3,7 +3,7 @@ layout: post
 title: "Comment écrire un plugin Octopress - partie 2"
 date: 2013-07-30 08:18
 legacy: true
-tags: [octopress, ruby]
+tags: [ ruby]
 ---
 
 

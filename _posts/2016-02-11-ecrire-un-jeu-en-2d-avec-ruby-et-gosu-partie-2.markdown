@@ -3,7 +3,7 @@ layout: post
 title: "Écrire un jeu en 2d avec Ruby et Gosu - partie 2"
 date: 2016-02-11 09:40
 legacy: true
-tags: [ruby, gosu, jeu, 2d]
+tags: [ruby, gosu, jeu]
 ---
 
 Aujourd'hui on voit comment déplacer et contrôler le joueur, ainsi que

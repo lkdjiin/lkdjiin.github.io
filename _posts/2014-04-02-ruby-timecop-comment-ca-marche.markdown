@@ -3,7 +3,7 @@ layout: post
 title: "Ruby Timecop - Comment ça marche ?"
 date: 2014-04-02 21:07
 legacy: true
-tags: [ruby, test, date, time, meta, intermédiaire]
+tags: [ruby]
 ---
 
 

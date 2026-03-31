@@ -3,7 +3,7 @@ layout: post
 title: "Apprenez Vim comme vous voulez"
 date: 2014-03-05 20:51
 legacy: true
-tags: [vim, conseil, débutant]
+tags: [vim]
 ---
 
 

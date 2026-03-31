@@ -3,7 +3,7 @@ layout: post
 title: "Utiliser une version particulière d'une gem Ruby... dans une gem"
 date: 2014-05-21 20:48
 legacy: true
-tags: [débutant, ruby, gem]
+tags: [ ruby]
 ---
 
 

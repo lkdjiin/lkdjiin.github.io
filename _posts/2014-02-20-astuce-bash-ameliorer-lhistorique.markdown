@@ -3,7 +3,7 @@ layout: post
 title: "Astuce Bash - Améliorer l'historique"
 date: 2014-02-20 21:02
 legacy: true
-tags: [bash, débutant, astuce]
+tags: [bash]
 ---
 
 

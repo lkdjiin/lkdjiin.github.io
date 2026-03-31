@@ -3,7 +3,7 @@ layout: post
 title: "Quelques commandes Git par Michael Hartl"
 date: 2014-02-12 20:29
 legacy: true
-tags: [git, ruby, bash, intermédiaire]
+tags: [git, ruby, bash]
 ---
 
 

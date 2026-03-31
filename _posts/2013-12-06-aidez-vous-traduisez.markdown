@@ -3,7 +3,7 @@ layout: post
 title: "Aidez-vous : traduisez !"
 date: 2013-12-06 20:52
 legacy: true
-tags: documentation]
+tags: []
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Nombres aléatoires en assembleur sur le Commodore 64"
 date: 2025-12-20 8:00
 comments: true
-tags: [ commodore, c64, assembleur, aléatoire, 6502, 6510 ]
+tags: [ c64, assembleur, 6502 ]
 ---
 
 Comment obtenir un nombre aléatoire en assembleur sur une machine rétro 8 bits ?

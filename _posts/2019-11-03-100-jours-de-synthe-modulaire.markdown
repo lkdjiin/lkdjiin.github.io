@@ -3,7 +3,7 @@ layout: post
 title: "100 jours de synthé modulaire"
 date: 2019-11-03 13:54
 legacy: true
-tags: [musique, synthèse, synthé, modulaire]
+tags: [musique, synthé modulaire]
 ---
 
 Pendant 100 jours je vais étudier les synthés modulaires selon les règles

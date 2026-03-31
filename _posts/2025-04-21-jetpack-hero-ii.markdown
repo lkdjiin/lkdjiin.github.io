@@ -3,7 +3,7 @@ layout: post
 title: "Jetpack Hero - partie II"
 date: 2025-04-21 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Il s'agit maintenant d'utiliser le jetpack en simulant la gravité. Simulation

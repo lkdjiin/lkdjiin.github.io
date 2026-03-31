@@ -3,7 +3,7 @@ layout: post
 title: "Comment écrire un framework de test pour Ruby"
 date: 2016-11-02 09:06
 legacy: true
-tags: [ruby, framework, test]
+tags: [ruby]
 ---
 
 Si vous souhaitez comprendre le fonctionnement d'un framework de test, si vous

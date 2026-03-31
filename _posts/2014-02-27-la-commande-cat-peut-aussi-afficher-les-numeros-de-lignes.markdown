@@ -3,7 +3,7 @@ layout: post
 title: "La commande cat peut aussi afficher les numéros de lignes"
 date: 2014-02-27 20:48
 legacy: true
-tags: [débutant, linux, terminal, cat]
+tags: [ linux, terminal ]
 ---
 
 

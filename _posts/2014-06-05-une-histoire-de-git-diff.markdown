@@ -3,7 +3,7 @@ layout: post
 title: "Une histoire de git diff"
 date: 2014-06-05 21:17
 legacy: true
-tags: [débutant, git, diff]
+tags: [ ]
 ---
 
 

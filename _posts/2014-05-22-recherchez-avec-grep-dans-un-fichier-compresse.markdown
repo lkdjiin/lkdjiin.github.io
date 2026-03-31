@@ -3,7 +3,7 @@ layout: post
 title: "Rechercher avec grep dans un fichier compressé"
 date: 2014-05-22 21:10
 legacy: true
-tags: [débutant, astuce, ligne de commande]
+tags: [  ]
 ---
 
 

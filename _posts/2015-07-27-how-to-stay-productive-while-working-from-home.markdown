@@ -3,7 +3,7 @@ layout: post
 title: "How to stay productive while working from home"
 date: 2015-07-27 13:25
 legacy: true
-tags: [guest, remote work]
+tags: [ ]
 ---
 
 *Pour la première fois voici un article en anglais écrit par une développeuse qui

@@ -3,7 +3,7 @@ layout: post
 title: "Exemple de test pour Vim avec le framework Vader"
 date: 2014-03-29 21:10
 legacy: true
-tags: [vim, test, plugin, framework, vader]
+tags: [vim, plugin]
 ---
 
 

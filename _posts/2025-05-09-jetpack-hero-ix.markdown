@@ -3,7 +3,7 @@ layout: post
 title: "Du rangement avec la classe Game (Jetpack Hero)"
 date: 2025-05-09 12:00
 comments: true
-tags: [ jeu, dragonruby, ruby ]
+ts: [ jeu, dragonruby, ruby ]
 ---
 
 Quand on commence l'écriture d'un jeu avec DragonRuby il est d'usage de tout mettre dans la

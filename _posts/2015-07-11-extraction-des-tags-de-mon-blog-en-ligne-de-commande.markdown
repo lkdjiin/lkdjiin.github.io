@@ -3,7 +3,7 @@ layout: post
 title: "Extraction des tags de mon blog en ligne de commande"
 date: 2015-07-11 17:08
 legacy: true
-tags: [bash, R, csv, data science, text mining, pipeline]
+tags: [bash, R]
 ---
 
 
@@ -34,7 +34,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 35"
 date: 2013-10-20 21:21
 legacy: true
-tags: [imagerie, algorithme génétique, intermédiaire, javascript]
+ts: [imagerie, algorithme génétique, javascript]
 #...
 {% endhighlight %}
 
@@ -44,8 +44,8 @@ Avec `sed` je peux extraire uniquement les lignes qui commencent par `cat` :
 
 {% highlight bash %}
 $ head *.markdown | sed -n '/^cat/p'
-tags: [annonce, défi]
-tags: [vim, conseil, débutant]
+tags: [ ]
+tags: [vim]
 tags: [ruby, code propre, intermédiaire]
 tags: [ruby, eigenclass, object, intermédiaire]
 #...

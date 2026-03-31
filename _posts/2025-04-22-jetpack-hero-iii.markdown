@@ -3,7 +3,7 @@ layout: post
 title: "Jetpack Hero III - Une plateforme, des collisions"
 date: 2025-04-22 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Voyons comment afficher une plateforme, comment le personnage peut s'y cogner, et

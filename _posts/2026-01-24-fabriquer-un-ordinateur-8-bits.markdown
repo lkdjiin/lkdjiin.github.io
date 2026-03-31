@@ -3,7 +3,7 @@ layout: post
 title: "Fabriquer un ordinateur 8 bits"
 date: 2026-01-24 8:00
 comments: true
-tags: [ 8bits retro ]
+tags: [  ]
 ---
 
 Depuis quelques années,

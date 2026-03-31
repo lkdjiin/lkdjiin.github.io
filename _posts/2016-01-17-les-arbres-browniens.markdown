@@ -3,7 +3,7 @@ layout: post
 title: "Les arbres browniens"
 date: 2016-01-17 23:30
 legacy: true
-tags: [ruby, jruby, brownian tree, arbre, mouvement brownien]
+tags: [ruby, jruby, arbre brownien]
 ---
 
 Ce week end j'ai joué avec les arbres browniens (*brownian trees*).

@@ -3,7 +3,7 @@ layout: post
 title: "La méta programmation en Ruby - partie 2"
 date: 2014-04-11 21:41
 legacy: true
-tags: [ruby, intermédiaire, meta, programmation]
+tags: [ruby]
 ---
 
 

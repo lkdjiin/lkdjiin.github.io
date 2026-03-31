@@ -3,7 +3,7 @@ layout: post
 title: "Une machine de Turing en Ruby - La routine de copie"
 date: 2015-02-04 10:22
 legacy: true
-tags: [ruby, intermédiaire, turing]
+tags: [ruby, turing]
 ---
 
 

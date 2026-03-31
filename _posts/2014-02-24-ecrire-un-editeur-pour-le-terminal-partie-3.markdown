@@ -3,7 +3,7 @@ layout: post
 title: "Écrire un éditeur pour le terminal - partie 3"
 date: 2014-02-24 20:59
 legacy: true
-tags: [ruby, curses, ncurses, intermédiaire, terminal]
+tags: [ruby, curses, ncurses, terminal]
 ---
 
 

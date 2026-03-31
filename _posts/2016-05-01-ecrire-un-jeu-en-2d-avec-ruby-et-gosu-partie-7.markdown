@@ -3,7 +3,7 @@ layout: post
 title: "Écrire un jeu en 2d avec Ruby et Gosu - partie 7"
 date: 2016-05-01 09:29
 legacy: true
-tags: [ruby, gosu, jeu, 2d]
+tags: [ruby, gosu, jeu]
 ---
 
 Ça fait plus de 2 mois que je dois terminer ce jeu et cette série d'article, alors au boulot !

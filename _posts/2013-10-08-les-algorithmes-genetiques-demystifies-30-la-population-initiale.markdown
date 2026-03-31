@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 30: La population initiale"
 date: 2013-10-08 21:30
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

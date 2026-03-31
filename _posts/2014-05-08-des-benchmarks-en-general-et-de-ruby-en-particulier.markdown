@@ -3,7 +3,7 @@ layout: post
 title: "Des benchmarks en général et de Ruby en particulier"
 date: 2014-05-08 18:24
 legacy: true
-tags: [débutant, benchmark, ruby]
+tags: [  ruby]
 ---
 
 

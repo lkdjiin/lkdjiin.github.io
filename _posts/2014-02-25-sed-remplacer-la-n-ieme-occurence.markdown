@@ -3,7 +3,7 @@ layout: post
 title: "Sed - Remplacer la n-ième occurence"
 date: 2014-02-25 21:10
 legacy: true
-tags: [intermédiaire, unix, sed, texte, éditeur]
+tags: [ unix, sed]
 ---
 
 J'adore Sed. Je l'utilise depuis de longues années. Et pourtant je n'avais

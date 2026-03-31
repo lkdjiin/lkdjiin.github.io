@@ -3,7 +3,7 @@ layout: post
 title: "Le thème Gruvbox pour Vim"
 date: 2014-05-19 20:51
 legacy: true
-tags: [vim, débutant, thème]
+tags: [vim]
 ---
 
 

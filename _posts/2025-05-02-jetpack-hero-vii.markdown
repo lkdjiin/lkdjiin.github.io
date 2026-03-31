@@ -3,7 +3,7 @@ layout: post
 title: "Collecte de minerai (Jetpack Hero)"
 date: 2025-05-02 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 J'ai décidé que l'objectif du jeu serait de collecter du minerai. Pour terminer

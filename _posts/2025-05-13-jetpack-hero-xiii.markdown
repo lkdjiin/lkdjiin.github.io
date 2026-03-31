@@ -3,7 +3,7 @@ layout: post
 title: "GAME OVER (Jetpack Hero)"
 date: 2025-05-13 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Première notion de fin de jeu, quand un alien nous touche on écrit GAME OVER et

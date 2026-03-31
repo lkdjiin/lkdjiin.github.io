@@ -3,7 +3,7 @@ layout: post
 title: "Mieux utiliser le programme gem"
 date: 2015-01-23 11:49
 legacy: true
-tags: [ruby, débutant, gem]
+tags: [ruby]
 ---
 
 

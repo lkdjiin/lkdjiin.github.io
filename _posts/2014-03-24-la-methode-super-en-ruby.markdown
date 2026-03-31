@@ -3,7 +3,7 @@ layout: post
 title: "La méthode super en Ruby"
 date: 2014-03-24 21:21
 legacy: true
-tags: [ruby, débutant, super, héritage, orienté objet]
+tags: [ruby]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Hub - Git plus facile avec Github"
 date: 2014-05-20 21:03
 legacy: true
-tags: [débutant, git, github]
+tags: [ ]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Présentation de Gopher"
 date: 2018-07-21 09:06
 legacy: true
-tags: [ gopher, protocole, internet ]
+tags: [ gopher ]
 ---
 
 En 1997, ma maigre connexion internet était facturée chèrement à la seconde.

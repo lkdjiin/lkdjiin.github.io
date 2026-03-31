@@ -3,7 +3,7 @@ layout: post
 title: "Programmation concurrente pour Ruby avec eldritch - partie 2"
 date: 2014-05-07 19:18
 legacy: true
-tags: [ruby, concurrence, parallèlisisme, intermédiaire]
+tags: [ruby]
 ---
 
 

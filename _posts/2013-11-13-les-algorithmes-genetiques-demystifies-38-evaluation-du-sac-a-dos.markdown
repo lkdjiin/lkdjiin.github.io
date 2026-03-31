@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 38: Évaluation du sac à dos"
 date: 2013-11-13 09:32
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

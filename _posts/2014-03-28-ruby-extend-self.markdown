@@ -3,7 +3,7 @@ layout: post
 title: "Ruby - extend self"
 date: 2014-03-28 21:16
 legacy: true
-tags: [ruby, débutant, self, module, utilitaire, orienté objet]
+tags: [ruby]
 ---
 
 

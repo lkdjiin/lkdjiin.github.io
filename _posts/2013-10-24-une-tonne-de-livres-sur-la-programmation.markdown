@@ -3,7 +3,7 @@ layout: post
 title: "Une tonne de livres sur la programmation"
 date: 2013-10-24 10:22
 legacy: true
-tags: [annonce]
+tags: []
 ---
 
 Une super initiative de [vhf](https://github.com/vhf) sur Github: une

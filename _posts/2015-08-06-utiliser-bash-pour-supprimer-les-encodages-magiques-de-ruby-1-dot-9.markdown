@@ -3,7 +3,7 @@ layout: post
 title: "Utiliser Bash pour supprimer les encodages magiques de Ruby 1.9"
 date: 2015-08-06 17:27
 legacy: true
-tags: [ruby, encodage, bash, sed]
+ts: [ruby, encodage, bash, sed]
 ---
 
 Si vous avez travaillé sur des projets écrit avec Ruby 1.9, vous avez peut-être

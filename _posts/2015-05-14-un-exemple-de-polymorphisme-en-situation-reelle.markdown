@@ -3,7 +3,7 @@ layout: post
 title: "Un exemple de polymorphisme en situation réelle"
 date: 2015-05-14 19:16
 legacy: true
-tags: [ruby, avancé, polymorphisme, chip8, assembleur, émulateur]
+tags: [ruby, chip8, assembleur]
 ---
 
 

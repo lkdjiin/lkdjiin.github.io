@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 25: extremum local"
 date: 2013-09-30 21:41
 legacy: true
-tags: [algorithme génétique]
+tags: [ génétique]
 ---
 
 

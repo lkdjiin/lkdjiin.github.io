@@ -3,7 +3,7 @@ layout: post
 title: "Effets sonores (Jetpack Hero)"
 date: 2025-05-08 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Ajouter des effets sonores en _one shot_ est très simple avec DragonRuby.

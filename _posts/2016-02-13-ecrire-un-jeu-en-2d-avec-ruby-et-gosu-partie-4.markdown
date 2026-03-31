@@ -3,7 +3,7 @@ layout: post
 title: "Écrire un jeu en 2d avec Ruby et Gosu - partie 4"
 date: 2016-02-13 16:19
 legacy: true
-tags: [ruby, gosu, jeu, 2d]
+tags: [ruby, gosu, jeu]
 ---
 
 Dans cet article on va s'occuper de gérer les vies de notre joueur.

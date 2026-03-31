@@ -3,7 +3,7 @@ layout: post
 title: "Retour sur un an d'article quotidien"
 date: 2014-08-24 14:02
 legacy: true
-tags: [défi]
+tags: []
 ---
 
 Voici plus d'un mois que mon défi «un article par jour pendant un an» sur ce

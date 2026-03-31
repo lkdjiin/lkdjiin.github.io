@@ -3,7 +3,7 @@ layout: post
 title: "Un badge pour la documentation pour vos projets Ruby"
 date: 2014-03-19 20:56
 legacy: true
-tags: [débutant, badge, ruby, documentation]
+tags: [  ruby]
 ---
 
 

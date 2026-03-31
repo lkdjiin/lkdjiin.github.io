@@ -3,7 +3,7 @@ layout: post
 title: "Fabriquer un sablier à thé électronique 2"
 date: 2015-12-12 16:51
 legacy: true
-tags: [arduino, maker]
+tags: [arduino]
 ---
 
 Après avoir appris à programmer un ATtiny45 avec l'IDE Arduino, il fallait

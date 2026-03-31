@@ -3,7 +3,7 @@ layout: post
 title: "Comment j'ai amélioré mon Ruby avec des contrats"
 date: 2015-07-13 12:42
 legacy: true
-tags: [guest, ruby, contrat]
+tags: [ ruby]
 ---
 
 ## `{ Guest Post }`

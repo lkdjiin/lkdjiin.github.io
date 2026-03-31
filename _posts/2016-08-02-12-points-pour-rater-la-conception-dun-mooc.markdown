@@ -3,7 +3,7 @@ layout: post
 title: "12 points pour rater la conception d'un MOOC"
 date: 2016-08-02 16:51
 legacy: true
-tags: [mooc]
+tags: []
 ---
 
 _Ça fait maintenant quelques temps que je pratique les MOOCs. J'adore ça.  J'en

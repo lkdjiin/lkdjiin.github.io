@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 36"
 date: 2013-10-22 08:25
 legacy: true
-tags: [algorithme génétique, javascript]
+tags: [ génétique, javascript]
 ---
 
 

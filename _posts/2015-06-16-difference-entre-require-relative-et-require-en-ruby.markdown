@@ -3,7 +3,7 @@ layout: post
 title: "Différence entre require_relative et require en Ruby"
 date: 2015-06-16 16:59
 legacy: true
-tags: [ruby, débutant]
+tags: [ruby]
 ---
 
 

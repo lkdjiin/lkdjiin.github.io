@@ -3,7 +3,7 @@ layout: post
 title: "Fabriquer une vactrol pour piloter un oscillateur"
 date: 2019-12-04 16:07
 legacy: true
-tags: [musique, synthèse, synthé, modulaire, oscillateur]
+tags: [musique, synthé modulaire, oscillateur]
 ---
 
 Vactrol, comme Frigidère ou Mobylette, c'est une marque passée dans le langage

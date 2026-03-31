@@ -3,7 +3,7 @@ layout: post
 title: "Le duck typing avec Ruby"
 date: 2014-04-07 21:19
 legacy: true
-tags: [ruby, débutant, orienté objet, duck typing]
+tags: [ruby]
 ---
 
 Vous faites du Ruby depuis peu ? Vous venez d'un langage

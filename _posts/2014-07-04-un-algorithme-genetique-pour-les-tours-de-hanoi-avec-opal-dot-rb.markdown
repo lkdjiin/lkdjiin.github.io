@@ -3,7 +3,7 @@ layout: post
 title: "Un algorithme génétique pour les tours de Hanoi avec Opal.rb"
 date: 2014-07-04 21:07
 legacy: true
-tags: [algorithme génétique, intermédiaire, ruby, opal]
+tags: [ génétique, ruby, opal]
 ---
 
 

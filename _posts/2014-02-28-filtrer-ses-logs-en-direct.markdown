@@ -3,7 +3,7 @@ layout: post
 title: "Filtrer ses logs en direct"
 date: 2014-02-28 20:50
 legacy: true
-tags: [intermédiaire, linux, os x, log, terminal, tail, sed]
+tags: [ terminal, sed]
 ---
 
 

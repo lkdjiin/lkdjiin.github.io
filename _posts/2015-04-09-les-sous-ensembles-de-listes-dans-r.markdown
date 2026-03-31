@@ -3,7 +3,7 @@ layout: post
 title: "Les sous-ensembles de listes dans R"
 date: 2015-04-09 07:47
 legacy: true
-tags: [R, débutant, sous ensemble, liste]
+tags: [R]
 ---
 
 

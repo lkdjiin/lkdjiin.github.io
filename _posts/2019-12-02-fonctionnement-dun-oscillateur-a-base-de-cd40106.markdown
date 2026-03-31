@@ -3,7 +3,7 @@ layout: post
 title: "Fonctionnement d'un oscillateur à base de CD40106"
 date: 2019-12-02 20:41
 legacy: true
-tags: [musique, synthèse, synthé, modulaire]
+tags: [musique, synthé modulaire]
 ---
 
 Dernièrement j'ai écrit un article qui montre quelques oscillateurs simples,

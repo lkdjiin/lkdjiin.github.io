@@ -3,7 +3,7 @@ layout: post
 title: "Quelques oscillateurs très simples"
 date: 2019-11-20 17:05
 legacy: true
-tags: [musique, synthèse, synthé, modulaire, oscillateur]
+tags: [musique, synthé modulaire, oscillateur]
 ---
 
 J'ai l'intention de fabriquer mon synthétiseur modulaire. Et comme il faut bien

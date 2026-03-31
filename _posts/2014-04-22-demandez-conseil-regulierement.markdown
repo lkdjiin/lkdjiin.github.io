@@ -3,7 +3,7 @@ layout: post
 title: "Demandez conseil régulièrement"
 date: 2014-04-22 21:43
 legacy: true
-tags: [ruby, refactoring, débutant, truc]
+tags: [ruby]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Créer plusieurs fichiers en Bash"
 date: 2015-05-15 13:46
 legacy: true
-tags: [bash, débutant, automatisation]
+tags: [bash]
 ---
 
 

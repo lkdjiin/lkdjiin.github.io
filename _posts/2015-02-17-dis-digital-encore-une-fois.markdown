@@ -3,7 +3,7 @@ layout: post
 title: "Dis digital encore une fois"
 date: 2015-02-17 10:56
 legacy: true
-tags: [opinion]
+tags: []
 ---
 
 Je suis un pessimiste optimiste. C'est à dire que ma raison sait

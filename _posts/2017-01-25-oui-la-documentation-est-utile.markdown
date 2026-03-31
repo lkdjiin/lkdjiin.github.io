@@ -3,7 +3,7 @@ layout: post
 title: "Oui la documentation est utile"
 date: 2017-01-25 11:13
 legacy: true
-tags: documentation
+tags: 
 ---
 
 J'ai lu récemment un article de blog intitulé

@@ -3,7 +3,7 @@ layout: post
 title: "Hacker la classe Fixnum"
 date: 2015-05-23 08:48
 legacy: true
-tags: [ruby, débutant]
+tags: [ruby]
 ---
 
 

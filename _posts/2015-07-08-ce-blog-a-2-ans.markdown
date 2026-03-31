@@ -3,7 +3,7 @@ layout: post
 title: "Ce blog à 2 ans"
 date: 2015-07-08 14:28
 legacy: true
-tags: [annonce]
+tags: []
 ---
 
 Bonjour à toutes et à tous.

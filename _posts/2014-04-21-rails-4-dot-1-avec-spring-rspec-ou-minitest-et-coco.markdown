@@ -3,7 +3,7 @@ layout: post
 title: "Rails 4.1 avec Spring, Rspec ou Minitest et Coco"
 date: 2014-04-21 21:15
 legacy: true
-tags: [rails, rspec, minitest, coco, débutant]
+tags: [ minitest, coco]
 ---
 
 

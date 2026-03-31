@@ -3,7 +3,7 @@ layout: post
 title: "Comportement inattendu de Rspec"
 date: 2015-06-30 15:37
 legacy: true
-tags: [ruby, rspec, test, intermédiaire]
+tags: [ruby]
 ---
 
 

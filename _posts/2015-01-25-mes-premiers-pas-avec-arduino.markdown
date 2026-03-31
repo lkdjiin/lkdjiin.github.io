@@ -3,7 +3,7 @@ layout: post
 title: "Mes premiers pas avec Arduino"
 date: 2015-01-25 18:04
 legacy: true
-tags: [matériel, arduino, débutant]
+tags: [ arduino]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Comment mettre temporairement de coté ses modifications de code avec Git"
 date: 2014-02-18 21:03
 legacy: true
-tags: [git, débutant, stash, astuce]
+tags: []
 ---
 
 

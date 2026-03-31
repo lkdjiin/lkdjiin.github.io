@@ -3,7 +3,7 @@ layout: post
 title: "Cherchez avec grep dans Vim"
 date: 2014-05-26 21:03
 legacy: true
-tags: [vim, débutant, grep, ack, ag]
+ts: [vim]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Quand internet m'énerve (ou mes principes à la con"
 date: 2013-11-20 21:11
 legacy: true
-tags: [opinion]
+tags: []
 ---
 
 Bonjour à tous, rien de technique aujourd'hui, seulement sept

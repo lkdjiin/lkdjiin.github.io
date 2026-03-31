@@ -3,7 +3,7 @@ layout: post
 title: "Plusieurs petites animations (Jetpack Hero)"
 date: 2025-05-25 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Pour rendre le jeu plus attractif je vais ajouter quelques animations.

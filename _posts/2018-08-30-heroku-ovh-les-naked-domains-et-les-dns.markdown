@@ -3,7 +3,7 @@ layout: post
 title: "Heroku, OVH, les naked domains, et les DNS"
 date: 2018-08-30 17:12
 legacy: true
-tags: [ heroku, ovh, naked domain, dns, php, http, redirection ]
+tags: [    php ]
 ---
 
 ## La situation

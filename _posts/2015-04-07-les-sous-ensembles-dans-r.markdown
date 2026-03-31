@@ -3,7 +3,7 @@ layout: post
 title: "Les sous-ensembles dans R"
 date: 2015-04-07 19:12
 legacy: true
-tags: [R, débutant, sous ensemble, vecteur]
+tags: [R]
 ---
 
 

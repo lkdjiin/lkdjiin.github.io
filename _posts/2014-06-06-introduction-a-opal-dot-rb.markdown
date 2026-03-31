@@ -3,7 +3,7 @@ layout: post
 title: "Introduction à Opal.rb"
 date: 2014-06-06 19:56
 legacy: true
-tags: [débutant, opal.rb, ruby, javascript]
+tags: [ opal, ruby, javascript]
 ---
 
 

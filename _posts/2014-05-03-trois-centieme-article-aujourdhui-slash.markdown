@@ -3,7 +3,7 @@ layout: post
 title: "Trois-centième article aujourd'hui !"
 date: 2014-05-03 21:56
 legacy: true
-tags: [annonce, intermédiaire, ruby, rake, documentation]
+tags: [ ruby]
 ---
 
 

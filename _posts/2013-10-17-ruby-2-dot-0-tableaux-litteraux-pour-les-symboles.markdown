@@ -3,7 +3,7 @@ layout: post
 title: "Ruby 2.0: Tableaux littéraux pour les symboles"
 date: 2013-10-17 10:48
 legacy: true
-tags: [ruby, débutant, ruby 2.0]
+tags: [ruby]
 ---
 
 

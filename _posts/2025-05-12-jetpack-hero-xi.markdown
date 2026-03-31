@@ -3,7 +3,7 @@ layout: post
 title: "Tir du personnage (Jetpack Hero)"
 date: 2025-05-12 8:00
 comments: true
-tags: [ ruby, dragonruby, jeu ]
+ts: [ ruby, dragonruby, jeu ]
 ---
 
 Le personnage doit pouvoir tirer au laser pour dégommer les aliens. Voyons comment gérer les entrées,

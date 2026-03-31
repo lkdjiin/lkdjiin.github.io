@@ -3,7 +3,7 @@ layout: post
 title: "Le jeu de la vie dans sept langages différents"
 date: 2014-10-08 12:30
 legacy: true
-tags: [défi, ruby, opal, tdd, javascript, racket, logo, julia, haskell, rust]
+tags: [ ruby, opal, javascript, logo, julia, haskell, rust]
 ---
 
 

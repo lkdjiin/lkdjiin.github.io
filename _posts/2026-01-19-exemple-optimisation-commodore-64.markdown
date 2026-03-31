@@ -3,7 +3,7 @@ layout: post
 title: "Exemple d'optimisation assembleur sur Commodore 64"
 date: 2026-01-19 8:00
 comments: true
-tags: [ commodore, c64, assembleur, optimisation, 6502, 6510 ]
+tags: [ c64, assembleur, 6502 ]
 ---
 
 En cherchant des bouts de code à propos de tout et de rien pour Commodore 64, je suis tombé sur un tutoriel

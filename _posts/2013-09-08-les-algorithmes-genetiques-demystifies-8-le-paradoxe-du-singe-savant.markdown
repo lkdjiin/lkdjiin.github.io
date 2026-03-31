@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 8 - Le paradoxe du singe savant"
 date: 2013-09-08 09:40
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

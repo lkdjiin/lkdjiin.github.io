@@ -3,7 +3,7 @@ layout: post
 title: "Comment étendre Git avec ses propres scripts: la suite"
 date: 2013-07-18 07:39
 legacy: true
-tags: [git]
+tags: []
 ---
 
 

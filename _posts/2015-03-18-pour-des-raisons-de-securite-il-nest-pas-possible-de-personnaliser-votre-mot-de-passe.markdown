@@ -3,7 +3,7 @@ layout: post
 title: "Pour des raisons de sécurité il n'est pas possible de personnaliser votre mot de passe"
 date: 2015-03-18 09:59
 legacy: true
-tags: [opinion, mot de passe]
+tags: [ ]
 ---
 
 J'ai coutume de râler sur twitter contre les sites web qui font n'importe quoi

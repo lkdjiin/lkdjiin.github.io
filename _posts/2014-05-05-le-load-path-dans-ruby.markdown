@@ -3,7 +3,7 @@ layout: post
 title: "Le LOAD_PATH dans Ruby"
 date: 2014-05-05 21:02
 legacy: true
-tags: [ruby, load_path, intermédiaire]
+tags: [ruby]
 ---
 
 

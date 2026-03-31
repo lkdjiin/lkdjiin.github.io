@@ -3,7 +3,7 @@ layout: post
 title: "Un quine en R - Le retour"
 date: 2015-10-13 14:19
 legacy: true
-tags: [R, quine, répliquant]
+tags: [R, quine]
 ---
 
 Dans l'article précédent [Un quine en R](http://lkdjiin.github.io/blog/2015/10/10/un-quine-en-r/)

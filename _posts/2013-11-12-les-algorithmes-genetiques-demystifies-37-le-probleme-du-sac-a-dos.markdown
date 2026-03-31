@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 37: Le problème du sac à dos"
 date: 2013-11-12 13:02
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

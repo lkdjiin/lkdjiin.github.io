@@ -3,7 +3,7 @@ layout: post
 title: "Retour du MOOC Designer dans un fablab"
 date: 2016-12-20 16:25
 legacy: true
-tags: [mooc, maker, 2d, 3d]
+tags: [ ]
 ---
 
 L'idée est excellente. Et originale. Je n'ai trouvé ça nulle part ailleurs.

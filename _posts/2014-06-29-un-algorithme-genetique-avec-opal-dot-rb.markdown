@@ -3,7 +3,7 @@ layout: post
 title: "Un algorithme génétique avec Opal.rb ?"
 date: 2014-06-29 20:59
 legacy: true
-tags: [algorithme génétique, opal, ruby]
+tags: [ génétique, opal, ruby]
 ---
 
 Aujourd'hui c'est dimanche, pas d'article technique. Par contre une idée

@@ -3,7 +3,7 @@ layout: post
 title: "Utiliser une API météo avec Ruby"
 date: 2026-02-12 8:00
 comments: true
-tags: [ ruby, api ]
+tags: [ ruby ]
 ---
 
 _Tutoriel pour écrire de A à Z une commande de prévision météo, en Ruby,

@@ -3,7 +3,7 @@ layout: post
 title: "Écrire un DSL en Ruby facilement avec Docile"
 date: 2013-08-14 10:41
 legacy: true
-tags: [ruby, dsl]
+tags: [ruby]
 ---
 
 

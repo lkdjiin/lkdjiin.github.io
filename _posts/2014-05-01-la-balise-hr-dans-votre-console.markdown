@@ -3,7 +3,7 @@ layout: post
 title: "La balise hr dans votre console"
 date: 2014-05-01 16:46
 legacy: true
-tags: [bash, débutant, application]
+tags: [bash]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 43: Économie, la population"
 date: 2013-12-13 21:36
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

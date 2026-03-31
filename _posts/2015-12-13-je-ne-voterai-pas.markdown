@@ -3,7 +3,7 @@ layout: post
 title: "Je ne voterai pas"
 date: 2015-12-13 17:13
 legacy: true
-tags: opinion
+tags: 
 ---
 
 Il est 16h00, nous sommes le 13 décembre 2015, le FN va peut-être remporter

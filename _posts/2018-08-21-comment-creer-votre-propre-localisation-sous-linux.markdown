@@ -3,7 +3,7 @@ layout: post
 title: "Comment créer votre propre localisation sous Linux"
 date: 2018-08-21 13:20
 legacy: true
-tags: [ linux, configuration, date, localisation, locale, lang, lc_time ]
+tags: [ lin lc_ ]
 ---
 
 Un article récent 

@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés: le croisement en deux points"
 date: 2013-09-15 11:40
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

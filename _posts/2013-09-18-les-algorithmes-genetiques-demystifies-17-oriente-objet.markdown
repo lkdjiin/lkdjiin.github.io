@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés 17: Orienté Objet"
 date: 2013-09-18 10:06
 legacy: true
-tags: [algorithme génétique, ruby]
+tags: [ génétique, ruby]
 ---
 
 

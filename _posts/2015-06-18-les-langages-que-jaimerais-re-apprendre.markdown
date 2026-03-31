@@ -3,7 +3,7 @@ layout: post
 title: "Les langages que j'aimerais (ré)apprendre"
 date: 2015-06-18 10:46
 legacy: true
-tags: [langage, R, ruby, java, assembleur, C, elm, julia]
+ts: [langage, R, ruby, java, assembleur, C, elm, julia]
 ---
 
 Ça fait 5 ans que je fais presque exclusivement du Ruby.  J'ai envie que ça

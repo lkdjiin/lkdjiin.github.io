@@ -3,7 +3,7 @@ layout: post
 title: "Créer facilement des thèmes pour Vim"
 date: 2014-06-07 21:12
 legacy: true
-tags: [débutant, vim, thème]
+tags: [ vim]
 ---
 
 

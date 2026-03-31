@@ -3,7 +3,7 @@ layout: post
 title: "Trois bibliothèques de fonctions pour écrire vos plugins Vim"
 date: 2014-06-08 21:27
 legacy: true
-tags: [intermédiaire, vim, plugin]
+tags: [ vim, plugin]
 ---
 
 

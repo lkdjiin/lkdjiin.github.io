@@ -3,7 +3,7 @@ layout: post
 title: "Le système binaire"
 date: 2015-06-04 13:55
 legacy: true
-tags: [binaire, boole, débutant]
+tags: [ ]
 ---
 
 

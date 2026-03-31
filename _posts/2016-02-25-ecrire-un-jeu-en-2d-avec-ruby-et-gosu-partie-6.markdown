@@ -3,7 +3,7 @@ layout: post
 title: "Écrire un jeu en 2d avec Ruby et Gosu - partie 6"
 date: 2016-02-25 11:37
 legacy: true
-tags: [ruby, gosu, jeu, 2d]
+tags: [ruby, gosu, jeu]
 ---
 
 Pour augmenter l'effet dramatique lorsque le joueur perd une vie, je voudrais

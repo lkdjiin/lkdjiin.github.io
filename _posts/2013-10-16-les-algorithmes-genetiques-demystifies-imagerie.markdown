@@ -3,7 +3,7 @@ layout: post
 title: "Les algorithmes génétiques démystifiés: Imagerie"
 date: 2013-10-16 16:31
 legacy: true
-tags: [algorithme génétique, javascript]
+tags: [ génétique, javascript]
 ---
 
 

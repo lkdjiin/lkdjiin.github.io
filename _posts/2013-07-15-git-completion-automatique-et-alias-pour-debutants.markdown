@@ -3,7 +3,7 @@ layout: post
 title: "Git: complétion automatique et alias pour débutants"
 date: 2013-07-15 07:50
 legacy: true
-tags: [git]
+tags: []
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Plugin vim-refactor pour Ruby"
 date: 2014-04-15 21:23
 legacy: true
-tags: [débutant, vim, plugin, ruby, refactoring]
+tags: [ vim, plugin, ruby]
 ---
 
 

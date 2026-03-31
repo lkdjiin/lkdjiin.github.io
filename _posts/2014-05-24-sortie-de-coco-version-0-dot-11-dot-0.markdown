@@ -3,7 +3,7 @@ layout: post
 title: "Sortie de Coco version 0.11.0"
 date: 2014-05-24 20:59
 legacy: true
-tags: [coco, ruby, gem, annonce]
+tags: [coco, ruby]
 ---
 
 Je viens juste de mettre en ligne la version 0.11.0 de Coco, une gem de

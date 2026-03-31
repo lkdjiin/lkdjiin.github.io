@@ -3,7 +3,7 @@ layout: post
 title: "Vim - Un plugin pour markdown - partie 8"
 date: 2014-03-31 20:58
 legacy: true
-tags: [vim, débutant, markdown, plugin, vader]
+tags: [vim, markdown, plugin]
 ---
 
 

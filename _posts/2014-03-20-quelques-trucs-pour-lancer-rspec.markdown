@@ -3,7 +3,7 @@ layout: post
 title: "Quelques trucs pour lancer Rspec"
 date: 2014-03-20 21:06
 legacy: true
-tags: [débutant, ruby, rspec, test]
+tags: [ ruby]
 ---
 
 

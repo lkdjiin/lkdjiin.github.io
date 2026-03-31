@@ -3,7 +3,7 @@ layout: post
 title: "Exercise Ruby - Reduce ranges - d'autres solutions"
 date: 2014-07-02 21:03
 legacy: true
-tags: [ruby, intermédiaire]
+tags: [ruby]
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "De Linux (Debian) vers OS X - Supprimer un fichier dans le finder"
 date: 2014-02-26 20:52
 legacy: true
-tags: [linux, debian, os x, débutant]
+tags: [ ]
 ---
 
 

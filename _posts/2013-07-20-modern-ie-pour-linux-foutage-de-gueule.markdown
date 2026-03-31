@@ -3,7 +3,7 @@ layout: post
 title: "Modern IE pour Linux: foutage de gueule"
 date: 2013-07-20 08:44
 legacy: true
-tags: [opinion, linux]
+tags: [ linux ]
 ---
 
 **Question:** «Que doit faire régulièrement un développeur du web ?»

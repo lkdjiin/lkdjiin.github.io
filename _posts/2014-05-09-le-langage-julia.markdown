@@ -3,7 +3,7 @@ layout: post
 title: "Le langage Julia"
 date: 2014-05-09 21:27
 legacy: true
-tags: [intermédiaire, julia, programmation fonctionnelle]
+tags: [ julia, programmation fonctionnelle]
 ---
 
 
