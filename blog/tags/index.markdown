@@ -8,7 +8,8 @@ permalink: /blog/tags/
   <h1 class="page-heading">Tags</h1>
 
   <ul class="tag-list">
-    {%- for tag in site.tags -%}
+    {%- assign sorted_tags = site.tags | sort_hash_keys -%}
+    {%- for tag in sorted_tags -%}
       <li>
         <a href="{{ tag[0] | tag_url }}">{{ tag[0] }}</a>
         <span class="post-meta">({{ tag[1].size }})</span>
