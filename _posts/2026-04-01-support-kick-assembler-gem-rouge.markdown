@@ -7,7 +7,7 @@ tags: [ ruby, 6502 ]
 ---
 
 Ça n'était pas drôle d'écrire des articles sur l'assembleur 6502 et de voir que
-les bouts de code était moches et ne pouvait pas être bien
+les bouts de code était moches et que la syntaxe n'était pas bien
 mise en évidence (_highlight_).
 
 <!-- more -->
