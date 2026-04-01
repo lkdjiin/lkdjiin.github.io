@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Support de la syntaxe Kick Assembler dans la gem Rouge</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-04-01T08:00:00+02:00" itemprop="datePublished">
+        1 avril 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/ruby/">ruby</a><a href="/blog/tags/6502/">6502</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Ça n’était pas drôle d’écrire des articles sur l’assembleur 6502 et de voir que
+les bouts de code était moches et ne pouvait pas être bien
+mise en évidence (<em>highlight</em>).</p>
+
+<!-- more -->
+
+<p>En effet la gem <strong>Rouge</strong>, qui est utilisée par <strong>Jekyll</strong> pour le <em>syntax highlighting</em>
+ne prend pas en compte la syntaxe (parfois particulière) de l’assembleur
+<strong>Kick Assembler</strong>.</p>
+
+<p>J’ai donc écrit un lexer pour cette gem :</p>
+
+<p>Avant</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">.const</span> <span class="nv">COLOR</span> <span class="err">=</span> <span class="kc">$</span><span class="nv">a286</span>
+<span class="nl">start:</span>
+  <span class="nf">jsr</span> <span class="nv">init_screen</span>
+  <span class="nf">lda</span> <span class="kc">$</span><span class="nv">d01a</span> <span class="o">//</span> <span class="nv">INTERRUPT_CONTROL</span>
+  <span class="nf">ora</span> <span class="err">#</span><span class="o">%</span><span class="mi">00000001</span>
+  <span class="nf">sta</span> <span class="kc">$</span><span class="nv">d01a</span>
+
+<span class="nl">init_screen:</span> <span class="err">{</span>
+  <span class="nf">ldx</span> <span class="err">#</span><span class="mi">0</span>
+  <span class="nf">stx</span> <span class="kc">$</span><span class="nv">d020</span> <span class="o">//</span> <span class="nv">border</span>
+  <span class="nf">stx</span> <span class="kc">$</span><span class="nv">d021</span> <span class="o">//</span> <span class="nv">background</span>
+  <span class="nf">rts</span>
+<span class="err">}</span></code></pre></figure>
+
+<p>Après</p>
+
+<figure class="highlight"><pre><code class="language-kickass" data-lang="kickass"><span class="kc">.const</span> <span class="n">COLOR</span> <span class="o">=</span> <span class="m">$a286</span>
+<span class="nl">start:</span>
+  <span class="k">jsr</span> <span class="n">init_screen</span>
+  <span class="k">lda</span> <span class="m">$d01a</span> <span class="c1">// INTERRUPT_CONTROL</span>
+  <span class="k">ora</span> <span class="m">#%00000001</span>
+  <span class="k">sta</span> <span class="m">$d01a</span>
+
+<span class="nl">init_screen:</span> <span class="p">{</span>
+  <span class="k">ldx</span> <span class="m">#0</span>
+  <span class="k">stx</span> <span class="m">$d020</span> <span class="c1">// border</span>
+  <span class="k">stx</span> <span class="m">$d021</span> <span class="c1">// background</span>
+  <span class="k">rts</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Pour l’instant j’utilise ma branche directement dans le Gemfile de Jekyll :</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">gem</span> <span class="s2">"rouge"</span><span class="p">,</span> <span class="ss">git: </span><span class="s1">'git@github.com:lkdjiin/rouge.git'</span><span class="p">,</span> <span class="ss">branch: </span><span class="s1">'kickass'</span></code></pre></figure>
+
+<p>Il semblerait que <a href="https://github.com/rouge-ruby/rouge/pull/2262">ma PR</a> soit
+sur le point d’être acceptée. Sinon j’en ferais sûrement un plugin.</p>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/03/18/now-playing/" title="Article précédent: "Now playing" dans le terminal">&laquo; "Now playing" dans le terminal</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/04/01/support-kick-assembler-gem-rouge/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
