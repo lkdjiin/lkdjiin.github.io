@@ -1,5 +1,7 @@
 source "https://rubygems.org"
 
+# My kickass branch is merged in Rouge, but will be available only
+# with the next Rouge version (4.8).
 gem "rouge", git: 'git@github.com:lkdjiin/rouge.git', branch: 'kickass'
 
 # Hello! This is where you manage which Jekyll version is used to run.
