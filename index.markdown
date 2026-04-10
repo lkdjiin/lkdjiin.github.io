@@ -4,4 +4,5 @@
 
 layout: home
 limit: 20
+show_excerpts: true
 ---
