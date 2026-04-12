@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Theme switcher pour Alacritty</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-04-12T08:00:00+02:00" itemprop="datePublished">
+        12 avril 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/fish/">fish</a><a href="/blog/tags/bash/">bash</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>J’aime bien <a href="https://alacritty.org/">Alacritty</a>. En ce moment c’est mon terminal par défaut. Un autre truc
+que j’aime bien, c’est passer d’un thème sombre à un thème clair et vice versa
+dans les terminaux et les éditeurs. Et généralement je fais ça plusieurs fois
+par jour.</p>
+
+<p>J’ai regardé les solutions existantes pour modifier le thème d’Alacritty, et j’ai décidé de ne pas les utiliser.
+Je vais plutôt bricoler la mienne. Mais pourquoi ?</p>
+
+<ul>
+  <li>C’est toujours intéressant de faire par soi-même. Il y a souvent quelque chose
+à en tirer, à apprendre.</li>
+  <li>Les solutions existantes ne font pas <em>exactement</em> ce que je veux.</li>
+  <li>Je préfère éviter les plugins. Au début c’est rapide, puis
+avant de réaliser ce qu’il se passe on a installé des tas de trucs et on se
+retrouve aux commandes d’une usine à gaz.</li>
+  <li>Beaucoup de ce qui existe est basé sur Rust et son gestionnaire de package. Je n’ai pas ça sur ma machine,
+et autant éviter une dépendance de plus…</li>
+</ul>
+
+<!-- more -->
+
+<h2 id="configuration-du-thème">Configuration du thème</h2>
+
+<p>Alacritty a un fichier de configuration plutôt clair, au format <a href="https://toml.io/en/">toml</a>.
+Le mien se trouve à <code class="language-plaintext highlighter-rouge">~/.alacritty.toml</code>.
+Sous la balise <code class="language-plaintext highlighter-rouge">[general]</code>, on renseigne la clé <code class="language-plaintext highlighter-rouge">import</code> avec le fichier qui
+contient le thème. Ici j’utilise le thème <code class="language-plaintext highlighter-rouge">ashes_light</code> :</p>
+
+<figure class="highlight"><pre><code class="language-toml" data-lang="toml"><span class="k">[</span><span class="n">general</span><span class="k">]</span>
+<span class="n">import</span> <span class="o">=</span><span class="w"> </span><span class="p">[</span>
+  <span class="s">"~/.config/alacritty/themes/ashes_light.toml"</span><span class="p">,</span>
+<span class="p">]</span></code></pre></figure>
+
+<p>L’objectif du <em>theme switcher</em> sera donc de modifier cette ligne dans le fichier
+de config.</p>
+
+<h2 id="idée-n1---sed">Idée n°1 - sed</h2>
+
+<p>Dès lors qu’il faut modifier une ligne dans un fichier, je pense immanquablement
+à <code class="language-plaintext highlighter-rouge">sed</code>. Je vais utiliser l’expression <code class="language-plaintext highlighter-rouge">s/regex/substitution/</code>. Sed remplacera
+la regex par substitution. Reste à trouver une regex qui va correspondre à la ligne
+<code class="language-plaintext highlighter-rouge">"~/.config/alacritty/themes/ashes_light.toml"</code>. Sans correspondre à d’autres lignes
+bien sûr. Pas besoin de se prendre la tête, le format toml pouvant contenir des
+commentaires je peux ajouter un marqueur dans le fichier de config :</p>
+
+<figure class="highlight"><pre><code class="language-toml" data-lang="toml"><span class="k">[</span><span class="n">general</span><span class="k">]</span>
+<span class="n">import</span> <span class="o">=</span><span class="w"> </span><span class="p">[</span>
+  <span class="s">"~/.config/alacritty/themes/ashes_light.toml"</span><span class="p">,</span> <span class="c"># THEME SWITCHER</span>
+<span class="p">]</span></code></pre></figure>
+
+<p>Je teste en ligne de commande, et ça fonctionne. De cette manière je peux
+remplacer la ligne qui m’intéresse dans le fichier de config par ce que je veux :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-e</span> <span class="s1">'s/.*THEME SWITCHER/foobar/'</span> test.toml
+<span class="o">[</span>general]
+import <span class="o">=</span> <span class="o">[</span>
+foobar
+<span class="o">]</span></code></pre></figure>
+
+<p>Les exemples qui suivent sont en Fish, et non en Bash. La seule différence sera
+dans la déclaration des variables.</p>
+
+<ul>
+  <li>Bash : <code class="language-plaintext highlighter-rouge">foo = "bar"</code></li>
+  <li>Fish : <code class="language-plaintext highlighter-rouge">set foo "bar"</code></li>
+</ul>
+
+<p>Pour remplacer la ligne par quelque chose de plus utile que simplement <code class="language-plaintext highlighter-rouge">foobar</code>
+il va falloir corser un peu la commande de substitution :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">set </span>new_theme <span class="s2">"new_theme_name"</span>
+<span class="nv">$ </span><span class="nb">set </span>line <span class="s1">'  "~/.config/alacritty/themes/'</span><span class="nv">$new_theme</span><span class="s1">'.toml", # THEME SWITCHER'</span>
+<span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-e</span> <span class="s1">'s@.*THEME SWITCHER@'</span><span class="nv">$line</span><span class="s1">'@'</span> test.toml
+<span class="o">[</span>general]
+import <span class="o">=</span> <span class="o">[</span>
+  <span class="s2">"~/.config/alacritty/themes/new_theme_name.toml"</span>, <span class="c"># THEME SWITCHER</span>
+<span class="o">]</span></code></pre></figure>
+
+<p>Maintenant qu’on sait que ça fonctionne il faut effectuer le
+remplacement <em>pour de vrai</em> dans le fichier. Pour ça on peut utiliser l’option
+<code class="language-plaintext highlighter-rouge">-i</code> de sed (pour <em>in place</em>) :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s1">'s@.*THEME SWITCHER@'</span><span class="nv">$line</span><span class="s1">'@'</span> test.toml</code></pre></figure>
+
+<p>On en sait suffisament pour écrire deux commandes, <code class="language-plaintext highlighter-rouge">dark</code> et <code class="language-plaintext highlighter-rouge">light</code> :</p>
+
+<p>fichier dark</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/fish</span>
+<span class="nb">set </span>new_theme <span class="s2">"autumn"</span>
+<span class="nb">set </span>line <span class="s1">'  "~/.config/alacritty/themes/'</span><span class="nv">$new_theme</span><span class="s1">'.toml", # THEME SWITCHER'</span>
+<span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s1">'s@.*THEME SWITCHER@'</span><span class="nv">$line</span><span class="s1">'@'</span> ~/.alacritty.toml</code></pre></figure>
+
+<p>fichier light</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/fish</span>
+<span class="nb">set </span>new_theme <span class="s2">"nord_light"</span>
+<span class="nb">set </span>line <span class="s1">'  "~/.config/alacritty/themes/'</span><span class="nv">$new_theme</span><span class="s1">'.toml", # THEME SWITCHER'</span>
+<span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s1">'s@.*THEME SWITCHER@'</span><span class="nv">$line</span><span class="s1">'@'</span> ~/.alacritty.toml</code></pre></figure>
+
+<p>Mais pour ce genre de chose je préfère écrire une fonction fish :</p>
+
+<p>fichier dark.fish</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="k">function </span>dark <span class="se">\</span>
+  <span class="nt">--description</span> <span class="s1">'Set alacritty dark theme'</span>
+
+    <span class="nb">set </span>new_theme <span class="s2">"autumn"</span>
+    <span class="nb">set </span>line <span class="s1">'  "~/.config/alacritty/themes/'</span><span class="nv">$new_theme</span><span class="s1">'.toml", # THEME SWITCHER'</span>
+    <span class="nb">sed</span> <span class="nt">-i</span> <span class="nt">-e</span> <span class="s1">'s@.*THEME SWITCHER@'</span><span class="nv">$line</span><span class="s1">'@'</span> ~/.alacritty.toml
+end</code></pre></figure>
+
+<p>Dès que je tape <code class="language-plaintext highlighter-rouge">dark</code> ou <code class="language-plaintext highlighter-rouge">light</code> dans un terminal, le thème change immédiatement.
+Ça marche car, par défaut, la config alacritty est en <em>live reload</em>. Elle se
+recharge automatiquement dès qu’on la modifie.</p>
+
+<p>On pourra aller plus loin en se basant sur cette méthode :</p>
+
+<ul>
+  <li>Supprimer la duplication avec une seule fonction <code class="language-plaintext highlighter-rouge">set-theme</code> qui prendra un
+argument. On pourra ainsi afficher n’importe quel thème. Et avec deux alias <code class="language-plaintext highlighter-rouge">dark</code> et <code class="language-plaintext highlighter-rouge">light</code> on garde le même comportement.</li>
+  <li>Offrir une liste de thème dans laquelle piocher.</li>
+  <li>Ne pas s’arrêter à modifier le thème. On peut faire pareil pour la police, l’opacité, etc.</li>
+</ul>
+
+<p>Par contre <code class="language-plaintext highlighter-rouge">sed</code> à tendance à être un peu cryptique ;) Et de plus je ne suis pas
+convaincu que modifier directement le fichier de config soit une bonne chose.
+Alors j’ai pensé à une autre méthode.</p>
+
+<h2 id="idée-n2---configuration-déportée">Idée n°2 - configuration déportée</h2>
+
+<p>Je vais utiliser la capacité d’importation de fichier dans toml pour ne pas
+avoir à toucher au fichier de config principal. Je fais un copier/coller d’un
+thème, que je vais nommer <code class="language-plaintext highlighter-rouge">current</code> :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cp</span> ~/.config/alacritty/themes/autumn.toml ~/.config/alacritty/themes/current.toml</code></pre></figure>
+
+<p>Et je modifie le fichier de config principal d’Alacritty (dans ~/.alacritty.toml)
+pour utiliser ce “nouveau” thème :</p>
+
+<figure class="highlight"><pre><code class="language-toml" data-lang="toml"><span class="k">[</span><span class="n">general</span><span class="k">]</span>
+<span class="n">import</span> <span class="o">=</span><span class="w"> </span><span class="p">[</span>
+  <span class="s">"~/.config/alacritty/themes/current.toml"</span><span class="p">,</span>
+<span class="p">]</span></code></pre></figure>
+
+<p>Pour changer de thème, plus besoin de toucher au fichier de config
+principal, il suffit de modifier le thème que j’ai appelé <code class="language-plaintext highlighter-rouge">current</code>.
+Par exemple :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">cp</span> ~/.config/alacritty/themes/ashes_light.toml ~/.config/alacritty/themes/current.toml</code></pre></figure>
+
+<p>Sauf que maintenant, le <em>live_reload</em> ne fonctionne plus puisqu’on n’a pas
+touché au fichier de config. Pour remédier à cela il suffit de faire croire à
+Alacritty que la config a été modifiée et le tour est joué :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">touch</span> ~/.alacritty.toml</code></pre></figure>
+
+<p>Comme pour la méthode précédente, on pourra faire des commandes pour le shell.
+Par exemple :</p>
+
+<p>fichier light</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/bash</span>
+<span class="nb">cp</span> ~/.config/alacritty/themes/ashes_light.toml ~/.config/alacritty/themes/current.toml
+<span class="nb">touch</span> ~/.alacritty.toml</code></pre></figure>
+
+<p>fichier dark</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/bash</span>
+<span class="nb">cp</span> ~/.config/alacritty/themes/autumn.toml ~/.config/alacritty/themes/current.toml
+<span class="nb">touch</span> ~/.alacritty.toml</code></pre></figure>
+
+<h2 id="fichier-de-configuration-de-notre-theme-switcher">Fichier de configuration de notre <em>theme switcher</em></h2>
+
+<p>Je n’ai pas envie de modifier les fichiers des commandes <code class="language-plaintext highlighter-rouge">light</code> et <code class="language-plaintext highlighter-rouge">dark</code>
+chaque fois que j’aurais envie de tester des nouveaux thèmes. Alors franchissons
+un pas en offrant un fichier de config à notre <em>theme switcher</em> ;)</p>
+
+<p>Il s’appelera <code class="language-plaintext highlighter-rouge">switcher.config</code> et sera placé dans le même dossier que tout les
+thèmes. Ça m’évitera de le chercher.</p>
+
+<p>Avec Bash :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">light_name <span class="o">=</span> <span class="s2">"ashes_light"</span>
+dark_name <span class="o">=</span> <span class="s2">"autumn"</span></code></pre></figure>
+
+<p>Avec Fish :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">set </span>light_name <span class="s2">"ashes_light"</span>
+<span class="nb">set </span>dark_name <span class="s2">"autumn"</span></code></pre></figure>
+
+<p>Et pour finir voici comment l’utiliser dans une commande Bash et/ou Fish :</p>
+
+<p>fichier light</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#!/bin/fish</span>
+<span class="nb">set dir</span> ~/.config/alacritty/themes
+<span class="nb">source</span> <span class="nv">$dir</span>/switcher.config
+<span class="nb">cp</span> <span class="nv">$dir</span>/<span class="nv">$light_name</span>.toml <span class="nv">$dir</span>/current.toml
+<span class="nb">touch</span> ~/.alacritty.toml</code></pre></figure>
+
+<p>Et comment l’utiliser dans une fonction Fish :</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="k">function </span>light <span class="se">\</span>
+  <span class="nt">--description</span> <span class="s1">'Set alacritty light theme'</span>
+
+  <span class="nb">set dir</span> ~/.config/alacritty/themes
+  <span class="nb">source</span> <span class="nv">$dir</span>/switcher.config
+  <span class="nb">cp</span> <span class="nv">$dir</span>/<span class="nv">$light_name</span>.toml <span class="nv">$dir</span>/current.toml
+  <span class="nb">touch</span> ~/.alacritty.toml
+end</code></pre></figure>
+
+<h2 id="une-dernière-remarque">Une dernière remarque</h2>
+
+<p>Ici le changement de thème dans Alacritty est juste un pretexte. Ces méthodes
+pourront être utilisées pour modifier les configurations d’à peu près n’importe quoi.</p>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/04/01/support-kick-assembler-gem-rouge/" title="Article précédent: Support de la syntaxe Kick Assembler dans la gem Rouge">&laquo; Support de la syntaxe Kick Assembler dans la gem Rouge</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/04/12/alacritty-theme-switcher/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
