@@ -1,0 +1,150 @@
+---
+layout: post
+title: "BLONK! un système d'exploitation éducatif"
+date: 2026-08-24 8:00
+comments: true
+tags: [ blonk! ]
+---
+
+L'objectif de cet article est de présenter le projet :
+de quoi il s'agit exactement, pourquoi le lancer, à qui
+il s'adresse et comment la série va procéder.
+
+<!-- more -->
+
+## Le projet BLONK!
+
+BLONK! est un système d'exploitation minimaliste pour PC x86, écrit entièrement
+à la main. Pas de Linux recyclé, pas de GRUB pour mâcher le travail, pas de
+bibliothèque toute faite. Le but, c'est de comprendre comment tout fonctionne.
+Quitte à faire des erreurs.
+
+_L'origine du nom, BLONK!, vient de la période pendant laquelle je faisais la
+mise au point du système. Lors des tests j'avais pris l'habitude d'afficher BLK
+en haut de l'écran. B pour le module de boot, L pour le chargeur (loader) et
+K quand on entrait enfin dans le kernel. J'ai ajouter ON pour le rendre
+prononçable ;) et un point d'exclamation parce que BLONK n'est pas un mot qu'on
+peut murmurer._
+
+Un OS moderne c'est des dizaines de millions de
+lignes de code entre le bouton power et l'écran de connexion. Personne ne peut
+lire ça. Mais on peut reconstruire une version miniature. Partir de rien et
+arriver à un système qui démarre, affiche, écoute le clavier et discute avec
+nous dans un shell.
+
+
+## Pourquoi écrire son propre OS ?
+
+Écrire son propre système d'exploitation est le moyen le plus direct de
+comprendre des trucs comme le BIOS, la RAM, les modes du CPU, les interruptions,
+les systèmes de fichier, les processus, etc.
+Pas à travers des milliers de pages de doc et de littérature, mais
+en construisant.
+On écrit quelques centaines d'octets, des fois quelques dizaines, on redémarre, rien ne
+s'affiche, on cherche pourquoi, on comprend quelque chose, on recommence. C'est
+long, c'est souvent frustrant, mais ça paye.
+
+C'est aussi l'occasion de se confronter avec des notions que le développement
+classique ignore (parce qu'on n'en a pas besoin) : la segmentation, la carte mémoire,
+les contrôleurs matériel, ce que fait vraiment un compilateur, pourquoi une fonction a
+besoin d'une pile, ou ce que devient un programme entre le moment où il est
+un fichier sur disque et celui où il s'exécute en mémoire.
+
+
+## À qui ça s'adresse ?
+
+Clairement, ce n'est pas un projet pour débuter en programmation.
+
+Quelques pré-requis :
+
+- Quelques années d'expérience en développement. Je ne vais pas expliquer les
+  bases.
+- Avoir déjà utilisé l'assembleur. Inutile d'être productif, mais il faut en
+  connaître les contraintes : registres, adresses mémoire, savoir jongler entre
+  décimal, binaire et hexadécimal.
+- Avoir déjà utilisé un langage compilé. Pas besoin que ce soit le C en
+  particulier. Mais on va se servir du C.
+- Une bonne dose de curiosité pour le fonctionnement interne des machines.
+
+Si ça vous parle, bienvenue. Sinon, la série peut aussi se lire en
+curieux : chaque article explique ce qu'il fait, même si reproduire le code
+demandera un peu plus de préparation.
+
+
+## La méthode
+
+Une règle simple rythmera toute la série : un article = une fonctionnalité = un commit
+
+Chaque article fait avancer le système d'un petit pas mesurable.
+
+Deux partis pris :
+
+- **La pratique avant la théorie.** On écrit le code d'abord, on l'observe
+  tourner, puis on explique ce qui s'est passé.
+- **Tout se vérifie.** Chaque étape est testée dans l'émulateur, puis sur du
+  vrai matériel. Si ça ne tourne pas sur une machine physique, ce n'est pas
+  terminé.
+
+
+## Le pari du matériel réel
+
+Un émulateur comme Qemu accélère énormément le développement : pas besoin de
+redémarrer une machine ni de copier sur clé USB à chaque essai. Mais un
+émulateur est souvent trop tolérant.
+
+C'est pourquoi BLONK! a une exigence supplémentaire : il doit fonctionner sur
+mes trois ordinateurs physiques de test. Un laptop de 2016, un laptop de 2014
+et un desktop de 2006. Trois générations de matériel, trois BIOS différents,
+trois occasions de découvrir que "ça marche dans Qemu" ne veut pas dire grand chose ;)
+
+
+## L'architecture en un coup d'œil
+
+Sans rien dévoiler de la suite, voici un petit teaser du
+système. Au démarrage, trois modules se passent le relais :
+
+1. **Le secteur de boot**, 512 octets, que le BIOS charge en
+   mémoire à l'adresse `0x7c00` avant de lui donner la main. En 16 bits, en
+   mode dit _réel_, avec toutes les limitations que cela implique.
+2. **Le chargeur**, lu sur le disque par le premier module et installé à
+   l'adresse `0x600`. Son rôle : décoder le format exécutable du noyau,
+   copier ses segments en mémoire, basculer le processeur en mode protégé
+   32 bits, puis sauter au point d'entrée du kernel.
+3. **Le kernel**, écrit en C et chargé à l'adresse `0x9000`. C'est lui qui fait
+   le taf : installer les interruptions, piloter l'écran et le
+   clavier, et un tas d'autres trucs.
+
+
+## Les outils
+
+La boîte à outils n'est pas bien lourde :
+
+- **nasm** : l'assembleur, utilisé pour le secteur de boot et le chargeur
+- **gcc** et **ld** : un compilateur et un éditeur de liens. Assez vite on
+  compilera nos propres versions pour produire du code x86 32 bits autonome, sans supposer la
+  présence d'un système hôte. Écrire un OS avec le GCC de sa distribution est
+  possible mais source de surprises
+- **make** : le chef d'orchestre pour la construction
+- **qemu** : l'émulateur de PC
+- **ndisasm**, **hexdump** et **readelf** : les outils d'inspection, pour regarder ce que
+  l'assembleur et le compilateur ont vraiment produit, octet par octet.
+
+Tout est libre et disponible sur n'importe quelle distribution Linux.
+
+
+## Conclusion
+
+Voilà le décor planté : un OS écrit à la main, une série d'articles qui
+progresse fonctionnalité par fonctionnalité, et un banc d'essai composé de
+Qemu et de trois vieilles machines bien réelles.
+
+Dès le prochain article, on commence : premier secteur
+de boot, 512 octets qui prennent la main au démarrage et affichent un message
+à l'écran.
+
+
+## Références
+
+- [Le wiki d'osdev.org](https://wiki.osdev.org/)
+- [L'assembleur nasm](https://www.nasm.us/)
+- [L'émulateur Qemu](https://www.qemu.org/)
