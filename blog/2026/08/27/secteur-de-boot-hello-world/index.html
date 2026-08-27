@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Secteur de boot : Hello, world!</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-08-27T08:00:00+02:00" itemprop="datePublished">
+        27 août 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/blonk%21/">blonk!</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>L’objectif est de prendre la main au démarrage de l’ordinateur en affichant un
+message sur l’écran, et rien de plus.</p>
+
+<p><img class="center" src="/images/blonk-001-01.png" /></p>
+
+<!-- more -->
+
+<h2 id="power-on">Power On</h2>
+
+<p>Quand on allume un ordinateur (un PC), le BIOS cherche un périphérique (disque dur, clé
+USB, disquette, …) à partir duquel charger un code d’amorçage.
+Sur les PC ce code est celui du tout premier secteur du périphérique d’amorçage,
+soit 512 octets, pas un de plus, pas un de moins.
+Le BIOS place le contenu de ce secteur en mémoire à l’adresse <code class="language-plaintext highlighter-rouge">0x7c00</code>.
+Il vérifie la signature de <em>boot</em>, qui sont les deux derniers octets de ce bloc
+de 512 octets. Si c’est la bonne (<code class="language-plaintext highlighter-rouge">0x55 0xaa</code>) il lance l’exécution à l’adresse
+<code class="language-plaintext highlighter-rouge">0x7c00</code>. Sinon il essaie le périphérique suivant sur sa liste.</p>
+
+<h2 id="le-code-de-base">Le code de base</h2>
+
+<p>C’est assez simple puisque le BIOS nous fournit une fonction pour écrire une
+chaîne de caractères. Mais il y a quand même plusieurs subtilitées à prendre en
+compte, dues au fonctionnement du processeur x86. Le code est écrit pour
+<a href="https://www.nasm.us/">nasm</a>.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">org</span> <span class="mh">0x7c00</span>      <span class="c1">; (1)</span>
+<span class="nf">bits</span> <span class="mi">16</span>         <span class="c1">; (2)</span>
+
+<span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>      <span class="c1">; (3)</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>      <span class="c1">; (4)</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="mh">0x7c00</span>  <span class="c1">; (5)</span>
+<span class="nf">cld</span>             <span class="c1">; (6)</span>
+
+<span class="nf">mov</span> <span class="nb">si</span><span class="p">,</span> <span class="nv">welcome</span>   <span class="c1">; (7)</span>
+<span class="nf">call</span> <span class="nv">print_string</span> <span class="c1">; (8)</span>
+
+<span class="nf">jmp</span> <span class="kc">$</span>             <span class="c1">; (9)</span>
+
+<span class="nf">welcome</span> <span class="nv">db</span> <span class="err">'</span><span class="nv">Welcome</span> <span class="nv">and</span> <span class="nv">bienvenue</span><span class="err">'</span><span class="p">,</span> <span class="mh">0x0d</span><span class="p">,</span> <span class="mh">0x0a</span><span class="p">,</span> <span class="mi">0</span> <span class="c1">; (10)</span>
+
+<span class="nl">print_string:</span>      <span class="c1">; (11)</span>
+  <span class="nf">lodsb</span>            <span class="c1">; (12)</span>
+  <span class="nf">or</span> <span class="nb">al</span><span class="p">,</span> <span class="nb">al</span>        <span class="c1">; (13)</span>
+  <span class="nf">jz</span> <span class="nv">.done</span>         <span class="c1">; (14)</span>
+  <span class="nf">mov</span> <span class="nb">ah</span><span class="p">,</span> <span class="mh">0x0e</span>     <span class="c1">; (15)</span>
+  <span class="nf">mov</span> <span class="nb">bx</span><span class="p">,</span> <span class="mh">0x0007</span>   <span class="c1">; (16)</span>
+  <span class="nf">int</span> <span class="mh">0x10</span>         <span class="c1">; (17)</span>
+  <span class="nf">jmp</span> <span class="nv">print_string</span> <span class="c1">; (18)</span>
+<span class="nl">.done:</span>
+  <span class="nf">ret</span>              <span class="c1">; (19)</span>
+
+<span class="kd">times</span> <span class="mi">510</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">db</span> <span class="mi">0</span> <span class="c1">; (20)</span>
+<span class="kd">dw</span> <span class="mh">0xaa55</span>             <span class="c1">; (21)</span></code></pre></figure>
+
+<h3 id="explications-ligne-par-ligne">Explications ligne par ligne</h3>
+
+<p>Comme c’est le premier programme en assembleur de la série, que c’est peut-être
+la première fois que vous utilisez nasm, je vais le décortiquer ligne après
+ligne. Je ne le ferais plus autant par la suite.</p>
+
+<p>(1) <code class="language-plaintext highlighter-rouge">org 0x7c00</code></p>
+
+<p>C’est une directive pour l’assembleur, signifiant que le code qui suit démarre
+à l’adresse 0x7c00. Ainsi les adresses absolues tomberont aux
+bons endroits. On peut vérifier ces adresses, encodées en langage machine, en désassemblant le binaire :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ndisasm -b 16 -o 0x7c00 boot | head -7
+00007C00  31C0              xor ax,ax
+00007C02  8ED8              mov ds,ax
+00007C04  8EC0              mov es,ax
+00007C06  8ED0              mov ss,ax
+00007C08  BC007C            mov sp,0x7c00
+00007C0B  FC                cld
+00007C0C  BE147C            mov si,0x7c14 ; &lt;--- Ici par exemple
+</code></pre></div></div>
+
+<p>(2) <code class="language-plaintext highlighter-rouge">bits 16</code></p>
+
+<p>Là aussi, c’est une directive. Elle signale à l’assembleur de générer du code
+16 bits. Au démarrage de l’ordinateur, le CPU est en 16 bits, ce que Intel nomme
+le mode réèl.</p>
+
+<p>(3) <code class="language-plaintext highlighter-rouge">xor ax, ax</code></p>
+
+<p>La manière classique pour x86 de charger un registre à zéro. C’est
+équivalent à <code class="language-plaintext highlighter-rouge">mov ax, 0</code>, sauf que ça produit un code machine plus court.
+Comparaison :</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>code machine</th>
+      <th>assembleur</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">B80000</code></td>
+      <td><code class="language-plaintext highlighter-rouge">mov ax,0x0</code></td>
+    </tr>
+  </tbody>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">31C0</code></td>
+      <td><code class="language-plaintext highlighter-rouge">xor ax,ax</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>(4) <code class="language-plaintext highlighter-rouge">mov ds, ax</code></p>
+
+<p>On charge le registre DS (data segment) à 0. Et dans les lignes suivantes on
+fait pareil avec ES (extra segment) et SS (stack segment).</p>
+
+<p>Note 1 : on ne peut pas
+charger les registres de segment directement, par exemple <code class="language-plaintext highlighter-rouge">mov ds, 0</code>. C’est
+pourquoi on passe par AX.</p>
+
+<p>Note 2 : en mode réel, une adresse est <strong>toujours</strong> un couple <code class="language-plaintext highlighter-rouge">segment:offset</code>.
+C’est le moyen qu’a choisi Intel pour pouvoir adresser plus de 64 Ko.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>adresse physique = segment × 16 + offset
+</code></pre></div></div>
+
+<p>Les deux couples suivants représente la même adresse :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0000:7C00  = 0x0000×16 + 0x7C00 = 0x7C00
+07C0:0000  = 0x07C0×16 + 0x0000 = 0x7C00
+</code></pre></div></div>
+
+<p>(5) <code class="language-plaintext highlighter-rouge">mov sp, 0x7c00</code></p>
+
+<p>SP est le registre <em>stack pointer</em>. Il représente le haut de la pile. Comme la
+pile descend, on peut la placer juste avant notre code. Cette zone est pour
+l’instant un endroit relativement libre et sans risque pour la pile.</p>
+
+<p>(6) <code class="language-plaintext highlighter-rouge">cld</code></p>
+
+<p>Cette instruction signifie <em>Clear Direction Flag</em>. Elle met à zéro le <em>flag</em> de
+direction pour que les instructions de copie fonctionnent dans le sens normal,
+vers l’avant. En théorie les <em>flags</em> peuvent être dans n’importe quel état
+lorsque le BIOS passe la main à votre <em>boot sector</em>.</p>
+
+<p>(7) <code class="language-plaintext highlighter-rouge">mov si, welcome</code></p>
+
+<p>Charge le registre SI avec l’adresse du message à afficher. Pourquoi ? Parce que
+c’est ce que demande la fonction BIOS qu’on utilise plus loin.</p>
+
+<p>(8) <code class="language-plaintext highlighter-rouge">call print_string</code></p>
+
+<p>J’aurais pu mettre directement le code pour afficher le message, mais j’ai
+préféré faire plus propre avec un appel de routine.</p>
+
+<p>(9) <code class="language-plaintext highlighter-rouge">jmp $</code></p>
+
+<p>Lorsqu’on revient de la routine <code class="language-plaintext highlighter-rouge">print_string</code> on retombe ici. <code class="language-plaintext highlighter-rouge">$</code> est une sorte
+de variable magique de l’assembleur nasm, qui est remplacée par l’adresse courante
+lors de l’assemblage. On a donc une boucle infinie. C’est l’équivalent de :</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nl">loop:</span>
+  <span class="nf">jmp</span> <span class="nv">loop</span></code></pre></figure>
+
+<p>(10) <code class="language-plaintext highlighter-rouge">welcome db 'Welcome and bienvenue', 0x0d, 0x0a, 0</code></p>
+
+<p>Le message à afficher. Déclarer avec <code class="language-plaintext highlighter-rouge">db</code> : <em>declare byte(s)</em>. Notez qu’on
+inclus passage à la ligne suivante, retour à la ligne, et zéro terminal.</p>
+
+<p>(11) <code class="language-plaintext highlighter-rouge">print_string:</code></p>
+
+<p>Le <em>label</em> <code class="language-plaintext highlighter-rouge">print_string</code>. Un <em>label</em> est convertit en adresse lors de l’assemblage.
+C’est pourquoi on a pu faire plus tôt un <code class="language-plaintext highlighter-rouge">call print_string</code>.</p>
+
+<p>(12) <code class="language-plaintext highlighter-rouge">lodsb</code></p>
+
+<p>C’est une instruction de copie. Elle charge l’octet pointé par DS:SI dans AL puis
+incrémente SI. Elle est ainsi prête à charger le prochain caractère du message.</p>
+
+<p>(13) <code class="language-plaintext highlighter-rouge">or al, al</code></p>
+
+<p>On teste le contenu de AL pour savoir si c’est zéro, ce qui indiquera la fin du
+message. Quel que soit X, <code class="language-plaintext highlighter-rouge">or X, X</code> produira zéro si et seulement si X == 0.</p>
+
+<p>(14) <code class="language-plaintext highlighter-rouge">jz .done</code></p>
+
+<p>Si c’est la fin du message (le dernier caractère lu était un zéro) on saute au
+<em>label</em> <code class="language-plaintext highlighter-rouge">.done</code>.</p>
+
+<p>(15) <code class="language-plaintext highlighter-rouge">mov ah, 0x0e</code></p>
+
+<p>C’est le numéro de la fonction de l’interruption 0x10 du BIOS.</p>
+
+<p>(16) <code class="language-plaintext highlighter-rouge">mov bx, 0x0007</code></p>
+
+<p>C’est la couleur du caractère qu’on va afficher.</p>
+
+<p>(17) <code class="language-plaintext highlighter-rouge">int 0x10</code></p>
+
+<p>Tout les infos nécessaires sont chargées dans les registres adéquats. On appelle
+le BIOS pour afficher un caractère.</p>
+
+<p>(18) <code class="language-plaintext highlighter-rouge">jmp print_string</code></p>
+
+<p>Au tour du caractère suivant.</p>
+
+<p>(19) <code class="language-plaintext highlighter-rouge">ret</code></p>
+
+<p>Le message est affiché, on sort de la routine.</p>
+
+<p>(20) <code class="language-plaintext highlighter-rouge">times 510-($-$$) db 0</code></p>
+
+<p>Un truc de nasm qui va remplir de zéro jusqu’au 510ème octet.</p>
+
+<p>(21) <code class="language-plaintext highlighter-rouge">dw 0xaa55</code></p>
+
+<p>La signature du <em>boot sector</em>.</p>
+
+<h3 id="assemblage-et-test-dans-qemu">Assemblage et test dans Qemu</h3>
+
+<p>À l’aide de nasm, on transforme le code source en un fichier binaire qu’on
+pourra ensuite utiliser comme secteur de boot :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nasm boot.nasm -f bin -o boot
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">boot.nasm</code> : le fichier à assembler</li>
+  <li><code class="language-plaintext highlighter-rouge">-f bin</code> : format binaire, aussi appelé plat, c’est à dire sans header</li>
+  <li><code class="language-plaintext highlighter-rouge">-o boot</code> : le nom du fichier en sortie</li>
+</ul>
+
+<p>Assurez vous que le fichier <code class="language-plaintext highlighter-rouge">boot</code> mesure bien exactement 512 octets.</p>
+
+<p>Puis on utilise l’émulateur de PC <a href="https://www.qemu.org/">Qemu</a> pour tester ce
+fichier binaire. Un émulateur ne remplace pas le matériel réel, mais il nous
+permet d’accélerer grandement la vitesse de développement.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-i386 -hda boot
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">-hda boot</code> : le fichier boot est utilisé comme image du premier disque dur</li>
+</ul>
+
+<h3 id="test-sur-ordinateur-physique">Test sur ordinateur physique</h3>
+
+<p>Je transfère le fichier <code class="language-plaintext highlighter-rouge">boot</code> sur une clé USB, que j’utilise pour <em>booter</em> sur
+trois ordinateurs de test. Deux laptops d’une dizaine d’années et un desktop de
+20 ans. D’abord il faut déterminer le nom du <em>device</em> à utiliser pour la clé USB :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo fdisk -l
+</code></pre></div></div>
+
+<p>Ensuite on copie le fichier sur la clé. Il va s’installer naturellement au
+début, donc sur le premier secteur :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo cp boot /dev/sdx   # &lt;&lt;&lt; remplacez x par la bonne lettre ;)
+</code></pre></div></div>
+
+<p>Attention quand même, si vous vous plantez de <em>device</em> vous perdez ses données.
+Vérifier plusieurs fois la commande.</p>
+
+<p>Sur les trois ordinateurs, deux affichent parfaitement le message. Mais sur la
+machine la plus récente, le message est tronqué et n’affiche que “Welcome “.
+2 sur 3 c’est un bon score pour un premier essai. Je réglerai ce problème dans
+un prochain article.</p>
+
+<h2 id="glossaire">Glossaire</h2>
+
+<p><strong>BIOS</strong> — Basic Input Output System</p>
+
+<p><em>Système élémentaire d’entrée/sortie présent dans la ROM des ordinateurs</em>
+<em>compatibles PC.</em></p>
+
+<p><strong>PC</strong> — Personal Computer</p>
+
+<p><em>Ordinateur compatible PC, basé sur les microprocesseurs de la famille x86.</em></p>
+
+<h2 id="références">Références</h2>
+
+<ul>
+  <li><a href="https://www.nasm.us/">L’assembleur nasm</a></li>
+  <li><a href="https://www.qemu.org/">L’émulateur Qemu</a></li>
+  <li><a href="https://wiki.osdev.org/BIOS">BIOS</a></li>
+  <li><a href="https://www.ctyme.com/intr/rb-0106.htm">int 10h ah=0Eh</a></li>
+</ul>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/08/24/blonk/" title="Article précédent: BLONK! un système d'exploitation éducatif">&laquo; BLONK! un système d'exploitation éducatif</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/08/27/secteur-de-boot-hello-world/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
