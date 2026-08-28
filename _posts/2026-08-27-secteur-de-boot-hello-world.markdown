@@ -265,7 +265,11 @@ _Ordinateur compatible PC, basé sur les microprocesseurs de la famille x86._
 
 ## Références
 
+- [Code complet de BLONK! v0.0.1](https://github.com/lkdjiin/blonk/tree/v0.0.1)
 - [L'assembleur nasm](https://www.nasm.us/)
 - [L'émulateur Qemu](https://www.qemu.org/)
 - [BIOS](https://wiki.osdev.org/BIOS)
 - [int 10h ah=0Eh](https://www.ctyme.com/intr/rb-0106.htm)
+
+
+{% include serie_blonk.md %}
