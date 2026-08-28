@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Clé USB, émulation disquette ou disque dur</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-08-28T08:00:00+02:00" itemprop="datePublished">
+        28 août 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/blonk%21/">blonk!</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>On explore les mystères de l’émulation disquette ou disque dur des clés USB au
+démarrage d’un PC, en mode réel (16 bits).</p>
+
+<!-- more -->
+
+<h2 id="rappel">Rappel</h2>
+
+<p>On veut comprendre pour quelle raison le message du <em>boot sector</em>
+développé dans <a href="/blog/2026/08/27/secteur-de-boot-hello-world/">l’article précédent</a> est tronqué sur une des machines de test, mais
+pas sur les autres.
+Et bien sûr on veut résoudre le problème.</p>
+
+<h3 id="comment-le-pc-démarre-sur-une-clé-usb">Comment le PC démarre sur une clé USB</h3>
+
+<p>En mode réèl (16 bits) il n’y a pas vraiment de driver USB dans le BIOS. Il
+s’agit en fait d’une émulation. Le BIOS voit la clé USB soit comme une disquette,
+soit comme un disque dur.</p>
+
+<p>Pour certains BIOS (c’est le moment où vous devez admettre que chaque PC a un
+BIOS différent), une disquette doit avoir un <em>BIOS Parameter Block</em> (BPB) valide.
+Sinon, certains de ces BIOS s’accordent la liberté de <em>patcher</em> certains octets de la supposée BPB à zéro.
+Certains BIOS sont connus pour faire ça aux offsets 0x1c, 0x1d, 0x1e et 0x1f du
+secteur de boot. Et quand je regarde à ces emplacements je vois le morceau “and “ du message :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>xxd boot | head -3
+00000000: 31c0 8ed8 8ec0 8ed0 bc00 7cfc be14 7ce8  1.........|...|.
+00000010: 1a00 ebfe 5765 6c63 6f6d 6520 616e 6420  ....Welcome and
+                                        ^^^^ ^^^^
+00000020: 6269 656e 7665 6e75 650d 0a00 ac08 c074  bienvenue......t
+</code></pre></div></div>
+
+<p>Le BIOS a réécrit ces octets à zéro. C’est la raison pour laquelle cet ordinateur
+affiche seulement “Welcome “ au lieu de “Welcome and bienvenue”.</p>
+
+<p>Pour corriger ce problème, une solution possible est d’assumer que la clé USB
+soit reconnue en tant que disquette.</p>
+
+<h3 id="la-clé-usb-émulée-comme-une-disquette">La clé USB émulée comme une disquette</h3>
+
+<p>Je ne vais pas m’étendre sur cette solution. Je l’ai testée, elle fonctionne,
+mais je ne l’utilise pas : les disquettes sont obsolètes et je ne veux pas
+m’embêter avec, même émulées. Mais si pour une raison ou pour une autre vous
+voulez utiliser l’émulation disquette de la clé USB, ou une vraie disquette
+voici ce qu’il faudra faire : insérer une FAT, même fictive, avant le code.
+Ainsi tout les BIOS seront contents.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">org</span> <span class="mh">0x7c00</span>
+<span class="nf">bits</span> <span class="mi">16</span>
+
+<span class="nf">jmp</span> <span class="nv">short</span> <span class="nv">start</span>
+<span class="nf">nop</span>
+
+<span class="c1">; Fausse FAT BPB</span>
+<span class="nl">bpb_oem_name:</span>          <span class="kd">db</span> <span class="s">'BLONK   '</span>
+<span class="nl">bpb_bytes_per_sector:</span>  <span class="kd">dw</span> <span class="mi">512</span>
+<span class="nl">bpb_sectors_per_cluster:</span> <span class="kd">db</span> <span class="mi">1</span>
+<span class="nl">bpb_reserved_sectors:</span>  <span class="kd">dw</span> <span class="mi">1</span>
+<span class="nl">bpb_num_fats:</span>          <span class="kd">db</span> <span class="mi">2</span>
+<span class="nl">bpb_root_entries:</span>      <span class="kd">dw</span> <span class="mi">224</span>
+<span class="nl">bpb_total_sectors_16:</span>  <span class="kd">dw</span> <span class="mi">2880</span>
+<span class="nl">bpb_media:</span>             <span class="kd">db</span> <span class="mh">0xf0</span>
+<span class="nl">bpb_sectors_per_fat:</span>   <span class="kd">dw</span> <span class="mi">9</span>
+<span class="nl">bpb_sectors_per_track:</span> <span class="kd">dw</span> <span class="mi">18</span>
+<span class="nl">bpb_num_heads:</span>         <span class="kd">dw</span> <span class="mi">2</span>
+<span class="nl">bpb_hidden_sectors:</span>    <span class="kd">dd</span> <span class="mi">0</span>
+<span class="nl">bpb_total_sectors_32:</span>  <span class="kd">dd</span> <span class="mi">0</span>
+<span class="nl">eb_drive_number:</span>       <span class="kd">db</span> <span class="mh">0x80</span>
+<span class="nl">eb_reserved:</span>           <span class="kd">db</span> <span class="mi">0</span>
+<span class="nl">eb_boot_signature:</span>     <span class="kd">db</span> <span class="mh">0x29</span>
+<span class="nl">eb_volume_id:</span>          <span class="kd">dd</span> <span class="mh">0x12345678</span>
+<span class="nl">eb_volume_label:</span>       <span class="kd">db</span> <span class="s">'BLONK      '</span>
+<span class="nl">eb_fs_type:</span>            <span class="kd">db</span> <span class="s">'FAT12   '</span>
+
+<span class="nl">start:</span>
+<span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="mi">0</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="p">[</span> <span class="nf">Suite</span> <span class="nv">du</span> <span class="nv">code</span><span class="p">,</span> <span class="nv">c</span><span class="err">'</span><span class="nb">es</span><span class="nv">t</span> <span class="nv">le</span> <span class="nv">m</span><span class="err">ê</span><span class="nv">me</span> <span class="nv">que</span> <span class="nv">plus</span> <span class="nv">haut</span> <span class="p">]</span></code></pre></figure>
+
+<h3 id="la-clé-usb-émulée-comme-un-disque-dur">La clé USB émulée comme un disque dur</h3>
+
+<p>Un PC s’attend à ce qu’un disque dur possède un <em>Master Boot Record</em> (MBR).
+Le MBR est le tout premier secteur du disque. Si vous avez suivi <a href="/blog/2026/08/27/secteur-de-boot-hello-world/">l’article précédent</a>,
+c’est le moment où vous dites :</p>
+
+<p><em>«Non, le premier secteur c’est le boot sector !»</em></p>
+
+<p>Et vous auriez raison. C’est les deux en même temps. Un MBR contient la table
+des partitions du disque, dont l’une au moins doit être active. Rien
+n’empêche un secteur de contenir une table des partitions, une signature de
+<em>boot sector</em> et du code d’amorçage. Tant que ça tient en 512 octets…</p>
+
+<p>Comme avec la solution précédente, là encore on peut construire une partition fictive.
+Il faut placer cette table à l’offset 446 :</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="kd">times</span> <span class="mi">446</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">nop</span>
+<span class="kd">db</span> <span class="mh">0x80</span>    <span class="c1">; Partition active</span>
+<span class="kd">db</span> <span class="mi">0</span>       <span class="c1">; Starting head</span>
+<span class="kd">db</span> <span class="mi">2</span>       <span class="c1">; Starting sector</span>
+<span class="kd">db</span> <span class="mi">0</span>       <span class="c1">; Starting cylinder</span>
+<span class="kd">db</span> <span class="mh">0x20</span>    <span class="c1">; System ID</span>
+<span class="kd">db</span> <span class="mi">1</span>       <span class="c1">; Ending head</span>
+<span class="kd">db</span> <span class="mh">0x10</span>    <span class="c1">; Ending sector</span>
+<span class="kd">db</span> <span class="mh">0x10</span>    <span class="c1">; Ending cylinder</span>
+<span class="kd">dd</span> <span class="mi">1</span>       <span class="c1">; LBA</span>
+<span class="kd">dd</span> <span class="mi">131072</span>  <span class="c1">; Total de secteurs (64 MB)</span></code></pre></figure>
+
+<p>Vous pourriez vous amuser à modifier certains champs pour voir ce que ça
+change.</p>
+
+<h2 id="le-code-complet">Le code complet</h2>
+
+<p>Pour référence, voici le code complet.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">org</span> <span class="mh">0x7c00</span>
+<span class="nf">bits</span> <span class="mi">16</span>
+
+<span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span> 
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="mh">0x7c00</span>
+<span class="nf">cld</span>
+
+<span class="nf">mov</span> <span class="nb">si</span><span class="p">,</span> <span class="nv">welcome</span>
+<span class="nf">call</span> <span class="nv">print_string</span>
+
+<span class="nf">jmp</span> <span class="kc">$</span>
+
+<span class="nf">welcome</span> <span class="nv">db</span> <span class="err">'</span><span class="nv">Welcome</span> <span class="nv">and</span> <span class="nv">bienvenue</span><span class="err">'</span><span class="p">,</span> <span class="mh">0x0d</span><span class="p">,</span> <span class="mh">0x0a</span><span class="p">,</span> <span class="mi">0</span>
+
+<span class="nl">print_string:</span>
+  <span class="nf">lodsb</span>
+  <span class="nf">or</span> <span class="nb">al</span><span class="p">,</span> <span class="nb">al</span>
+  <span class="nf">jz</span> <span class="nv">.done</span>
+  <span class="nf">mov</span> <span class="nb">ah</span><span class="p">,</span> <span class="mh">0x0e</span>
+  <span class="nf">mov</span> <span class="nb">bx</span><span class="p">,</span> <span class="mh">0x0007</span>
+  <span class="nf">int</span> <span class="mh">0x10</span>
+  <span class="nf">jmp</span> <span class="nv">print_string</span>
+<span class="nl">.done:</span>
+  <span class="nf">ret</span>
+
+<span class="c1">; ----------------------------------------------------------------------</span>
+<span class="c1">; Table des partitions</span>
+<span class="kd">times</span> <span class="mi">446</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">nop</span>
+<span class="kd">db</span> <span class="mh">0x80</span>    <span class="c1">; Partition active</span>
+<span class="kd">db</span> <span class="mi">0</span>       <span class="c1">; Starting head</span>
+<span class="kd">db</span> <span class="mi">2</span>       <span class="c1">; Starting sector</span>
+<span class="kd">db</span> <span class="mi">0</span>       <span class="c1">; Starting cylinder</span>
+<span class="kd">db</span> <span class="mh">0x20</span>    <span class="c1">; System ID</span>
+<span class="kd">db</span> <span class="mi">1</span>       <span class="c1">; Ending head</span>
+<span class="kd">db</span> <span class="mh">0x10</span>    <span class="c1">; Ending sector</span>
+<span class="kd">db</span> <span class="mh">0x10</span>    <span class="c1">; Ending cylinder</span>
+<span class="kd">dd</span> <span class="mi">1</span>       <span class="c1">; LBA ?</span>
+<span class="kd">dd</span> <span class="mi">131072</span>  <span class="c1">; Total de secteurs (64 MB)</span>
+
+<span class="kd">times</span> <span class="mi">510</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">db</span> <span class="mi">0</span>
+<span class="kd">dw</span> <span class="mh">0xaa55</span></code></pre></figure>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Pour que le BIOS traite une clé USB comme si c’était une disquette
+il faut insérer une FAT dans le secteur de boot.
+Si vous voulez plutôt que le BIOS traite votre clé USB comme un disque dur, vous
+y ajouterez une table des partitions.</p>
+
+<h2 id="glossaire">Glossaire</h2>
+
+<p><strong>BIOS</strong> — Basic Input Output System</p>
+
+<p><em>Système élémentaire d’entrée/sortie présent dans la ROM des ordinateurs</em>
+<em>compatibles PC.</em></p>
+
+<p><strong>BPB</strong> — BIOS Parameter Block</p>
+
+<p><em>Structure de données décrivant le disque dur ou la disquette et placée dans</em>
+<em>le boot sector.</em></p>
+
+<p><strong>FAT</strong> — File Allocation Table</p>
+
+<p><em>Système de fichiers classique. S’il est loin d’être le meilleur, il possède</em>
+<em>deux avantages de poids : il est simple et présent partout.</em></p>
+
+<p><strong>MBR</strong> — Master Boot Record</p>
+
+<p><em>Le premier secteur d’un disque dur. Il contient, entre autre, la table des</em>
+<em>partitions.</em></p>
+
+<p><strong>PC</strong> — Personal Computer</p>
+
+<p><em>Ordinateur compatible PC, basé sur les microprocesseurs de la famille x86.</em></p>
+
+<h2 id="références">Références</h2>
+
+<ul>
+  <li><a href="https://github.com/lkdjiin/blonk/tree/v0.0.2">Code complet de BLONK! v0.0.2</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/BIOS_parameter_block">BIOS Parameter Block</a></li>
+  <li><a href="https://fr.wikipedia.org/wiki/File_Allocation_Table">File Allocation Table</a></li>
+</ul>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ul>
+  <li>000 <a href="/blog/2026/08/24/blonk/">BLONK! un système d’exploitation éducatif</a></li>
+  <li>001 <a href="/blog/2026/08/27/secteur-de-boot-hello-world/">Secteur de boot : Hello, world!</a></li>
+  <li>002 <a href="/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/">Clé USB, émulation disquette ou disque dur</a></li>
+</ul>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/08/27/secteur-de-boot-hello-world/" title="Article précédent: Secteur de boot : Hello, world!">&laquo; Secteur de boot : Hello, world!</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
