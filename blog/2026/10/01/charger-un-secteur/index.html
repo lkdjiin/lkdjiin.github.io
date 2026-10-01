@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Charger un secteur</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-10-01T08:00:00+02:00" itemprop="datePublished">
+        1 octobre 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/blonk%21/">blonk!</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Objectif : Charger un secteur du disque dur en mémoire et lui passer la main
+pour poursuivre l’exécution.</p>
+
+<!-- more -->
+
+<h2 id="sortir-du-boot-sector">Sortir du boot sector</h2>
+
+<p>Le BIOS charge le secteur 0 et c’est tout. C’est à nous d’assurer la suite.
+Une solution : faire deux fichiers et les concaténer pour former une
+image disque. Le premier fichier est notre bon vieux <em>boot sector</em>, le second
+est un programme (rien de plus que l’écriture d’un message pour l’instant).
+Le boot sector charge en mémoire le secteur contenant le programme, puis y
+saute. On appelle communément ce code chargé par le boot sector le <em>stage 2</em>.
+Aujourd’hui notre <em>stage 2</em> tient dans un seul secteur, mais plus tard rien ne
+l’empêchera d’être aussi volumineux que nécessaire.</p>
+
+<h2 id="le-programme-message">Le programme message</h2>
+
+<p>Le programme message est presque un copier/coller du <em>boot sector</em> de
+<a href="/blog/2026/08/27/secteur-de-boot-hello-world/">l’article précédent</a>.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">org</span> <span class="mh">0x9000</span> <span class="c1">; (1)</span>
+<span class="nf">bits</span> <span class="mi">16</span>
+
+<span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="mh">0x7c00</span>
+
+<span class="nf">mov</span> <span class="nb">si</span><span class="p">,</span> <span class="nv">message</span>
+<span class="nf">call</span> <span class="nv">print_string</span>
+
+<span class="nf">jmp</span> <span class="kc">$</span>
+
+<span class="nf">message</span> <span class="nv">db</span> <span class="s">'BLONK! 0.0.3'</span><span class="p">,</span> <span class="mi">0</span>
+
+<span class="nl">print_string:</span>
+  <span class="nf">lodsb</span>
+  <span class="nf">or</span> <span class="nb">al</span><span class="p">,</span> <span class="nb">al</span>
+  <span class="nf">jz</span> <span class="nv">.done</span>
+  <span class="nf">mov</span> <span class="nb">ah</span><span class="p">,</span> <span class="mh">0x0e</span>
+  <span class="nf">mov</span> <span class="nb">bx</span><span class="p">,</span> <span class="mh">0x0007</span>
+  <span class="nf">int</span> <span class="mh">0x10</span>
+  <span class="nf">jmp</span> <span class="nv">print_string</span>
+<span class="nl">.done:</span>
+  <span class="nf">ret</span>
+
+<span class="kd">times</span> <span class="mi">512</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">db</span> <span class="mi">0</span> <span class="c1">; (2)</span></code></pre></figure>
+
+<p>(1) <code class="language-plaintext highlighter-rouge">org 0x9000</code></p>
+
+<p>C’est la grosse différence avec notre précédent boot sector. Le programme sera
+chargé  en 0x9000 alors que le boot sector est en 0x7c00. Notez que le boot
+sector chargé en 0x7c00 n’est pas un choix, c’est une contrainte. C’est comme
+ça que fonctionne un PC. Si j’ai choisi 0x9000 pour charger le programme, c’est
+avant tout parce que c’est possible. J’aurais pu choisir beaucoup d’autres
+adresses.</p>
+
+<p>(2) <code class="language-plaintext highlighter-rouge">times 512-($-$$) db 0</code></p>
+
+<p>Je m’assure que le fichier binaire fasse exactement 512 octets.</p>
+
+<h2 id="la-mémoire-du-pc-au-démarrage">La mémoire du PC au démarrage</h2>
+
+<p>Au démarrage du PC, en mode réel, le CPU n’a pas accès à plus de 1 Mo de mémoire.
+Entre 0x500 inclus et 0x80000 exclus (un peu plus de 500 Ko) la mémoire est
+libre, excepté les 512 octets occupés par le boot sector.
+En dessous c’est pour le BIOS et le CPU. Au dessus c’est pour le BIOS et la mémoire vidéo.</p>
+
+<h2 id="le-nouveau-boot-sector">Le nouveau boot sector</h2>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="no">BOOT_ADDRESS</span><span class="kd">  equ</span> <span class="mh">0x7c00</span> <span class="c1">; (1)</span>
+<span class="no">SHELL_ADDRESS</span><span class="kd"> equ</span> <span class="mh">0x9000</span>
+<span class="no">DRIVE_NUMBER</span><span class="kd">  equ</span> <span class="mh">0x80</span>
+
+<span class="nf">org</span> <span class="nv">BOOT_ADDRESS</span>
+<span class="nf">bits</span> <span class="mi">16</span>
+
+<span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="nv">BOOT_ADDRESS</span>
+<span class="nf">cld</span>
+
+<span class="nl">drive_reset:</span>              <span class="c1">; (2)</span>
+  <span class="nf">mov</span> <span class="nb">ah</span><span class="p">,</span> <span class="mi">0</span>
+  <span class="nf">mov</span> <span class="nb">dl</span><span class="p">,</span> <span class="nv">DRIVE_NUMBER</span>
+  <span class="nf">int</span> <span class="mh">0x13</span>
+  <span class="nf">jc</span> <span class="nv">drive_reset</span>
+
+<span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="nv">SHELL_ADDRESS</span> <span class="o">/</span> <span class="mi">16</span> <span class="c1">; (3)</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">xor</span> <span class="nb">bx</span><span class="p">,</span> <span class="nb">bx</span>
+<span class="nf">mov</span> <span class="nb">ah</span><span class="p">,</span> <span class="mh">0x02</span>               <span class="c1">; (4)</span>
+<span class="nf">mov</span> <span class="nb">al</span><span class="p">,</span> <span class="mi">1</span>
+<span class="nf">mov</span> <span class="nb">ch</span><span class="p">,</span> <span class="mi">0</span>
+<span class="nf">mov</span> <span class="nb">cl</span><span class="p">,</span> <span class="mi">2</span>
+<span class="nf">mov</span> <span class="nb">dh</span><span class="p">,</span> <span class="mi">0</span>
+<span class="nf">mov</span> <span class="nb">dl</span><span class="p">,</span> <span class="nv">DRIVE_NUMBER</span>
+<span class="nf">int</span> <span class="mh">0x13</span>                   <span class="c1">; (5)</span>
+<span class="nf">jc</span> <span class="nv">drive_reset</span>
+
+
+<span class="nf">jmp</span> <span class="mi">0</span><span class="p">:</span><span class="nv">SHELL_ADDRESS</span>     <span class="c1">; (6)</span>
+
+<span class="c1">; ----------------------------------------------------------------------</span>
+<span class="c1">; Table des partitions</span>
+<span class="kd">times</span> <span class="mi">446</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">nop</span>
+<span class="kd">db</span> <span class="mh">0x80</span>    <span class="c1">; Partition active</span>
+<span class="kd">db</span> <span class="mi">0</span>       <span class="c1">; Starting head</span>
+<span class="kd">db</span> <span class="mi">2</span>       <span class="c1">; Starting sector</span>
+<span class="kd">db</span> <span class="mi">0</span>       <span class="c1">; Starting cylinder</span>
+<span class="kd">db</span> <span class="mh">0x20</span>    <span class="c1">; System ID</span>
+<span class="kd">db</span> <span class="mi">1</span>       <span class="c1">; Ending head</span>
+<span class="kd">db</span> <span class="mh">0x10</span>    <span class="c1">; Ending sector</span>
+<span class="kd">db</span> <span class="mh">0x10</span>    <span class="c1">; Ending cylinder</span>
+<span class="kd">dd</span> <span class="mi">1</span>       <span class="c1">; LBA ?</span>
+<span class="kd">dd</span> <span class="mi">131072</span>  <span class="c1">; Total de secteurs (64 MB)</span>
+
+<span class="kd">times</span> <span class="mi">510</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">db</span> <span class="mi">0</span>
+<span class="kd">dw</span> <span class="mh">0xaa55</span></code></pre></figure>
+
+<p>(1) <code class="language-plaintext highlighter-rouge">BOOT_ADDRESS  equ 0x7c00</code></p>
+
+<p>C’est la définition d’une constante avec nasm.</p>
+
+<p>(2) <code class="language-plaintext highlighter-rouge">drive_reset:</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mov ah, 0            ; Fonction "RESET DISK SYSTEM" de l'interruption 13h
+mov dl, DRIVE_NUMBER ; Le numéro du drive (chaque disque dur à son numéro)
+int 0x13
+jc drive_reset       ; Si erreur, on retente
+</code></pre></div></div>
+
+<p>Avant de lire on demande au disque dur de faire une remise à zéro de sa (ou ses)
+tête de lecture. Pas sûr que ce soit encore nécessaire avec des BIOS moderne, ou
+avec l’émulation disque dur d’une clé USB. Mais historiquement les contrôleurs de
+disque, ou de disquette, étaient vraiment <em>cheap</em> et ne gardaient pas
+forcement la mémoire de la position de la tête de lecture. Il fallait donc toujours
+la replacer sur le secteur 0 avant de la déplacer sur le secteur voulu.</p>
+
+<p>(3) <code class="language-plaintext highlighter-rouge">mov ax, SHELL_ADDRESS / 16</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mov es, ax
+xor bx, bx
+</code></pre></div></div>
+
+<p>On fait en sorte que le couple ES:BX pointe sur l’adresse où on veut loger notre
+programme. Pourquoi ? Parce que c’est ce que demande la fonction du BIOS qu’on
+va utiliser.</p>
+
+<p>(4) <code class="language-plaintext highlighter-rouge">mov ah, 0x02</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mov al, 1 ; Nombre de secteurs à lire
+mov ch, 0 ; Cylindre (_cylinder_)
+mov cl, 2 ; Numéro du secteur
+mov dh, 0 ; Tête (_head_)
+mov dl, DRIVE_NUMBER
+</code></pre></div></div>
+
+<p>On continue de charger les registres pour pouvoir utiliser la fonction de chargement de
+secteur(s) du BIOS. Voir plus loin les explications pour <em>cylinder/head/sector</em>.</p>
+
+<p>(5) <code class="language-plaintext highlighter-rouge">int 0x13</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jc drive_reset
+</code></pre></div></div>
+
+<p>Quand les registres sont prêts on appelle la fonction de lecture. Et si elle
+échoue on reprend à partir du <em>reset</em>, c’est plus sûr.</p>
+
+<p>(6) <code class="language-plaintext highlighter-rouge">jmp 0:SHELL_ADDRESS</code></p>
+
+<p>Le programme a été chargé, on peut y «sauter». On se rappelle qu’en mode réel toute
+adresse est en réalité un couple segment:offset. Cela signifie que <code class="language-plaintext highlighter-rouge">jmp 0x9000</code> n’ira
+pas à l’adresse 0x9000 mais à l’adresse pointée par le couple CS:0x9000. CS étant
+le <em>Code Segment</em>. On n’a jamais chargé ce registre et le BIOS ne garanti pas sa
+valeur. C’est pourquoi on fait <code class="language-plaintext highlighter-rouge">jmp 0:0x9000</code>. Là on est sûr d’aller à l’adresse
+0x9000. De plus, par effet de bord, le processeur va forcer le chargement de CS à 0.</p>
+
+<h2 id="chs--cylinder--head--sector">CHS : Cylinder / Head / Sector</h2>
+
+<p>En français : cylinder, tête, secteur.</p>
+
+<p>Les premiers PCs étaient chers. Un moyen de d’abaisser le coût était “d’oublier”
+le contrôleur de disquette. Un disque (dur ou disquette) est constitué
+physiquement de cylindres partagés en plusieurs secteurs sur plusieurs faces
+accéssibles par plusieurs têtes de lecture. Résultat : au lieu de lire
+simplement le secteur n° X, on doit lire le secteur S du cylindre C qui se
+trouve sur la face/tête H.</p>
+
+<h2 id="assemblage-et-tests">Assemblage et tests</h2>
+
+<p>Cette fois on a deux programmes à assembler :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nasm message.nasm -f bin -o message
+nasm boot.nasm -f bin -o boot
+</code></pre></div></div>
+
+<p>On les réunit ensemble. L’ordre est important, le <em>boot sector</em> doit absolument
+être en premier :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cat boot message &gt; kernel
+</code></pre></div></div>
+
+<p>Le nom <code class="language-plaintext highlighter-rouge">kernel</code> est un peu prétentieux à ce stade, mais c’est bien vers quoi on
+se dirige ;) On peut s’assurer que le kernel fait bien exactement 1024 octets,
+la taille de deux secteurs :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ls -l
+-rw-rw-r-- 1 xavier xavier  512 Aug 12 15:00 boot
+-rw-rw-r-- 1 xavier xavier 1024 Aug 12 15:00 kernel
+-rw-rw-r-- 1 xavier xavier  512 Aug 12 15:00 message
+</code></pre></div></div>
+
+<p>On lance dans Qemu pour un retour rapide :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-i386 -hda kernel
+</code></pre></div></div>
+
+<p>Pour tester sur un véritable ordinateur (ou comme moi sur plusieurs) on copie
+d’abord le binaire sur une clé USB :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sudo fdisk -l           # &lt;&lt;&lt; pour connaître le device
+sudo cp kernel /dev/sdx   # &lt;&lt;&lt; remplacez x par la bonne lettre ;)
+</code></pre></div></div>
+
+<p><em>Attention avec sudo. Si vous ne comprenez pas ce
+que vous faites, il n’y a pas de mal à se contenter pour l’instant de l’émulateur.</em></p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>On a vu comment charger un programme de la taille d’un secteur en mémoire à partir d’une clé USB
+et à lancer ce programme. Au passage on en a appris un peu plus sur l’organisation de la
+mémoire du PC et sur la géométrie des disques (CHS).</p>
+
+<h2 id="glossaire">Glossaire</h2>
+
+<p><strong>CHS</strong> — Cylinder Head Sector</p>
+
+<p><em>Méthode historique pour parler à un disque dur ou à un lecteur de disquette</em>
+<em>en mode réel.</em></p>
+
+<h2 id="références">Références</h2>
+
+<ul>
+  <li><a href="https://github.com/lkdjiin/blonk/tree/v0.0.3">Code complet de BLONK! v0.0.3</a></li>
+  <li><a href="https://wiki.osdev.org/Memory_Map_(x86)">x86 Memory Map</a></li>
+  <li><a href="https://www.ctyme.com/intr/rb-0605.htm">int 13h/ah=00h</a></li>
+  <li><a href="https://www.ctyme.com/intr/rb-0607.htm">int 13h/ah=02h</a></li>
+  <li><a href="https://fr.wikipedia.org/wiki/Cylindre/T%C3%AAte/Secteur">CHS</a></li>
+  <li><a href="https://wiki.osdev.org/Rolling_Your_Own_Bootloader">Rolling Your Own Bootloader</a></li>
+</ul>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ul>
+  <li>000 <a href="/blog/2026/08/24/blonk/">BLONK! un système d’exploitation éducatif</a></li>
+  <li>001 <a href="/blog/2026/08/27/secteur-de-boot-hello-world/">Secteur de boot : Hello, world!</a></li>
+  <li>002 <a href="/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/">Clé USB, émulation disquette ou disque dur</a></li>
+  <li>003 <a href="/blog/2026/10/01/charger-un-secteur/">Charger un secteur</a></li>
+</ul>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/" title="Article précédent: Clé USB, émulation disquette ou disque dur">&laquo; Clé USB, émulation disquette ou disque dur</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/10/01/charger-un-secteur/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
