@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Inspecter la mémoire avec Qemu</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-10-02T08:00:00+02:00" itemprop="datePublished">
+        2 octobre 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/blonk%21/">blonk!</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>On va voir comment inspecter la mémoire avec le moniteur de Qemu.</p>
+
+<!-- more -->
+
+<h2 id="sauvegarder-le-numéro-du-boot-drive">Sauvegarder le numéro du boot drive</h2>
+
+<p>J’ai trouvé un petit pretexte pour aller regarder dans la mémoire de Qemu.
+Au lieu de définir en dur le numéro du drive sur lequel l’ordinateur démarre, on
+va le prendre du BIOS et l’enregistrer dans la RAM en tant que donnée du système.
+On pourra s’y réferer plus tard autant que nécessaire.</p>
+
+<h3 id="le-problème">Le problème</h3>
+
+<p>Pour illustrer le problème induit par le numéro en dur du drive de boot, lançons
+notre kernel dans Qemu depuis une disquette en remplaçant l’option <code class="language-plaintext highlighter-rouge">-hda</code> par <code class="language-plaintext highlighter-rouge">-fda</code> :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>qemu-system-i386 -fda kernel
+</code></pre></div></div>
+
+<p>Qemu va afficher éternellement un message du genre “Booting from floppy disk…”.
+La faute au code de chargement dans <code class="language-plaintext highlighter-rouge">boot.nasm</code> :</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="no">DRIVE_NUMBER</span><span class="kd">  equ</span> <span class="mh">0x80</span>
+
+<span class="nl">drive_reset:</span>
+<span class="c1">;[...]</span>
+<span class="c1">; Charger le shell à l'adresse 0x9000.</span>
+<span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="nv">SHELL_ADDRESS</span> <span class="o">/</span> <span class="mi">16</span>
+<span class="c1">;[...]</span>
+<span class="nf">mov</span> <span class="nb">dl</span><span class="p">,</span> <span class="nv">DRIVE_NUMBER</span> <span class="c1">; &lt;&lt;&lt; Il n'y a pas de drive 0x80</span>
+<span class="nf">int</span> <span class="mh">0x13</span>
+<span class="nf">jc</span> <span class="nv">drive_reset</span>       <span class="c1">; &lt;&lt;&lt; Alors erreur et on recommence</span></code></pre></figure>
+
+<p>Si on passe le <code class="language-plaintext highlighter-rouge">DRIVE_NUMBER</code> à 0, on pourra booter à partir d’une disquette.
+Mais alors c’est le disque dur qui ne fonctionnera plus.</p>
+
+<h3 id="la-solution">La solution</h3>
+
+<p>Pour une fois ce n’est pas le problème mais la solution qui vient du BIOS.
+Juste avant de passer la main au boot sector, le BIOS charge dans le registre DL
+le numéro du drive sur lequel l’ordinateur a booter. À nous de le sauvegarder
+quelque part avant que notre code ne touche au registre DL. Mais après avoir initialisé DS !
+Pour rappel on va toucher à la mémoire, donc on aura affaire au couple segment:offset du
+mode réel. Je décide de l’enregistrer à l’adresse 0x500 :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mov byte [0x500], dl
+</code></pre></div></div>
+
+<p>Cette instruction signifie : «charge la case mémoire 0x500 avec l’octet de DL».
+Plus précisement encore «la case mémoire pointée par DS:0x500».</p>
+
+<h2 id="memory-map">Memory Map</h2>
+
+<p>Voici la carte mémoire actuelle de BLONK! J’ai choisi de réservé une tranche de
+256 octets pour les données du système et j’ai pris la première zone libre.
+L’avenir nous dira si 256 octets est trop ou trop peu ;)</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Début</th>
+      <th>Fin</th>
+      <th>Longueur</th>
+      <th>Fonction</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0x80000</td>
+      <td> </td>
+      <td> </td>
+      <td>BIOS + vidéo</td>
+    </tr>
+    <tr>
+      <td>0x09200</td>
+      <td>0x7ffff</td>
+      <td>475 Ko</td>
+      <td>Libre</td>
+    </tr>
+    <tr>
+      <td>0x09000</td>
+      <td>0x091ff</td>
+      <td>512 o</td>
+      <td>Programme message</td>
+    </tr>
+    <tr>
+      <td>0x07c00</td>
+      <td>0x07dff</td>
+      <td>512 o</td>
+      <td>Boot</td>
+    </tr>
+    <tr>
+      <td>0x00600</td>
+      <td>0x07bff</td>
+      <td> </td>
+      <td>Stack</td>
+    </tr>
+    <tr>
+      <td>0x00500</td>
+      <td>0x005ff</td>
+      <td>256 o</td>
+      <td>Données du système (pour l’instant seulement boot drive)</td>
+    </tr>
+    <tr>
+      <td>0x00000</td>
+      <td>0x004ff</td>
+      <td>1280 o</td>
+      <td>Interruptions + BIOS</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="le-code">Le code</h2>
+
+<p>On remplace <code class="language-plaintext highlighter-rouge">DRIVE_NUMBER equ 0x80</code> par <code class="language-plaintext highlighter-rouge">BOOT_DRIVE equ 0x500</code>.</p>
+
+<p>On sauvegarde DL dès que possible :</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="nv">BOOT_ADDRESS</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nv">BOOT_DRIVE</span><span class="p">],</span> <span class="nb">dl</span>
+<span class="nf">cld</span></code></pre></figure>
+
+<p>Puis on remplace les deux <code class="language-plaintext highlighter-rouge">mov dl, DRIVE_NUMBER</code> par <code class="language-plaintext highlighter-rouge">mov dl, [BOOT_DRIVE]</code>.</p>
+
+<p>Vous pourrez <a href="https://github.com/lkdjiin/blonk/tree/v0.0.4">le trouver au complet ici</a>.</p>
+
+<p>Une fois assemblé comme la dernière fois, on peut vérifier que ça fonctionne
+aussi bien avec une disquette qu’avec un disque dur :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nasm message.nasm -f bin -o message
+nasm boot.nasm -f bin -o boot
+cat boot message &gt; kernel
+
+qemu-system-i386 -fda kernel
+qemu-system-i386 -hda kernel
+</code></pre></div></div>
+
+<h2 id="le-moniteur-qemu">Le moniteur Qemu</h2>
+
+<p>On lance le kernel avec <code class="language-plaintext highlighter-rouge">qemu-system-i386 -hda kernel</code>. Quand le message
+“BLONK! 0.0.4” s’affiche, ouvrez l’onglet du moniteur (menu view).</p>
+
+<p>La commande de base pour inspecter la mémoire est <code class="language-plaintext highlighter-rouge">x/</code>. Sa forme : <code class="language-plaintext highlighter-rouge">x/</code> suivi
+du nombre d’éléments, du format, puis de l’adresse. Le format est une taille
+(<code class="language-plaintext highlighter-rouge">b</code> octet, <code class="language-plaintext highlighter-rouge">h</code> mot de 2 octets) suivie d’un rendu (<code class="language-plaintext highlighter-rouge">x</code> hexadécimal, <code class="language-plaintext highlighter-rouge">c</code>
+caractère) : <code class="language-plaintext highlighter-rouge">bx</code> pour des octets en hexadécimal, <code class="language-plaintext highlighter-rouge">bc</code> pour des octets en
+caractères. Sans précision du rendu, l’hexadécimal est utilisé.</p>
+
+<p>Dans le moniteur tapez :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>x/8b 0x500
+</code></pre></div></div>
+
+<p>Résultat :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>QEMU 10.2.1 monitor - type 'help' for more information
+(qemu) x/8b 0x500
+00000500: 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+</code></pre></div></div>
+
+<p>Le premier octet est notre boot drive sauvegardé : <code class="language-plaintext highlighter-rouge">0x80</code> parce qu’on a démarré
+depuis un disque dur. Avec <code class="language-plaintext highlighter-rouge">-fda kernel</code> ce serait <code class="language-plaintext highlighter-rouge">0x00</code>.</p>
+
+<h3 id="notre-message-en-mémoire">Notre message en mémoire</h3>
+
+<p>Le message “BLONK! 0.0.4” est stocké dans le programme <code class="language-plaintext highlighter-rouge">message</code>, en 0x9013.
+Regardons ses octets :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(qemu) x/16bx 0x9013
+00009013: 0x42 0x4c 0x4f 0x4e 0x4b 0x21 0x20 0x30
+0000901b: 0x2e 0x30 0x2e 0x34 0x00 0xac 0x08 0xc0
+</code></pre></div></div>
+
+<p>On reconnait les codes ASCII du message : <code class="language-plaintext highlighter-rouge">0x42</code>=’B’, <code class="language-plaintext highlighter-rouge">0x4c</code>=’L’, <code class="language-plaintext highlighter-rouge">0x4f</code>=’O’,
+<code class="language-plaintext highlighter-rouge">0x4e</code>=’N’, <code class="language-plaintext highlighter-rouge">0x4b</code>=’K’, <code class="language-plaintext highlighter-rouge">0x21</code>=’!’, et le zéro final qui marque la fin de la
+chaîne. Les trois octets qui suivent (<code class="language-plaintext highlighter-rouge">0xac 0x08 0xc0</code>) ne font pas partie du
+message : c’est le début de la fonction <code class="language-plaintext highlighter-rouge">print_string</code>, qui commence par
+<code class="language-plaintext highlighter-rouge">lodsb</code> puis <code class="language-plaintext highlighter-rouge">or al, al</code>.</p>
+
+<h3 id="létat-du-processeur">L’état du processeur</h3>
+
+<p>La commande <code class="language-plaintext highlighter-rouge">info registers</code> affiche l’état de tous les registres :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(qemu) info registers
+EAX=00000e00 EBX=00000007 ECX=00000002 EDX=00000080
+ESI=00009020 EDI=00000000 EBP=00000000 ESP=00007c00
+EIP=00009011 EFL=00000246 [---Z-P-] CPL=0 ...
+</code></pre></div></div>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">EIP=00009011</code> : on est dans la boucle infinie <code class="language-plaintext highlighter-rouge">jmp $</code>, la dernière
+instruction de notre programme</li>
+  <li><code class="language-plaintext highlighter-rouge">ESP=00007c00</code> : le haut de la pile, comme prévu</li>
+  <li><code class="language-plaintext highlighter-rouge">EDX=00000080</code> : DL contient à nouveau le numéro du boot drive, relu depuis
+0x500</li>
+  <li><code class="language-plaintext highlighter-rouge">ESI=00009020</code> : SI pointe juste après la chaîne, <code class="language-plaintext highlighter-rouge">lodsb</code> incrémentant à
+chaque caractère lu</li>
+</ul>
+
+<h3 id="une-capture-décran">Une capture d’écran</h3>
+
+<p>Pour terminer, la commande <code class="language-plaintext highlighter-rouge">screendump</code> écrit une image de l’écran dans le
+répertoire courant au format PPM :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(qemu) screendump ecran.ppm
+</code></pre></div></div>
+
+<h2 id="références">Références</h2>
+
+<ul>
+  <li><a href="https://github.com/lkdjiin/blonk/tree/v0.0.4">Code complet de BLONK! v0.0.4</a></li>
+  <li><a href="https://www.qemu.org/docs/master/system/monitor.html">Documentation moniteur Qemu</a></li>
+</ul>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ul>
+  <li>000 <a href="/blog/2026/08/24/blonk/">BLONK! un système d’exploitation éducatif</a></li>
+  <li>001 <a href="/blog/2026/08/27/secteur-de-boot-hello-world/">Secteur de boot : Hello, world!</a></li>
+  <li>002 <a href="/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/">Clé USB, émulation disquette ou disque dur</a></li>
+  <li>003 <a href="/blog/2026/10/01/charger-un-secteur/">Charger un secteur</a></li>
+  <li>004 <a href="/blog/2026/10/02/inspecter-la-memoire-avec-qemu/">Inspecter la mémoire avec Qemu</a></li>
+</ul>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/10/01/charger-un-secteur/" title="Article précédent: Charger un secteur">&laquo; Charger un secteur</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/10/02/inspecter-la-memoire-avec-qemu/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
