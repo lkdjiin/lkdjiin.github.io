@@ -8,3 +8,4 @@ _Cet article fait partie d'une série :_
 - 001 [Secteur de boot : Hello, world!](/blog/2026/08/27/secteur-de-boot-hello-world/)
 - 002 [Clé USB, émulation disquette ou disque dur](/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/)
 - 003 [Charger un secteur](/blog/2026/10/01/charger-un-secteur/)
+- 004 [Inspecter la mémoire avec Qemu](/blog/2026/10/02/inspecter-la-memoire-avec-qemu/)
