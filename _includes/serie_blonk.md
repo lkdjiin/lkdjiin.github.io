@@ -9,3 +9,4 @@ _Cet article fait partie d'une série :_
 - 002 [Clé USB, émulation disquette ou disque dur](/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/)
 - 003 [Charger un secteur](/blog/2026/10/01/charger-un-secteur/)
 - 004 [Inspecter la mémoire avec Qemu](/blog/2026/10/02/inspecter-la-memoire-avec-qemu/)
+- 005 [Écrire dans la mémoire vidéo VGA](/blog/2026/10/03/ecrire-dans-la-memoire-video-vga/)
