@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Écrire dans la mémoire vidéo VGA</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-10-03T08:00:00+02:00" itemprop="datePublished">
+        3 octobre 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/blonk%21/">blonk!</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Dans cet article on regarde comment on peut écrire directement dans la mémoire
+vidéo du mode VGA, sans passer par le BIOS.</p>
+
+<!-- more -->
+
+<h2 id="un-point-sur-la-situation">Un point sur la situation</h2>
+
+<p>Prenons deux secondes pour regarder ce qu’on a fait jusqu’ici :</p>
+
+<ul>
+  <li>charger des secteurs du disque dur vers la mémoire</li>
+  <li>écrire des chaînes de caractères à l’écran</li>
+</ul>
+
+<p>Tout cela, on l’a réalisé à l’aide du BIOS.  Mais lorsqu’on passera dans un
+futur proche en 32 bits (mode protégé) nous n’aurons plus accès au BIOS.
+On va donc devoir trouver d’autres moyens pour continuer à réaliser ces actions.
+Une chose à la fois, aujourd’hui on regarde le fonctionnement de base de la
+mémoire vidéo du VGA.</p>
+
+<h2 id="mode-texte-couleur">Mode texte couleur</h2>
+
+<p>Quand le PC démarre, il est en mode texte, 80 colonnes sur 25 lignes, en couleur.
+En couleur seulement si le moniteur est lui-même couleur, mais on va supposer que
+c’est le cas et oublier les moniteurs monochromes. La mémoire vidéo texte couleur
+est mappée à l’adresse 0xb8000. Chaque lettre/case/cellule est codée sur
+deux octets : un octet pour le code ASCII et un second pour la couleur.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Adresse</th>
+      <th>Fonction</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0xb8000</td>
+      <td>code ASCII rangée supérieure, première colonne (coin en haut à gauche)</td>
+    </tr>
+    <tr>
+      <td>0xb8001</td>
+      <td>couleur rangée supérieure, première colonne</td>
+    </tr>
+    <tr>
+      <td>0xb8002</td>
+      <td>code ASCII rangée supérieure, deuxième colonne</td>
+    </tr>
+    <tr>
+      <td>0xb8003</td>
+      <td>couleur rangée supérieure, deuxième colonne</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Pour l’octet de couleur, voici comment il est codé :</p>
+
+<ul>
+  <li>les bits 0 à 3 définissent la couleur de premier plan (16 possibles)</li>
+  <li>les bits 4 à 6 définissent la couleur d’arrière-plan (8 possibles)</li>
+</ul>
+
+<p>Et le bit 7 ? On ne va pas l’utiliser car il dépend du matériel. Mais sur Qemu
+il permettra d’accéder à 16 couleurs pour l’arrière-plan.</p>
+
+<p>La liste des couleurs :</p>
+
+<ul>
+  <li>0 noir</li>
+  <li>1 bleu</li>
+  <li>2 vert</li>
+  <li>3 cyan</li>
+  <li>4 rouge</li>
+  <li>5 rose</li>
+  <li>6 marron</li>
+  <li>7 gris clair</li>
+  <li>8 gris foncé</li>
+  <li>9 bleu clair</li>
+  <li>10 vert clair</li>
+  <li>11 cyan clair</li>
+  <li>12 rouge clair</li>
+  <li>13 rose clair</li>
+  <li>14 jaune</li>
+  <li>15 blanc</li>
+</ul>
+
+<h2 id="du-code">Du code</h2>
+
+<p>On modifie message.nasm :</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">org</span> <span class="mh">0x9000</span>
+<span class="nf">bits</span> <span class="mi">16</span>
+
+<span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="mh">0x7c00</span>
+
+<span class="nf">mov</span> <span class="nb">ebx</span><span class="p">,</span> <span class="mh">0xb8000</span>      <span class="c1">; (1)</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="s">'B'</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>               <span class="c1">; (2)</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="mh">0x34</span>
+
+<span class="nf">cli</span> <span class="c1">; (3)</span>
+<span class="nf">hlt</span>
+
+<span class="kd">times</span> <span class="mi">512</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">db</span> <span class="mi">0</span></code></pre></figure>
+
+<p><img class="center" src="/images/blonk-005-01.png" /></p>
+
+<p>(1) <code class="language-plaintext highlighter-rouge">mov ebx, 0xb8000</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mov byte [ebx], 'B'
+</code></pre></div></div>
+
+<p>On charge EBX avec l’adresse de début de la mémoire vidéo, 0xb8000. Puis on met
+le code ASCII de la lettre B à cette adresse. Notez au passage qu’on peut très
+bien utiliser comme ici un registre 32 bits (EBX) alors qu’on est en mode 16
+bits.</p>
+
+<p>(2) <code class="language-plaintext highlighter-rouge">inc ebx</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mov byte [ebx], 0x34
+</code></pre></div></div>
+
+<p>On passe à l’adresse suivante, 0xb8001, pour y mettre la couleur. 0x34 nous
+donne du rouge sur fond cyan.</p>
+
+<p>(3) <code class="language-plaintext highlighter-rouge">cli</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hlt
+</code></pre></div></div>
+
+<p>Rien à voir avec le VGA et la mémoire vidéo.
+J’ai remplacé l’ancien <code class="language-plaintext highlighter-rouge">jmp $</code> par <code class="language-plaintext highlighter-rouge">cli</code> et <code class="language-plaintext highlighter-rouge">hlt</code>. Je trouve ça plus propre.
+L’instruction <code class="language-plaintext highlighter-rouge">hlt</code> met le processeur en pause jusqu’à la prochaine interruption.
+C’est pourquoi on désactive d’abord les interruptions avec <code class="language-plaintext highlighter-rouge">cli</code>.</p>
+
+<h2 id="jeu-de-caractères">Jeu de caractères</h2>
+
+<p>Normalement, le PC devrait avoir le jeu de caractères dit <em>code page 437</em>. Un
+ASCII étendu avec des accents et quelques caractères semi-graphiques. On peut
+tester :</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">org</span> <span class="mh">0x9000</span>
+<span class="nf">bits</span> <span class="mi">16</span>
+
+<span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="mh">0x7c00</span>
+
+<span class="nf">mov</span> <span class="nb">ebx</span><span class="p">,</span> <span class="mh">0xb8000</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="mi">3</span>    <span class="c1">; un coeur</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="mh">0x0f</span> <span class="c1">; blanc sur fond noir</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="mi">66</span>   <span class="c1">; la lettre B</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="mh">0xe4</span> <span class="c1">; rouge sur fond jaune</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="mi">130</span>  <span class="c1">; la lettre é</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="mh">0x0f</span> <span class="c1">; blanc sur fond noir</span>
+
+<span class="nf">cli</span>
+<span class="nf">hlt</span>
+
+<span class="kd">times</span> <span class="mi">512</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">db</span> <span class="mi">0</span></code></pre></figure>
+
+<p>Résultat dans Qemu : <img class="center" src="/images/blonk-005-02.png" /></p>
+
+<p>Mes trois ordinateurs de test affichent bien les caractères. Mais la lettre B est
+en rouge clignotant sur fond marron ; c’est le problème avec le bit 7 de la
+couleur.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>On est prêt à affronter le mode 32 bits en ce qui concerne l’affichage. Même si
+pour être honnête, on est encore loin de gérer tout le bazar nécessaire :</p>
+
+<ul>
+  <li>afficher une chaîne</li>
+  <li>gérer le curseur</li>
+  <li>gérer le scrolling</li>
+</ul>
+
+<p>Malgré tout, l’affichage d’un unique caractère à un endroit précis sans passer
+par le BIOS était le premier pas indispensable. Et on l’a fait.</p>
+
+<h2 id="glossaire">Glossaire</h2>
+
+<p><strong>ASCII</strong> — American Standard Code for Information Interchange</p>
+
+<p><em>Jeu de codage des caractères sur 7 bits (codes 0 à 127), défini en 1963.</em></p>
+
+<p><strong>VGA</strong> — Video Graphic Array</p>
+
+<p><em>Standard d’affichage qui date de 1987.</em></p>
+
+<h2 id="références">Références</h2>
+
+<ul>
+  <li><a href="https://en.wikipedia.org/wiki/VGA_text_mode">VGA text mode</a></li>
+  <li><a href="https://fr.wikipedia.org/wiki/Video_Graphics_Array">Le standard VGA</a></li>
+  <li><a href="https://fr.wikipedia.org/wiki/Page_de_code_437">Page de code 437</a></li>
+</ul>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ul>
+  <li>000 <a href="/blog/2026/08/24/blonk/">BLONK! un système d’exploitation éducatif</a></li>
+  <li>001 <a href="/blog/2026/08/27/secteur-de-boot-hello-world/">Secteur de boot : Hello, world!</a></li>
+  <li>002 <a href="/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/">Clé USB, émulation disquette ou disque dur</a></li>
+  <li>003 <a href="/blog/2026/10/01/charger-un-secteur/">Charger un secteur</a></li>
+  <li>004 <a href="/blog/2026/10/02/inspecter-la-memoire-avec-qemu/">Inspecter la mémoire avec Qemu</a></li>
+  <li>005 <a href="/blog/2026/10/03/ecrire-dans-la-memoire-video-vga/">Écrire dans la mémoire vidéo VGA</a></li>
+</ul>
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/10/02/inspecter-la-memoire-avec-qemu/" title="Article précédent: Inspecter la mémoire avec Qemu">&laquo; Inspecter la mémoire avec Qemu</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/10/03/ecrire-dans-la-memoire-video-vga/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
