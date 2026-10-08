@@ -11,3 +11,4 @@ _Cet article fait partie d'une série :_
 - 004 [Inspecter la mémoire avec Qemu](/blog/2026/10/02/inspecter-la-memoire-avec-qemu/)
 - 005 [Écrire dans la mémoire vidéo VGA](/blog/2026/10/03/ecrire-dans-la-memoire-video-vga/)
 - 006 [Global Descriptor Table](/blog/2026/10/06/global-descriptor-table/)
+- 007 [Le mode protégé](/blog/2026/10/08/le-mode-protege/)
