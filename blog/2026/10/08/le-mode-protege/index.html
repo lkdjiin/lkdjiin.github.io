@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="stylesheet" href="/assets/main.css">
+  <link rel="stylesheet" href="/assets/perldoc.css">
+  <link rel="stylesheet" href="/assets/tags.css"><link type="application/atom+xml" rel="alternate" href="http://lkdjiin.github.io/atom.xml" title="Xavier Nayrac" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Xavier Nayrac</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/blog/tags/">Tags</a><a class="page-link" href="/about/">À propos</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Le mode protégé</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2026-10-08T08:00:00+02:00" itemprop="datePublished">
+        8 octobre 2026
+      </time>• <span class="post-tags"><a href="/blog/tags/blonk%21/">blonk!</a></span></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>Avec une GDT en place, il n’y a plus qu’à s’en servir. Aujourd’hui on bascule
+enfin en 32 bits : le mode protégé. Le principe est d’une simplicité presque
+décevante — mettre à 1 le bit PE du registre CR0 — mais il faut s’occuper de la
+pile, des registres de segment et d’un saut pour “officialiser” le passage.</p>
+
+<!-- more -->
+
+<h2 id="le-code">Le code</h2>
+
+<p>Nous sommes prêts à passer en 32 bits, le fameux mode protégé.
+Tout se passe dans le fichier message.nasm. Le début reste le même :</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">org</span> <span class="mh">0x9000</span>
+<span class="nf">bits</span> <span class="mi">16</span>
+
+<span class="nf">xor</span> <span class="nb">ax</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span>
+<span class="nf">mov</span> <span class="nb">sp</span><span class="p">,</span> <span class="mh">0x7c00</span></code></pre></figure>
+
+<p>Il faut prendre garde à désactiver les interruptions, sinon le processeur
+pourrait se mettre à faire n’importe quoi.  On les réactivera plus tard, quand
+on en aura besoin.  On peut alors enregistrer la GDT avec l’instruction <code class="language-plaintext highlighter-rouge">lgdt</code>.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">cli</span>
+<span class="nf">lgdt</span> <span class="p">[</span><span class="nv">gdt_pointer</span><span class="p">]</span></code></pre></figure>
+
+<p>On passe en mode protégé en mettant à 1 le bit 0 du registre CR0. C’est presque
+trop simple.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">mov</span> <span class="nb">eax</span><span class="p">,</span> <span class="nb">cr0</span>
+<span class="nf">or</span> <span class="nb">eax</span><span class="p">,</span> <span class="mi">1</span>
+<span class="nf">mov</span> <span class="nb">cr0</span><span class="p">,</span> <span class="nb">eax</span></code></pre></figure>
+
+<p>Pour “officialiser” le passage en mode protégé, on effectue un saut qui en
+même temps charge CS avec 8. On se souvient que 8 est l’index du descripteur de
+segment de code dans la GDT. Le saut nous emmène après la définition de la GDT,
+qui est identique à celle de l’article précédent.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">jmp</span> <span class="mi">8</span><span class="p">:</span><span class="nv">go_32_bits</span>
+
+<span class="c1">; ----------------------------------------------------------------------</span>
+<span class="c1">; Définition de la Global Descriptor Table</span>
+<span class="c1">;</span>
+<span class="nl">gdt_start:</span>
+  <span class="c1">; Null descriptor</span>
+  <span class="kd">dd</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+
+  <span class="c1">; Code descriptor</span>
+  <span class="kd">dw</span> <span class="mh">0xffff</span>     <span class="c1">;  0 - 15</span>
+  <span class="kd">dw</span> <span class="mi">0</span>          <span class="c1">; 16 - 31</span>
+  <span class="kd">db</span> <span class="mi">0</span>          <span class="c1">; 32 - 39</span>
+  <span class="kd">db</span> <span class="mb">0b</span><span class="mi">10011010</span> <span class="c1">; 40 - 47</span>
+  <span class="kd">db</span> <span class="mb">0b</span><span class="mi">11001111</span> <span class="c1">; 48 - 55</span>
+  <span class="kd">db</span> <span class="mi">0</span>          <span class="c1">; 56 - 63</span>
+
+  <span class="c1">; Data descriptor</span>
+  <span class="kd">dw</span> <span class="mh">0xffff</span>
+  <span class="kd">dw</span> <span class="mi">0</span>
+  <span class="kd">db</span> <span class="mi">0</span>
+  <span class="kd">db</span> <span class="mb">0b</span><span class="mi">10010010</span>
+  <span class="kd">db</span> <span class="mb">0b</span><span class="mi">11001111</span>
+  <span class="kd">db</span> <span class="mi">0</span>
+<span class="nl">gdt_end:</span>
+
+<span class="nl">gdt_pointer:</span>
+  <span class="kd">dw</span> <span class="nv">gdt_end</span> <span class="o">-</span> <span class="nv">gdt_start</span> <span class="o">-</span> <span class="mi">1</span>
+  <span class="kd">dd</span> <span class="nv">gdt_start</span></code></pre></figure>
+
+<p>À partir de maintenant nous sommes en 32 bits / mode protégé. On le signale à
+nasm avec la directive <code class="language-plaintext highlighter-rouge">bits 32</code>. Vient ensuite le chargement de tous les
+registres de segment de données avec la valeur 0x10, qui est l’index du
+descripteur du segment de données dans la GDT. C’est quelque chose qu’on veut
+faire le plus tôt possible pour éviter les erreurs.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="nf">bits</span> <span class="mi">32</span>
+<span class="nl">go_32_bits:</span>
+  <span class="nf">mov</span> <span class="nb">ax</span><span class="p">,</span> <span class="mh">0x10</span>
+  <span class="nf">mov</span> <span class="nb">ds</span><span class="p">,</span> <span class="nb">ax</span>
+  <span class="nf">mov</span> <span class="nb">es</span><span class="p">,</span> <span class="nb">ax</span>
+  <span class="nf">mov</span> <span class="nb">fs</span><span class="p">,</span> <span class="nb">ax</span>
+  <span class="nf">mov</span> <span class="nb">gs</span><span class="p">,</span> <span class="nb">ax</span>
+  <span class="nf">mov</span> <span class="nb">ss</span><span class="p">,</span> <span class="nb">ax</span></code></pre></figure>
+
+<p>On n’oublie pas de signaler le haut de la pile. 0x90000 est loin du kernel, ça
+laisse de quoi voir venir.</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm">  <span class="nf">mov</span> <span class="nb">esp</span><span class="p">,</span> <span class="mh">0x90000</span> <span class="c1">; la pile commence à 0x90000</span></code></pre></figure>
+
+<p>Pour finir je me contente d’afficher le numéro de version au centre de l’écran.
+Il faut se décaler de ((80×11)+37)×2 octets par rapport au début de la mémoire
+vidéo : nombre de colonnes par ligne (80) x 11 (12ème ligne) + 37 (38ème colonne),
+le tout x 2 (2 octets par cellule, le code ASCII et la couleur).</p>
+
+<figure class="highlight"><pre><code class="language-nasm" data-lang="nasm"><span class="c1">; Afficher le numéro de version au centre de l'écran</span>
+<span class="nf">mov</span> <span class="nb">ebx</span><span class="p">,</span> <span class="mh">0xb8000</span> <span class="o">+</span> <span class="mh">0x72a</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="s">'0'</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="s">'0'</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">inc</span> <span class="nb">ebx</span>
+<span class="nf">mov</span> <span class="kt">byte</span> <span class="p">[</span><span class="nb">ebx</span><span class="p">],</span> <span class="s">'7'</span>
+
+<span class="nf">cli</span>
+<span class="nf">hlt</span>
+
+<span class="kd">times</span> <span class="mi">512</span><span class="o">-</span><span class="p">(</span><span class="kc">$</span><span class="o">-</span><span class="kc">$$</span><span class="p">)</span> <span class="nv">db</span> <span class="mi">0</span></code></pre></figure>
+
+<h2 id="inspection-des-registres">Inspection des registres</h2>
+
+<p>Il est intéressant de regarder le contenu des registres dans Qemu.</p>
+
+<ul>
+  <li>ESP pointe sur le haut de la pile : 0x90000</li>
+  <li>DS, ES, FS, GS et SS contient l’index 0x10 (le descripteur de données)</li>
+  <li>CS contient l’index 0x08 (le descripteur de code)</li>
+  <li>GDT positionne son adresse à 0x9020 et sa taille à 0x17 (comme vu dans l’article précédent)</li>
+  <li>CR0 a bien son bit n°0 allumé</li>
+</ul>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>QEMU 10.2.1 monitor - type 'help' for more information
+(qemu) info registers
+CPU#0
+EAX=00000010 EBX=000b8004 ECX=00000002 EDX=00000080
+ESI=00000000 EDI=00000000 EBP=00000000 ESP=00090000
+EIP=00009065 EFL=00000002 [-------] CPL=0 II=0 A20=1 SMM=0 HLT=1
+ES =0010 00000000 ffffffff 00cf9300 DPL=0 DS   [-WA]
+CS =0008 00000000 ffffffff 00cf9a00 DPL=0 CS32 [-R-]
+SS =0010 00000000 ffffffff 00cf9300 DPL=0 DS   [-WA]
+DS =0010 00000000 ffffffff 00cf9300 DPL=0 DS   [-WA]
+FS =0010 00000000 ffffffff 00cf9300 DPL=0 DS   [-WA]
+GS =0010 00000000 ffffffff 00cf9300 DPL=0 DS   [-WA]
+LDT=0000 00000000 0000ffff 00008200 DPL=0 LDT
+TR =0000 00000000 0000ffff 00008b00 DPL=0 TSS32-busy
+GDT=     00009020 00000017
+IDT=     00000000 000003ff
+CR0=00000011 CR2=00000000 CR3=00000000 CR4=00000000
+</code></pre></div></div>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Voilà, notre code fonctionne maintenant en 32 bits, mode protégé.
+Par rapport au monstrueux boxon que représente la compréhension de la GDT
+(voir l’article précédent) son activation m’a semblé étonnamment simple.</p>
+
+<p>La prochaine étape importante va être l’utilisation du langage C. Autant j’aime
+l’assembleur, autant je sais que le C permettra de booster l’avancement de
+BLONK! Mais avant cela, le prochain article se concentrera sur l’organisation du
+code et sur l’utilitaire make, car le nombre de fichiers source va certainement
+bientôt exploser.</p>
+
+<h2 id="glossaire">Glossaire</h2>
+
+<p><strong>CR0</strong> — Registre de contrôle du processeur</p>
+
+<p><em>Registre 32 bits dont le bit 0 (PE, _protected enable</em>) commande le mode
+protégé. Le passage de PE à 1 est précisément ce qui bascule le processeur en
+32 bits._</p>
+
+<p><strong>GDT</strong> — Global Descriptor Table</p>
+
+<p><em>Table du processeur qui décrit les segments de mémoire.
+Elle est obligatoire en mode protégé.</em></p>
+
+<p><strong>LGDT</strong> — <em>Load Global Descriptor Table</em></p>
+
+<p><em>Instruction qui charge le registre GDTR avec l’adresse de la GDT et sa limite.
+À elle seule elle ne suffit pas à entrer en mode protégé, il faut aussi le bit
+PE de CR0.</em></p>
+
+<p><strong>PE</strong> — <em>Protected Enable</em></p>
+
+<p><em>Bit 0 du registre CR0. C’est en le mettant à 1 qu’on active le mode protégé.</em></p>
+
+<p><strong>Sélecteur</strong> — index d’un descripteur dans la GDT</p>
+
+<p><em>Numéro chargé dans un registre de segment (CS, DS, …) qui désigne un
+descripteur de la GDT.</em></p>
+
+<h2 id="références">Références</h2>
+
+<ul>
+  <li><a href="http://www.osdever.net/tutorials/view/the-world-of-protected-mode">The world of protected mode</a></li>
+  <li><a href="https://wiki.osdev.org/GDT_Tutorial">GDT tutorial</a></li>
+</ul>
+
+<p><br /></p>
+<div style="text-align: center">/ / / / / / / / / /</div>
+<p><br /></p>
+
+<p><em>Cet article fait partie d’une série :</em></p>
+
+<ul>
+  <li>000 <a href="/blog/2026/08/24/blonk/">BLONK! un système d’exploitation éducatif</a></li>
+  <li>001 <a href="/blog/2026/08/27/secteur-de-boot-hello-world/">Secteur de boot : Hello, world!</a></li>
+  <li>002 <a href="/blog/2026/08/28/cle-usb-emulation-disquette-ou-disque-dur/">Clé USB, émulation disquette ou disque dur</a></li>
+  <li>003 <a href="/blog/2026/10/01/charger-un-secteur/">Charger un secteur</a></li>
+  <li>004 <a href="/blog/2026/10/02/inspecter-la-memoire-avec-qemu/">Inspecter la mémoire avec Qemu</a></li>
+  <li>005 <a href="/blog/2026/10/03/ecrire-dans-la-memoire-video-vga/">Écrire dans la mémoire vidéo VGA</a></li>
+  <li>006 <a href="/blog/2026/10/06/global-descriptor-table/">Global Descriptor Table</a></li>
+  <li>007 <a href="/blog/2026/10/08/le-mode-protege/">Le mode protégé</a></li>
+</ul>
+
+
+  </div>
+
+  <br/>
+  <br/>
+  <div style="text-align: center">/ / / / / / / / / /</div>
+  <br/>
+  <br/>
+
+  <div style="text-align: center">
+    
+      <a href="/blog/2026/10/06/global-descriptor-table/" title="Article précédent: Global Descriptor Table">&laquo; Global Descriptor Table</a> ---//---
+    
+    
+  </div>
+
+  <br/>
+  <br/><h2>Commentaires</h2>
+
+<p>
+<em>Pas encore trouvé de solution simple et non-invasive pour avoir des
+commentaires sur le blog. En attendant vous pouvez laisser votre commentaire
+et/ou engager une discussion sur </em>
+<a href="https://ruby.social/@lkdjiin">mastodon@lkdjiin</a>
+ou
+<a href="https://x.com/lkdjiin">twitter@lkdjiin</a>
+</p>
+<a class="u-url" href="/blog/2026/10/08/le-mode-protege/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <div>
+    <p class="rss-subscribe">s'abonner <a href="/atom.xml">via RSS</a></p>
+    </div>
+
+    <h2 class="footer-heading">Xavier Nayrac</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">
+            Copyright 2013 - 2026
+            </li><li><a class="u-email" href="mailto:"></a></li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list">
+
+  <li style="margin-bottom:10px;">
+    <a href="https://github.com/lkdjiin">
+      <img src="/images/github.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://ruby.social/@lkdjiin">
+      <img src="/images/mastodon.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="https://x.com/lkdjiin">
+      <img src="/images/twitter.png" />
+      <span class="username">lkdjiin</span>
+    </a>
+  </li>
+
+  <li style="margin-bottom:10px;">
+    <a href="/atom.xml">
+      <img src="/images/atom.png" />
+      <span class="username">RSS</span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Dev accro au TDD, brasseur d&#39;appartement, musicien, maker, ex créateur d&#39;effets pour guitare, heureux utilisateur de Vim.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
